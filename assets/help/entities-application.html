@@ -17,11 +17,13 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Applications</h1>
 <h2>What it shows</h2>
-<p>One row per internal application &mdash; the identities of the Applications row on the Logical, Partners, Domains &amp; Applications page. Columns, rules, views and drills are the same on all nine entity pages: see <a href="entities.html">Entities</a>.</p>
-<h2>How a File is attributed</h2>
 <ul>
-<li>The application is the MIDDLE part of the three-part logical name <code>domain_application_partner</code> (<code>ODV-TDRS-ASR</code> &rarr; TDRS); a File under a two-token name (no application segment) is not counted.</li>
-<li>A File counts for every application its subscription maps to (the FlowID spine), unioned with the parse-time attribution; the total row counts each File once.</li>
+<li>One row per internal application, in the shared <a href="entities.html">Entities</a> layout.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>An application is the middle part of the logical name <code>domain_application_partner</code>; <code>input/logical_apps.txt</code> can replace it.</li>
+<li>A File counts for the application of its logical flow and for every application of its subscription; the Total row, narrowed dates included, counts each File once.</li>
 </ul>
 </main>
 </body>

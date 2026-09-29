@@ -76,7 +76,7 @@
     return out;
   }
 
-  // ---- the matcher (file-search.js rules) ---------------------------------
+  // ---- the matcher -------------------------------------------------------
   function matcher(term) {
     if (!/[*?]/.test(term)) return function (k) { return k.indexOf(term) !== -1; };
     var re = new RegExp(term.replace(/[.+^${}()|[\]\\]/g, "\\$&")
@@ -175,7 +175,7 @@
     function showData(on) { wrap.style.display = on ? "" : "none"; }
     showData(false);
 
-    // ---- one match -> a <tr> (the file-search.js shape) -----------------
+    // ---- one match -> a <tr> -------------------------------------------
     function cell(tr, cls, text, href, mono) {
       var c = document.createElement("td"), t;
       if (cls) c.className = cls;
@@ -189,13 +189,15 @@
       else c.textContent = text;
       tr.appendChild(c);
     }
-    var STATE = { "": "Delivered", d: "Delivered", e: "Errored", w: "Waiting", x: "Expired" };
-    var TINT = { Delivered: "green", Errored: "red", Expired: "red", Waiting: "orange" };
+    // the site's words and outcome policy (2026-09-29): OK / Error, Waiting
+    // counts as OK (green), Expired as Error
+    var STATE = { "": "OK", d: "OK", e: "Error", w: "Waiting", x: "Expired" };
+    var TINT = { OK: "green", Error: "red", Expired: "red", Waiting: "green" };
     function render(day, r) {
       var tr = document.createElement("tr");
       var sn = CACHE[day].subs[r.si] ? CACHE[day].subs[r.si].name : "";
       var slug = Object.prototype.hasOwnProperty.call(SLUGOF, sn) ? SLUGOF[sn] : "";
-      var st = STATE[r.fl.toLowerCase()] || "Delivered";
+      var st = STATE[r.fl.toLowerCase()] || "OK";
       var when = day + " " + r.tm.substr(0, 2) + ":" + r.tm.substr(2, 2) + ":" + r.tm.substr(4, 2);
       tr.setAttribute("data-res", TINT[st]);
       if (r.fl !== "" && r.fl !== r.fl.toLowerCase()) {   // a File page: the whole row opens it

@@ -63,7 +63,7 @@
 #        the xref pairs in both directions, $FILES,
 #        $SERVER_REPORTS/{auth-activity,remote-poll}.rpt (may be absent —
 #        that proof source then counts 0).
-# Writes: data/<env>/transfer/reports/entity-coverage.rpt
+# Writes: data/transfer/reports/entity-coverage.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -318,6 +318,4 @@ for spec in "${SPECS[@]}"; do
 done
 printf 'FOOT\tGenerated on %s from %s file(s)\n' "$now" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
-# the former rule reports (2026-09-29: their verdicts are columns now)
-rm -f "$REPORTS_DIR/entity-coverage-once.rpt" "$REPORTS_DIR/entity-coverage-ok.rpt" "$REPORTS_DIR/entity-coverage-diff.rpt"
 echo "Data written to $OUT ($(command grep -c '^TABLE' "$OUT") view(s))." >&2

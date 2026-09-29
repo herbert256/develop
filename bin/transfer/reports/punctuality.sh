@@ -24,7 +24,7 @@
 # Writes data/punctuality-src.rpt (the first tab of the merged Punctuality page).
 #
 # Usage:
-#   ./punctuality.sh    # reads input/*.csv (via the cache), writes data/punctuality.rpt
+#   ./punctuality.sh    # reads input/*.csv (via the cache), writes data/transfer/reports/punctuality-src.rpt
 #
 set -euo pipefail
 

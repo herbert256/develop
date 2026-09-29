@@ -51,7 +51,7 @@ GENERATED_AT="${GENERATED_AT:-$(date '+%Y-%m-%d %H:%M')}"
 # CDN) never serves a stale style.css/report.js against freshly published HTML.
 # Content-derived (not the build timestamp), so an assets-unchanged rebuild
 # keeps the same URL and the cache stays warm.
-ASSET_VER=$( (cksum docs/assets/style.css docs/assets/report.js docs/assets/slotchart.js docs/assets/file-search.js docs/assets/all-files-search.js 2>/dev/null || true) | cksum | cut -d' ' -f1 )
+ASSET_VER=$( (cksum docs/assets/style.css docs/assets/report.js docs/assets/slotchart.js docs/assets/all-files-search.js docs/assets/sub-files.js 2>/dev/null || true) | cksum | cut -d' ' -f1 )
 
 # ---- the render job pool ----------------------------------------------------
 # Rendering a page is FORK-BOUND, not compute-bound: measured on a full rebuild,
@@ -128,11 +128,10 @@ pub_wait() {   # reap every pooled job; abort the publish if any page failed
 area_dates() {   # $1 area
     local dr="$DATA/$1/reports/day.rpt"
     [ -f "$dr" ] || dr="$DATA/$1/reports/topview.rpt"   # server: its Top view carries the per-day calendar (the day report was removed)
-    if [ -f "$dr" ]; then
-        grep "^ROW"$'\t' "$dr" | cut -f2 | sed 's/^@{[^}]*}//' | grep -oE '^[0-9]{4}-[0-9]{2}-[0-9]{2}' | sort -u | tr '\n' ',' | sed 's/,$//' || true
-    else
-        grep -hv '^FOOT' "$1"/data/*.rpt 2>/dev/null | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | sort -u | tr '\n' ',' | sed 's/,$//' || true
-    fi
+    # no day.rpt / topview.rpt: no dates (the pre-2026-07 glob fallback over
+    # "<area>/data/*.rpt" matched nothing any more; it went 2026-09-29)
+    [ -f "$dr" ] || return 0
+    grep "^ROW"$'\t' "$dr" | cut -f2 | sed 's/^@{[^}]*}//' | grep -oE '^[0-9]{4}-[0-9]{2}-[0-9]{2}' | sort -u | tr '\n' ',' | sed 's/,$//' || true
 }
 # Per-AREA list of days whose COLLECTION WINDOW ended mid-day — the exports are
 # a snapshot, so the newest day almost always stops at the pull time (server
@@ -192,7 +191,7 @@ server_order=(topview errors failure-flows io-errors routing-errors uc-status po
 # _report_groups (analyses/<name> members) like every other report's.
 #
 # OWNERSHIP: bin/analyses/publish.sh renders them, NOT the area publishes —
-# it clears docs/<env>/analyses/*.html and runs AFTER both, so a page written
+# it clears docs/analyses/*.html and runs AFTER both, so a page written
 # there by the transfer/server loop would be deleted again.
 SUBS_GROUP_REPORTS=" transfer:failed analyses:failing-reasons server:uc-status server:polling transfer:account-sharing transfer:twins analyses:triage analyses:data-diff analyses:partner-scorecard analyses:blast-radius analyses:app-partners analyses:cleanup-backlog  analyses:partners-in "
 
@@ -207,11 +206,11 @@ is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
 
 # The 2026-07 MERGED-report components: their .rpt files stay on disk (they
 # feed the merged reports and every other consumer) but they have NO page of
-# their own — whats-new must not link them. ranking and double are retired
+# their own — whats-new must not link them. ranking and double are retired (not listed)
 # outright; the four uc<n>-status merged into uc-status. site-failures (2026-09-28)
 # is a pageless DATA producer like pesit / event-queue: the Boxes and
 # Partners - Outgoing read its .rpt, its page was the Per flow connection rows.
-MERGED_COMPONENT_REPORTS=" day weekly hourly weekday retry attempts resubmissions patterns legs-count protocol-journey arrived-left errors-day error-timing error-reasons top-messages unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins inbound-connections connection-diagnostics logon auth-activity pesit event-queue site-failures ssh-crypto ssh-sessions uc1-status uc2-status uc3-status uc4-status double stale-accounts trend size-dist file-type duplicate-files duration-distribution dwell-time remote-poll uc3-polling missing-cronjobs duration-trend top-transfers size-profile uc4-to-uc2 file-in-file-out-src episodes-src recovered recovered-files uc2-visits pickups no-remote-dir no-remote-files deploy-errors from-green-to-red only-red punctuality-src expected-arrival "
+MERGED_COMPONENT_REPORTS=" day weekly hourly weekday retry attempts resubmissions patterns legs-count protocol-journey arrived-left errors-day error-timing error-reasons top-messages unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins inbound-connections connection-diagnostics logon auth-activity pesit event-queue site-failures ssh-crypto ssh-sessions uc1-status uc2-status uc3-status uc4-status went-quiet-src stale-accounts trend size-dist file-type duplicate-files duration-distribution dwell-time remote-poll uc3-polling missing-cronjobs duration-trend top-transfers size-profile uc4-to-uc2 file-in-file-out-src episodes-src recovered recovered-files uc2-visits pickups no-remote-dir no-remote-files deploy-errors from-green-to-red only-red punctuality-src expected-arrival "
 is_merged_component() {
     case $MERGED_COMPONENT_REPORTS in *" $1 "*) return 0 ;; esac
     return 1
@@ -374,7 +373,7 @@ first_page() {
 # page, unless overridden (the cross-reference entry opens on Account × Subscriptions).
 group_home() {   # $1 group id
     case $1 in
-        cross)        echo "xref/cross-account-subscriptions.html" ;;   # the cross pages live in docs/<env>/analyses/xref/ (analyses-relative href)
+        cross)        echo "xref/cross-account-subscriptions.html" ;;   # the cross pages live in docs/analyses/xref/ (analyses-relative href)
         account-login-site) first_page subscription ;;   # Entities DEFAULTS to Subscriptions / All — the same member the tab bar leads with
         *)            local fm; fm=$(group_members "$1"); first_page "${fm%% *}" ;;
     esac
@@ -484,7 +483,7 @@ field2() { LC_ALL=C awk -F'\t' -v a="$2" -v b="$3" '
 field1() { LC_ALL=C awk -F'\t' -v k="$1" '$1 == k { i = index($0, "\t"); print (i ? substr($0, i + 1) : ""); exit }' "$2" 2>/dev/null || true; }
 meta_val() { grep -m1 "^META"$'\t'"$2"$'\t' "$1" 2>/dev/null | cut -f3- || true; }   # META key $2 in file $1
 
-html_head() {   # $1 title  $2 css_href  [$3 date-list]  [$4 unused (was the right label — replaced by the quick-search box)]  [$5 help slug]  [$6 area]  [$7 report key]  [$8 body class (the detail pages' direction/seen tint)]  [$9 extra asset scripts, space-separated basenames — only the slot-chart pages ask for slotchart.js]
+html_head() {   # $1 title  $2 css_href  [$3 date-list]  [$4 unused (was the right label — replaced by the quick-search box)]  [$5 help slug]  [$6 area]  [$7 report key]  [$8 body class (the detail pages' direction/seen tint)]  [$9 extra asset scripts, space-separated basenames — the slot-chart pages ask for slotchart.js, the subscription pages for sub-files.js]
     esc "$1"
     # ONE depth prefix (2026-09-11, one repo = one environment): callers pass
     # their css href relative to the docs root ("../assets/style.css" from
@@ -550,7 +549,8 @@ render_topbar() {
     # checkout without one; 2026-09-12, user request: the static label span
     # that stood beside a fixed "Cloud" brand since the env split of
     # 2026-09-11 is gone) · 2 the Entities link + search icon · 3 the Files
-    # link · 4 the three report dropdowns (Transfer/Server/Analyses) · 5 the
+    # link · 4 the Reports pulldown (ONE, 2026-09-29 — the Transfer / Server /
+    # Analyses dropdowns went) · 5 the
     # plain Dashboard link (ONE dashboard page — no dropdown) · 6 the three
     # right icons. The precomputed menu strings carry an "@" placeholder; swap
     # it for this page's prefix.
@@ -623,7 +623,7 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 home-href  [$5 top-bar r
     # grep|cut pipelines cost two subshells and four programs per page, and a
     # build renders several thousand pages (2026-09-27); same values: the
     # first line opening "TITLE<TAB>" / "META<TAB>dirclass<TAB>", the rest of it
-    local title="" bodyclass="" _rl=""
+    local title="" bodyclass="" xassets="" _rl=""
     # NO PROCESS for the title of a page outside docs/details/ (2026-09-27,
     # speed round 9): every writer puts TITLE on line 1, which a builtin read
     # takes — the awk below is a fork + exec per page (thousands of files/
@@ -631,14 +631,17 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 home-href  [$5 top-bar r
     # only in the detail-page .rpt files — details_writer.awk and the
     # incoming-connection pages, both rendered into docs/details/ — at their
     # END, so those still scan the whole file; so does any .rpt whose line 1
-    # is not a TITLE.
+    # is not a TITLE. The same scan spots a subscription page's Files table
+    # (TABLE ... subfiles=<slug>, 2026-09-29): its page loads the engine,
+    # assets/sub-files.js (html_head's extra-scripts argument).
     if [ "${out#"$DOCS"/details/}" = "$out" ] && IFS= read -r _rl < "$rpt" 2>/dev/null && [ "${_rl#TITLE$'\t'}" != "$_rl" ]; then
         title=${_rl#TITLE$'\t'}
     else
-    IFS=$'\037' read -r title bodyclass < <(LC_ALL=C awk '
+    IFS=$'\037' read -r title bodyclass xassets < <(LC_ALL=C awk '
         !t && index($0, "TITLE\t") == 1 { t = 1; ti = substr($0, 7) }
         !m && index($0, "META\tdirclass\t") == 1 { m = 1; bc = substr($0, 15) }
-        END { printf "%s\037%s\n", ti, bc }' "$rpt" 2>/dev/null) || true
+        !x && index($0, "TABLE\t") == 1 && index($0, "\tsubfiles=") > 0 { x = 1; xa = "sub-files.js" }
+        END { printf "%s\037%s\037%s\n", ti, bc, xa }' "$rpt" 2>/dev/null) || true
     fi
     # The page's AREA (the date-filter persistence key report.js uses), derived
     # from where the output lands — transfer report and detail pages share the
@@ -646,7 +649,7 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 home-href  [$5 top-bar r
     # callers use for the CSS depth, so no caller needs a new argument.
     local rarea=""
     case $out in
-        "$DOCS"/transfer/*|"$DOCS"/details/*|"$DOCS"/latest/*|"$DOCS"/search/all-files.html) rarea="transfer" ;;   # all-files.html: the shared transfer From/To (2026-09-27)
+        "$DOCS"/transfer/*|"$DOCS"/details/*|"$DOCS"/search/all-files.html) rarea="transfer" ;;   # all-files.html: the shared transfer From/To (2026-09-27)
         "$DOCS"/server/*)                     rarea="server" ;;
     esac
     # The page body — the whole .rpt line protocol, tables and cells included —
@@ -668,7 +671,7 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 home-href  [$5 top-bar r
     # no-dates page.)
     local dropbuckets=0; [ -z "$CUR_DATES" ] && dropbuckets=1
     {
-        html_head "$title" "$css" "$CUR_DATES" "$rlabel" "$helpslug" "$rarea" "$reportkey" "$bodyclass"
+        html_head "$title" "$css" "$CUR_DATES" "$rlabel" "$helpslug" "$rarea" "$reportkey" "$bodyclass" "$xassets"
         LC_ALL=C awk -F'\t' -v droptitle="$droptitle" -v dlink="${DLINK_BASE:-../details/}" \
             -v slugmaps="$SLUGMAP_FILES" -v resmaps="${RESMAP_FILES:-}" \
             -v subtint="${RPT_SUBTINT:-}" \
@@ -834,7 +837,7 @@ render_missing_reports() {
     if [ "$area" = transfer ]; then order=("${transfer_order[@]}"); else order=("${server_order[@]}"); fi
     for name in "${order[@]}"; do
         [ -f "$DATA/$area/reports/$name.rpt" ] && continue
-        # the Subscriptions group's pages live in docs/<env>/analyses/, which
+        # the Subscriptions group's pages live in docs/analyses/, which
         # bin/analyses/publish.sh owns and clears — it writes their placeholders
         if is_subs_report "$name"; then continue; fi
         fp=$(first_page "$name")
@@ -885,7 +888,7 @@ render_missing_reports() {
                     printf '</p>\n' ;;
                 esac
             fi
-            printf '<p class="range">This report has <strong>no data in this environment</strong> — the log lines or configuration it reads are absent, so its report file was not produced. The report exists in the other environment when its data does; use the environment switch in the top bar.</p>\n'
+            printf '<p class="range">This report has <strong>no data in this environment</strong> — the log lines or configuration it reads are absent, so its report file was not produced.</p>\n'
             printf '</body>\n</html>\n'
         } > "$out"
         n=$((n + 1))
@@ -937,6 +940,7 @@ help_slug_for() {   # $1 area (transfer|server)  $2 report basename
     local area=$1 n=$2
     case $n in
         account|login|subscription|remote-host|logical|partner|application|domain|bl) echo "entities-$n" ;;
+        failed-files)                                                   echo "failed-files" ;;   # its own page (2026-09-29 fix: failed-* below caught it)
         failed-*)                                                       echo "failed" ;;    # the Failed Subscriptions view pages share one help page
         duration-all)     echo "duration" ;;  # the All-transfers sibling view shares the Duration help page (the Min/Avg/Max pages are gone, 2026-09-13)
         cross-*)                                                        echo "cross-reference" ;;
@@ -1015,9 +1019,12 @@ entities_name_only() {
         # the column-group / drill / ratio TABLE modifiers — drop them
         $1 == "GHEAD" { next }
         $1 == "TABLE" { out = $1; drop = 0
-                        for (i = 2; i <= NF; i++) { if (i > 2 && $i ~ /^(gsep|drillcols|pct|noagg|autohide)=/) drop = 1; else out = out OFS $i }
+                        for (i = 2; i <= NF; i++) { if (i > 2 && ($i ~ /^(gsep|drillcols|pct|noagg|autohide)=/ || $i == "datereset")) drop = 1; else out = out OFS $i }
                         if (drop) print out; else print
                         next }
+        # the RECALC tokens re-aggregate columns a names-only table lacks — and
+        # with them the page offered a From/To over nothing (2026-09-29)
+        $1 == "RECALC" { next }
         $1 == "HEAD" || $1 == "KIND" || $1 == "TOTAL" { print $1, $2; next }
         $1 == "ROW" { out = $1 OFS $2; for (i = 3; i <= NF; i++) if ($i ~ /^@data:/) out = out OFS $i; print out; next }
         { print }'
@@ -1331,8 +1338,9 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                 V[3]=nz(S[3]); V[4]=nz(S[4]); V[5]=S[5]+0; V[6]=pr(S[5], files); V[7]=S[7]+0; V[8]=S[8]+0; V[9]=S[9]+0
                 W[10] = (HN > 0) ? dcell(prank(90)) : ""; W[11] = (HN > 0) ? dcell(prank(95)) : ""; W[12] = (HN > 0) ? dcell(prank(99)) : ""; W[13] = (HN > 0) ? dcell(prank(100)) : ""   # WHOLE cells (their tint follows the value)
                 V[14]=human(sb); V[15]=human(files > 0 ? sb / files : 0); V[16]=S[16]+0; V[17]=S[17]+0; V[18]=pr(S[17], S[16]+S[17]); V[19]=S[19]+0; V[20]=S[20]+0; V[23]=days+0
-                nt = split(tmpl, T, "\t")
-                l = T[2]; sub(/\([0-9,]+/, "(" cnt, l); out = T[1] OFS l
+                nt = split(tmpl, T, "\t"); while (nt > 2 && T[nt] ~ /^@data:/) nt--   # the All total own distinct @data:buckets never ride a SUBSET total (2026-09-29)
+                if (cnt + 0 == 0) { V[14] = ""; V[15] = ""; V[23] = "" }   # an EMPTY view (2026-09-29): no "0 B" / 0 days in its total
+                l = T[2]; sub(/\([0-9,]+/, "(" (cnt + 0), l); out = T[1] OFS l
                 for (c = 3; c <= nt; c++) { cell = T[c]
                     if (c in W) cell = W[c]
                     else if (c in V) { if (match(cell, /^@\{[^}]*\}/)) cell = substr(cell, 1, RLENGTH) V[c]; else cell = V[c] }
@@ -1532,6 +1540,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                 for (i = nreal + 1; i <= NF; i++) out = out OFS $i
                 return out
             }
+            $1 == "GHEAD"  { print $0 OFS ""; next }   # the banner row gains the Reason column'"'"'s empty cell (2026-09-29: it was one short)
             $1 == "HEAD"   { print ins("Reason"); next }
             $1 == "KIND"   { print ins("text"); next }
             $1 == "RECALC" { print ins("-"); next }
@@ -1598,15 +1607,13 @@ split_search_rows() {   # $1 rendered search.html  $2 data file to write
     split_table_rows "$1" "$2" 'window.AXWAY_SEARCH=`' '`;'
 }
 
-# The shared lifter behind split_search_rows and the Latest files pages
-# (docs/latest/<slug>.js, 2026-09-27): every rendered data row of PAGE (a
-# <tr> line with a <td>, total rows excepted) moves into DATA between the
+# The row lifter behind split_search_rows: every rendered data row of PAGE
+# (a <tr> line with a <td>, total rows excepted) moves into DATA between the
 # PROLOGUE and EPILOGUE lines, the page keeps its header and total, and the
-# payload's <script> tag goes in before report.js. TABLE_ATTR (optional) is
-# stamped onto the page's first <table> — how report.js finds the table a
-# payload belongs to (data-latest="<slug>").
-split_table_rows() {   # $1 page  $2 data file  $3 prologue  $4 epilogue  [$5 table attr]
-    local page=$1 data=$2 pro=$3 epi=$4 tattr=${5:-} tmp="$1.tmp.$$"
+# payload's <script> tag goes in before report.js. (Its second user, the
+# Latest files pages' docs/latest/<slug>.js, went 2026-09-29.)
+split_table_rows() {   # $1 page  $2 data file  $3 prologue  $4 epilogue
+    local page=$1 data=$2 pro=$3 epi=$4 tmp="$1.tmp.$$"
     [ -f "$page" ] || return 0
     : > "$data.rows"
     # Encoding: ONE JS template literal, one rendered row per line, and NOTHING
@@ -1615,13 +1622,12 @@ split_table_rows() {   # $1 page  $2 data file  $3 prologue  $4 epilogue  [$5 ta
     # first use for ~10 ms. A template literal needs only three escapes (\ ` ${)
     # where a JSON string would escape every attribute quote; backslashes are
     # escaped because subscription paths are full of them (F:\Data\Opswise\...).
-    awk -v rowfile="$data.rows" -v tattr="$tattr" '
+    awk -v rowfile="$data.rows" '
         function esc(x) { gsub(/\\/, "\\\\", x); gsub(/`/, "\\`", x); gsub(/\$\{/, "\\${", x); return x }
         /^<tr[ >]/ && /<td/ && $0 !~ /class="total"/ {
             printf "%s\n", esc($0) > rowfile
             next
         }
-        tattr != "" && !tdone && /<table[ >]/ { sub(/<table/, "<table " tattr); tdone = 1 }
         { print }
     ' "$page" > "$tmp"
     {
@@ -1647,9 +1653,8 @@ render_report() {   # $1 area  $2 name  $3 rpt
     local area=$1 name=$2 rpt=$3
     # NO PROSE ON THE REPORT PAGES (2026-09-13, user request): the .rpt INTRO
     # and NOTE lines are not rendered on any report page — every page this
-    # function (and the functions it calls) renders — but on the report's
-    # HELP page instead ("About this report", bin/build/publish.sh
-    # apply_help_chrome); the Report finder shows the DESC line. The drill and
+    # function (and the functions it calls) renders; the report's hand-written
+    # HELP page explains it (assets/help/), the Report finder shows the DESC. The drill and
     # record pages (files/ — the error and File pages, the record and value pages, the detail
     # pages) keep their INTRO — there it states facts, not explanations.
     local RPT_NOPROSE=1
@@ -1665,7 +1670,7 @@ render_report() {   # $1 area  $2 name  $3 rpt
     # report-dates meta (html_head emits it from CUR_DATES) while rendering,
     # in the single-page and per-table branches alike.
     local saved_dates=${CUR_DATES:-}
-    case $name in cross-*|entity-search|entity-coverage|entity-coverage-*|sources-and-targets|skipped) CUR_DATES="" ;; esac
+    case $name in cross-*|entity-search|entity-coverage|sources-and-targets|skipped) CUR_DATES="" ;; esac
     # The Entities reports have their own four-page renderer (see above).
     case $name in
         account|login|subscription|remote-host|logical|partner|application|domain|bl)
@@ -1695,9 +1700,9 @@ render_report() {   # $1 area  $2 name  $3 rpt
             return ;;
     esac
     # The Subscriptions analyses group: the DATA is this area's, the PAGE lives
-    # in docs/<env>/analyses/ (same depth as the area dirs, so every relative
+    # in docs/analyses/ (same depth as the area dirs, so every relative
     # prefix is unchanged -- only the directory moves). group_of returns "" for
-    # them, so row1 is empty and analyses_grouprow_for supplies the tab bar.
+    # them, so row1 is empty (the group row comes from apply_report_groups).
     local pagedir=$area
     if is_subs_report "$name"; then pagedir=analyses; fi   # if, not && — set -e
     local row1; row1=$(group_nav_row "$area" "$name")
@@ -1724,7 +1729,6 @@ render_report() {   # $1 area  $2 name  $3 rpt
             render_rpt "$tmp" "$DOCS/$pagedir/$name.html" "../assets/style.css" "index.html" "$rlabel" 1 "$hslug" "$rkey"
             rm -f "$tmp"
         fi
-        analyses_grouprow_for "$area" "$name"   # analyses group tab bar for entity-coverage/skipped
         CUR_DATES=$saved_dates
         return
     fi
@@ -1746,7 +1750,7 @@ render_report() {   # $1 area  $2 name  $3 rpt
         files[$i]="$name-$(slugify "$lbl").html"
     done
     # The cross-reference pages are an ANALYSES feature, so they live in
-    # docs/<env>/analyses/xref/ (same depth as the old transfer/xref/, so the
+    # docs/analyses/xref/ (same depth as the old transfer/xref/, so the
     # css/home/detail-link paths are unchanged — only the directory moves). They
     # are still rendered here in the transfer loop (area=transfer), so the write
     # path goes up-and-over via outsub. The in-page NAV hrefs are bare filenames.
@@ -1851,7 +1855,7 @@ render_report() {   # $1 area  $2 name  $3 rpt
         # had them.
         #
         # The CROSS pages are the exception: their group row is the analyses
-        # "Configuration" row that analyses_grouprow_for injects after the
+        # "Configuration" row that apply_report_groups injects after the
         # </h1>, so the two rows built above are the report's OWN entity
         # selectors, not group members. They belong under the intro that
         # explains what a cross reference is — h1 -> group row -> intro ->
@@ -1870,14 +1874,13 @@ render_report() {   # $1 area  $2 name  $3 rpt
         render_rpt "$tmp" "$DOCS/$pagedir/$outsub${files[$i]}" "$pcss" "$phome" "$rlabel" 1 "$(tab_help_slug "$area" "$name" "${laba[$((i-1))]:-}")" "$rkey"
         rm -f "$tmp"
     done
-    analyses_grouprow_for "$area" "$name"   # analyses group tab bar for the cross-reference pages
     DLINK_BASE=$saved_dl
     CUR_DATES=$saved_dates
 }
 
 # ---- the Subscriptions analyses group ---------------------------------------
 # Called by bin/analyses/publish.sh, NOT by the area publishes: those run first
-# and bin/analyses/publish.sh clears docs/<env>/analyses/*.html, so anything they
+# and bin/analyses/publish.sh clears docs/analyses/*.html, so anything they
 # wrote there would be deleted again. Each member renders from its own area's
 # .rpt (render_report's pagedir sends the page to analyses/), or gets an
 # empty-report placeholder when this env has no data for it — the same contract
@@ -1887,7 +1890,7 @@ render_subs_group_pages() {
     for spec in $SUBS_GROUP_REPORTS; do
         area=${spec%%:*}; name=${spec#*:}
         rpt="$DATA/$area/reports/$name.rpt"
-        # analyses-area members (2026-08): .rpt in data/<env>/analyses/reports/,
+        # analyses-area members (2026-08): .rpt in data/analyses/reports/,
         # transfer date range (they read the transfer caches)
         if [ "$area" = transfer ] || [ "$area" = analyses ]; then CUR_DATES=$TRANSFER_DATES; else CUR_DATES=$SERVER_DATES; fi
         # a SERVER member gets the same subscription row tints its area pages
@@ -1918,9 +1921,6 @@ _subs_placeholder() {   # $1 area  $2 name
     local area=$1 name=$2 fp out title html labels lbl pages pg
     fp=$(first_page "$name")
     title=$(member_label "$name"); [ -n "$title" ] || title=$(entry_label "$area" "$name")
-    # h1 FIRST, then the group tab bar, then the prose — the same order the
-    # rendered members get from _inject_after_h1 "above"
-    html=""; if is_subs_report "$name"; then html=$(analyses_group_tabs_ctx "$fp" analyses) || html=""; fi
     # a TABBED member (uc-status) needs a placeholder for EVERY tab page —
     # other pages link the sibling tabs directly (a boxes explanation links
     # uc-status-uc3.html), and only stubbing the first left those links
@@ -1941,8 +1941,7 @@ _subs_placeholder() {   # $1 area  $2 name
         {
             html_head "$title" "../assets/style.css" "" "" "$(tab_help_slug "$area" "$name" "$lbl")" "$area" "$name"
             esc "$title"; printf '<h1>%s</h1>\n' "$ESC"
-            [ -n "$html" ] && printf '%s\n' "$html"
-            printf '<p class="range">This report has <strong>no data in this environment</strong> — the log lines or configuration it reads are absent, so its report file was not produced. The report exists in the other environment when its data does; use the environment switch in the top bar.</p>\n'
+            printf '<p class="range">This report has <strong>no data in this environment</strong> — the log lines or configuration it reads are absent, so its report file was not produced.</p>\n'
             printf '</body>\n</html>\n'
         } > "$out"
     done <<< "$pages"
@@ -1978,7 +1977,7 @@ entry_label() {   # $1 area  $2 basename
 # ---- Month stats (2026-09-13, user request) ---------------------------------
 # The 18 pages of bin/transfer/reports/month-stats.sh — {this,previous} × the
 # nine entities — under docs/<area>/month-stats/, the Reports pulldown's
-# Activity & volume group (retired and brought back 2026-09-29). Two tab rows: the MONTH (This month · Previous month, each
+# Activity & volume group (retired and brought back 2026-09-29). Two tab rows: the MONTH (Current month · Previous month, each
 # with its yyyy-mm from the .rpt META) and the ENTITY (the Entities order).
 # No date filter (a page IS one month); no prose (help page month-stats).
 render_month_stats() {   # $1 area
@@ -1996,7 +1995,7 @@ render_month_stats() {   # $1 area
             rpt="$rdir/$w-$e.rpt"; [ -f "$rpt" ] || continue
             row1=""
             for a in this previous; do
-                if [ "$a" = this ]; then lbl="This month ($mon_this)"; else lbl="Previous month ($mon_prev)"; fi
+                if [ "$a" = this ]; then lbl="Current month ($mon_this)"; else lbl="Previous month ($mon_prev)"; fi   # "Current", like the date preset (2026-09-29)
                 if [ "$a" = "$w" ]; then row1+=$'\t'"1|$lbl|$a-$e.html"; else row1+=$'\t'"0|$lbl|$a-$e.html"; fi
             done
             row2=""
@@ -2055,7 +2054,7 @@ _report_groups() {
         "Protocols & security|transfer/protocol=Protocol, Direction & Mode|transfer/security-params=Security Parameters|transfer/security-outreach=Security outreach|transfer/av-scan=AV Scan|transfer/connection-efficiency=Connection efficiency|server/ssh-security=SSH security" \
         "Logons & connections|server/logons=Logons|server/connections=Connections" \
         "Partners|analyses/partners-in=Partners - Incoming|analyses/partner-scorecard=Partner scorecard|analyses/blast-radius=Blast radius|analyses/app-partners=Application dependencies" \
-        "Configuration|analyses/subscriptions=Subscriptions|analyses/accounts=Accounts|analyses/logical-detection=Logical detection|transfer/sources-and-targets=Sources and Targets|analyses/xref/cross=Cross References" \
+        "Configuration|analyses/subscriptions=Configured subscriptions|analyses/accounts=Configured accounts|analyses/logical-detection=Logical detection|transfer/sources-and-targets=Sources and Targets|analyses/xref/cross=Cross References" \
         "Coverage|transfer/entity-coverage=Entity coverage|analyses/first-seen=First seen|transfer/not-in-flow-manager=Not in Flow Manager|transfer/skipped=Skipped|server/missing-entities=Missing entities" \
         "Cleanup|analyses/cleanup-backlog=Cleanup backlog|analyses/config-hygiene=Config hygiene|analyses/whitelist-audit=Whitelist audit|analyses/account-sharing=Account sharing|analyses/twins=Twins"
 }
@@ -2128,66 +2127,9 @@ rg_group_for() {
     if [ "$best" -ge 0 ]; then RG_GROUP=${RG_IDX_GRP[$best]}; else RG_GROUP=""; fi
 }
 
-# The former analyses group rows (2026-08..09-29: _analyses_groups, injected
-# into the analyses pages and their transfer / xref members): their callers
-# stay, the rows now come from _report_groups via apply_report_groups, so
-# these answer "no row".
-analyses_group_tabs_ctx() { return 1; }
-analyses_group_tabs() { return 0; }
-analyses_grouprow_for() { return 0; }
-
-# The fragment lands DIRECTLY under the </h1>, before the report's intro — the
-# site-wide rule: a page's tab bars are navigation, so they sit between the
-# title and the prose. See _hdr_with_nav for the same rule on the .rpt side.
-# Injecting several fragments into one page puts the LAST one on top.
-# Use this for a row of GROUP MEMBERS only; a row that carries none of those
-# (the Skipped per-value buttons) belongs under the prose — _inject_after_intro.
-_inject_after_h1() {
-    local f=$1 frag=$2 tmp; [ -f "$f" ] || return 0
-    tmp=$(mktemp "${TMPDIR:-/tmp}/inj.XXXXXX")
-    awk -v frag="$frag" '
-        done     { print; next }
-        /<\/h1>/ { print; print frag; done = 1; next }
-                 { print }
-    ' "$f" > "$tmp" && mv "$tmp" "$f"
-}
-
-# THE FILE SEARCH GROUP (2026-09-27, user request): the seven
-# search/file-search-*.html window pages and search/all-files.html are two
-# implementations of one tool, joined by a FIRST tab row of two buttons —
-# injected right after the <h1>, above the window row of the seven. Both pages
-# sit one level below the docs root, so the same ../ hrefs serve either side.
-# (The "latest 1000" implementation, latest/search.html, went 2026-09-29 — a
-# subset of the all-files one; the all-files one is number 2 since.)
-file_search_impl_row() {   # $1 the current implementation: 1 (period) | 2 (all files)
-    local lbl1="Implementation 1, period" lbl2="Implementation 2, all files"
-    local href1="../search/file-search-24-hours.html" href2="../search/all-files.html"
-    local out='<p class="tabs">' i lbl href
-    for i in 1 2; do
-        eval "lbl=\$lbl$i; href=\$href$i"
-        if [ "$1" = "$i" ]; then out+="<span class=\"tab active\">$lbl</span>"
-        else out+="<a class=\"tab\" href=\"$href\">$lbl</a>"; fi
-    done
-    printf '%s</p>' "$out"
-}
-
-# Insert a one-line HTML fragment AFTER the page's intro paragraph — the
-# <p class="range"> / <p class="subtitle"> the renderer writes right after the
-# <h1>. The site-wide "tab bars go between the title and the prose" rule covers
-# rows of GROUP MEMBERS; a row that is a per-value view switch is not that, so
-# it reads better under the introduction that explains what the values are (the
-# Skipped intro literally says "the buttons below give a per-value report").
-# Falls back to right after the </h1> on a page with no intro.
-_inject_after_intro() {
-    local f=$1 frag=$2 tmp; [ -f "$f" ] || return 0
-    tmp=$(mktemp "${TMPDIR:-/tmp}/inj.XXXXXX")
-    awk -v frag="$frag" '
-        done                           { print; next }
-        /<p class="(range|subtitle)">/ { print; print frag; done = 1; next }
-                                       { print }
-        END { if (!done) exit 1 }       # no intro on this page — signal the fallback
-    ' "$f" > "$tmp" && mv "$tmp" "$f" || { rm -f "$tmp"; _inject_after_h1 "$f" "$frag"; }
-}
+# (The former analyses group rows — _analyses_groups and its no-op stubs
+# analyses_group_tabs[_ctx] / analyses_grouprow_for — went 2026-09-29: every
+# group row comes from _report_groups via apply_report_groups.)
 
 # Insert a one-line HTML fragment DIRECTLY BEFORE the page's first table wrap
 # — the slot for a row that must sit UNDER the From/To date controls (report.js
@@ -2368,17 +2310,12 @@ TB_VER=$(printf '%s' "$REPORTS_MENU$TB_MON$TB_CID${ENV_LABEL:-}${ENV_KEY:-}$ENV_
 ensure_assets() {
     # the assets and .nojekyll live at the docs ROOT (docs/assets/); every
     # publish writes the same bytes, so writing them is idempotent.
-    # style.css / report.js / slotchart.js / file-search.js / all-files-search.js and docs/help/
+    # style.css / report.js / slotchart.js / all-files-search.js / sub-files.js and docs/help/
     # are SEEDED from the repo-root assets/ by bin/build.sh (2026-08-29 —
     # every build clears its scope's docs tree first, so docs/ is pure build
     # output; EDIT IN assets/, a build overwrites the docs copies). Only the
     # GENERATED files below and .nojekyll are written here.
     mkdir -p docs/assets
-    # the ONE file that changes every build: the footer timestamp source
-    # (report.js reads window.AXWAY_BUILD and fills the "Build report"
-    # anchor). Included WITHOUT a ?v= cache-buster — its content changes
-    # every build, and versioning it would put the changing value back into
-    # every page, defeating the point.
     # ATOMIC writes (2026-07): publishes run CONCURRENTLY (the report and
     # detail pages beside each other), so two processes write these same
     # bytes at the same time. Same content

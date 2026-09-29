@@ -19,7 +19,7 @@
 #   - $CONFIG_XREF/_subscriptions-{accounts,logins,hosts}.tsv: the connected
 #     account(s)/login(s)/host(s) for each subscription (usually one each).
 #     The HOST ring joins only when the subscription has exactly ONE configured
-#     host (2026-08); the endpoint's forward addresses (input/<env>/ip/
+#     host (2026-08); the endpoint's forward addresses (input/ip/
 #     ip-hosts.tsv) carry rings of their own and count the same way. NOTE this
 #     page is an EARLY WARNING and deliberately looser than the colour step:
 #     bin/build/result.sh's after-last-transfer RED FLIP counts only the
@@ -62,7 +62,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # SERVER lib, not the analyses one: this is a server-DATA report (it reads the
-# server parse cache and writes data/<env>/server/reports/). It lives HERE
+# server parse cache and writes data/server/reports/). It lives HERE
 # because its page sits in the ANALYSES menu, in the Subscriptions group — the
 # same arrangement as cross-reference.sh. bin/build.sh runs it ONCE, early —
 # right after result.sh — not the server-reports pool (2026-09-28).
@@ -331,7 +331,7 @@ fi
 
 # 3) write the .rpt (sorted by Latest error, newest first — ROW field 5)
 {
-    printf 'TITLE\tTrouble after Success\n'
+    printf 'TITLE\tTrouble after success\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tStill-GREEN subscriptions whose last transfer succeeded but which then logged a server-log ERROR — for the subscription or a connected login, account or remote host. Warnings do not count.\n'
     printf 'KEYWORDS\tsubscription,error,warning,after last transfer,post-transfer,server log,failing,login,account,kaput,went kaput\n'
     printf 'INTRO\tSubscriptions whose **last transfer was OK** but which then logged an **Error** in the server log **after** that transfer — either the subscription itself or a connected login, account or remote host. A recent problem on a flow that last looked healthy. **Errors only** (2026-08): a Warning does not put a flow on this page — the warnings-only shape was the benign "Transfer site ID is not present in environment", which has its own report in this group.\n'
@@ -348,7 +348,7 @@ fi
         printf 'HEAD\tSubscription\tLast OK transfer\tErrors after\tLatest error\tSource\tLatest message\n'
         printf 'KIND\tsite\ttext\tnumfailed\ttext\ttext\ttext\n'
         LC_ALL=C sort -t"$(printf '\t')" -k5,5r "$rowfile"
-        printf 'TOTAL\tTotal (%d subscription(s))\t\t%d\t\t\t\n' "$nrows" "$terr"
+        printf 'TOTAL\tTotal (%d subscription(s))\t\t@{class=num failed}%d\t\t\t\n' "$nrows" "$terr"   # red like its column (2026-09-29)
     fi
     printf 'NOTE\tSource: the server per-name Error/Warn caches for the subscription and its connected login(s), account(s) and remote host — the host only where the flow has exactly ONE configured, the same restriction the result colours use. Only **E-level** lines count and are shown; warnings are ignored. A connected account or host serves other flows too, so its Error need not concern this subscription — the Source column names the entity that logged it. Poll-backlog warnings ("Skipping the next scheduled occurrence of this task.") are excluded. Click a row to expand its 10 most recent Error/Warning lines.\n'
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"

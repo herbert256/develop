@@ -17,18 +17,24 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Error reasons</h1>
 <h2>What it shows</h2>
-<p>One row per error <strong>Reason</strong>: how many Files in error carry it (<strong>Count</strong>) and the newest occurrence (<strong>Last</strong>) &mdash; the failure profile of the whole data at a glance.</p>
+<ul>
+<li>The failure profile of the whole data: one row per error reason that occurs, with the Files in error carrying it.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Reason</strong> &mdash; the Error reason of <a href="failed-files.html">Failed files</a>: the classifier&rsquo;s vocabulary (<em>Connection failures</em>, <em>PeSIT transfer aborted</em>, &hellip;), <em>One-legged</em>, a raw last-leg status, <em>Expired (not collected)</em>; <code>(none)</code> when no rule applies.</li>
+<li><strong>Count</strong> &mdash; the Files in error (Failed or Expired) with this reason, recovered flows included.</li>
+<li><strong>Last</strong> &mdash; the newest such File&rsquo;s start; the default sort, newest first.</li>
+</ul>
 <h2>Rules</h2>
 <ul>
-<li>Count = <strong>every File in error</strong>, Failed or Expired, recovered flows included: the rows of <a href="failed-files.html">Failed files</a>, so the Total equals that list and the home page&rsquo;s Error total.</li>
-<li>The reasons are the Failed files page&rsquo;s: the shared classifier vocabulary (<em>Connection failures</em>, <em>PeSIT transfer aborted</em>, &hellip;) in classifier order, <em>One-legged</em>, the raw last-leg status and <em>Expired (not collected)</em>; <code>(none)</code> when no rule applies.</li>
-<li>Only reasons that occur are listed: a reason with nothing counted has no row.</li>
-<li>Sorted by <strong>Last</strong>, newest first; the <strong>Total</strong> row sits at the bottom.</li>
+<li>The Total equals the Failed files list and the home page&rsquo;s Error total; a busy flow counts as often as it failed.</li>
+<li>A reason with nothing counted has no row. Always the full period.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>A row opens <a href="failed-files.html">Failed files</a> searched on that reason &mdash; every File with it, newest first; clear the search box for all of them.</li>
-<li>Counts <em>Files</em>; the server Errors &rsaquo; <a href="server-errors-day.html">Log reasons</a> tab counts server-log <em>lines</em> in its own bucket vocabulary.</li>
+<li>A row opens <a href="failed-files.html">Failed files</a> searched on that reason (<code>(none)</code>: the whole list).</li>
+<li>This page counts <em>Files</em>; the <a href="server-errors-day.html">Errors</a> report&rsquo;s Log reasons tab counts server-log <em>lines</em> in its own vocabulary.</li>
 </ul>
 </main>
 </body>

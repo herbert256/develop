@@ -770,15 +770,15 @@ aggregate_files() {
       else if(gEX) be[key]++
       if(dio!="") bD[key SUBSEP dio]++ }
     # addbig: lib.sh addtop with a per-type bound and its own array — the
-    # Latest Files list per entity, newest first (sortkey = date+time desc).
-    # SITE keeps 1000 (2026-09-16, user request: the subscription list moved
-    # OFF the detail page onto its own docs/latest/<slug>.html — it was 500 on
-    # the detail page since 2026-08); every other type keeps 100 — the bound
-    # also caps the string re-join cost per insert, so widening it for all
-    # seven attributions would multiply the aggregation cost across the board.
+    # Latest Files list per entity, newest first (sortkey = date+time desc),
+    # 100 per entity. NOT for SITE (2026-09-29, user request): a subscription
+    # page lists its Files in the browser from docs/search/all/ (the Files
+    # table, assets/sub-files.js), so its 1000-row list and the docs/latest/
+    # pages it fed are gone. The bound also caps the insert cost, so widening
+    # it would multiply the aggregation cost across the board.
     # AN ARRAY POOL, NOT A JOINED STRING (2026-09-27): the list used to live
     # in one \x1f-joined string per entity, split and re-joined on EVERY
-    # accepted insert — and with the SITE bound at 1000 that string is
+    # accepted insert — and with the SITE bound at 1000 (then) that string is
     # ~200 KB, re-built by 1000 concatenations each copying the growing
     # string: tens of MB of copying per File, the long pole of the whole
     # build (35 of the 40 s of the sample run). The candidates now go into
@@ -816,15 +816,9 @@ aggregate_files() {
       # into its dwell bucket for the entity (only when the group had a
       # measurable dwell — gdwb set in flush)
       if(gdwb!=""){ k5=ty SUBSEP ent; dwt[k5]++; dwc[k5 SUBSEP gdwb]++ }
-      # the entry ends with the state and (2026-09-05, user request) the
-      # RECOVERED flag: "yes" when this File finished OK but carried a failed
-      # leg (gHADF — the same rule as the Activity per day Recovered column)
-      # the Pickup cell (UC2 pages): the collect stamp RELATIVE to the File\047s
-      # Date — "2d 5h 45m" (2026-09-05, user request); blank when not collected
-      # (grel, computed ONCE per File in flush — 2026-09-27)
-      # … then the pickup delay, then (2026-09-12) the File END — the latest
-      # leg end (g_end, the leg walk), in the Start cell format (gEND, flush)
-      addbig(ty SUBSEP ent, sk, bigdisp, st4 "|" ((pr2 && gHADF) ? "yes" : "") "|" grel "|" gEND, (ty=="SITE")?1000:100)
+      # the entry ends with the state (the SITE-only Recovered / Pickup / End
+      # cells went with the SITE list, 2026-09-29)
+      if(ty!="SITE") addbig(ty SUBSEP ent, sk, bigdisp, st4, 100)
       # Waiting/Expired rollup -> the section-0.9 summary table (per entity):
       # count + first/last STAGED date per state
       if(toc[curcid]=="Waiting" || toc[curcid]=="Expired"){ kwe=ty SUBSEP ent SUBSEP toc[curcid]
@@ -838,14 +832,14 @@ aggregate_files() {
         if((GD1[ig]+0==3 || GD1[ig]+0==4) && ty!="PTN" && ty!="APP" && ty!="DOM" && ty!="LGC" && ty!="BL" && ty!="ACC") continue   # the Login/Host dims feed the Logical+PDA+BL+Account pages
         bump(ty,ent,GD1[ig],GD2[ig]) } }
     function flush(   v){
-      day=tdt[curcid]; if(day=="") { split("",gLOGIN); split("",gSITE); split("",gHOST); split("",gDIM); gHADF=0; gPICK=""; return }
+      day=tdt[curcid]; if(day=="") { split("",gLOGIN); split("",gSITE); split("",gHOST); split("",gDIM); gHADF=0; return }
       jd=tjd[curcid]+0; sk=tsk[curcid]; disp=tdt[curcid]" "ttm[curcid]; pr2=(toc[curcid]!="Failed" && toc[curcid]!="Expired"); size=tsz[curcid]+0
       hh=""; if(ttm[curcid] ~ /^[0-9][0-9]:/) hh=substr(ttm[curcid],1,2)
       if(jd>gmax) gmax=jd
       oc2=(pr2?"OK":"Error")
       # the 4-state label for the Latest-100 State column (toc = _files col 2)
-      st4="Delivered"
-      if(toc[curcid]=="Failed") st4="Errored"
+      st4="OK"   # the site words OK / Error (2026-09-29: Delivered / Errored)
+      if(toc[curcid]=="Failed") st4="Error"
       else if(toc[curcid]=="Waiting") st4="Waiting"
       else if(toc[curcid]=="Expired") st4="Expired"
       # the File own direction (col 16) -> the 4-way In/Out x Error/OK split a
@@ -906,17 +900,13 @@ aggregate_files() {
       for(iu6=1;iu6<=nbu6;iu6++) gDIM[2.85 SUBSEP BU6[iu6]]=1
       # PER-FILE values ent_apply/perday use for every entity of the File —
       # computed once here, not once per entity (2026-09-27, speed round 8):
-      # the File END in the Start cell format, and the Pickup delay
+      # the File END in the Start cell format
       gEND=(g_end>=0 ? fmt_ep(g_end) : "")
       # ... the dimension values of the File split once (GD1 = the dim code, GD2
       # = the value; ent_apply walks them per entity) and its outcome
       # letter / Waiting / Expired flags (bump)
       ngd=0; for(dv9 in gDIM){ split(dv9,GDS,SUBSEP); ngd++; GD1[ngd]=GDS[1]; GD2[ngd]=GDS[2] }
       gOC=(pr2?"P":"F"); gWT=(toc[curcid]=="Waiting"); gEX=(toc[curcid]=="Expired")
-      grel=""
-      if(gPICK!=""){ split(gPICK,pp9," "); ds9=ep_iso(pp9[1],pp9[2])-ep_iso(tdt[curcid],ttm[curcid])
-        if(ds9>=0){ dd9=int(ds9/86400); hh9=int((ds9%86400)/3600); mm9=int((ds9%3600)/60)
-          grel=(dd9>0 ? dd9 "d " hh9 "h " mm9 "m" : (hh9>0 ? hh9 "h " mm9 "m" : (mm9>0 ? mm9 "m" : "<1m"))) } }
       if(tac[curcid]!="") ent_apply("ACC", tac[curcid])
       for(iu6=1;iu6<=nlu6;iu6++) ent_apply("LGC", LU6[iu6])
       for(iu6=1;iu6<=npu6;iu6++) ent_apply("PTN", PU6[iu6])
@@ -926,7 +916,7 @@ aggregate_files() {
       for(v in gLOGIN) ent_apply("LOGIN", v)
       for(v in gSITE)  ent_apply("SITE",  v)
       for(v in gHOST)  ent_apply("HOST",  v)
-      split("",gLOGIN); split("",gSITE); split("",gHOST); split("",gDIM); gHADF=0; gPICK="" }
+      split("",gLOGIN); split("",gSITE); split("",gHOST); split("",gDIM); gHADF=0 }
     BEGIN { if(ONLY!=""){ nw9=split(ONLY, W9, " "); for(iw9=1; iw9<=nw9; iw9++) WANT[W9[iw9]]=1 }
             od["ACC"]=2.8; od["SITE"]=2; od["LOGIN"]=3; od["HOST"]=4
             od["DOM"]=2.81; od["APP"]=2.82; od["LGC"]=2.83; od["PTN"]=2.84; od["BL"]=2.85   # the quad dims (the former Groups table)
@@ -948,11 +938,6 @@ aggregate_files() {
       if(e6<0 && $15+0>=0 && $12 ~ /^[0-9][0-9]:/){ s6=ep_iso($11,$12); if(s6>=0) e6=s6+$15/1000 }
       if(e6>g_end) g_end=e6
       if($3!="Processed") gHADF=1   # the group carried a FAILED leg (the Activity per day Recovered column, 2026-08-29)
-      # the PICKUP stamp (2026-09-05, user request — the UC2 pages\047 Latest
-      # Files table): the latest successful partner-protocol Outbound leg, i.e.
-      # the collect that took the file (parse.sh\047s delivery leg for a
-      # movement-out file); a Waiting file has none
-      if($2=="Outbound" && $3=="Processed" && ($10=="ssh" || $10=="ftp" || $10=="ftps") && $11!=""){ t9=$11" "$12; if(t9>gPICK) gPICK=t9 }
       if($5!="")  gLOGIN[$5]=1
       if($6!="")  gSITE[$6]=1
       # HOST entities are OUTBOUND endpoints only (the hosts we dial) — an

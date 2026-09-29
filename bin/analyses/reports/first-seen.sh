@@ -124,9 +124,10 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
     # "UCx_<account>" = the parse-time SYNTHETIC subscription for transfers no
     # attribution pass could place (bin/transfer/parse.sh). It reaches the base
     # cache like every logged-but-unconfigured name (result.sh discover_logged)
-    # but is EXCLUDED from First seen by design: nothing was configured, so
-    # there is nothing whose first sighting could be dated.
-    FILENAME ~ /base\/_subscriptions\.tsv$/ { if ($1 ~ /^UCx_/) next; conf("subscriptions", $1, $2, $3); next }
+    # and is COUNTED here like one (2026-09-29: it was excluded, so the Total /
+    # Seen cells — which open the Entities views, where it is a row — read one
+    # short of the lists they open, 152 / 108 against 153 / 109)
+    FILENAME ~ /base\/_subscriptions\.tsv$/ { conf("subscriptions", $1, $2, $3); next }
     FILENAME ~ /base\/_accounts\.tsv$/      { conf("accounts",      $1, $2, $3); next }
     FILENAME ~ /base\/_logins\.tsv$/        { conf("logins",        $1, $2, $3); next }
     FILENAME ~ /base\/_hosts\.tsv$/         { conf("hosts",         $1, $2, $3); next }
@@ -150,7 +151,7 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
         next
     }
     FILENAME ~ /coverage\/logicals\.tsv$/     { covput("logicals",      $1, $3); next }
-    FILENAME ~ /coverage\/subscriptions\.tsv$/ { if ($1 ~ /^UCx_/) next; covput("subscriptions", $1, $3); next }
+    FILENAME ~ /coverage\/subscriptions\.tsv$/ { covput("subscriptions", $1, $3); next }
     FILENAME ~ /coverage\/accounts\.tsv$/      { covput("accounts",      $1, $3); next }
     FILENAME ~ /coverage\/logins\.tsv$/        { covput("logins",        $1, $3); next }
     FILENAME ~ /coverage\/hosts\.tsv$/         { covput("hosts",         $1, $3); next }

@@ -43,7 +43,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # SERVER lib, not the analyses one: this is a server-DATA report (it reads the
-# server parse cache and writes data/<env>/server/reports/). It lives HERE
+# server parse cache and writes data/server/reports/). It lives HERE
 # because its page sits in the ANALYSES menu, in the Subscriptions group — the
 # same arrangement as cross-reference.sh. bin/server/reports.sh still runs it.
 source "$SCRIPT_DIR/../lib.sh"
@@ -203,7 +203,7 @@ day_rows() {
     sub_rows
     printf 'TOTAL\t@{colspan=2}Total (%s subscription(s))\t@{class=num warn}%s\t\t\n' "$n_sub" "$tot_polls"
 
-    printf 'TABLE\tPer day\ttab=uc3\n'
+    printf 'TABLE\tPolls that found no file, per day\ttab=uc3\n'   # its own heading on the shared UC3 tab (2026-09-29: two tables read "Per day")
     printf 'HEAD\tDate\tPolls\tSubscriptions\n'
     printf 'KIND\ttext\tnumwarn\tnum\n'
     day_rows

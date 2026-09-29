@@ -21,7 +21,7 @@
 #   4. copy the exports onto input/ (existing files overwritten — a
 #      re-delivered export replaces its older self). Two layouts:
 #        a. the REPO TREE — flow-manager/ rooted at the archive root or under
-#           input/; the OLD per-environment layout (input/<env>/… or
+#           input/; the OLD per-environment layout (input/… or
 #           <env>/…) is accepted when <env> is THIS one;
 #        b. every OTHER file, at any depth, routed by name and — the two log
 #           exports — RENAMED on the way in (2026-09-12, user request):
@@ -134,7 +134,7 @@ ingest_one() {
     # CONTENT (json_kind) and the log exports RENAMED (csv_ymd). The former
     # tree copy of flow-manager/ is gone (2026-09-12): a tree's files go
     # through the same plan, so a mis-named subscriptions.json inside it is
-    # recognised too; the old per-environment layout (input/<env>/…, <env>/…)
+    # recognised too; the old per-environment layout (input/…, <env>/…)
     # only matters for the tree refusal above.
     # ---- 4b. every file, routed by name — the log exports RENAMED -------------
     # (2026-09-12, user request): logEntry_yyyy-mm-dd.csv /

@@ -35,7 +35,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # TRANSFER lib, not the analyses one: these are transfer-DATA reports (they
-# read the transfer caches and write into data/<env>/transfer/reports/, and
+# read the transfer caches and write into data/transfer/reports/, and
 # bin/transfer/publish.sh renders their pages) — they live HERE because their
 # pages sit in the ANALYSES menu. The lib resolves every path from its own
 # location, so sourcing it across areas is safe by design.

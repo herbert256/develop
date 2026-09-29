@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
 #
-# trend.sh — per-subscription GROWTH and DECLINE over the data window, plus
-# the flows that went silent mid-window. The weekly report shows the site-wide
-# trend; nothing else says WHICH subscription is behind a swing. The window is
-# split in half at its midpoint and each subscription's Files/volume compared
-# across the halves:
-#   Went silent  active early (10+ Files in the first half), then NOTHING in
-#                the window's final week. Stale Accounts covers accounts gone
-#                quiet — subscriptions/flows fell through until now.
+# trend.sh — per-subscription GROWTH and DECLINE over the data window. The
+# weekly report shows the site-wide trend; nothing else says WHICH
+# subscription is behind a swing. The window is split in half at its midpoint
+# and each subscription's Files/volume compared across the halves:
 #   Growers      4x+ more Files in the second half (20+ Files there); a flow
 #                with no first-half activity at all shows as "new".
 #   Shrinkers    4x+ fewer Files in the second half (from 20+ in the first),
-#                but still alive in the final week (else it is Went silent).
+#                but still alive in the final week.
+# A flow that went SILENT — active early (10+ Files in the first half), then
+# NOTHING in the window's final week — is neither: the Went quiet report owns
+# it (the Went silent table here went 2026-09-29).
 #
 # Full-period semantics (`nofilter`): the halves are fixed by the window, so
 # the date filter never narrows this page.
@@ -31,7 +30,7 @@ OUT="$REPORTS_DIR/trend.rpt"
 
 RATIO=4        # growth/shrink factor at/above which a flow is listed
 MIN_BASE=20    # Files the busy half needs before a ratio means anything
-MIN_SILENT=10  # first-half Files an already-dead flow needs to be listed
+MIN_SILENT=10  # first-half Files that make a flow with no final-week File SILENT (left out)
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
@@ -43,10 +42,9 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # One pass collecting per (site, day) Files/bytes; END splits the window at
 # its midpoint. Emits pipe-separated:
-#   S|f1|site|f2|lastd|dayssilent                      (went silent)
 #   G|f2|site|f1|ratio|v1h|v2h                         (growers)
 #   K|f1|site|f2|ratio|v1h|v2h                         (shrinkers)
-#   TOT|nsil|ngrow|nshrink|from|mid1|mid2|to|nsites
+#   TOT|ngrow|nshrink|from|mid1|mid2|to|nsites
 agg=$(awk -F'\t' -v RATIO="$RATIO" -v MINBASE="$MIN_BASE" -v MINSIL="$MIN_SILENT" '
     function fromjdn(j,  a,b,c,dd,e,mm,day,mon,yr){ a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d",yr,mon,day) }
     function human(b,   u, i, v) {
@@ -64,7 +62,7 @@ agg=$(awk -F'\t' -v RATIO="$RATIO" -v MINBASE="$MIN_BASE" -v MINSIL="$MIN_SILENT
         if (!(k in seenk)) { seenk[k] = 1; dl[s] = dl[s] " " j }
         if (minjd == 0 || j < minjd) minjd = j
         if (j > maxjd) maxjd = j
-        if (!(s in lastjd) || j > lastjd[s]) { lastjd[s] = j; lastd[s] = $4 }
+        if (!(s in lastjd) || j > lastjd[s]) lastjd[s] = j
         sites[s] = 1
     }
     END {
@@ -75,10 +73,9 @@ agg=$(awk -F'\t' -v RATIO="$RATIO" -v MINBASE="$MIN_BASE" -v MINSIL="$MIN_SILENT
             nd = split(dl[s], D, " ")
             for (i = 1; i <= nd; i++) { j = D[i] + 0; k = s SUBSEP j
                 if (j <= mid) { f1 += sf[k]; v1 += sb[k] } else { f2 += sf[k]; v2 += sb[k] } }
-            if (f1 >= MINSIL && lastjd[s] < silent) {
-                nsil++
-                printf "S|%08d|%s|%d|%s|%d\n", f1, s, f2, lastd[s], maxjd - lastjd[s]
-            } else if (f2 >= MINBASE && f1 < f2 / RATIO) {
+            # a SILENT flow (see the header) is neither grower nor shrinker
+            if (f1 >= MINSIL && lastjd[s] < silent) continue
+            if (f2 >= MINBASE && f1 < f2 / RATIO) {
                 ngrow++
                 r = (f1 > 0) ? sprintf("%.1f x", f2 / f1) : "new"
                 printf "G|%08d|%s|%d|%s|%s|%s\n", f2, s, f1, r, human(v1), human(v2)
@@ -88,7 +85,7 @@ agg=$(awk -F'\t' -v RATIO="$RATIO" -v MINBASE="$MIN_BASE" -v MINSIL="$MIN_SILENT
                 printf "K|%08d|%s|%d|%s|%s|%s\n", f1, s, f2, r, human(v1), human(v2)
             }
         }
-        printf "TOT|%d|%d|%d|%s|%s|%s|%s|%d\n", nsil+0, ngrow+0, nshr+0, fromjdn(minjd), fromjdn(mid), fromjdn(mid + 1), fromjdn(maxjd), nsites+0
+        printf "TOT|%d|%d|%s|%s|%s|%s|%d\n", ngrow+0, nshr+0, fromjdn(minjd), fromjdn(mid), fromjdn(mid + 1), fromjdn(maxjd), nsites+0
     }
 ' "$FILES")
 
@@ -97,20 +94,20 @@ if [ -z "$agg" ]; then
     exit 1
 fi
 
-IFS='|' read -r _ n_sil n_grow n_shr d_from d_mid1 d_mid2 d_to n_sites <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
+IFS='|' read -r _ n_grow n_shr d_from d_mid1 d_mid2 d_to n_sites <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
 
-# The three row loops run INSIDE the report block below (a herestring keeps them
+# The two row loops run INSIDE the report block below (a herestring keeps them
 # in this shell). Their empty-state rows end their line like every other
 # (2026-09-28 fix: they ran into the NOTE under each table, rendering it as a
 # cell).
-n_sil_rows=0; n_grow_rows=0; n_shr_rows=0
+n_grow_rows=0; n_shr_rows=0
 
 {
     printf 'TITLE\tGrowers & Shrinkers\n'
     printf 'DESC\tPer-subscription growth and decline: the window split in half, each flow'\''s Files/volume compared across the halves — growers and shrinkers.\n'
-    printf 'KEYWORDS\tgrowth, shrink, decline, silent, disappeared, delta, new flow, gone\n'
-    printf 'INTRO\tWhich flows are changing: the window (**%s → %s**) split at its midpoint (first half to %s, second from %s), each of the **%s** subscription(s) compared across the halves. **%s** went **silent** (active early, nothing in the final week), **%s** grew **%sx+**, **%s** shrank **%sx+** while still alive. The Weekly report shows the site-wide trend; this names the flows behind it.\n' \
-        "$d_from" "$d_to" "$d_mid1" "$d_mid2" "$n_sites" "$n_sil" "$n_grow" "$RATIO" "$n_shr" "$RATIO"
+    printf 'KEYWORDS\tgrowth, shrink, decline, delta, new flow, grower, shrinker\n'
+    printf 'INTRO\tWhich flows are changing: the window (**%s → %s**) split at its midpoint (first half to %s, second from %s), each of the **%s** subscription(s) compared across the halves. **%s** grew **%sx+**, **%s** shrank **%sx+** while still alive (a flow silent in the final week is on Went quiet instead). The Weekly report shows the site-wide trend; this names the flows behind it.\n' \
+        "$d_from" "$d_to" "$d_mid1" "$d_mid2" "$n_sites" "$n_grow" "$RATIO" "$n_shr" "$RATIO"
 
     # (the Went silent table went 2026-09-29: Expected arrival's Overdue
     # verdict and the Went quiet report list the same flows)
@@ -140,9 +137,9 @@ n_sil_rows=0; n_grow_rows=0; n_shr_rows=0
     fi
     printf 'NOTE\t%sx+ fewer Files in the second half (from %s+ in the first), but still alive in the final week — a fading flow, not a dead one (those are on Went quiet).\n' "$RATIO" "$MIN_BASE"
 
-    printf 'SUMMARY\tSubscriptions: %s  |  Went silent: %s  |  Growers (%sx+): %s  |  Shrinkers (%sx+): %s  |  Window: %s → %s\n' \
-        "$n_sites" "$n_sil" "$RATIO" "$n_grow" "$RATIO" "$n_shr" "$d_from" "$d_to"
+    printf 'SUMMARY\tSubscriptions: %s  |  Growers (%sx+): %s  |  Shrinkers (%sx+): %s  |  Window: %s → %s\n' \
+        "$n_sites" "$RATIO" "$n_grow" "$RATIO" "$n_shr" "$d_from" "$d_to"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
-echo "Data written to $OUT (silent $n_sil, growers $n_grow, shrinkers $n_shr)." >&2
+echo "Data written to $OUT (growers $n_grow, shrinkers $n_shr)." >&2

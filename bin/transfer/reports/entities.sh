@@ -175,6 +175,12 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
         tc[t]++; if (isin) tin[t]++; if (isout) tout[t]++; if (f) tfe[t]++; tv[t] += size; ttok[t] += tk; tter[t] += te
         if (ra) tra[t]++; if (rmo) tmo[t]++; if (rme) tme[t]++; if (wt) twt[t]++; if (ex) tex[t]++
         tdd[t SUBSEP date] = 1
+        # the per-DAY distinct totals (2026-09-29): the TOTAL row own
+        # @data:buckets, so a narrowed range re-totals a type whose Files count
+        # for several names (BL / partner / application) as DISTINCT Files,
+        # not as the sum of the rows — the bucket layout of a row (see bk)
+        tdk = t SUBSEP date; tdl[tdk]++; if (isin) tdin[tdk]++; if (isout) tdout[tdk]++; if (f) tdfe[tdk]++; tdb[tdk] += size
+        tdtok[tdk] += tk; tdter[tdk] += te; if (ra) tdra[tdk]++; if (rmo) tdmo[tdk]++; if (rme) tdme[tdk]++; if (wt) tdwt[tdk]++; if (ex) tdex[tdk]++
         if (hasd) th[t SUBSEP q]++
     }
     # calc_pcts: the per-(type, name) and per-type percentiles from the
@@ -223,7 +229,7 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
         isin = (mv == "in"); isout = (mv == "out"); wt = ($2 == "Waiting"); ex = ($2 == "Expired")
         tk = (cid in tokc) ? tokc[cid] : 0; te = (cid in terrc) ? terrc[cid] : 0
         ra = (!f && (cid in fl) && !(cid in rsb)); rmo = (!f && (cid in rsb)); rme = (f && (cid in rsb))
-        dur = $9 + 0; hasd = (!f && dur > 0); q = hasd ? qdur(dur) : 0   # the Duration group: OK Files with a positive wall-clock span
+        dur = $9 + 0; hasd = ($2 == "Processed" && dur > 0); q = hasd ? qdur(dur) : 0   # the Duration group: DELIVERED Files with a positive wall-clock span — the Duration report scope (F08, 2026-09-28; 2026-09-29: a Waiting File span, its staging wait, counted here)
         delete NS
         if (SAC && $3 != "") NS["account" SUBSEP $3] = 1
         if (SSU && (cid in st)) addnames("subscription", st[cid])
@@ -283,11 +289,13 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
                 ((key in ddp) ? ddp[key] : ""), \
                 buildlist(top[key SUBSEP "d90"]), buildlist(top[key SUBSEP "d95"]), buildlist(top[key SUBSEP "d99"]), buildlist(top[key SUBSEP "d100"]) > (OUTP "." t) }
         for (k in tdd) { split(k, kk, SUBSEP); tdays[kk[1]]++ }
+        for (t in tc) for (i2 = 1; i2 <= ndl; i2++) { dk = t SUBSEP DL[i2]; if (!(dk in tdd)) continue
+            tbk[t] = tbk[t] (tbk[t] ? "," : "") DL[i2] ":" tdl[dk] ":" (tdin[dk]+0) ":" (tdout[dk]+0) ":" (tdfe[dk]+0) ":" (tdb[dk]+0) ":" (tdtok[dk]+0) ":" (tdter[dk]+0) ":" (tdra[dk]+0) ":" (tdmo[dk]+0) ":" (tdme[dk]+0) ":" (tdwt[dk]+0) ":" (tdex[dk]+0) ":" (tdtok[dk]+tdter[dk]) }
         n2 = split(DSEL, TL, " ")   # a T| line for EVERY selected type, data or not (the config-only estate renders zero-row tables)
         for (i2 = 1; i2 <= n2; i2++) { t = TL[i2]
-            printf "T|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%s|%d|%s|%s|%s|%s\n", t, tc[t]+0, tdays[t]+0, ttok[t]+0, tter[t]+0, tin[t]+0, tout[t]+0, tfe[t]+0, \
+            printf "T|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%s|%d|%s|%s|%s|%s|%s\n", t, tc[t]+0, tdays[t]+0, ttok[t]+0, tter[t]+0, tin[t]+0, tout[t]+0, tfe[t]+0, \
                 tra[t]+0, tmo[t]+0, tme[t]+0, twt[t]+0, tex[t]+0, tv[t]+0, ns[t]+0, \
-                ((t in TP90) ? TP90[t] : ""), ((t in TP95) ? TP95[t] : ""), ((t in TP99) ? TP99[t] : ""), ((t in TP100) ? TP100[t] : "") > (OUTP "." t) }
+                ((t in TP90) ? TP90[t] : ""), ((t in TP95) ? TP95[t] : ""), ((t in TP99) ? TP99[t] : ""), ((t in TP100) ? TP100[t] : ""), ((t in tbk) ? tbk[t] : "") > (OUTP "." t) }
     }
 ' "$PARSED" "$FILES" "$FILES"
 }
@@ -333,7 +341,7 @@ fmt_dim() {
         account)      title="Accounts";      chead="Account";      nkind=acct;  noun="account" ;;
         subscription) title="Subscriptions"; chead="Subscription"; nkind=site;  noun="subscription" ;;
         login)        title="Logins";        chead="Login";        nkind=login; noun="login" ;;
-        remote-host)  title="Remote Hosts";  chead="Remote Host";  nkind=host;  noun="remote host" ;;
+        remote-host)  title="Hosts";         chead="Remote Host";  nkind=host;  noun="remote host" ;;
         logical)      title="Logical";       chead="Logical";      nkind=lgc;   noun="logical" ;;
         partner)      title="Partners";      chead="Partner";      nkind=ptn;   noun="partner" ;;
         application)  title="Applications";  chead="Application";  nkind=app;   noun="application" ;;
@@ -341,7 +349,7 @@ fmt_dim() {
         bl)           title="BL";            chead="BL";           nkind=bl;    noun="BL" ;;
     esac
     OUT="$OUTDIR/$dim.rpt"
-    IFS='|' read -r _ _ tc tdays ttok tter tin tout tfe tra tmo tme twt tex tv ns tp90 tp95 tp99 tp100 \
+    IFS='|' read -r _ _ tc tdays ttok tter tin tout tfe tra tmo tme twt tex tv ns tp90 tp95 tp99 tp100 tbk \
         <<< "$({ grep "^T|$dim|" "$AGG.$dim" 2>/dev/null || true; } | awk 'NR == 1')"
     : "${tc:=0}" "${tdays:=0}" "${ttok:=0}" "${tter:=0}" "${tin:=0}" "${tout:=0}" "${tfe:=0}" "${tra:=0}" "${tmo:=0}" "${tme:=0}" "${twt:=0}" "${tex:=0}" "${tv:=0}" "${ns:=0}" "${tp90:=}" "${tp95:=}" "${tp99:=}" "${tp100:=}"
     # the display order (2026-09-13, user request; Transfers moved after
@@ -376,8 +384,9 @@ fmt_dim() {
         printf 'KIND\t%s\tnum\tnum\tnumfailed\tnum\tnumwarn\tnumwarn\tnumfailed\tnum\tnum\tnum\tnum\tnum\tnum\tnumok\tnumfailed\tnum\tnumwarn\tnumfailed\ttext\ttext\tnum\n' "$nkind"
         printf 'RECALC\t-\tS1\tS2\ts3\te3.0\ts7\ts8\ts9\tP90\tP95\tP99\tP100\tH4\tV4.0\ts5\ts6\te6.12\ts10\ts11\t-\t-\tc\n'
         [ -n "$rows" ] && printf '%s\n' "$rows"
-        printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s\t%s\t%s\t%s\t%s\t@{class=num}%s\t@{class=num}%s\t@{class=num okc}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num warn}%s\t@{class=num failed}%s\t\t\t@{class=num}%s\n' \
-            "$ns" "$noun" "$tinz" "$toutz" "$tfe" "$tfep" "$tra" "$tmo" "$tme" "$td90" "$td95" "$td99" "$td100" "$tvh" "$tavg" "$ttok" "$tter" "$tterp" "$twt" "$tex" "$tdays"
+        printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s\t%s\t%s\t%s\t%s\t@{class=num}%s\t@{class=num}%s\t@{class=num okc}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num warn}%s\t@{class=num failed}%s\t\t\t@{class=num}%s%s\n' \
+            "$ns" "$noun" "$tinz" "$toutz" "$tfe" "$tfep" "$tra" "$tmo" "$tme" "$td90" "$td95" "$td99" "$td100" "$tvh" "$tavg" "$ttok" "$tter" "$tterp" "$twt" "$tex" "$tdays" \
+            "${tbk:+$'\t'@data:buckets=$tbk}"   # the DISTINCT per-day totals (2026-09-29: report.js re-totals a narrowed range from them)
         printf 'NOTE\t**Files** = logical transfers (one per CoreId; Waiting counts as OK, Expired as Error), **Transfers** = the physical log rows of those Files (one per leg). **In** / **Out** is the movement direction of the File (a File with no known movement counts in the Files total and Error %% only); an empty Error cell keeps an empty rate beside it, and In / Out never show a 0. **Retry / Resubmit**: **Auto** = an OK File that carried at least one failed leg and no resubmitted leg — the platform'\''s own retry delivered it (the classic Retry column); **Ok** / **Error** = every File with a resubmitted leg (the log'\''s Resubmitted flag), OK or Error by its final outcome (the Top view'\''s Resubmit rule — a resubmitted re-delivery that never failed counts under Ok). **Duration** = the p90 / p95 / p99 / p100 (the longest) of the wall-clock duration of the OK Files (first record start to last record end, as on the Duration report — the Error attempts, mostly instant, are left out), re-picked for the selected From/To like every other figure, as whole seconds / minutes / hours / days (s m h d) — seconds green, minutes amber, hours and days red. **Volume** in whole units; **Avg** = the volume divided by the Files. **Retry / Resubmit** and **State** are shown only on a view where at least one File carries such a value. **Days** = the days with at least one File; First / Last stay full-period under the date filter. Click any count for its 10 most recent Files (newest first, by start time); the Transfers cells list the Files that carried a leg of that outcome, and a Duration cell the 10 most recent OK Files whose span is at or above that percentile, each with its span.\n'
         printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

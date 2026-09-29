@@ -16,14 +16,14 @@
 #                        (`-` vs `_`) — two configured objects for one relation.
 #
 # Thin formatter over the pair maps details.sh persists
-# (data/<env>/transfer/reports/details/_twins-{subscriptions,accounts}.tsv),
+# (data/transfer/reports/details/_twins-{subscriptions,accounts}.tsv),
 # so this page and the detail pages' Twin rows can never disagree. A
 # transfer-DATA report housed with the ANALYSES scripts; bin/analyses/reports.sh
-# runs it (wave 1); the PAGE renders into docs/<env>/analyses/ via
+# runs it (wave 1); the PAGE renders into docs/analyses/ via
 # SUBS_GROUP_REPORTS.
 #
 # Usage:
-#   ./twins.sh   # -> data/<env>/transfer/reports/twins.rpt
+#   ./twins.sh   # -> data/transfer/reports/twins.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -90,7 +90,7 @@ combos=$(awk -F'\t' -v UCDF="$UCDF" '
 {
     printf 'TITLE\tTwins\n'
     printf 'DESC\tEvery twin pair on one page: subscriptions that are the same flow configured the opposite way (by name, by shared login, or by spelling-twin accounts — with the naming slips listed first), and the accounts spelled with both separators.\n'
-    printf 'INTRO\tThe **Twin** rows of the detail pages, collated. A **subscription twin** is the same flow configured the opposite way — the UC2+UC4 mailbox pair or the UC1+UC3 outbound pair — detected by **name** (same body, opposite side), by **login** (the UC2+UC4 pair sharing one FE login — the partner&#8217;s actual credential; the login-less UC1+UC3 mirror pairs on its account instead), or via **spelling-twin accounts**; a pair the login or account proves but the names do NOT match is a **naming slip**. An **account twin** is one partner relation configured twice, under both separator spellings.\n'
+    printf 'INTRO\tThe **Twin** rows of the detail pages, collated. A **subscription twin** is the same flow configured the opposite way — the UC2+UC4 mailbox pair or the UC1+UC3 outbound pair — detected by **name** (same body, opposite side), by **login** (the UC2+UC4 pair sharing one FE login — the partner credential; the login-less UC1+UC3 mirror pairs on its account instead), or via **spelling-twin accounts**; a pair the login or account proves but the names do NOT match is a **naming slip**. An **account twin** is one partner relation configured twice, under both separator spellings.\n'
     # the first STAT row doubles as the table's filters: the total box carries an
     # empty pf key (shows all rows), the detection boxes narrow to their rule.
     # Name-matched / Shared login-account / Twin account count rows CARRYING

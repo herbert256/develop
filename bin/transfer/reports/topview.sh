@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# topview.sh — the transfer "Top view", ONE per-day dashboard page (re-merged
+# topview.sh — the "Transfer top view", ONE per-day dashboard page (re-merged
 # 2026-07 — the former topview-{ids,entities,state} split is gone: the
 # Entities page was removed, the Sessions unit dropped, and the State split
-# merged in; the old three URLs are redirect stubs to topview.html):
+# merged in):
 #
 #   topview.rpt   ONE per-day table in SIX column groups (2026-09-12 layout):
 #                 the Files (per CoreId, activity_stream) with Count / Ok /
@@ -44,8 +44,6 @@ fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 OUT="$REPORTS_DIR/topview.rpt"
-# the 2026-07 three-page split (stale copies would republish)
-rm -f "$REPORTS_DIR/topview-ids.rpt" "$REPORTS_DIR/topview-entities.rpt" "$REPORTS_DIR/topview-state.rpt"
 
 # Pass 1 = activity_stream (1=date 2=jdn 3=time 4=proc 5=size 6=sortkey 7=id):
 # per-day Files count, Ok/Error, first/last time + the Error/OK cell drills.
@@ -144,8 +142,8 @@ IFS='|' read -r _ tC tP tRVF tF tfp tT tTP tTF ttp wP wF wW wX ndays tRVA tRVM t
 [ "$ndays" -eq 1 ] && total_label="Total for 1 day" || total_label="Total for $ndays days"
 
 {
-    printf 'TITLE\tTop view\n'
-    printf 'DESC\tThe whole transfer log at a glance, per day: logical Files (per CoreId) with their Count / Ok / Error split and error rate, the physical Transfers (log rows) with the same Ok/Error split, the same Files by their final state — Processed, Failed, Waiting and Expired — and, per day, the Recovered Files (automatic or manual) and the resubmitted Files (Ok or Failed).\n'
+    printf 'TITLE\tTransfer top view\n'   # = its Reports menu label (2026-09-29)
+    printf 'DESC\tThe whole transfer log at a glance, per day: logical Files (per CoreId) with their Count / Ok / Error split and error rate, the physical Transfers (log rows) with the same Ok/Error split, the same Files by their final state — Processed, Failed, Waiting and Expired — and, per day, the Recovered Files (automatic or manual) and the resubmitted Files (Ok or Error).\n'
     printf 'KEYWORDS\tstate, processed, failed, waiting, expired, recovered, cured, retry, resubmit, resubmitted, manual, automatic, per day, outcome, error rate\n'
     printf 'INTRO\tEvery day of the loaded transfer log on one row — the day counted as **Files** (one per CoreId — the site-wide counting unit) split into Ok/Error with its error rate, the day counted as **Transfers** (physical log rows) with the same Ok/Error split, and the same Files by their **final state**: **Processed** (delivered), **Failed**, **Waiting** (UC2 staged for pickup, not collected yet) and **Expired** (the retention sweep deleted the staged copy before any pickup — never delivered). Between Files and Transfers: **Recovered** — the Files that carried a failed leg yet still finished OK, **Automatic** when a retry healed them, **Manual** when an operator resubmitted the transfer (the log'\''s Resubmitted flag) — and **Resubmit** — every File with a resubmitted leg, **Ok** or **Failed** by its final outcome. Newest day on top; the Date cell opens that day'\''s page.\n'
     # 0-based columns (six groups, 2026-09-12): Date0 First1 Last2 | Files:
@@ -157,7 +155,7 @@ IFS='|' read -r _ tC tP tRVF tF tfp tT tTP tTF ttp wP wF wW wX ndays tRVA tRVM t
     # of the ROW fields (the home log table, the day pages) are unchanged
     printf 'TABLE\t\twide\ttotaltop\tdatereset\tpct=6:5:3;14:13:11\tgsep=3,7,9,11,15,19\n'
     printf 'GHEAD\t@{colspan=3}\t@{colspan=4,class=gband gsep}Files\t@{colspan=2,class=gband gsep}Recovered\t@{colspan=2,class=gband gsep}Resubmit\t@{colspan=4,class=gband gsep}Transfers\t@{colspan=4,class=gband gsep}State\t@{class=gband gsep}\n'
-    printf 'HEAD\tDate\tFirst\tLast\tCount\tOk\tError\tError %%\tAutomatic\tManual\tOk\tFailed\tCount\tOk\tError\tError %%\tProcessed\tFailed\tWaiting\tExpired\tVolume\n'
+    printf 'HEAD\tDate\tFirst\tLast\tCount\tOk\tError\tError %%\tAutomatic\tManual\tOk\tError\tCount\tOk\tError\tError %%\tProcessed\tFailed\tWaiting\tExpired\tVolume\n'
     printf 'KIND\ttext\ttext\ttext\tnum\tnumprocessed\tnumfailed\tnum\tnumwarn\tnumwarn\tnumprocessed\tnumfailed\tnum\tnumok\tnumerr\tnum\tnumok\tnumerr\tnumwarn\tnumerr\tnum\n'
     # a nonzero Waiting / Expired total opens its report too (2026-08-31)
     wW_cell="@{class=num warn}"; [ "${wW:-0}" -gt 0 ] && wW_cell="@{class=num warn,href=waiting.html}$wW"   # 0 -> blank (td.warn:empty drops the tint)

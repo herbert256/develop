@@ -27,7 +27,7 @@
 # and the flow-manager xref. Config/analysis page: every table is `nofilter`.
 #
 # Usage:
-#   ./partner-scorecard.sh   # -> data/<env>/analyses/reports/partner-scorecard.rpt
+#   ./partner-scorecard.sh   # -> data/analyses/reports/partner-scorecard.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -43,6 +43,7 @@ if [ ! -f "$TF" ] || [ ! -f "$TT" ]; then
     exit 0
 fi
 [ -f "$SPMAP" ] || SPMAP=/dev/null
+UCDMAP="$DATA/flow-manager/xref/_subscriptions-ucderived.tsv"; [ -f "$UCDMAP" ] || UCDMAP=/dev/null   # the derived use case of a hybrid flow (2026-09-29)
 
 TMPD=$(mktemp -d)
 trap 'rm -rf "$TMPD"' EXIT
@@ -63,6 +64,7 @@ awk -F'\t' -v ROWS="$TMPD/score.pre" -v STATS="$TMPD/stats.tsv" '
     function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
         while (v >= 1024 && i < 6) { v /= 1024; i++ }
         return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
+    FILENAME ~ /_subscriptions-ucderived\.tsv$/ { if ($1 != "" && $2 == "UC2") UCD2[toupper($1)] = 1; next }
     FILENAME ~ /_subscriptions-partners\.tsv$/ {
         if ($1 != "" && $2 != "") SP[toupper($1)] = SP[toupper($1)] (SP[toupper($1)] == "" ? "" : "\037") $2
         next }
@@ -74,7 +76,7 @@ awk -F'\t' -v ROWS="$TMPD/score.pre" -v STATS="$TMPD/stats.tsv" '
         if (set == "") next
         PSET[$1] = set
         err = ($2 == "Failed" || $2 == "Expired") ? 1 : 0
-        uc2 = (substr($12, 1, 3) == "UC2") ? 1 : 0
+        uc2 = (substr($12, 1, 3) == "UC2" || (toupper($12) in UCD2)) ? 1 : 0   # UC2-named, or DERIVED UC2 (2026-09-29)
         if ($4 != "" && $4 > maxd) maxd = $4
         n = split(set, Z, "\037")
         for (i = 1; i <= n; i++) { p = Z[i]
@@ -162,7 +164,7 @@ awk -F'\t' -v ROWS="$TMPD/score.pre" -v STATS="$TMPD/stats.tsv" '
             np, nsc, (tot ? 100 * t1 / tot : 0), (tot ? 100 * t3 / tot : 0), (tot ? 100 * t10 / tot : 0), gini, tot > STATS
         close(STATS)
     }
-' "$SPMAP" "$TF" "$TT"
+' "$UCDMAP" "$SPMAP" "$TF" "$TT"
 
 sv() { awk -F'\t' -v k="$1" '$1 == k { print $2 }' "$TMPD/stats.tsv"; }
 n_seen=$(sv seen); n_scored=$(sv scored)

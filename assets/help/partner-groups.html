@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Partner groups — Cloud Reports</title>
+<title>Help: Partner group — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,26 +15,22 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the page</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Partner groups &amp; the Direction column</h1>
+<h1>Partner group</h1>
 <h2>What it shows</h2>
-<p>Most partner names on <strong>Entities &rarr; Partners</strong> are one organisation (<code>ROTAFORM</code>, <code>VECOZO</code>). A <strong>group</strong> such as <code>GBA_TT_XXLLNC</code> joins several partner codes with underscores: FlowManager configures those codes on separate logical flows, the grouping recognises them as one real organisation and counts them together.</p>
+<ul>
+<li>One page per partner <strong>group</strong>: several partner codes (the last part of logical flow names) that the configuration ties to one organisation, named by its codes joined with underscores (<code>GBA_TT_XXLLNC</code>).</li>
+<li>Opened from the <strong>&#128279;</strong> icon after a group&rsquo;s name on <a href="entities-partner.html">Entities &rsaquo; Partners</a> and on the Partners coverage page of the home status table.</li>
+<li>Three boxes: <strong>Member partners</strong>, <strong>Connection</strong> (the group&rsquo;s configured side: in, out or both) and <strong>Merge facts</strong>.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Member partner codes</strong> &mdash; Partner code &middot; Accounts behind the code (the accounts of the logical flows it comes from, up to eight).</li>
+<li><strong>Why these partners are one group</strong> &mdash; Partners (the pair of codes) &middot; How they are linked &middot; Evidence (one representative fact, &ldquo;+N more&rdquo; for the rest).</li>
+</ul>
 <h2>Rules</h2>
 <ul>
-<li>Every three-part logical flow name reads <em>domain_application_partner</em>, so its last part is a partner token.</li>
-<li>Tokens merge into one group when any of three things holds: their logical flows connect to the <strong>same configured host</strong>; their logical flows <strong>whitelist the same IP</strong> (the same partner reaching us two ways); one partner&rsquo;s <strong>host resolves to an IP another whitelists</strong> (the same partner, both directions).</li>
-<li>Every rule is derived from the configuration. Hand-maintained knowledge the infrastructure cannot prove (&ldquo;this variant code is really that organisation&rdquo;) is a <strong>part replacement</strong> in <code>input/logical_partners.txt</code>: the variant is rewritten to its canonical token before it ever becomes a partner, so the two never form a group.</li>
-<li>The group&rsquo;s name is its member codes joined with underscores, sorted alphabetically.</li>
-</ul>
-<h2>Tips</h2>
-<ul>
-<li>A group row carries a <strong>&#128279;</strong> icon after its name; it opens a page listing the member codes and the evidence used to merge them, grouped by the pair of codes it links &mdash; one representative fact per pair with a count of the rest.</li>
-</ul>
-<h2>The Direction column</h2>
-<ul>
-<li>The Partners list reads <em>connection / movement</em>, e.g. <code>both/both</code> or <code>in/out</code>.</li>
-<li><strong>Connection</strong> &mdash; the partner&rsquo;s configured side: <em>in</em> (the partner connects into SecureTransport), <em>out</em> (SecureTransport connects out to the partner) or <em>both</em>.</li>
-<li><strong>Movement</strong> &mdash; which way the files actually travel across the partner&rsquo;s subscriptions: <em>in</em>, <em>out</em> or <em>both</em>.</li>
-<li>The two diverge on pull flows: SecureTransport connects <em>out</em> to collect files that move <em>in</em> &mdash; <code>out/in</code>.</li>
+<li>Codes merge when their logical flows connect to the <strong>same configured host</strong>, <strong>whitelist the same IP</strong>, or one partner&rsquo;s <strong>host resolves to an IP the other whitelists</strong>. Merges are transitive.</li>
+<li>Every merge is derived from the configuration. A known variant spelling is rewritten to its canonical code in <code>input/logical_partners.txt</code> before merging, so it never forms a group.</li>
 </ul>
 </main>
 </body>

@@ -50,7 +50,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # SERVER lib, not the analyses one: this is a server-DATA report (it reads the
-# server parse cache and writes data/<env>/server/reports/). It lives HERE
+# server parse cache and writes data/server/reports/). It lives HERE
 # because its page sits in the ANALYSES menu, in the Subscriptions group — the
 # same arrangement as cross-reference.sh. bin/server/reports.sh still runs it.
 source "$SCRIPT_DIR/../../server/lib.sh"
@@ -249,13 +249,19 @@ fi
 # status label, an em-dash for an absent date, the loglines attribute — where a
 # bash while-read used to fork a $(printf) per row into an O(n^2) append.
 rows=$(awk -F'\t' '
+    function z(v) { return (v + 0 == 0) ? "" : v }   # a count cell shows blank, never 0
     $3 == "" { next }          # no subscription (and the blank line an empty stream feeds in)
     {
+        # ok -> error is RED like its row and its STAT box (2026-09-29 — the
+        # amber warn class read as a third result colour)
         st = ($2 == 0) ? "@{class=failed}error" : \
-             ($2 == 1) ? "@{class=warn}ok -> error" : \
+             ($2 == 1) ? "@{class=failed}ok -> error" : \
              ($2 == 2) ? "@{class=processed}ok" : "not seen"
-        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:loglines=%s\n", st, $3, $4, $5, $6, \
-            ($7 == "-" ? "—" : $7), $8, $9, ($10 == "-" ? "—" : $10), $11
+        # (the Route runs column, $8, went 2026-09-29: its "Starting execution"
+        # line is dropped at tokenize time — AR0076 is on the NOISE list — so it
+        # read 0 on every row; the count is still aggregated, never shown)
+        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:loglines=%s\n", st, $3, z($4), z($5), z($6), \
+            ($7 == "-" ? "—" : $7), z($9), ($10 == "-" ? "—" : $10), $11
     }
 ' <<< "$(printf '%s\n' "$agg" | grep $'^A\t' | sort -t$'\t' -k2,2n -k6,6nr -k4,4nr -k3,3)")
 [ -n "$rows" ] && rows+=$'\n'   # put back the newline the command substitution stripped (the loop ended every row with one)
@@ -265,24 +271,27 @@ rows=$(awk -F'\t' '
 # dashboards overview), so one is created when absent.
 [ -f "$SLOTS_OUT" ] || : > "$SLOTS_OUT"
 
+nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }   # a count cell shows blank, never 0
+
 {
     printf 'TITLE\tUC1 status\n'
-    printf 'DESC\tEvery configured UC1 (we send a file to the partner) subscription in one of four statuses: healthy, failing, failing after a working history, or not seen in the transfer log — with its route runs and problems from the server log.\n'
+    printf 'DESC\tEvery configured UC1 (we send a file to the partner) subscription in one of four statuses: healthy, failing, failing after a working history, or not seen in the transfer log — with its problems from the server log.\n'
     printf 'INTRO\tEvery configured **UC1** (we are the client and SEND a file to the partner) subscription, in exactly one status: **ok** = green, its latest File was delivered; **error** = red and never once delivered an OK File; **ok -> error** = red now, but it HAS delivered before — a regression; **not seen** = configured and never seen in the transfer log. Click a row for its most recent server-log lines.\n'
 
     printf 'STAT\twhite\t%s\tUC1 subscriptions\n' "$n_all"
     printf 'STAT\tgreen\t%s\tok\n' "$n_ok"
     printf 'STAT\tred\t%s\terror\n' "$n_err"
-    printf 'STAT\torange\t%s\tok -> error\n' "$n_okerr"
+    printf 'STAT\tred\t%s\tok -> error\n' "$n_okerr"   # red like its rows (the result colour), 2026-09-29
     printf 'STAT\torange\t%s\tnot seen\n' "$n_notseen"
 
     printf 'TABLE\tUC1 subscriptions\twide\tnofilter\n'
-    printf 'HEAD\tStatus\tSubscription\tFiles\tOK\tError\tLast file\tRoute runs\tProblems\tLast log\n'
-    printf 'KIND\ttext\tmono\tnum\tnumprocessed\tnumfailed\ttext\tnum\tnumfailed\ttext\n'
+    printf 'HEAD\tStatus\tSubscription\tFiles\tOK\tError\tLast file\tProblems\tLast log\n'
+    printf 'KIND\ttext\tmono\tnum\tnumprocessed\tnumfailed\ttext\tnumfailed\ttext\n'
     printf '%s\n' "$rows"   # %s\n: $rows already ends in one, so this is the blank line before TOTAL
-    printf 'TOTAL\tTotal (%s subscription(s))\t\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t\t@{class=num}%s\t@{class=num}%s\t\n' \
-        "$n_all" "$t_files" "$t_ok" "$t_er" "$t_run" "$t_prob"
-    printf 'NOTE\tEvery configured **UC1** subscription, classified. The colour is the site-wide **result**: green/red mean real transfer data (its LAST File OK / Failed-or-Expired), and orange — **not seen** — means the transfer log never has. **error** vs **ok -> error** is a per-FILE question: right after any OK File the subscription WAS green, so a red subscription with even one OK File in the window is a regression; that is finer than **From green to red**, which buckets by whole days. The server counts read the Advanced Routing lines, which carry the route in their second bracket: **Route runs** is "Starting execution of route", **Problems** is a send that could not be made ("Could not send file", "An error occurred while sending", a step "finished with error") or the partner being unreachable at all (a **Connection failure**, a failing directory listing). **Last log** is the newest line of either kind, so it answers "is this flow still running at all" and can be newer than the failures the drill shows. Unlike **UC3 status** there is no "no files" status: a UC1 push is triggered by a file APPEARING, so no file means no route run and no log line — nothing to report. Click a row for its most recent server-log lines; on a red row that never transferred those are the failures.\n'
+    # the OK / Error / Problems totals keep their column tint (2026-09-29)
+    printf 'TOTAL\tTotal (%s subscription(s))\t\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t\t@{class=num failed}%s\t\n' \
+        "$n_all" "$(nz0 "$t_files")" "$(nz0 "$t_ok")" "$(nz0 "$t_er")" "$(nz0 "$t_prob")"
+    printf 'NOTE\tEvery configured **UC1** subscription, classified. The colour is the site-wide **result**: green/red mean real transfer data (its LAST File OK / Failed-or-Expired), and orange — **not seen** — means the transfer log never has. **error** vs **ok -> error** is a per-FILE question: right after any OK File the subscription WAS green, so a red subscription with even one OK File in the window is a regression; that is finer than **From green to red**, which buckets by whole days. **Problems** counts the Advanced Routing lines (the route in their second bracket) of a send that could not be made ("Could not send file", "An error occurred while sending", a step "finished with error") plus the partner being unreachable at all (a **Connection failure**, a failing directory listing). **Last log** is the newest line of either kind, so it answers "is this flow still running at all" and can be newer than the failures the drill shows. Unlike **UC3 status** there is no "no files" status: a UC1 push is triggered by a file APPEARING, so no file means no route run and no log line — nothing to report. Click a row for its most recent server-log lines; on a red row that never transferred those are the failures.\n'
 
     printf 'KEYWORDS\tuc1, push, send, sendtopartner, advanced routing, status, green, red, orange, regression, never worked, never seen, unused, connection failure, could not send, subscription health\n'
     printf 'SUMMARY\tok: %s  |  error: %s  |  ok -> error: %s  |  not seen: %s\n' \

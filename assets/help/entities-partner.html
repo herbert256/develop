@@ -17,13 +17,14 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Partners</h1>
 <h2>What it shows</h2>
-<p>One row per external partner <strong>organisation</strong> &mdash; the identities of the Partners row on the Logical, Partners, Domains &amp; Applications page. Columns, rules, views and drills are the same on all nine entity pages: see <a href="entities.html">Entities</a>.</p>
-<h2>How a File is attributed</h2>
 <ul>
-<li>A partner is the LAST part of the three-part logical name (<code>domain_application_partner</code>), merged into one organisation by shared endpoints, shared whitelist IPs and whitelisted host addresses; <code>input/logical_partners.txt</code> replaces a part token before the merge.</li>
-<li>An outbound File takes the partner of its endpoint (the configured remote host), an inbound File its account&rsquo;s partner, unioned with its subscription&rsquo;s configured partner(s); a File whose partner cannot be determined is not counted.</li>
-<li>A File counts for <strong>every</strong> partner of its subscription, so the per-partner counts can exceed the distinct total; the total row counts each File once.</li>
-<li>A merged (multi-token) name carries a small icon linking the page that explains the group (<a href="partner-groups.html">Partner groups</a>).</li>
+<li>One row per external partner organisation, in the shared <a href="entities.html">Entities</a> layout.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>A partner is the last part of the logical name <code>domain_application_partner</code>; <code>input/logical_partners.txt</code> rewrites a token first, and tokens sharing endpoints, whitelist IPs or whitelisted host addresses merge into one organisation.</li>
+<li>A File counts for the partner its subscription names (else its host&rsquo;s, else its account&rsquo;s) and for every configured partner of its subscription; the Total row, narrowed dates included, counts each File once.</li>
+<li>A merged name carries &#128279;, linking its <a href="partner-groups.html">Partner group</a> page.</li>
 </ul>
 </main>
 </body>

@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
 #
-# pda-entities.sh — the Logical + three PDA entities as Entities reports, one
+# pda-entities.sh — the Logical + three PDA entities + BL as entity DATA, one
 # .rpt per dimension from the logical-transfer cache (each File carries its
 # partner / application / domain attribution, _files.tsv cols 20 / 18 / 19;
 # the Logical resolves the profile column 13 through the FlowID map,
 # xref/_profiles-logicals.tsv):
 #   logical.rpt  partner.rpt  application.rpt  domain.rpt
-# Each is the exact account.sh shape — a summary per name (Files, Failed,
-# Processed, Volume, % of Files, First/Last seen) plus a per-day detail — so
-# showseen.sh and entity-search.sh can lift counts/buckets/drill from the
-# summaries exactly like the classic five. The name column is plain text:
-# these entities link to their own detail pages.
+# (+ bl.rpt). Each is the exact account.sh shape — ONE table, a summary per
+# name (Files, Error, OK, Retry, Resubmit, Volume, First/Last seen, the per-day
+# buckets and the drill lists) — so entity-search.sh and home.sh can lift
+# counts/buckets/drill from the summaries exactly like the classic four. NO
+# PAGE of their own: the Entities pages render from entities.sh's grouped
+# entities/<dim>.rpt. (The per-day "Detail per <name> / Date" table went
+# 2026-09-29: no reader.)
 #
 # Usage:
-#   ./pda-entities.sh    # reads input/*.csv (via the caches), writes data/{logical,partner,application,domain}.rpt
+#   ./pda-entities.sh    # reads input/*.csv (via the caches), writes data/transfer/reports/{logical,partner,application,domain,bl}.rpt
 #
 set -euo pipefail
 
@@ -44,7 +46,7 @@ awk -F'\t' '$3 != "Processed" && !(("F" SUBSEP $1) in s) { s["F" SUBSEP $1]; pri
 # the same read-only inputs, one job each instead of one after another.
 pda_dim() {   # $1 = logical|partner|application|domain|bl
     local dim=$1 col title chead nkind attr VMAP UMAP UKEY OUT agg src
-    local tot_records tot_failed tot_processed tot_human summary_row_count detail_row_count tot_retry tot_resub summary_rows detail_rows
+    local tot_records tot_failed tot_processed tot_human summary_row_count tot_retry tot_resub summary_rows
     case $dim in
         logical)     col=13; title="Logical";      chead="Logical"; nkind=lgc
                      attr="the file's logical flow group (its FlowID condensed to a 3-part group name — data/flow-manager/base/_logicals.tsv)" ;;
@@ -122,8 +124,6 @@ pda_dim() {   # $1 = logical|partner|application|domain|bl
                 addtop("S" SUBSEP a SUBSEP (f ? "F" : "P"), sk, disp, cid)
                 if (rt) addtop("R" SUBSEP a SUBSEP "T", sk, disp, cid); if (rs) addtop("R" SUBSEP a SUBSEP "S", sk, disp, cid)   # the Retry / Resubmit drill lists, 10 newest each (2026-09-13, user request)
                 dk = a SUBSEP date; ds[dk] = 1; dl[dk]++; if (f) dfl[dk]++; else dpr[dk]++; if (rt) drt[dk]++; if (rs) drs[dk]++; ddb[dk] += size
-                addtop("D" SUBSEP a SUBSEP date SUBSEP (f ? "F" : "P"), sk, disp, cid)
-                if (rt) addtop("Q" SUBSEP a SUBSEP date SUBSEP "T", sk, disp, cid); if (rs) addtop("Q" SUBSEP a SUBSEP date SUBSEP "S", sk, disp, cid)
             }
             tc++; if (f) tfl++; else tpr++; if (rt) trt++; if (rs) trs++; tvol += size
         }
@@ -134,10 +134,7 @@ pda_dim() {   # $1 = logical|partner|application|domain|bl
                 sh = tc > 0 ? sprintf("%.1f", sc[a] * 100 / tc) : "0.0"
                 printf "S|%s|%d|%d|%d|%d|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", a, sc[a], sfl[a]+0, spr[a]+0, srt[a]+0, srs[a]+0, human(sv[a]+0), sh, fst[a], lst[a], \
                     bk[a], buildlist(top["S" SUBSEP a SUBSEP "F"]), buildlist(top["S" SUBSEP a SUBSEP "P"]), buildlist(top["R" SUBSEP a SUBSEP "T"]), buildlist(top["R" SUBSEP a SUBSEP "S"]) }
-            for (dk in ds) { split(dk, x, SUBSEP); nd++
-                printf "D|%s|%s|%d|%d|%d|%d|%d|%s|%s|%s|%s\n", x[1], x[2], dl[dk], dfl[dk]+0, dpr[dk]+0, drt[dk]+0, drs[dk]+0, \
-                    buildlist(top["D" SUBSEP x[1] SUBSEP x[2] SUBSEP "F"]), buildlist(top["D" SUBSEP x[1] SUBSEP x[2] SUBSEP "P"]), buildlist(top["Q" SUBSEP x[1] SUBSEP x[2] SUBSEP "T"]), buildlist(top["Q" SUBSEP x[1] SUBSEP x[2] SUBSEP "S"]) }
-            printf "T|%d|%d|%d|%s|%d|%d|%d|%d\n", tc+0, tfl+0, tpr+0, human(tvol+0), ns+0, nd+0, trt+0, trs+0
+            printf "T|%d|%d|%d|%s|%d|%d|%d\n", tc+0, tfl+0, tpr+0, human(tvol+0), ns+0, trt+0, trs+0
         }
     ' "$LEGF" "$FILES")
 
@@ -146,7 +143,7 @@ pda_dim() {   # $1 = logical|partner|application|domain|bl
         return 0
     fi
 
-    IFS='|' read -r _ tot_records tot_failed tot_processed tot_human summary_row_count detail_row_count tot_retry tot_resub <<< "$(printf '%s\n' "$agg" | grep '^T|')"
+    IFS='|' read -r _ tot_records tot_failed tot_processed tot_human summary_row_count tot_retry tot_resub <<< "$(printf '%s\n' "$agg" | grep '^T|')"
 
     # Summary rows, busiest first. ONE awk pass formats the sorted stream into
     # finished ROW lines — a bash while-read with a $(printf) per row forked a
@@ -158,16 +155,9 @@ pda_dim() {   # $1 = logical|partner|application|domain|bl
           printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\t@data:coreids-retry=%s\t@data:coreids-resubmit=%s\n", \
               $2, $3, $4, $5, $6, $7, $8, $10, $11, $12, $13, ccp, $15, $16 }')
 
-    # Detail rows, sorted by name then date (repeated name blanked in-browser).
-    detail_rows=$({ printf '%s\n' "$agg" | grep '^D|' || true; } | sort -t'|' -k2,2 -k3,3 | awk -F'|' '
-        $2 == "" { next }
-        { ccp = $10   # field 10 = the OK list; 11/12 = the Retry / Resubmit lists (2026-09-13)
-          printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\t@data:coreids-retry=%s\t@data:coreids-resubmit=%s\n", \
-              $2, $3, $4, $5, $6, $7, $8, $9, ccp, $11, $12 }')
-
     {
         printf 'TITLE\t%s\n' "$title"
-        printf 'DESC\tFiles per %s: a summary and a per-day detail, both split into Error/OK.\n' "$dim"
+        printf 'DESC\tFiles per %s, split into Error/OK.\n' "$dim"
         src="derived from the logical flow names (and, for partners, the endpoint/whitelist/alias merge)"
         [ "$dim" = logical ] && src="derived from the FlowIDs, condensed into logical flow groups"
         printf 'INTRO\tEvery %s with its **Files** (one per CoreId), Error/OK split (**Retry** / **Resubmit** = the OK Files that needed a retry — a failed leg, then delivered — healed by the platform'\''s own retry or by an operator'\''s resubmit, the log'\''s Resubmitted flag), volume and last sighting — %s. The view tabs switch between logged (**Seen**), configured (**All** / **Not seen**) and the status subsets (**OK** / **Warning** / **Error**) — rows tint by each %s'\''s status.\n' "$dim" "$src" "$dim"
@@ -179,13 +169,6 @@ pda_dim() {   # $1 = logical|partner|application|domain|bl
         [ -n "$summary_rows" ] && printf '%s\n' "$summary_rows"
         printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num}%s\t\t\n' \
             "$summary_row_count" "$dim" "$tot_records" "$tot_failed" "$tot_processed" "$tot_retry" "$tot_resub" "$tot_human"
-
-        printf 'TABLE\tDetail per %s / Date\tgroup\n' "$chead"
-        printf 'HEAD\t%s\tDate\tFiles\tError\tOK\tRetry\tResubmit\n' "$chead"
-        printf "KIND\t$nkind\ttext\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumwarn\n"
-        [ -n "$detail_rows" ] && printf '%s\n' "$detail_rows"
-        printf 'TOTAL\t@{colspan=2}Total (%s row(s))\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num warn}%s\n' \
-            "$detail_row_count" "$tot_records" "$tot_failed" "$tot_processed" "$tot_retry" "$tot_resub"
 
         printf 'NOTE\tCounts Files — one logical transfer each; the %s is %s. Names link to the logical / partner / application / domain detail pages. Volume is the file counted once; First/Last seen stay full-period under the date filter. **The Total row counts each File once** (the site-wide distinct figure); a narrowed date range re-totals over the per-%s rows, whose union attribution can claim one File for several %ss — so a filtered Total can run slightly higher than the distinct figure it replaces, and snaps back to it at the full range. Click an Error or OK count for that outcome'\''s 10 most recent Files (newest first).\n' "$dim" "$attr" "$dim" "$dim"
         printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"

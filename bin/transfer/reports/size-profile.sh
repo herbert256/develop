@@ -106,11 +106,15 @@ if [ "$(printf '%s\n' "$agg" | awk 'NR==1 { print $1 }')" = "EMPTY" ]; then
         printf 'TITLE\tSize Profile\n'
         printf 'DESC\tPer-subscription file-size fingerprint: median size, first-half vs second-half drift, and the share of stub (near-empty) files.\n'
         printf 'INTRO\tNo Files in this dataset.\n'
-        printf 'TABLE\tSize profile\tnofilter\n'
-        printf 'HEAD\tSubscription\n'
-        printf 'KIND\ttext\n'
-        printf 'ROW\tNo Files in this dataset.\n'
-        printf 'TOTAL\tTotal (0 rows)\n'
+        # BOTH tables of a normal run (2026-09-29: one stub made the merged
+        # Sizes report one tab short, its labels shifted)
+        for _t in 'Size regime changed' 'Stub shippers'; do
+            printf 'TABLE\t%s\twide\tnofilter\n' "$_t"
+            printf 'HEAD\tSubscription\n'
+            printf 'KIND\ttext\n'
+            printf 'ROW\tNo Files in this dataset.\n'
+            printf 'TOTAL\tTotal (0 rows)\n'
+        done
         printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     echo "No Files found — wrote empty-state $OUT." >&2

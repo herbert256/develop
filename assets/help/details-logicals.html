@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Logical Flow Details — Cloud Reports</title>
+<title>Help: Logical details — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,29 +15,28 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Logical Flow Details</h1>
+<h1>Logical details</h1>
 <h2>What it shows</h2>
-<p>The detail page of one <strong>logical flow</strong>: a FlowID family of the configured subscriptions condensed to one three-part name. A <code>-</code> inside a part marks parts the derivation combined; a fixed mapping in <code>input/logical.txt</code> wins verbatim.</p>
-<h2>Sections</h2>
 <ul>
-<li><strong>KPI line</strong> &mdash; rank and share of traffic among all logical flows, failure rate, total volume, cadence, and processed-transfer performance where durations are recorded.</li>
-<li><strong>Last error(s)</strong> &mdash; directly above Features, only when a subscription it moves files with has an error: one row per such subscription, its most recent error, newest first, with date and time, subscription and file.</li>
-<li><strong>Features</strong> &mdash; a Partner, Application, Domain or Logical breakdown holding exactly one row is folded away into a Features row, keeping its link and colour. The first Features row is the Logical itself.</li>
-<li><strong>Activity per day</strong>.</li>
-<li><strong>Breakdowns</strong> &mdash; every dimension the flow&rsquo;s transfers touch: subscription, account, login, remote host, domain, application, partner.</li>
-<li><strong>Latest Files</strong> and the <strong>load tables</strong>.</li>
+<li>One page per logical flow &mdash; a FlowID family of configured subscriptions condensed to one <em>domain_application_partner</em> name (see <a href="logical-detection.html">Logical detection</a>) &mdash; opened from every <strong>Logical</strong> cell. Title prefix = connection/movement direction.</li>
+<li><strong>Last error(s)</strong> &mdash; Date &amp; time &middot; Subscription &middot; File: per connected subscription with a failed File, its newest one; the whole row opens that File&rsquo;s page.</li>
+<li><strong>Features</strong> &mdash; the logical first, then each single linked Account, Login, Host, Domain, Application, Partner or BL.</li>
+<li><strong>Waiting/Expired</strong> &mdash; State &middot; Files &middot; First staged &middot; Last staged.</li>
+<li><strong>Activity per day</strong> &mdash; Date &middot; Files &middot; Error &middot; OK &middot; Volume &middot; Duration (average per File).</li>
+<li><strong>Subscriptions</strong> &mdash; Subscription &middot; Direction &middot; Files &middot; Error &middot; OK &middot; Waiting &middot; Expired (when any) &middot; Volume; a nonzero Error opens <a href="failed-files.html">Failed files</a> for that subscription.</li>
+<li><strong>Incoming connections</strong> (IP &middot; In &middot; Out) / <strong>Outgoing connections</strong> (IP &middot; In &middot; Out &middot; Name) &mdash; the configured whitelist / endpoints plus the addresses seen; In / Out = Files that entered / left us; an IP opens its <a href="details-incoming_connections.html">incoming connection</a> page.</li>
+<li><strong>Accounts</strong> (Account &middot; Login &middot; Host &middot; Files &middot; Error &middot; OK &middot; Volume); <strong>Domains</strong>, <strong>Applications</strong>, <strong>Logical</strong>, <strong>Partners</strong>, <strong>BL</strong>, <strong>Logins</strong>, <strong>Hosts</strong> (name &middot; Files &middot; Error &middot; OK &middot; Volume) when there are several &mdash; a single value folds into Features.</li>
+<li><strong>Latest 100 Files</strong> &mdash; Date &middot; State &middot; Direction &middot; Size &middot; Throughput &middot; Duration &middot; File &middot; CoreId.</li>
+<li><strong>Load by weekday</strong> / <strong>hour</strong> (Files &middot; Error &middot; OK &middot; Volume); <strong>Dwell</strong> (Files per store-and-forward wait, inbound end to outbound start, with Share).</li>
+<li><strong>Duration</strong> (min, avg, max, p50, p95, p99), <strong>Size</strong> (Volume, Throughput, Average, Largest), <strong>Date</strong> (First / Last seen, Busiest day, Active days), <strong>Ranking</strong> (position among all logical flows; each row opens <a href="ranking.html">Ranking</a>).</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>The <strong>Subscriptions</strong> table&rsquo;s nonzero <strong>Error</strong> count opens <a href="failed-files.html">Failed files</a> for that subscription at the full date range: every failed File of the subscription, so a page that sees only part of its traffic can list more.</li>
-<li>A file belongs to a logical flow through its FlowID attribution, unioned with its subscription&rsquo;s configured logical(s).</li>
-<li>Every count is in <strong>Files</strong>: one per logical transfer, split by its delivered (final-row) outcome, volume counted once per file.</li>
-<li>The subscription / account / login / remote host tables are cross-referenced with the FlowManager configuration: every name configured for this flow is listed, seen or not &mdash; <strong>green</strong> rows have logged data, <strong>red</strong> rows are configured but never seen; each links its own detail page.</li>
-<li>Every configured logical flow has a page, seen or not. Background: <strong>light brown</strong> = seen &amp; in, <strong>light blue</strong> = seen &amp; out, <strong>light gray</strong> = seen &amp; both/unknown, <strong>light yellow</strong> = never seen &amp; in, <strong>light orange</strong> = never seen &amp; out, <strong>light purple</strong> = never seen &amp; both/unknown.</li>
-</ul>
-<h2>Tips</h2>
-<ul>
-<li>Click anywhere on a Last error(s) row for that file&rsquo;s error page: every transfer leg and the server log of the failure.</li>
+<li>Page background = the logical&rsquo;s result colour: red when any connected subscription is red, green when all are green, else orange (see <a href="general.html">Generic help</a>).</li>
+<li>Counts are Files; Error = Failed or Expired. On a logical used both ways, outcomes split into In - Error &middot; In - OK &middot; Out - Error &middot; Out - OK by file movement.</li>
+<li>Subscriptions and breakdown rows take the linked entity&rsquo;s result colour; every configured name is listed, one without traffic here has no counts.</li>
+<li>Connection rows: green configured with traffic, red traffic on an unconfigured address, orange configured without traffic (folded behind one orange row).</li>
+<li>No date filter: full period. A never-seen page keeps Features, Subscriptions, the connection tables and the configured names.</li>
 </ul>
 </main>
 </body>

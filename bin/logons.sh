@@ -69,7 +69,8 @@
 #   errors (the SOCKS families).
 # Fields 10-15 are the OUTBOUND side — an endpoint like secureftp.pondres.nl
 # is one WE connect to, so its page would otherwise show nothing: the "had
-# initiated a connection over …" lines count our connections per target
+# initiated a connection over …" lines with login name "" (a named login is
+# a partner connecting IN) count our connections per target
 # address (fields 10-13, same cadence), and the "Authentication failure
 # connecting to remote host H:P" errors count our failures per target
 # HOSTNAME (fields 14-15 — those rows key on the lowercased hostname, in
@@ -181,8 +182,12 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                 }
             }
             # OUR outbound connections: one line per SSH/FTP connection ST
-            # opens toward a partner — the Remote address is the TARGET
+            # opens toward a partner — the Remote address is the TARGET. Only
+            # the login name "" lines: a line that NAMES a login is a partner
+            # connecting IN (inbound-connections.sh) — its address is the
+            # partner SOURCE, never one of our targets (2026-09-29)
             $5 ~ /had initiated a connection over / {
+                if ($5 !~ /login name ""/) next
                 ha = addrof($5)
                 if (ha != "" && !bl_blank("host", ha)) {
                     hocnt[ha]++
@@ -271,7 +276,7 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                     side = "B"; u2 = qtok(substr(m9, RSTART + RLENGTH)); sub(/^.*@/, "", u2) }
                 else if (match(m9, /\[Ssh Default\] User [A-Za-z0-9_.-]+ failed to login successfully/)) {
                     side = "K"; u2 = substr(m9, RSTART + 19); sub(/ failed to login.*$/, "", u2) }
-                else if (match(m9, /\[Ssh Default\] User /) && m9 ~ /is locked/) {
+                else if (match(m9, /\[Ssh Default\] User /) && m9 ~ /is locked|locked due to too many failed login/) {   # = logon.sh (2026-09-29: the lockout line itself was missing here)
                     side = "L"; u2 = qtok(substr(m9, RSTART + RLENGTH))
                     if (u2 == "" && match(m9, /Username: /)) u2 = qtok(substr(m9, RSTART + RLENGTH)) }
                 if (side == "" || u2 == "") {

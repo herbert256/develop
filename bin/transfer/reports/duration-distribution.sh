@@ -13,7 +13,7 @@
 # re-aggregates the counts and shares over the selected range.
 #
 # Usage:
-#   ./duration-distribution.sh   # -> data/<env>/transfer/reports/duration-distribution.rpt
+#   ./duration-distribution.sh   # -> data/transfer/reports/duration-distribution.rpt
 #
 set -euo pipefail
 

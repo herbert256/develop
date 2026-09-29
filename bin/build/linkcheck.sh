@@ -173,39 +173,11 @@ awk -v DOCS="$DOCS" '
                 }
             }
         }
-        # 3. Entity Search + File search: their rows live in *search-data.js,
-        # not in the page (search/search-data.js maps to search/search.html; each of the six
-        # search/file-search-<key>-data.js maps to its search/file-search-<key>.html;
-        # the engine-derived links are ../details/… and ../files/…, one level up)
-        for (f in FILE) if (f ~ /^[a-z]+\/(file-search-[a-z0-9-]+-|search-)data\.js$/) {
+        # 3. Entity Search: its rows live in search/search-data.js, not in the
+        # page (the payload maps to search/search.html; its links carry ../,
+        # one level up)
+        for (f in FILE) if (f ~ /^[a-z]+\/search-data\.js$/) {
             src = f; sub(/-data\.js$/, ".html", src)
-            if (f ~ /file-search-/) {
-                # the COMPACT v2 payload (bin/analyses/reports/file-search.sh,
-                # 2026-08): no markup — the links are DERIVED the way the
-                # engine derives them. In the _S section the second field is a
-                # detail slug (non-empty = a detail-page link); an _R row
-                # whose LAST field is "E" (an Error with its own page, the v5
-                # flag) links files/<coreid>.html — the coreid is its
-                # 36-char field.
-                sect = ""
-                while ((getline l < (DOCS "/" f)) > 0) {
-                    if (index(l, "window.AXWAY_FSEARCH_S=") == 1) { sect = "S"; continue }
-                    if (index(l, "window.AXWAY_FSEARCH_R=") == 1) { sect = "R"; continue }
-                    if (index(l, "window.AXWAY_FSEARCH_") == 1) { sect = ""; continue }
-                    if (l == "`;" || l == "") continue
-                    if (sect == "S") {
-                        n2 = split(l, a2, "\t")
-                        if (n2 >= 2 && a2[2] != "") edge(src, "../details/subscriptions/" a2[2] ".html")
-                    } else if (sect == "R") {
-                        n2 = split(l, a2, "\t")
-                        if (a2[n2] == "E")
-                            for (i2 = 1; i2 <= n2; i2++)
-                                if (length(a2[i2]) == 36 && a2[i2] ~ /^[0-9a-f-]+$/) { edge(src, "../files/" a2[i2] ".html"); break }
-                    }
-                }
-                close(DOCS "/" f)
-                continue
-            }
             while ((getline l < (DOCS "/" f)) > 0) {
                 s = l
                 while (match(s, /href="[^"]*"/)) {

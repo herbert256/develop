@@ -31,16 +31,18 @@
 # just-went-quiet, never red — red is a configured-name verdict).
 #
 # This page is an ADDITION, not a replacement: the per-symptom deep-dives
-# (From green to red, Went quiet, Waiting, Only red, the Boxes pages) remain
-# where the full stories live — the evidence column points onward.
+# (Failed Subscriptions — which carries the red-run figures of the retired
+# From green to red / Only red pages — Went quiet, Waiting, Expired, the Boxes
+# pages) remain where the full stories live — the evidence column points
+# onward.
 #
-# Reads data/<env>/transfer/cache/_files.tsv (2=outcome, 4=date, 5=time,
-# 6=sortkey, 7=jdn, 8=size, 12=dest_site), data/<env>/flow-manager/base/
-# _subscriptions.tsv (name, dir, result) and data/<env>/colour/_redflip.tsv.
-# Writes data/<env>/analyses/reports/triage.rpt.
+# Reads data/transfer/cache/_files.tsv (2=outcome, 4=date, 5=time,
+# 6=sortkey, 7=jdn, 8=size, 12=dest_site), data/flow-manager/base/
+# _subscriptions.tsv (name, dir, result) and data/colour/_redflip.tsv.
+# Writes data/analyses/reports/triage.rpt.
 #
 # Usage:
-#   ./triage.sh    # reads the caches, writes data/<env>/analyses/reports/triage.rpt
+#   ./triage.sh    # reads the caches, writes data/analyses/reports/triage.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -189,7 +191,7 @@ rows_raw=$(printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' \
             if (u in seenk) continue
             since = (u in FLIP) ? FLIP[u] : "-"
             days = (u in FLIP) ? endj - dj(substr(FLIP[u], 1, 10)) : 0
-            emit(DISP[u], "red", since, days, 0, 0, 0, 0, "no Files in the window", "see Failed Subscriptions (Last green day never)")
+            emit(DISP[u], "red", since, days, 0, 0, 0, 0, 0, "no Files in the window", "see Failed Subscriptions (Last green day never)")   # riskb 0 (2026-09-29: the argument was missing, every later field shifted)
         }
         print "TOT", rows + 0, nred + 0, nrisk + 0, nquiet + 0, tvol + 0, trisk + 0
     }
@@ -239,7 +241,7 @@ sum_n=0; sum_ok=0; sum_err=0
     fi
     printf 'TOTAL\tTotal (%s subscriptions)\t\t\t\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num}%s\t\t\t\n' \
         "${n_rows:-0}" "$sum_n" "$sum_ok" "$sum_err" "$t_vol_h" "$t_risk_h"
-    printf 'NOTE\tRank score = **lifetime Files / (days in state + 1)** — state recency times historical weight: a flow that flipped yesterday after carrying hundreds of Files outranks one red for a month, which outranks a one-file wonder. **Days in state** counts against the last day in the data (**%s**), never the wall clock. Red-since is the server-log evidence stamp where one exists, else the first failure of the current failing run. **Volume in window** is the flow'\''s volume over the loaded data window — historical throughput, not an undelivered backlog; **At expiry risk** is the staged, uncollected bytes the sweep is about to delete (expiry-risk rows only). They were one column until 2026-09-05. One row per subscription, priority red > expiry-risk > just-went-quiet; the symptoms mention any second condition. This page is an ADDITION: **From green to red**, **Went quiet**, **Waiting**, **Expired**, **Only red** and the **Boxes** pages remain the per-symptom deep-dives — the Evidence column points the way.\n' \
+    printf 'NOTE\tRank score = **lifetime Files / (days in state + 1)** — state recency times historical weight: a flow that flipped yesterday after carrying hundreds of Files outranks one red for a month, which outranks a one-file wonder. **Days in state** counts against the last day in the data (**%s**), never the wall clock. Red-since is the server-log evidence stamp where one exists, else the first failure of the current failing run. **Volume in window** is the flow'\''s volume over the loaded data window — historical throughput, not an undelivered backlog; **At expiry risk** is the staged, uncollected bytes the sweep is about to delete (expiry-risk rows only). They were one column until 2026-09-05. One row per subscription, priority red > expiry-risk > just-went-quiet; the symptoms mention any second condition. This page is an ADDITION: **Failed Subscriptions** (Last green day, Days red, Failures in a row), **Went quiet**, **Waiting**, **Expired** and the **Boxes** pages remain the per-symptom deep-dives — the Evidence column points the way.\n' \
         "${endd:-?}"
     printf 'LINK\tfailed.html\tFailed Subscriptions — the red worklist, with the Last green day and Days red of every run\n'
     printf 'LINK\t../transfer/went-quiet-subscriptions.html\tWent quiet — every silence, not just the fresh ones\n'

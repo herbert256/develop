@@ -8,8 +8,9 @@
 # flip late yesterday may only be visible in today's export — everything is
 # judged against D OR D-1 (the grace day). Five tables:
 #
-#   New red flips    red subscriptions whose server-log evidence stamp
-#                    (colour/_redflip.tsv) or newest FAILING File is on D/D-1
+#   New red flips    red subscriptions whose red RUN started on D/D-1 (a
+#                    failing-File run), or whose server-log evidence stamp
+#                    (colour/_redflip.tsv) after an OK last File is on D/D-1
 #   Newly quiet      flows whose last File is exactly 8 days before the
 #                    transfer window end — the day went-quiet's >7-day rule
 #                    first bites (they crossed the threshold within the last
@@ -17,24 +18,24 @@
 #   Recovered        green flows whose FIRST OK File after their last failure
 #                    is on D/D-1 — broken before, working since yesterday
 #   First seen       configured entities whose first-ever File is on D/D-1,
-#                    read from the first-seen ledger (data/<env>/first-seen/
+#                    read from the first-seen ledger (data/first-seen/
 #                    <type>-<day>.rpt, written by first-seen.sh)
 #   Server-only names still mentioned (was "New unknown names" until 2026-09-29)
-#                    names in the data/<env>/unknown/*.tsv sidecars
+#                    names in the data/unknown/*.tsv sidecars
 #                    (server-log mentions with no transfer) whose mention
 #                    timestamp is on D/D-1
 #
 # Sites are attributed to their configured subscription by the longest
 # uppercase prefix match (log-only tails, e.g. _SCP_), like triage.sh.
 #
-# Reads data/<env>/transfer/cache/_files.tsv, data/<env>/server/cache/
-# _parse.tsv (dates only), data/<env>/flow-manager/base/_subscriptions.tsv,
-# data/<env>/colour/_redflip.tsv, data/<env>/first-seen/*.rpt and
-# data/<env>/unknown/{accounts,logins,sites,hosts,white}.tsv.
-# Writes data/<env>/analyses/reports/data-diff.rpt.
+# Reads data/transfer/cache/_files.tsv, data/server/cache/
+# _parse.tsv (dates only), data/flow-manager/base/_subscriptions.tsv,
+# data/colour/_redflip.tsv, data/first-seen/*.rpt and
+# data/unknown/{accounts,logins,sites,hosts,white}.tsv.
+# Writes data/analyses/reports/data-diff.rpt.
 #
 # Usage:
-#   ./data-diff.sh   # reads the caches, writes data/<env>/analyses/reports/data-diff.rpt
+#   ./data-diff.sh   # reads the caches, writes data/analyses/reports/data-diff.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -146,9 +147,14 @@ tables=$(printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' \
         # T1 — new red flips
         if (res == "red") {
             stampd = (key in FLIP) ? substr(FLIP[key], 1, 10) : ""
-            faild = (lastfailts != "") ? substr(lastfailts, 1, 10) : ""
-            if (stampd == D || stampd == G || faild == D || faild == G) {
-                when = (stampd == D || stampd == G) ? FLIP[key] : lastfailts
+            # NEW = the red RUN started on D / D-1 (a failing File run), or —
+            # red by server-log evidence after an OK last File — that evidence
+            # is on D / D-1 (2026-09-29: the newest failing File on D / D-1
+            # was enough, so a flow red since June was "new" every day)
+            startd = (runstart != "") ? substr(runstart, 1, 10) : ""
+            isnew = (runlen > 0) ? (startd == D || startd == G) : (stampd == D || stampd == G)
+            if (isnew) {
+                when = (runlen > 0) ? runstart : FLIP[key]   # when it went red
                 if (ok == 0)          ev = "never delivered — " err " Error in " n " File(s)"
                 else if (runlen > 0)  ev = runlen " consecutive failure(s); last OK " lastokts
                 else                  ev = "last File OK (" lastokts ") — server-log evidence after it"

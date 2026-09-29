@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# hourly.sh — LOAD BY HOUR OF DAY (00-23). Per hour across all days: the Files
-# count, Error/OK split, volume and a relative-load bar; plus an hour ×
+# hourly.sh — LOAD BY HOUR OF DAY (00-23). Per hour across all days: the
+# delivered (OK) Files, volume and a relative-load bar; plus an hour ×
 # weekday heatmap. Emits hourly.rpt from the shared normalized stream
 # (lib.sh activity_stream): 1=date 2=jdn 3=time 4=proc 5=size 6=sortkey 7=id.
 #
@@ -23,7 +23,7 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
-clabel="Files"; noun="File"; drillmod=""
+clabel="Files"; noun="File"
 OUT="$REPORTS_DIR/hourly.rpt"
 
 # ONE walk over the normalized stream feeds both tables: the per-hour aggregate
@@ -32,7 +32,7 @@ OUT="$REPORTS_DIR/hourly.rpt"
 HEAT=$(mktemp "${TMPDIR:-/tmp}/hourly.XXXXXX")
 trap 'rm -f "$HEAT"' EXIT
 
-agg=$(activity_stream | awk -F'\t' -v heat="$HEAT" "$COREIDS_AWK"'
+agg=$(activity_stream | awk -F'\t' -v heat="$HEAT" '
     function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
         while (v >= 1024 && i < 6) { v /= 1024; i++ }
         return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
@@ -40,10 +40,12 @@ agg=$(activity_stream | awk -F'\t' -v heat="$HEAT" "$COREIDS_AWK"'
         size = $5; t = $3; d = $1; pf = ($4 == 0)
         if (t !~ /^[0-9][0-9]:/) next
         h = substr(t, 1, 2)
-        hrec[h]++; hbytes[h] += size; trec++; tbytes += size
+        # VOLUME follows the Delivered column = the OK Files bytes (2026-09-29:
+        # every File was summed beside an OK-only count)
+        okb = pf ? 0 : size
+        hrec[h]++; hbytes[h] += okb; trec++; tbytes += okb
         if (pf) { hfail[h]++; tfail++ } else { hproc[h]++; tproc++ }
-        hdr[h SUBSEP d]++; hdf[h SUBSEP d] += pf; hdp[h SUBSEP d] += (!pf); hdb[h SUBSEP d] += size
-        addtop("H" SUBSEP h SUBSEP (pf ? "F" : "P"), $6, $1 " " $3, $7)
+        hdr[h SUBSEP d]++; hdf[h SUBSEP d] += pf; hdp[h SUBSEP d] += (!pf); hdb[h SUBSEP d] += okb
         # the same File on the heatmap grid: hour × weekday (2=jdn), each cell
         # keeping its own per-date series for report.js recalcHeat
         w = ($2 + 0) % 7
@@ -51,14 +53,12 @@ agg=$(activity_stream | awk -F'\t' -v heat="$HEAT" "$COREIDS_AWK"'
         if (d != "") { hwd = h SUBSEP w SUBSEP d; if (!(hwd in cd)) ord[h SUBSEP w] = ord[h SUBSEP w] (ord[h SUBSEP w] ? "," : "") d; cd[hwd]++ }
     }
     END {
-        maxrec = 0
-        for (k in hrec) if (hrec[k] > maxrec) maxrec = hrec[k]
         for (k in hdr) { split(k, a, SUBSEP); bk[a[1]] = bk[a[1]] (bk[a[1]] ? "," : "") a[2] ":" hdr[k] ":" (hdf[k]+0) ":" (hdp[k]+0) ":" hdb[k] }
         for (i = 0; i < 24; i++) {
             hh = sprintf("%02d", i)
-            printf "HOUR|%s|%d|%d|%d|%d|%s|%s|%s|%s\n", hh, hrec[hh]+0, hfail[hh]+0, hproc[hh]+0, hbytes[hh]+0, human(hbytes[hh]+0), bk[hh], buildlist(top["H" SUBSEP hh SUBSEP "F"]), buildlist(top["H" SUBSEP hh SUBSEP "P"])
+            printf "HOUR|%s|%d|%d|%d|%d|%s|%s\n", hh, hrec[hh]+0, hfail[hh]+0, hproc[hh]+0, hbytes[hh]+0, human(hbytes[hh]+0), bk[hh]
         }
-        printf "TOT|%d|%d|%d|%d|%s|%d\n", trec, tfail+0, tproc+0, tbytes, human(tbytes), maxrec
+        printf "TOT|%d|%d|%d|%s\n", trec, tfail+0, tproc+0, human(tbytes)
         # The heatmap rows, written as finished .rpt lines. Each cell carries
         # its own per-date bucket (@data:h<weekday>=date:count,…) so the
         # recalcHeat pass in report.js can re-sum every cell for the selected
@@ -86,21 +86,20 @@ agg=$(activity_stream | awk -F'\t' -v heat="$HEAT" "$COREIDS_AWK"'
 ')
 
 if [ -z "$agg" ]; then echo "No usable records found." >&2; exit 0; fi
-IFS='|' read -r _ tot_rec tot_failed tot_processed tot_bytes tot_human max_rec <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
-[ "${max_rec:-0}" -eq 0 ] && max_rec=1
+IFS='|' read -r _ tot_rec tot_failed tot_processed tot_human <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
 n_hours=$(printf '%s\n' "$agg" | grep -c '^HOUR|' || true)
 
 {
     printf 'TITLE\tLoad by Hour\n'
     printf 'DESC\t%s (the delivered ones) and volume per hour of day, with a load bar.\n' "$clabel"
     printf 'INTRO\t%s across the 24 hours of the day, by start time. The bar shows load relative to the busiest hour.\n' "$clabel"
-    printf 'TABLE\tPer hour of day%s\n' "$drillmod"
+    printf 'TABLE\tPer hour of day\n'
     # FILES = the delivered (OK) count, HOUR field 5 (2026-09-13, user request:
     # one Files column, no Error / OK pair, no green/red cells, no drills);
     # the bucket payload keeps all four metrics, so the tokens read metric 2
     # (ok) for Files and the bar, metric 3 for Volume
     # the column reads "Delivered" (2026-09-29): it counts the OK Files only,
-    # while the Volume beside it and the grid below count every File
+    # and the Volume beside it is their bytes; the grid below counts every File
     printf 'HEAD\tHour\tDelivered\tVolume\tLoad\n'
     printf 'KIND\ttext\tnum\tnum\tbar\n'
     printf 'RECALC\t-\ts2\th3\tb2\n'
@@ -111,14 +110,14 @@ n_hours=$(printf '%s\n' "$agg" | grep -c '^HOUR|' || true)
         $2 != "" { printf "ROW\t%s:00\t%s\t%s\t%d\t@data:buckets=%s\n", $2, $5, $7, int($5 * 100 / mx), $8 }' || true
     printf 'TOTAL\tTotal (%s hour(s))\t@{class=num}%s\t@{class=num}%s\t\n' \
         "$n_hours" "$tot_processed" "$tot_human"
-    printf 'NOTE\tDelivered = the OK %ss started in that hour; Volume = every %s started in it; the bar shows load relative to the busiest hour.\n' "$noun" "$noun"
+    printf 'NOTE\tDelivered = the OK %ss started in that hour; Volume = their bytes; the bar shows load relative to the busiest hour.\n' "$noun"
 
     printf 'TABLE\tHour × weekday\theat\n'
     printf 'HEAD\tHour\tMonday\tTuesday\tWednesday\tThursday\tFriday\tSaturday\tSunday\n'
     printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\tnum\tnum\n'
     cat "$HEAT"
     printf 'NOTE\tEach cell counts the %ss starting in that hour on that weekday, tinted by quartile of the busiest cell — batch windows show as dark blocks. The date filter re-sums every cell and re-tints for the selected range.\n' "$noun"
-    printf 'SUMMARY\tTotal %ss: %s  |  Error: %s  |  OK: %s  |  Volume: %s\n' "$noun" "$tot_rec" "$tot_failed" "$tot_processed" "$tot_human"
+    printf 'SUMMARY\tTotal %ss: %s  |  Error: %s  |  OK: %s  |  OK volume: %s\n' "$noun" "$tot_rec" "$tot_failed" "$tot_processed" "$tot_human"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT ($tot_rec $noun(s))." >&2

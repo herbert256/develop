@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Dashboards — Cloud Reports</title>
+<title>Help: Dashboard — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,42 +15,24 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Dashboards</h1>
+<h1>Dashboard</h1>
 <h2>What it shows</h2>
-<p>The <strong>Dashboard</strong> (top bar): the report data as graphs over the log window. Five KPI cards (Files transferred, Transfer failure rate, Volume moved, Server records, Server error rate) and one graph with twelve views: six per-slot activity, two cumulative coverage curves, four use-case status stacks.</p>
-<h2>Views</h2>
 <ul>
-<li><strong>Duration</strong> &mdash; P50 / P90 / P98 duration of the slot&rsquo;s OK Files, stacked dark green / orange / dark red bands (each top edge = that percentile). Fixed scale, equal ticks at 1, 2, 3, 5, 7, 10, 15, 20, 25, 30, 45 s, 1, 5, 30 m, 1, 5, 10, 24 h and ≥48 h (linear between; ≥48 h at the top), shared with the day pages.</li>
-<li><strong>Files processed</strong> &mdash; OK Files (Processed + Waiting) started in the slot.</li>
-<li><strong>Volume</strong> &mdash; bytes moved.</li>
-<li><strong>Error % Files</strong> &mdash; share Failed or Expired; no Files = a gap.</li>
-<li><strong>Transfer errors</strong> &mdash; raw Status Failed / Failed Subtransmission records: legs, not Files (one File can log several); none = a real zero.</li>
-<li><strong>PeSIT</strong> &mdash; CFT-link problem lines: ST&rarr;CFT red (outbound TM client leg), CFT&rarr;ST purple (inbound PESITD server leg); lines, not failed transfers.</li>
-<li><strong>Subscriptions seen</strong>, <strong>Partners seen</strong>, <strong>Accounts seen</strong> &mdash; cumulative at each slot, three counts:
+<li>Five KPI cards (Files transferred, Transfer failure rate, Volume moved, Server records, Server error rate), one graph with 16 views, and <strong>Busiest this period</strong>: the top 5 partners and subscriptions by Files, Volume and Errors.</li>
+</ul>
+<h2>Tabs</h2>
 <ul>
-<li><strong>orange</strong> = seen in the transfer log.</li>
-<li><strong>green</strong> = latest File so far OK (delivered or waiting); <strong>red</strong> = latest File so far Failed/Expired.</li>
-<li>Orange only rises; green and red move both ways and always sum to orange.</li>
-<li>Line draws all three; Bar/Solid stack red and green (their top edge is the orange line); the Data table lists all three.</li>
-</ul></li>
-<li><strong>UC1&ndash;UC4 status</strong> &mdash; the use case&rsquo;s configured subscriptions stacked per slot: composition, not traffic.
-<ul>
-<li>The total is the configured count (no configuration history), so the top edge is flat. Green OK at the bottom, never-seen light orange on top, problem states between by severity &mdash; the report&rsquo;s own verdict at each slot end.</li>
-<li>UC1/UC3/UC4: <em>OK · OK + error · Error · Not seen</em>; UC2: <em>OK · Both · No files · Never collected · Nothing</em>.</li>
-<li>Titles link <a href="server-uc1-status.html">UC1</a>, <a href="server-uc2-status.html">UC2</a>, <a href="server-uc3-status.html">UC3</a>, <a href="server-uc4-status.html">UC4</a>; no configured subscriptions = no button.</li>
-</ul></li>
+<li><strong>Duration</strong> &mdash; P50 / P90 / P98 of the slot&rsquo;s delivered (Processed) File durations, nearest rank like the <a href="duration.html">Duration</a> report; stacked bands on a fixed scale.</li>
+<li><strong>Files processed</strong> (OK Files) &middot; <strong>Volume</strong> &middot; <strong>Throughput</strong> (MB/s over legs above 1 MB and 500 ms) &middot; <strong>Error % Files</strong> (Failed or Expired) &middot; <strong>Transfer errors</strong> (every non-Processed leg, not Files).</li>
+<li><strong>Connections</strong> (SSH / PeSIT sessions opened, by who dialled) &middot; <strong>PeSIT</strong> (CFT-link problem lines, ST&rarr;CFT vs CFT&rarr;ST) &middot; <strong>EventQueue</strong> (&ldquo;Unable to submit event&rdquo; lines).</li>
+<li><strong>Seen</strong> &rsaquo; Partners / Accounts / Subscriptions &mdash; how many were seen by then (orange), split green / red. Only a Failed last File counts red; Subscriptions also count server-log reds. Green + red = orange.</li>
+<li><strong>Use cases</strong> &rsaquo; UC1&ndash;UC4 &mdash; the configured subscriptions stacked by status per slot (UC1/UC3/UC4: OK &middot; OK + error &middot; Error &middot; Not seen; UC2: OK &middot; Both &middot; No files &middot; Never collected &middot; Nothing).</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Per view: Line / Bar / Solid switch, interval 1 h / 2 h / 4 h / 6 h / 12 h / 1 day, hover tooltip, Data table (always 6-hour), a title linking the best-fitting report. Style and interval are remembered for the session; the style follows to the day pages (own intervals 15 / 30 min / 1 h, remembered separately).</li>
-<li>A From/To change picks a fitting interval (a day hourly, a week 4-hour, the full period daily); a manual pick overrides until the next change.</li>
-<li>Each resolution is computed from the raw Files, never merged from a finer one (a median of medians is not a median).</li>
-<li>A slot click opens that day&rsquo;s page in the same view (30-minute slots). Cumulative and status views have no day view: their slots open the day&rsquo;s Files processed graph; a day page opened elsewhere falls back to Duration.</li>
-<li>Activity views: the logical-transfer cache; PeSIT and EventQueue: server-log line counts per slot (no report page of their own since 2026-09-27; their titles link nowhere). Cumulative views use the union partner attribution &mdash; the final orange matches <a href="first-seen.html">First seen</a>; green/red follow the site-wide subscription rule (red when the latest outcome is Failed or Expired).</li>
-<li>Status stacks re-bucket each use-case report&rsquo;s hourly verdict sidecar: a state, not a rate &mdash; a coarser slot takes its last hour, an empty slot carries the previous state; the right edge equals the report.</li>
-<li><strong>Busiest this period</strong> closes the page: the day pages&rsquo; six Top-5 tables (partners and subscriptions by Files, Volume, Errors), re-selected within the From/To range; no activity = a gap. Union attribution: at the full range they match the Entities view <strong>See more</strong> opens, sorted descending.</li>
-<li>Opens at the full log period; no search box, full From/To controls. KPIs re-sum, the graph clips, Top-5 re-select; the range is remembered for the dashboards only, never carried to the reports.</li>
-<li>Inline SVG, no external libraries or web fonts.</li>
+<li>Per card: interval 1 hour &hellip; 1 day, Line / Bar / Solid and, except Duration, Linear / Log. Remembered for the session.</li>
+<li>From/To narrows everything: the KPIs re-sum, the graph clips, the top 5 cards re-select (<strong>See more</strong> opens the Entities view). A range change re-picks the interval to fit it; <strong>All</strong> returns to the page default (6 hours).</li>
+<li>A slot click opens that day&rsquo;s <a href="daily.html">day page</a> on a matching view; a Use cases slot opens its UC status report. A card title opens its report.</li>
 </ul>
 </main>
 </body>

@@ -41,10 +41,12 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         legs = $10 + 0; d = $4; size = $8 + 0
         pf = ($2 == "Failed" || $2 == "Expired")
         i = bucket(legs)
-        br[i]++; bb[i] += size; trec++
+        # Volume = the OK Files'"'"' bytes, the Files column'"'"'s own scope (2026-09-29:
+        # every File'"'"'s — a "1 leg | 0 | 104 MB" row)
+        br[i]++; if (!pf) { bb[i] += size; tpb += size }; trec++
         if (pf) { bf[i]++; tfl++ } else { bp[i]++; tpr++ }
         if (br[i] > maxrec) maxrec = br[i]
-        if (d != "") { bdr[i SUBSEP d]++; bdf[i SUBSEP d] += pf; bdp[i SUBSEP d] += (!pf); bdb[i SUBSEP d] += size }
+        if (d != "") { bdr[i SUBSEP d]++; bdf[i SUBSEP d] += pf; bdp[i SUBSEP d] += (!pf); if (!pf) bdb[i SUBSEP d] += size }
         addtop("L" SUBSEP i SUBSEP (pf ? "F" : "P"), $6, $4 " " $5, $1)
         # bounded top-25 by legs (ties: newest start first via the sortkey)
         tk = sprintf("%012d", legs) $6
@@ -64,7 +66,7 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         maxpr = 0; for (i = 1; i <= 12; i++) if (bp[i] + 0 > maxpr) maxpr = bp[i] + 0
         if (maxpr < 1) maxpr = 1
         for (i = 1; i <= 12; i++) {
-            if (br[i] + 0 == 0) continue
+            if (bp[i] + 0 == 0) continue   # no OK File: nothing this table counts (2026-09-29: rows of 0)
             sh = tpr > 0 ? sprintf("%.1f", (bp[i]+0) * 100 / tpr) : "0.0"
             w = int((bp[i]+0) * 100 / maxpr)
             printf "BKT|%s|%d|%d|%d|%d|%s|%s|%d|%s|%s|%s\n", lab[i], br[i]+0, bf[i]+0, bp[i]+0, bb[i]+0, human(bb[i]+0), sh, w, bk[i], buildlist(top["L" SUBSEP i SUBSEP "F"]), buildlist(top["L" SUBSEP i SUBSEP "P"])
@@ -72,7 +74,7 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         # top-25, most legs first (selection sort on the padded keys)
         for (z = 1; z <= tn; z++) for (y = z + 1; y <= tn; y++) if (TK[y] > TK[z]) { t2 = TK[z]; TK[z] = TK[y]; TK[y] = t2; t2 = TV[z]; TV[z] = TV[y]; TV[y] = t2 }
         for (z = 1; z <= tn; z++) printf "TOP|%s\n", TV[z]
-        printf "TOT|%d|%d|%d\n", trec, tfl+0, tpr+0
+        printf "TOT|%d|%d|%d|%s\n", trec, tfl+0, tpr+0, human(tpb+0)
     }
 ' "$FILES")
 
@@ -81,7 +83,7 @@ if [ -z "$agg" ]; then
     exit 1
 fi
 
-IFS='|' read -r _ tot_rec tot_failed tot_processed <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
+IFS='|' read -r _ tot_rec tot_failed tot_processed tot_vol <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
 
 # Both row loops run INSIDE the report block below (a herestring keeps them in
 # this shell), so their counters are ready for the TOTAL line that follows them.
@@ -107,7 +109,7 @@ top_n=0
         printf 'ROW\t%s\t%s\t%s\t%s%%\t%s\t@data:buckets=%s\t@data:ord=%s\n' "$label" "$pr" "$human" "$sh" "$w" "$bk" "$ord"
         ord=$((ord + 1))
     done <<< "$(printf '%s\n' "$agg" | grep '^BKT|')"
-    printf 'TOTAL\tTotal\t@{class=num}%s\t\t@{class=num}100.0%%\t\n' "$tot_processed"
+    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}%s\t@{class=num}100.0%%\t\n' "$tot_processed" "$tot_vol"
     printf 'NOTE\tFiles = the delivered (OK) Files of that bucket. The **1 leg** bucket is the One-legged (Pirates) population.\n'
     printf 'LINK\tpirates-details.html\tOne-legged transfers (the 1-leg Files, per subscription)\n'
 

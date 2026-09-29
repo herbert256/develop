@@ -1,28 +1,30 @@
 #!/usr/bin/env bash
 #
-# inbound-connections.sh — who connects IN to SecureTransport, over which
-# protocol, from where. From the TM "User with login name "L", associated with
-# account "A", had initiated a connection over SSH|PESIT|FTP. Remote address:
-# <addr>" lines — the only place the per-protocol INBOUND connection volume
-# exists (Auth Activity counts SSH auth successes only, Logon the screening
-# funnel; FTP and PeSIT connection volume appears nowhere else). Four views:
-#   By protocol       connection volume per protocol.
-#   Per day           the SSH / PESIT / FTP daily trend.
-#   By account        connections per account (protocol mix, distinct addresses).
-#   By source address the remote peers that connect in, top 50.
-# (A fifth, "Whitelist policy usage" — the "Allowed user … corresponding
-# policy name '<P>'" lines per policy — went 2026-09-28, user request: fewer
-# server reports; those are the lines the Logons / Incoming Allowed and
-# Re-screens columns count per login.)
+# inbound-connections.sh — CONNECTION VOLUME, in AND out (the first three
+# tabs of the merged Connections report). From the TM "User with login name
+# "L", associated with account "A", had initiated a connection over
+# SSH|PESIT|FTP. Remote address: <addr>" lines. THE DIRECTION (2026-09-29):
+# a partner connecting IN logs its login name; SecureTransport's own
+# connection OUT to a partner logs login name "" (bin/logons.sh books those
+# lines as our outbound connections, the Remote address being the TARGET).
+# Until 2026-09-29 every line counted as inbound — the name of this script
+# is historical. Three views, each split In / Out:
+#   Connections per day   the In / Out and SSH / PESIT / FTP daily trend.
+#   By account            connections per account (protocol mix, distinct addresses).
+#   By address            the remote peers, top 50 by connections.
+# Plus the sidecar _inbound-addr.tsv (every address with an INBOUND line,
+# uncapped) for the Whitelist audit and the Cleanup backlog.
+# (A "Whitelist policy usage" view went 2026-09-28 and the "by protocol"
+# table 2026-09-29 — the per-day table carries its per-protocol split.)
 #
 # An account equal to a known transfer-log account links to its detail page
-# (same alink mechanism as Transfer Outcomes); addresses stay plain — they are
-# the partners' SOURCE addresses, not the configured outbound endpoints.
+# (same alink mechanism as Transfer Outcomes); addresses stay plain.
 #
-# Reads the parse cache (data/_parse.tsv). Writes data/inbound-connections.rpt.
+# Reads the parse cache (data/server/cache/_parse.tsv). Writes
+# data/server/reports/inbound-connections.rpt + _inbound-addr.tsv.
 #
 # Usage:
-#   ./inbound-connections.sh    # reads input/*.csv (via the cache), writes data/inbound-connections.rpt
+#   ./inbound-connections.sh
 #
 set -euo pipefail
 
@@ -56,14 +58,13 @@ if [ ${#files[@]} -eq 0 ]; then
     rm -f "$OUT"   # no data for this ENV — page not published (an env-split legitimate state)
     exit 0
 fi
-echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # One pass. Emits TAB-separated:
-#   P <TAB> proto <TAB> conns <TAB> buckets <TAB> first <TAB> last <TAB> loglines
-#   Y <TAB> date <TAB> ssh <TAB> pesit <TAB> ftp <TAB> other <TAB> total
-#   A <TAB> [alink]account <TAB> conns <TAB> protos <TAB> naddr <TAB> buckets <TAB> first <TAB> last <TAB> loglines
-#   S <TAB> addr <TAB> conns <TAB> naccts <TAB> protos <TAB> buckets <TAB> first <TAB> last <TAB> loglines
-#   TOT <TAB> conns <TAB> nproto <TAB> nacct <TAB> naddr <TAB> ndays
+#   Y <TAB> date <TAB> in <TAB> out <TAB> ssh <TAB> pesit <TAB> ftp <TAB> other <TAB> total
+#   A <TAB> [alink]account <TAB> conns <TAB> in <TAB> out <TAB> protos <TAB> naddr <TAB> buckets <TAB> first <TAB> last <TAB> loglines
+#   S <TAB> addr <TAB> conns <TAB> in <TAB> out <TAB> naccts <TAB> protos <TAB> buckets <TAB> first <TAB> last <TAB> loglines
+#   TOT <TAB> conns <TAB> nproto <TAB> nacct <TAB> naddr <TAB> ndays <TAB> in <TAB> out <TAB> ssh <TAB> pesit <TAB> ftp <TAB> other
+# buckets = date:total:in:out (RECALC s0 / s1 / s2)
 agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
     # qval(m, key, q): the value right after `key` that is enclosed in quote
     # character q — "" when the key or its opening quote is absent.
@@ -72,8 +73,10 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
         s = substr(s, 2); e = index(s, q); return e ? substr(s, 1, e - 1) : "" }
     function addset(k, v) {   # union string with "/" separators, substring-safe
         if (!index("/" uni[k] "/", "/" v "/")) uni[k] = uni[k] (uni[k] ? "/" : "") v }
-    function acc(ns, key, d,   k, dk) { k = ns SUBSEP key; cnt[k]++
+    function acc(ns, key, d, io,   k, dk) { k = ns SUBSEP key; cnt[k]++
+        if (io == "I") cin[k]++; else cout[k]++
         if (d != "") { dk = k SUBSEP d; dd[dk]++
+            if (io == "I") ddi[dk]++; else ddo[dk]++
             if (!(dk in dseen)) { dseen[dk]=1; dlist[k] = dlist[k] (dlist[k]?",":"") d }
             if (!(k in fst) || d < fst[k]) fst[k]=d
             if (!(k in lst) || d > lst[k]) lst[k]=d } }
@@ -82,96 +85,106 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
     {
         m = $5
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) d = ""
-        # --- the inbound-connection lines ---
+        # --- the connection lines ---
         if (!index(m, "had initiated a connection over ")) next
         if (!match(m, /had initiated a connection over [A-Za-z0-9]+/)) next
         proto = substr(m, RSTART + 32, RLENGTH - 32)   # 32 = length of "had initiated a connection over "
         un = qval(m, "login name ", DQ)
+        # THE DIRECTION (2026-09-29): a partner connecting IN logs its login
+        # name; SecureTransport opening a connection OUT logs login name ""
+        # (bin/logons.sh books those as OUR outbound connections, the Remote
+        # address being the TARGET) — until this day every line counted as
+        # inbound, and the Whitelist audit / Cleanup backlog read our
+        # outbound targets as partner source addresses
+        io = (un != "") ? "I" : "O"
         an = qval(m, "associated with account ", DQ)
         if (an == "") an = "(none)"
         addr = ""
         if (match(m, /Remote address: [^ ]+/)) { addr = substr(m, RSTART + 16, RLENGTH - 16); sub(/[.,;]+$/, "", addr) }
         if (addr == "") addr = "(none)"
         line = lvlname($3) " " compname($4) "  " substr(m, 1, 200)
-        conns++
-
-        acc("P", proto, d); addline("P" SUBSEP proto, $1 " " $2, line)
-        acc("A", an, d);    addline("A" SUBSEP an, $1 " " $2, line)
-        acc("S", addr, d);  addline("S" SUBSEP addr, $1 " " $2, line)
+        conns++; if (io == "I") cin_t++; else cout_t++
+        if (!(proto in PS)) { PS[proto] = 1; np++ }
+        acc("A", an, d, io);   addline("A" SUBSEP an, $1 " " $2, line)
+        acc("S", addr, d, io); addline("S" SUBSEP addr, $1 " " $2, line)
         addset("A" SUBSEP an, proto); addset("S" SUBSEP addr, proto)
         if (!((an SUBSEP addr) in aad)) { aad[an SUBSEP addr]=1; an_addr[an]++ }
         if (!((addr SUBSEP an) in saa)) { saa[addr SUBSEP an]=1; s_acct[addr]++ }
         if (d != "") {
             yseen[d] = 1; yt[d]++
+            if (io == "I") yi[d]++; else yx[d]++
             if (proto == "SSH") ys[d]++; else if (proto == "PESIT") yp[d]++
             else if (proto == "FTP") yf[d]++; else yo[d]++
         }
     }
     END {
-        np=0; na=0; ns=0
+        na=0; ns=0
         for (k in cnt) {
             split(k, a, SUBSEP); nsp=a[1]; key=a[2]
             m2 = split(dlist[k], dz, ","); bk=""
-            for (i=1;i<=m2;i++){ dd2=dz[i]; bk=bk (bk?",":"") dd2 ":" dd[k SUBSEP dd2] }
-            if (nsp == "P") { np++
-                printf "P\t%s\t%d\t%s\t%s\t%s\t%s\n", key, cnt[k], bk, fst[k], lst[k], lastlines(k) }
-            else if (nsp == "A") { na++
-                printf "A\t%s%s\t%d\t%s\t%d\t%s\t%s\t%s\t%s\n", acctlink(key), key, cnt[k], uni[k], an_addr[key]+0, bk, fst[k], lst[k], lastlines(k) }
+            for (i=1;i<=m2;i++){ dd2=dz[i]; bk=bk (bk?",":"") dd2 ":" dd[k SUBSEP dd2] ":" (ddi[k SUBSEP dd2]+0) ":" (ddo[k SUBSEP dd2]+0) }
+            if (nsp == "A") { na++
+                printf "A\t%s%s\t%d\t%d\t%d\t%s\t%d\t%s\t%s\t%s\t%s\n", acctlink(key), key, cnt[k], cin[k]+0, cout[k]+0, uni[k], an_addr[key]+0, bk, fst[k], lst[k], lastlines(k) }
             else if (nsp == "S") { ns++
-                printf "S\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t%s\n", key, cnt[k], s_acct[key]+0, uni[k], bk, fst[k], lst[k], lastlines(k) }
+                printf "S\t%s\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\n", key, cnt[k], cin[k]+0, cout[k]+0, s_acct[key]+0, uni[k], bk, fst[k], lst[k], lastlines(k) }
         }
         ndays=0
         for (d in yseen) { ndays++
-            printf "Y\t%s\t%d\t%d\t%d\t%d\t%d\n", d, ys[d]+0, yp[d]+0, yf[d]+0, yo[d]+0, yt[d]+0 }
-        printf "TOT\t%d\t%d\t%d\t%d\t%d\n", conns+0, np, na, ns, ndays
+            ts_t += ys[d]; tp_t += yp[d]; tf_t += yf[d]; to_t += yo[d]   # the per-day TOTAL row sums
+            printf "Y\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", d, yi[d]+0, yx[d]+0, ys[d]+0, yp[d]+0, yf[d]+0, yo[d]+0, yt[d]+0 }
+        printf "TOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", conns+0, np+0, na, ns, ndays, cin_t+0, cout_t+0, ts_t+0, tp_t+0, tf_t+0, to_t+0
     }
 ' <(known_names KA "$TACCT") "$PARSED")
 
-IFS=$'\t' read -r _ t_conn n_proto n_acct n_addr n_days <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
+IFS=$'\t' read -r _ t_conn n_proto n_acct n_addr n_days t_in t_out t_ssh t_pesit t_ftp t_other <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
+
+# THE INBOUND-ADDRESS SIDECAR (2026-09-29): every address with at least one
+# INBOUND connection line, addr ⇥ count, uncapped — the Whitelist audit and
+# the Cleanup backlog read it (with the SSH logon evidence of
+# _logons-hosts.tsv) instead of the page's top-50 By address table
+INADDR="$REPORTS_DIR/_inbound-addr.tsv"
+printf '%s\n' "$agg" | awk -F'\t' '$1 == "S" && $4 + 0 > 0 { print $2 "\t" $4 }' | LC_ALL=C sort > "$INADDR.tmp" && mv "$INADDR.tmp" "$INADDR"
+
+TITLE_TXT='Connection volume'
+DESC_TXT='Connection volume per day, account and address, split In (a partner login connected to SecureTransport) and Out (SecureTransport connected to a partner).'
 if [ "${t_conn:-0}" -eq 0 ]; then
-    # No inbound-connection messages in this log window — write an EMPTY-STATE
-    # page (so the report still renders and its group-nav link never 404s).
-    echo "No inbound-connection messages found — writing an empty report." >&2
+    # No connection messages in this log window — write an EMPTY-STATE page
+    # (so the report still renders and its group-nav link never 404s).
+    echo "No connection messages found — writing an empty report." >&2
     {
-        printf 'TITLE\tInbound Connections\n'
-        printf 'DESC\tWho connects in to SecureTransport, over which protocol (SSH, PeSIT, FTP), from which addresses — the per-protocol inbound connection volume.\n'
-        printf 'KEYWORDS\tsource IP, partner address, protocol, connection volume\n'
-        printf 'INTRO\tNo inbound-connection messages in this log window.\n'
-        # one stub per table of the full report (2026-09-29: three since the
-        # Connections by protocol table went), so the merged Connections tabs
-        # keep their places
-        for _t in 'Connections per day' 'By account' 'By source address'; do
+        printf 'TITLE\t%s\n' "$TITLE_TXT"
+        printf 'DESC\t%s\n' "$DESC_TXT"
+        printf 'KEYWORDS\tsource IP, target address, partner address, protocol, connection volume, inbound, outbound\n'
+        printf 'INTRO\tNo connection messages in this log window.\n'
+        # one stub per table of the full report, so the merged Connections
+        # tabs keep their places
+        for _t in 'Connections per day' 'By account' 'By address'; do
             printf 'TABLE\t%s\twide\n' "$_t"
             printf 'HEAD\t%s\n' "$_t"
             printf 'KIND\ttext\n'
-            printf 'ROW\tNo inbound-connection messages in this data window.\n'
+            printf 'ROW\tNo connection messages in this data window.\n'
         done
-        printf 'SUMMARY\tInbound connections: 0\n'
+        printf 'SUMMARY\tConnections: 0\n'
         printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     exit 0
 fi
 
-# The four row writers print STRAIGHT to stdout inside the page block below —
-# a `rows+=$(printf …)` per row forks a subshell per row for nothing.
-proto_rows() {
-    while IFS=$'\t' read -r _ proto count bk fst lst lines; do
-        [ -z "$proto" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$proto" "$count" "$fst" "$lst" "$bk" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^P\t' | sort -t"$(printf '\t')" -k3,3nr -k2,2)"
-}
+nz() { [ "${1:-0}" = 0 ] && printf '' || printf '%s' "$1"; }   # a count cell shows blank, never 0
 
+# The row writers print STRAIGHT to stdout inside the page block below —
+# a `rows+=$(printf …)` per row forks a subshell per row for nothing.
 day_rows() {
-    while IFS=$'\t' read -r _ d s p f o t; do
+    while IFS=$'\t' read -r _ d i o s p f x t; do
         [ -z "$d" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\n' "$d" "$s" "$p" "$f" "$o" "$t"
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$d" "$(nz "$i")" "$(nz "$o")" "$(nz "$s")" "$(nz "$p")" "$(nz "$f")" "$(nz "$x")" "$t"
     done <<< "$(printf '%s\n' "$agg" | grep $'^Y\t' | sort -t"$(printf '\t')" -k2,2)"
 }
 
 acct_rows() {
-    while IFS=$'\t' read -r _ name count protos naddr bk fst lst lines; do
+    while IFS=$'\t' read -r _ name count ci co protos naddr bk fst lst lines; do
         [ -z "$name" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$name" "$count" "$protos" "$naddr" "$fst" "$lst" "$bk" "$lines"
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$name" "$(nz "$ci")" "$(nz "$co")" "$count" "$protos" "$naddr" "$fst" "$lst" "$bk" "$lines"
     done <<< "$(printf '%s\n' "$agg" | grep $'^A\t' | sort -t"$(printf '\t')" -k3,3nr -k2,2)"
 }
 
@@ -180,55 +193,53 @@ acct_rows() {
 # is built there — right after the rows are written).
 shown_addr=0
 shown_conns=0
+shown_in=0
+shown_out=0
 addr_rows() {
-    while IFS=$'\t' read -r _ addr count naccts protos bk fst lst lines; do
+    while IFS=$'\t' read -r _ addr count ci co naccts protos bk fst lst lines; do
         [ -z "$addr" ] && continue
         [ "$shown_addr" -ge 50 ] && break
-        shown_addr=$((shown_addr + 1)); shown_conns=$((shown_conns + count))
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$addr" "$count" "$naccts" "$protos" "$fst" "$lst" "$bk" "$lines"
+        shown_addr=$((shown_addr + 1)); shown_conns=$((shown_conns + count)); shown_in=$((shown_in + ci)); shown_out=$((shown_out + co))
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$addr" "$(nz "$ci")" "$(nz "$co")" "$count" "$naccts" "$protos" "$fst" "$lst" "$bk" "$lines"
     done <<< "$(printf '%s\n' "$agg" | grep $'^S\t' | sort -t"$(printf '\t')" -k3,3nr -k2,2)"
 }
 
 {
-    printf 'TITLE\tInbound Connections\n'
-    printf 'DESC\tWho connects in to SecureTransport, over which protocol (SSH, PeSIT, FTP), from which addresses — the per-protocol inbound connection volume.\n'
-    printf 'KEYWORDS\tsource IP, partner address, protocol, connection volume\n'
-    printf 'INTRO\t**%s** inbound connection(s) over **%s** protocol(s) from **%s** account(s) and **%s** source address(es) across **%s** day(s). This is connection VOLUME — every "had initiated a connection" line, before any transfer happens; Auth Activity counts SSH authentication successes and Logon the screening funnel. Click a row for its 10 most recent connection lines.\n' \
-        "$t_conn" "$n_proto" "$n_acct" "$n_addr" "$n_days"
+    printf 'TITLE\t%s\n' "$TITLE_TXT"
+    printf 'DESC\t%s\n' "$DESC_TXT"
+    printf 'KEYWORDS\tsource IP, target address, partner address, protocol, connection volume, inbound, outbound\n'
+    printf 'INTRO\t**%s** connection(s) — **%s** in, **%s** out — over **%s** protocol(s) from **%s** account(s) and **%s** address(es) across **%s** day(s). This is connection VOLUME — every "had initiated a connection" line, before any transfer happens.\n' \
+        "$t_conn" "${t_in:-0}" "${t_out:-0}" "$n_proto" "$n_acct" "$n_addr" "$n_days"
 
-    # (the Connections by protocol table went 2026-09-29: its counts are the
-    # per-day table's column totals — and the per-protocol split lives there)
     printf 'TABLE\tConnections per day\twide\n'
-    printf 'HEAD\tDate\tSSH\tPESIT\tFTP\tOther\tTotal\n'
-    printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\n'
+    printf 'HEAD\tDate\tIn\tOut\tSSH\tPESIT\tFTP\tOther\tTotal\n'
+    printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\tnum\tnum\n'
     day_rows
-    printf 'TOTAL\tTotal (%s day(s))\t\t\t\t\t@{class=num}%s\n' "$n_days" "$t_conn"
-    printf 'NOTE\tThe daily protocol mix. A protocol falling silent, or a sudden connection spike from one day to the next, stands out here first.\n'
+    printf 'TOTAL\tTotal (%s day(s))\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\n' \
+        "$n_days" "$(nz "${t_in:-0}")" "$(nz "${t_out:-0}")" "$(nz "${t_ssh:-0}")" "$(nz "${t_pesit:-0}")" "$(nz "${t_ftp:-0}")" "$(nz "${t_other:-0}")" "$t_conn"
 
     printf 'TABLE\tBy account\twide\n'
-    printf 'HEAD\tAccount\tConnections\tProtocols\tAddresses\tFirst\tLast\n'
-    printf 'KIND\tmono\tnum\ttext\tnum\ttext\ttext\n'
-    printf 'RECALC\t-\ts0\t-\t-\t-\t-\n'
+    printf 'HEAD\tAccount\tIn\tOut\tConnections\tProtocols\tAddresses\tFirst\tLast\n'
+    printf 'KIND\tmono\tnum\tnum\tnum\ttext\tnum\ttext\ttext\n'
+    printf 'RECALC\t-\ts1\ts2\ts0\t-\t-\t-\t-\n'
     acct_rows
-    printf 'TOTAL\tTotal (%s account(s))\t@{class=num}%s\t\t\t\t\n' "$n_acct" "$t_conn"
-    printf 'NOTE\tConnections per account (as logged; an account known from the transfer logs links to its detail page). Addresses is the distinct source addresses seen for that account over the whole period — it does not re-aggregate under the date filter. Click an account for its 10 most recent connection lines.\n'
+    printf 'TOTAL\tTotal (%s account(s))\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t\t\t\t\n' "$n_acct" "$(nz "${t_in:-0}")" "$(nz "${t_out:-0}")" "$t_conn"
 
-    printf 'TABLE\tBy source address\twide\n'
-    printf 'HEAD\tAddress\tConnections\tAccounts\tProtocols\tFirst\tLast\n'
-    printf 'KIND\tmono\tnum\tnum\ttext\ttext\ttext\n'
-    printf 'RECALC\t-\ts0\t-\t-\t-\t-\n'
+    printf 'TABLE\tBy address\twide\n'
+    printf 'HEAD\tAddress\tIn\tOut\tConnections\tAccounts\tProtocols\tFirst\tLast\n'
+    printf 'KIND\tmono\tnum\tnum\tnum\tnum\ttext\ttext\ttext\n'
+    printf 'RECALC\t-\ts1\ts2\ts0\t-\t-\t-\t-\n'
     addr_rows
     if [ "$shown_addr" -lt "${n_addr:-0}" ]; then
         addr_total_label="Top $shown_addr of $n_addr address(es)"
     else
         addr_total_label="Total ($n_addr address(es))"
     fi
-    printf 'TOTAL\t%s\t@{class=num}%s\t\t\t\t\n' "$addr_total_label" "$shown_conns"
-    printf 'NOTE\tThe partners'\'' SOURCE addresses (what actually connects in — the address the whitelist allows), not the configured outbound endpoints. Accounts is the distinct accounts seen from that address over the whole period. Top 50 by connections; the total row sums the shown rows. Click an address for its 10 most recent connection lines.\n'
+    printf 'TOTAL\t%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t\t\t\t\n' "$addr_total_label" "$(nz "$shown_in")" "$(nz "$shown_out")" "$shown_conns"
 
-    printf 'SUMMARY\tConnections: %s  |  Protocols: %s  |  Accounts: %s  |  Addresses: %s\n' \
-        "$t_conn" "$n_proto" "$n_acct" "$n_addr"
+    printf 'SUMMARY\tConnections: %s (in %s, out %s)  |  Protocols: %s  |  Accounts: %s  |  Addresses: %s\n' \
+        "$t_conn" "${t_in:-0}" "${t_out:-0}" "$n_proto" "$n_acct" "$n_addr"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
-echo "Data written to $OUT ($t_conn connection(s), $n_acct account(s), $n_addr address(es))." >&2
+echo "Data written to $OUT ($t_conn connection(s): $t_in in, $t_out out; $n_acct account(s), $n_addr address(es))." >&2

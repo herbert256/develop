@@ -137,7 +137,7 @@ n_shown=0
 if [ "$n_lines" -gt 0 ]; then n_shown=$(lin_rows | grep -c $'^ROW\t' || true); fi
 
 {
-    printf 'TITLE\tAdvanced Routing errors\n'
+    printf 'TITLE\tRouting errors\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tThe Advanced Routing errors a route gives up on — Could not send file (AR0074), Publish to account failed (ARPA0001), Post client action error (ARRC0009), Route stopped (ARSP0001) — one row per line, newest first, with the subscription or account and the file.\n'
     printf 'KEYWORDS\tadvanced routing,routing errors,could not send file,AR0074,send failed,transfer site,after attempting,publish to account failed,publishing the file,ARPA0001,route stopped,post client action,ARRC0009,error deleting the file,post-processing,ARSP0001,step failure,deploy,configuration defect,delivery,cft,push,uc1,uc2,route\n'
     if [ "$n_lines" -eq 0 ]; then

@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Missing Entities — Cloud Reports</title>
+<title>Help: Missing entities — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,27 +15,29 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Missing Entities</h1>
+<h1>Missing entities</h1>
 <h2>What it shows</h2>
-<p>Entity names that appear in <em>server-log</em> messages but never in the <em>transfer</em> log &mdash; one tab per type, one row per name with its mention count. Something alive on the platform (usually in a failed-connection message) that never produced a transfer; Entity Search and Cross reference tint such a name red when nothing configures it.</p>
+<ul>
+<li>Names the <strong>server</strong> log mentions but the <strong>transfer</strong> log never recorded: something alive on the platform (usually in a failed-connection message) that never produced a transfer. One row per name with its <strong>Server-log mentions</strong>.</li>
+</ul>
 <h2>Tabs</h2>
 <ul>
-<li><strong>Subscriptions</strong> &mdash; <code>UC&hellip;</code> names in server messages. The server truncates long names, so a name counts as known when it is a prefix of a real one.</li>
-<li><strong>Accounts</strong> &mdash; names from <code>associated with account "&hellip;"</code>, checked against every transfer row&rsquo;s account (not only first-row accounts, so a destination-side-only account is not falsely flagged).</li>
-<li><strong>Hosts</strong> &mdash; the outgoing side: configured endpoint addresses (the FlowManager partner <code>host</code> fields, the servers we connect to) named in messages such as &ldquo;tried to connect to remote host &hellip;&rdquo;. A hit = a configured endpoint the server tried to reach that never produced a transfer.</li>
-<li><strong>Whitelist</strong> &mdash; the incoming side: whitelisted partner addresses (the FlowManager <code>AllowIP</code> fields) named in messages. A hit = an allowed address that connected, or tried to, without ever producing a transfer.</li>
-<li><strong>Logins</strong> &mdash; names from <code>login name "&hellip;"</code>, checked against every transfer row&rsquo;s login.</li>
+<li><strong>Subscriptions</strong> &mdash; <code>UC&hellip;</code> names in Transfer Manager messages; the server truncates long names, so a prefix of a logged subscription counts as known. Rows carry the subscription&rsquo;s result colour.</li>
+<li><strong>Accounts</strong> &mdash; <code>account "&hellip;"</code> mentions (<code>@login</code> stripped), checked against every transfer row&rsquo;s account.</li>
+<li><strong>Hosts</strong> &mdash; configured outbound endpoints (the servers we connect to) named in messages, never a transfer&rsquo;s remote host.</li>
+<li><strong>Whitelist</strong> &mdash; whitelisted partner addresses (<code>AllowIP</code>) named in any component&rsquo;s messages: an allowed address that connected, or tried to, without a transfer.</li>
+<li><strong>Logins</strong> &mdash; <code>login name "&hellip;"</code> mentions, checked against every transfer row&rsquo;s login.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Only Transfer Manager (runtime) lines count; the admin/audit deploy trail names entities too, but that is configuration activity, not traffic.</li>
-<li>The known list of every tab is the transfer parse cache itself (every technical row&rsquo;s attribution), so the comparison covers everything the transfer log ever recorded.</li>
-<li>Hosts and Whitelist look only for configured endpoints and whitelisted addresses, so every hit is directly actionable.</li>
+<li>The known set is the whole transfer log, every leg&rsquo;s attribution included.</li>
+<li>Hosts and Whitelist look only for configured endpoints and whitelisted addresses, so every hit is actionable.</li>
+<li>Mentions re-total under the date filter.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
 <li>Click a row for its 10 most recent server-log lines.</li>
-<li>The <strong>&#8599;</strong> next to a subscription, account, login or host opens that entity&rsquo;s detail page; a name with no detail page (not configured, or truncated by the server) has none. Whitelisted IPs have no detail pages.</li>
+<li>The <strong>&#8599;</strong> beside a subscription, account, login or host opens its detail page; a name without one (not configured, or truncated) and a whitelist address have none.</li>
 </ul>
 </main>
 </body>

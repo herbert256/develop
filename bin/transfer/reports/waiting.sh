@@ -7,15 +7,15 @@
 # _files.tsv — arrived and staged, not collected yet; once the nightly File
 # Maintenance retention sweep (~11 days) deletes the staged copy before any
 # pickup, bin/expire-files.sh flips it to "Expired" (col 22 = the deletion
-# timestamp). Four views:
+# timestamp). Three views:
 #   Waiting now           per subscription: how many Files sit staged, since
 #                         when, and for how long (vs the dataset's end).
 #   Files waiting longest the individual staged Files, oldest first.
-#   Expired               per subscription: staged Files DELETED before any
-#                         pickup — never delivered (col 22 timestamps).
 #   Pickup wait           for the files that WERE collected: how long the
 #                         partner took (col 21 wait_ms — the staging->collect
 #                         gap parse.sh EXCLUDES from Duration).
+# (The Expired per-subscription table went 2026-09-29 — the Expired report
+# carries the same rows; only its counts stay, in the SUMMARY.)
 # Plus four second-pass views (2026-08):
 #   Staged backlog        the day-by-day staged-but-uncollected inventory,
 #                         reconstructed from every staged File's occupancy
@@ -45,7 +45,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # TRANSFER lib, not the analyses one: this is a transfer-DATA report (it reads
-# the transfer caches and writes data/<env>/transfer/reports/). It lives HERE
+# the transfer caches and writes data/transfer/reports/). It lives HERE
 # because its page sits in the ANALYSES menu, in the Subscriptions group — the
 # same arrangement as cross-reference.sh. bin/transfer/reports.sh still runs it.
 source "$SCRIPT_DIR/../lib.sh"
@@ -75,7 +75,6 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # Stream _files.tsv grouped by subscription, chronological inside each group.
 # Emits pipe-separated (file names go LAST — they may hold any byte but TAB):
 #   W|oldsec|site|nwait|oldest_dt|wait_for|wait_sec|newest_dt|ncoll|drill
-#   X|site|nexp|first_dt|last_dt|last_del|drill
 #   P|site|ncoll|median|avg|max|b1h|b24|bgt
 #   F|stagesec|staged_dt|site|acct|bytes|size|wait_for|wait_sec|coreid|file
 # (wait_sec = the Waiting for cell's SORT KEY: the humanized text does not sort)
@@ -109,10 +108,7 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COR
             W[wsites] = oldsec "|" site "|" nw "|" olddt "|" newdt "|" nc "|" buildlist(top["W" SUBSEP site])
             if (g_oldsec == 0 || oldsec < g_oldsec) { g_oldsec = oldsec; g_olddt = olddt; g_oldsite = site }
         }
-        if (nx > 0) {
-            xsites++; xtot += nx
-            X[xsites] = site "|" nx "|" xolddt "|" xnewdt "|" xlastdel "|" buildlist(top["X" SUBSEP site])
-        }
+        if (nx > 0) { xsites++; xtot += nx }   # the SUMMARY Expired counts
         if (nc > 0) {
             csites++; ctot += nc
             m = nc; nsort(WV, 1, m)
@@ -124,7 +120,7 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COR
     {
         if ($12 != site) { flush()
             site = $12; nw = 0; olddt = ""; oldsec = 0; newdt = ""
-            nx = 0; xolddt = ""; xnewdt = ""; xlastdel = ""
+            nx = 0
             nc = 0; split("", WV); wsum = 0; wmax = 0; c1h = 0; c24 = 0; cgt = 0 }
         if ($6 > g_lastsk) { g_lastsk = $6; g_lastsec = tsec($4, $5); g_lastdt = $4 " " substr($5, 1, 8) }
         if ($2 == "Waiting") {
@@ -136,11 +132,7 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COR
             FL[++nf] = s "|" $4 " " substr($5, 1, 8) "|" site "|" $3 "|" ($8 + 0) "|" hsize($8 + 0) "|" $1 "|" $11
         } else if ($2 == "Expired") {
             nx++
-            if (xolddt == "") xolddt = $4 " " substr($5, 1, 8)   # sortkey-sorted: first = oldest
-            xnewdt = $4 " " substr($5, 1, 8)
-            if ($22 > xlastdel) xlastdel = $22
-            addtop("X" SUBSEP site, $6, $4 " " $5, $1)
-        } else if ($21 != "") {
+        } else if ($21 != "" && $2 == "Processed") {   # COLLECTED = a delivered File with a pickup wait — the partner table and UC status Pickups rule (2026-09-29: a Failed File with a wait counted here too)
             nc++
             wv = $21 / 1000
             # (wv "") + 0: the value as the former space-joined list held it
@@ -157,7 +149,6 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COR
             ws = int(g_lastsec - a[1]); if (ws < 0) ws = 0
             printf "W|%s|%s|%s|%s|%s|%d|%s|%s|%s\n", a[1], a[2], a[3], a[4], hdur(ws), ws, a[5], a[6], a[7]
         }
-        for (i = 1; i <= xsites; i++) print "X|" X[i]
         for (i = 1; i <= csites; i++) {
             m = split(P[i], a, "|")
             printf "P|%s|%s|%s|%s|%s|%s|%s|%s\n", a[1], a[2], hdur(a[3]), hdur(a[4]), hdur(a[5]), a[6], a[7], a[8]
@@ -380,17 +371,16 @@ IFS='|' read -r _ n_bdays bk_peak bk_peakdate bk_end <<< "$(printf '%s\n' "$agg2
 sum_nc=0
 n_wrows=0
 n_shown=0; sum_bytes=0
-n_xrows=0
 b1h_sum=0; b24_sum=0; bgt_sum=0; n_prows=0
 
 oldest_cell="-"
 [ -n "$oldest_dt" ] && oldest_cell="$oldest_dt ($oldest_site)"
 
 {
-    printf 'TITLE\tWaiting Files\n'
+    printf 'TITLE\tWaiting\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tUC2 files staged for pickup: which subscriptions have Files the partner has not collected yet, how long they have been waiting, and how fast partners usually collect.\n'
     printf 'KEYWORDS\tuc2, pickup, collect, waiting, staged, routing, not collected, partner wait, expired, deleted, retention, file maintenance, never delivered, backlog, inventory, expire soon, at risk, call the partner, percentile, median, p95, near miss, weekly trend, pickup speed\n'
-    printf 'INTRO\tA UC2 file is COLLECTED by the partner: it arrives from CFT in three quick legs (PeSIT in, routing out, routing in), then sits STAGED until the partner dials in over SSH and picks it up. A file still staged at the end of the data window has outcome **Waiting** — not an error, just not collected yet. A staged file the nightly File Maintenance retention sweep (~11 days) DELETED before any pickup is **Expired** — never delivered. Right now **%s** File(s) across **%s** subscription(s) are waiting (oldest staged **%s**), **%s** File(s) across **%s** subscription(s) have expired, and **%s** staged File(s) were collected. The pickup wait is EXCLUDED from every UC2 Duration figure on this site. Below the four state tables: the day-by-day **staged backlog** curve (peak **%s** file(s) on %s), the **Will expire next** call list, and the per-partner and per-week **pickup-wait** statistics. Click a row for the 10 most recent Files.\n' \
+    printf 'INTRO\tA UC2 file is COLLECTED by the partner: it arrives from CFT in three quick legs (PeSIT in, routing out, routing in), then sits STAGED until the partner dials in over SSH and picks it up. A file still staged at the end of the data window has outcome **Waiting** — not an error, just not collected yet. A staged file the nightly File Maintenance retention sweep (~11 days) DELETED before any pickup is **Expired** — never delivered. Right now **%s** File(s) across **%s** subscription(s) are waiting (oldest staged **%s**), **%s** File(s) across **%s** subscription(s) have expired, and **%s** staged File(s) were collected. The pickup wait is EXCLUDED from every UC2 Duration figure on this site. Below the three state tables: the day-by-day **staged backlog** curve (peak **%s** file(s) on %s), the **Will expire next** call list, and the per-partner and per-week **pickup-wait** statistics. Click a row for the 10 most recent Files.\n' \
         "$n_wait" "$n_wsites" "$oldest_cell" "$n_exp" "$n_xsites" "$n_coll" "$bk_peak" "${bk_peakdate:--}"
 
     # default sort = Waiting for descending (2026-09-21, user request): declared
@@ -413,7 +403,7 @@ oldest_cell="-"
         printf 'ROW\t@{colspan=6}No Waiting Files — every staged UC2 File in this data window was collected.\n'
     fi
     printf 'TOTAL\tTotal (%s subscriptions)\t@{class=num warn}%s\t%s\t\t\t@{class=num}%s\n' "$n_wsites" "$n_wait" "$oldest_dt" "$sum_nc"
-    printf 'NOTE\tA **Waiting** File arrived and was staged (its last leg is the Inbound routing one) but no partner collect leg followed — and its staged copy has NOT been deleted yet, so the partner can still pick it up (once the retention sweep removes it, the File moves to the Expired table below). **Waiting for** counts from the staging moment to the dataset'\''s last record (%s) — a file may have been collected after the export. Collected = the same subscription'\''s Files that WERE picked up. Sorted oldest-waiting first. Click a row for the 10 most recent waiting Files.\n' "$last_dt"
+    printf 'NOTE\tA **Waiting** File arrived and was staged (its last leg is the Inbound routing one) but no partner collect leg followed — and its staged copy has NOT been deleted yet, so the partner can still pick it up (once the retention sweep removes it, the File moves to the Expired report). **Waiting for** counts from the staging moment to the dataset'\''s last record (%s) — a file may have been collected after the export. Collected = the same subscription'\''s Files that WERE picked up. Sorted oldest-waiting first. Click a row for the 10 most recent waiting Files.\n' "$last_dt"
 
     # the same default sort here: Waiting for descending (sort=5:-1 on the
     # sortval) — without it the Staged date column opened the table NEWEST first
@@ -490,7 +480,7 @@ oldest_cell="-"
         printf 'ROW\t@{colspan=4}No Waiting File has been staged for 9 days or more — nothing is close to the retention sweep.\n'
     fi
     printf 'TOTAL\tTotal (%s subscriptions)\t@{class=num warn}%s\t\t\n' "$n_erows" "$e_files_sum"
-    printf 'NOTE\t**Call the partner today.** These Waiting Files have been staged for **9 days or more** (vs the dataset'\''s last day) — the nightly File Maintenance retention sweep deletes staged copies after ~11 days, so without a pickup in the next day or two they move to the Expired table above and are never delivered. Age is the oldest File'\''s. Click a row for the 10 most recent Files at risk.\n'
+    printf 'NOTE\t**Call the partner today.** These Waiting Files have been staged for **9 days or more** (vs the dataset'\''s last day) — the nightly File Maintenance retention sweep deletes staged copies after ~11 days, so without a pickup in the next day or two they move to the Expired report and are never delivered. Age is the oldest File'\''s. Click a row for the 10 most recent Files at risk.\n'
 
     n_qrows=0; q_files_sum=0; q_nm_sum=0
     printf 'TABLE\tPickup wait percentiles per partner\twide\tnofilter\n'
@@ -507,7 +497,7 @@ oldest_cell="-"
         printf 'ROW\t@{colspan=6}No collected UC2 pickups in this data window.\n'
     fi
     printf 'TOTAL\tTotal (%s partners)\t@{class=num}%s\t\t\t\t@{class=num warn}%s\n' "$n_qrows" "$q_files_sum" "$q_nm_sum"
-    printf 'NOTE\tCollected Files rolled up to the PARTNER (the site-wide UNION attribution: a File counts for every partner of its subscription plus the host-resolved one, so the partner counts can sum past the collected total). Median = the typical pickup, **p95** = the slow tail, and **Waited over 8 days** are the near-misses — collected, but within a couple of days of the ~11-day retention sweep. A partner with a fat p95 or near-misses is one pause away from the Expired table.\n'
+    printf 'NOTE\tCollected Files rolled up to the PARTNER (the site-wide UNION attribution: a File counts for every partner of its subscription plus the host-resolved one, so the partner counts can sum past the collected total). Median = the typical pickup, **p95** = the slow tail, and **Waited over 8 days** are the near-misses — collected, but within a couple of days of the ~11-day retention sweep. A partner with a fat p95 or near-misses is one pause away from the Expired report.\n'
 
     n_krows=0; k_files_sum=0
     printf 'TABLE\tPickup wait per week — busiest subscriptions\twide\tnofilter\n'
@@ -523,7 +513,7 @@ oldest_cell="-"
         printf 'ROW\t@{colspan=5}No collected UC2 pickups in this data window.\n'
     fi
     printf 'TOTAL\tTotal (%s subscription-weeks)\t\t@{class=num}%s\t\t\n' "$n_krows" "$k_files_sum"
-    printf 'NOTE\tThe pickup wait per **staged week** (Monday-start) for the 10 subscriptions with the most collected Files, busiest first. The median shows the typical pickup; the **average** exposes a pause — a partner that stops collecting for days drags the average up long before the median moves, then both fall back once the backlog is cleared. Subscriptions whose staged Files were never collected have no pickup waits and are absent (the Waiting/Expired tables above carry them).\n'
+    printf 'NOTE\tThe pickup wait per **staged week** (Monday-start) for the 10 subscriptions with the most collected Files, busiest first. The median shows the typical pickup; the **average** exposes a pause — a partner that stops collecting for days drags the average up long before the median moves, then both fall back once the backlog is cleared. Subscriptions whose staged Files were never collected have no pickup waits and are absent (the Waiting table above and the Expired report carry them).\n'
 
     printf 'SUMMARY\tWaiting Files: %s across %s subscription(s)  |  Expired (deleted before pickup): %s  |  Oldest staged: %s  |  Collected pickups: %s  |  Peak backlog: %s  |  Expiring next: %s File(s) in %s subscription(s)  |  Waited over 8 days: %s  |  Dataset end: %s\n' \
         "$n_wait" "$n_wsites" "$n_exp" "${oldest_dt:--}" "$n_coll" "$bk_peak" "$e_files_sum" "$n_erows" "$q_nm_sum" "$last_dt"

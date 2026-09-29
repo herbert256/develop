@@ -3,11 +3,13 @@
 # reports.sh — run every transfer report script, each of which writes
 # data/<name>.rpt. Reports ONLY — parsing is a separate step (parse.sh); this
 # does not build the cache. The reports run IN PARALLEL over a core-count job
-# pool, in TWO phases: phase 1 is every independent report (details.sh
-# included — it is the longest and paces the wall clock); phase 2 is
-# showseen.sh (lifts rows from the entity summary .rpt files and resolves
-# links through details/*/_slugmap.tsv) and entity-search.sh (reads the detail
-# .rpt files), which both need phase 1 complete. The parse caches and the
+# pool, in TWO phases: phase 1 is every independent report (NOT details.sh —
+# the longest report step is its own bin/build.sh step, run in the background
+# BESIDE phase 1); phase 2 is showseen.sh (lifts rows from the entity summary
+# .rpt files and resolves links through details/*/_slugmap.tsv) and
+# ranking.sh (reads details.sh's per-type ranking sidecars), which both need
+# phase 1 AND details.sh complete. (entity-search.sh runs in the analyses
+# stage — see the note at the end.) The parse caches and the
 # config caches are built by bin/build.sh before this runs. Strict mode plus a
 # fail-collecting pool so any failing report aborts the run instead of leaving
 # a stale .rpt behind and exiting success.
@@ -18,7 +20,7 @@ source "$SCRIPT_DIR/lib.sh"
 source "$SCRIPT_DIR/../timing.sh"   # timed: one TIME line per pooled report (2026-09-27)
 rm -f "$REPORTS_DIR"/*.rpt.tmp   # orphaned atomic-write temps from a killed run
 
-NJOBS=${AXWAY_NJOBS:-$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 4 )}   # AXWAY_NJOBS: bin/build.sh caps the parallel production chain
+NJOBS=${AXWAY_NJOBS:-$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 4 )}   # AXWAY_NJOBS: an optional override of the pool size (nothing sets it; default = the core count)
 case $NJOBS in ''|*[!0-9]*) NJOBS=4 ;; esac
 
 POOL_PIDS=()
@@ -115,9 +117,10 @@ pool_run "$SCRIPT_DIR/reports/month-stats.sh"   # Month stats: this / previous m
 # the transfer reports dir)
 pool_run "$SCRIPT_DIR/reports/av-scan.sh"
 pool_run "$SCRIPT_DIR/reports/security-params.sh"
-# (details.sh is its OWN bin/build.sh step since 2026-07 — it runs BEFORE
-# this orchestrator there; the phase-2 scripts below read its outputs, so a
-# MANUAL run needs bin/transfer/reports/details.sh first)
+# (details.sh is its OWN bin/build.sh step since 2026-07 — it runs in the
+# background BESIDE phase 1 there (AXWAY_WAIT_FAILED=1: it waits for the
+# .phase1-pool-done signal below); the phase-2 scripts read its outputs, so a
+# MANUAL run of phase 2 needs bin/transfer/reports/details.sh first)
 pool_run "$SCRIPT_DIR/reports/incoming-connections.sh"   # whitelisted-IP detail pages (details/incoming_connections/)
 pool_wait
 # the phase-1 POOL is done — failed.sh's _srvsubs-map.tsv is written: the

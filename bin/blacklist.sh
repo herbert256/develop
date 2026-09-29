@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# bin/blacklist.sh — the ONE reader for input/<env>/blacklist.txt, the platform-internal
+# bin/blacklist.sh — the ONE reader for input/blacklist.txt, the platform-internal
 # pseudo-entities (see that file's header for the format and the why).
 #
 # SOURCED, not run. Defines:
-#   BLACKLIST_FILE  the path (input/<env>/blacklist.txt — per environment since
+#   BLACKLIST_FILE  the path (input/blacklist.txt — per environment since
 #                   2026-08-31, user request; platform policy differs per estate)
 #   BLACKLIST_AWK   awk functions to inject into a program with string
 #                   concatenation, the COREIDS_AWK / LOGLINES_AWK idiom:
@@ -26,14 +26,16 @@
 #                       - an exact "drop" match, or
 #                       - a "keep" regex the value fails.
 #
-# Consumers: bin/transfer/parse.sh (the authoritative blanking) and
+# Consumers: bin/transfer/parse.sh (the authoritative blanking),
 # bin/server/reports/unknown-entities.sh (so the server side agrees about what
-# is internal). Those two are ALL of them: report.js has no client-side
+# is internal) and bin/server/reports/logon.sh (the platform-internal
+# pseudo-logins stay out of its Incoming rows). Those three are ALL of them:
+# report.js has no client-side
 # blacklist net and must not gain one (CLAUDE.md) — filtering happens entirely
 # at parse time.
 #
 SCRIPT_DIR_BL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# PER ENVIRONMENT since 2026-08-31 (user request): input/<env>/blacklist.txt —
+# PER ENVIRONMENT since 2026-08-31 (user request): input/blacklist.txt —
 # the two estates are different platforms with different internal values.
 BLACKLIST_FILE="${BLACKLIST_FILE:-$(cd "$SCRIPT_DIR_BL/.." && pwd)/input/blacklist.txt}"
 export BLACKLIST_FILE
@@ -65,5 +67,4 @@ function bl_blank(field, v) {
     if ((field in BL_KEEP) && v !~ BL_KEEP[field]) return 1
     return 0
 }
-function bl_keep_re(field) { return (field in BL_KEEP) ? BL_KEEP[field] : "" }
 '

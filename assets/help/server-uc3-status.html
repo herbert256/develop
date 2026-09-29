@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: UC3 status — Cloud Reports</title>
+<title>Help: UC status &rsaquo; UC3 — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,60 +15,36 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>UC3 status &mdash; polling partners</h1>
+<h1>UC status &rsaquo; UC3</h1>
 <h2>What it shows</h2>
-<p>The one report about <em>us polling partners</em>, five tables on one tab: <strong>UC3 status</strong> (every configured UC3 subscription &mdash; we connect out on a schedule and fetch what is waiting &mdash; in one of four statuses, the info boxes counting them), then <a href="#polls">Polls by subscription</a> and <strong>Remote directory listing failures</strong>, then <a href="#cronjobs">Configured cronjobs</a> and <strong>Schedules that never complete a poll</strong>.</p>
-<p>Siblings: <a href="server-uc1-status.html">UC1</a> (we push out), <a href="server-uc2-status.html">UC2</a> (the partner collects from us), <a href="server-uc4-status.html">UC4</a> (the partner delivers to us).</p>
-<h2>Status columns</h2>
 <ul>
-<li><strong>Status</strong> &mdash; one of four, a complete partition (below). <strong>Subscription</strong> &mdash; the configured name, linked to its detail page.</li>
-<li><strong>Files</strong> / <strong>OK</strong> / <strong>Error</strong> / <strong>Last file</strong> &mdash; Files pulled in, by outcome, and the newest one&rsquo;s date (<code>_files.tsv</code>); zero on a not-seen row.</li>
-<li><strong>Polls</strong> / <strong>Empty polls</strong> &mdash; poll results and how many found nothing; a high empty count is normal.</li>
-<li><strong>Problems</strong> &mdash; a connection failure or a failed directory listing.</li>
-<li><strong>Last log</strong> &mdash; the newest line of any counted kind, the ones that merely <em>prepare</em> a poll included: &ldquo;still running at all&rdquo;.</li>
+<li>Everything about <strong>UC3</strong> &mdash; we connect out on a cron schedule and pull what the partner has waiting &mdash; in stacked tables.</li>
+<li>The other tabs: <a href="server-uc1-status.html">UC1</a>, <a href="server-uc2-status.html">UC2</a>, <a href="server-uc4-status.html">UC4</a>. <a href="server-polling.html">Polling</a> holds the same poll and schedule facts as one flat table.</li>
 </ul>
-<h2>Statuses</h2>
+<h2>Columns</h2>
 <ul>
-<li><strong>ok</strong> (green) &mdash; its latest File was delivered. A flow that polls cleanly but has never moved a file is <strong>not seen</strong> (orange), not ok. <strong>error</strong> (red) &mdash; the latest failed, no OK File in the window: nothing ever worked. <strong>ok -> error</strong> (red, was green) &mdash; OK Files before: a regression.</li>
-<li><strong>not seen</strong> (orange) &mdash; configured, never in the transfer log. Polls / Empty polls / Problems still say whether it polls at all, finds nothing (<a href="server-no-remote-files.html">No remote files</a>) or cannot connect (<a href="server-no-remote-dir.html">No remote dir</a>, the <a href="#polls">polls tables</a>).</li>
+<li><strong>UC3 subscriptions</strong> &mdash; Status &middot; Subscription &middot; Files / OK / Error / Last file &middot; <strong>Polls</strong> / <strong>Empty polls</strong> (poll results; empty = no file found) &middot; <strong>Problems</strong> (a connection failure or failed listing) &middot; <strong>Last log</strong> (newest line of any counted kind, poll preparation included).</li>
+<li><strong>Polls by subscription</strong> &mdash; Polls &middot; Empty polls (no file matched) &middot; Files matched &middot; Empty % &middot; First &middot; Last; worst first.</li>
+<li><strong>Remote directory listing failures</strong> &mdash; Listing errors &middot; First &middot; Last: the folder could not be listed at all (path, permissions).</li>
+<li><strong>Configured cronjobs</strong> &mdash; every receive schedule in the configuration: Cron expression (Quartz, raw) &middot; Schedule (plain English) &middot; <strong>Observed</strong> &middot; Polls &middot; Active days. Boxes count schedules, SFTP, FTP and distinct expressions.</li>
+<li><strong>Schedules that never complete a poll</strong> &mdash; those whose Observed is <strong>-</strong>: <strong>Poll starts</strong> (setup lines on the scheduled minutes) &middot; <strong>Failure lines</strong> &middot; <strong>What goes wrong</strong> (the dominant one: timeout, handshake, authentication, listing).</li>
+<li><strong>Missing remote directories</strong> + <strong>Missing remote directories per day</strong> (only when logged) &mdash; listings answered <em>No such file</em>, still open: Last error &middot; Remote directory (every rejected path as logged) &middot; Last OK File &middot; Last good poll &middot; Errors.</li>
+<li><strong>UC3 subscriptions that never find a file</strong> + <strong>Polls that found no file, per day</strong> &mdash; never-transferred UC3 flows whose every poll found 0 files: Last &middot; Polls &middot; Days &middot; First.</li>
 </ul>
-<h2>Status rules</h2>
+<h2>Rules</h2>
 <ul>
-<li>Roster: every <code>UC3</code> name in the FlowManager export, run or not. Colour = the site-wide result: green/red real transfer data (the LAST File OK / Failed-or-Expired), orange never in the transfer log. A never-transferred flow whose own polls fail to connect three times in a row is red (the cannot-connect rule).</li>
-<li><strong>error</strong> vs <strong>ok -> error</strong> is per File &mdash; right after any OK File the subscription WAS green &mdash; finer than <a href="failed.html">Failed Subscriptions</a>, which buckets by whole days and misses a flow failing at the end of every day.</li>
-<li>Current-state: the date filter narrows only the two poll tables; the status and cron tables are full-period and show the badge when a range is set.</li>
-<li>Click a row for its 10 most recent server-log lines; on a red row that never transferred the failures, which thousands of routine poll lines would bury.</li>
-<li>A UC3 fails quietly &mdash; an empty directory and a partner that stopped delivering look alike, and neither writes a transfer record: read a not-seen row&rsquo;s Empty polls and Problems before chasing the partner.</li>
+<li>Rows carry the subscription&rsquo;s result colour. <strong>ok</strong> green: last File OK. <strong>ok -&gt; error</strong>: red after OK Files, a regression (its box red too).</li>
+<li><strong>error</strong> red, never an OK File: last File Failed, server-log errors after it, or no connection on 3 polls in a row.</li>
+<li><strong>not seen</strong> orange: never in the transfer log (or last File Expired) &mdash; a UC3 polling cleanly with nothing to fetch stays here.</li>
+<li><strong>Observed</strong>: the median of each day&rsquo;s first poll &plusmn; one standard deviation, or the poll rate above 3 a day; <strong>&middot; files</strong> = only file arrivals give a slot; <strong>-</strong> = never observed; <strong>dark red</strong> = contradicts the schedule.</li>
+<li>Authentication failures name only host and user, so they match through the configured host and can be shared by its flows.</li>
+<li>A missing directory drops out once the flow recovers: a later OK File or successful listing of that site.</li>
+<li>Never find a file leaves out flows that found files their pattern did not match &mdash; a pattern problem.</li>
+<li>From/To narrows Polls by subscription, the listing failures, Missing remote directories and Never find a file (with their per-day tables); the other three tables are full-period.</li>
 </ul>
-<h2 id="polls">Polls by subscription and listing failures</h2>
+<h2>Tips</h2>
 <ul>
-<li>Source: <code>Applying the search pattern '&lt;pattern&gt;' for transfer site '&lt;SITE&gt;': N file(s) were found of which M matched the pattern.</code> Per subscription: polls, empty polls (M = 0), files matched, empty %; worst first.</li>
-<li>Only that line is used &mdash; the bare &ldquo;No files were found for download.&rdquo; lines name no site. The site is truncated at <code>_SCP_</code> to the clean name and shown as logged; a name matching a known subscription links to its detail page (a chronic empty poller may have none).</li>
-<li><strong>Listing failures</strong>: &ldquo;Error occurred while listing files from partner &lt;SITE&gt;&rdquo; &mdash; the folder could not be listed at all (wrong remote path, permissions), unlike an empty poll; concentrated on a few subscriptions.</li>
-<li>Additive; both re-total under the date filter. Click a subscription for its 10 most recent lines.</li>
-<li>An empty poll costs a slot, a connection and a listing, moves nothing and leaves no trace in the transfer log. A very high empty rate: a schedule far more frequent than the source produces, or a source that stopped.</li>
-</ul>
-<h2 id="cronjobs">Configured cronjobs</h2>
-<ul>
-<li>The polling schedules in the FlowManager <code>subscriptions.json</code>; each belongs to a UC3 subscription (SecureTransport is the client). Inbound flows are event-driven, never here; UC1 pushes on directory scanning &mdash; no cron. All enabled, none skip holidays.</li>
-<li><strong>Subscription</strong> &middot; <strong>Protocol</strong> (SFTP or FTP) &middot; <strong>Cron expression</strong> (raw, to cross-check with FlowManager) &middot; <strong>Schedule</strong> (plain English, computed at build, always in sync) &middot; <strong>Polls</strong> / <strong>Active days</strong> (poll lines, days with life) &middot; <strong>Observed</strong>.</li>
-<li>Rows tinted by result: green OK, orange never seen, red Error.</li>
-<li><a href="https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html">Quartz</a> cron, six fields <code>seconds minutes hours day-of-month month day-of-week</code>: <code>0 0/15 * ? * *</code> every 15 minutes; <code>0 0,30 8-17 ? * MON-FRI</code> every 30 minutes on workdays 08:00&ndash;17:00; <code>0 0 4 ? * *</code> daily at 04:00; <code>0 5 * ? * MON-FRI</code> hourly at :05 on workdays; <code>0 0 8 1-7 * ?</code> daily at 08:00 on days 1 to 7 for every month; <code>0 0 8 1 * ?</code> monthly on the 1st at 08:00.</li>
-<li><strong>Observed</strong> = when the schedule really fires, from the poll lines above: the median of each day&rsquo;s first poll &plusmn; one standard deviation (first and last active day left out &mdash; the export window cuts into both); a poll rate for a schedule firing more than 3&times; a day. Matching is name-prefix, both ways.</li>
-<li><strong>&middot; files</strong> = no poll lines, only the file arrivals give a slot (the Punctuality model); <strong>-</strong> = no poll and no File in the loaded logs &mdash; never fires.</li>
-<li><strong>Dark red</strong> Observed contradicts the schedule: the slot is off the scheduled time, the rate more than 3&times; off the expected one, or a continuous schedule is seen only a few times a day.</li>
-</ul>
-<h2>Schedules that never complete a poll</h2>
-<ul>
-<li>Every schedule whose Observed is <strong>-</strong>. Most do fire &mdash; <strong>Poll starts</strong> counts their &ldquo;Remote folder / files pattern &hellip; evaluated&rdquo; setup lines, right on the scheduled minutes &mdash; but the poll dies before the listing.</li>
-<li><strong>What goes wrong</strong> = the dominant failure line: a connection timeout, an SSH/TLS handshake failure, a password or public-key authentication failure, or a listing error such as &ldquo;No such file&rdquo; (login works, remote directory missing). <strong>Failure lines</strong> counts them all.</li>
-<li>Connection and listing failures name the subscription; authentication failures name only host and user, so they match through the configured host and can be shared between flows on that host.</li>
-<li>Neither starts nor failure lines = never fires at all in the loaded logs. Same server-log pass as the Polls table.</li>
-</ul>
-<h2>Missing remote directories and never-empty polls</h2>
-<ul>
-<li><strong>Missing remote directories</strong> (+ per day) &mdash; the flows whose listing fails with <em>No such file</em> and has not recovered since (<a href="server-no-remote-dir.html">details</a>).</li>
-<li><strong>UC3 subscriptions that never find a file</strong> (+ per day) &mdash; no-transfer UC3 flows whose every poll found 0 files: the connection works, the directory is always empty (<a href="server-no-remote-files.html">details</a>).</li>
+<li>A UC3 fails quietly, without transfer records: read Empty polls and Problems before chasing the partner.</li>
 </ul>
 </main>
 </body>

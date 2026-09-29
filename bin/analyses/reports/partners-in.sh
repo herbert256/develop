@@ -35,7 +35,7 @@
 # pool (logon.sh) and analyses wave 1 (fe-overview.sh).
 #
 # Usage:
-#   ./partners-in.sh   # -> data/<env>/analyses/reports/partners-in.rpt
+#   ./partners-in.sh   # -> data/analyses/reports/partners-in.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

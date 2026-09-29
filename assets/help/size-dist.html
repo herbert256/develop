@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Transfer Size Distribution — Cloud Reports</title>
+<title>Help: Sizes &amp; types — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,31 +15,30 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Transfer Size Distribution</h1>
+<h1>Sizes &amp; types</h1>
 <h2>What it shows</h2>
-<p>The files themselves: Files bucketed by size (one row per bucket, from <strong>0 B</strong> to <strong>&gt;= 1 GB</strong>), the empty files delivered OK, the split per file type, and the filenames delivered more than once.</p>
-<h2>Sections</h2>
 <ul>
-<li><strong>Size distribution</strong> &mdash; nine buckets: 0 B; 1 B&ndash;1 KB; 1 KB&ndash;10 KB; 10 KB&ndash;100 KB; 100 KB&ndash;1 MB; 1 MB&ndash;10 MB; 10 MB&ndash;100 MB; 100 MB&ndash;1 GB; &gt;= 1 GB. Counts Files (<code>_files.tsv</code>), not log rows.</li>
-<li>Per bucket: the Error/OK split, volume, share of all Files, and a distribution bar whose width is relative to the fullest bucket.</li>
-<li><strong>Empty files delivered OK</strong> &mdash; zero-byte Files whose delivery ended OK, per subscription: the transfer worked, the upstream export produced nothing. A flow that legitimately ships empty markers recurs steadily; a subscription that suddenly appears (or whose count jumps) deserves a look.</li>
-<li><strong>Per file type</strong> &mdash; the split per extension. Counts transfers (legs), not Files &mdash; a file appears on both its Inbound and Outbound leg.</li>
-<li><strong>Duplicate deliveries</strong> &mdash; one row per business filename delivered more than once, worst first (replay loops, re-sends): <strong>Files</strong> = logical transfers carrying that exact name, <strong>Error</strong> = how many failed, <strong>Accounts</strong> = distinct senders (full-period, not date-adjusted). Error below Files usually means a failed transfer was re-sent successfully.</li>
+<li>The files themselves: sizes, types, repeated names, the largest Files, and flows whose typical size changed or that ship stubs.</li>
 </ul>
-<h2>Largest files and Size profile</h2>
+<h2>Tabs</h2>
 <ul>
-<li><strong>Largest files</strong> &mdash; the top 50 Files by size, one row per File with its throughput (size &divide; the summed row durations, retries included), account, destination subscription, outcome and start time.</li>
-<li><strong>Size regime</strong> &mdash; subscriptions with 20+ Files whose median size changed 3&times;+ between the first and second half of their own files (split by count, not calendar); &infin; = a first-half median of 0 bytes. A new format or an upstream change &mdash; worth understanding, not an error.</li>
-<li><strong>Stub shippers</strong> &mdash; flows where 10%+ of the files are stubs: smaller than max(1 KB, 1% of the flow&rsquo;s median). A data file plus a 0-byte semaphore gives ~50% by design; a sudden surge is the interesting row.</li>
+<li><strong>By size</strong> &mdash; Size range / Files / Error / OK / Volume / % of Files / Distribution: nine buckets from 0 B to &gt;= 1 GB; the bar is relative to the fullest bucket.</li>
+<li><strong>Empty files</strong> &mdash; Subscription / Empty OK Files / First / Last: zero-byte Files delivered OK.</li>
+<li><strong>By type</strong> &mdash; File type / Transfers / Error / OK / Volume / % of transfers, per extension; counts legs, so a file appears on its Inbound and Outbound leg.</li>
+<li><strong>Duplicates</strong> &mdash; Filename / Files / Error / Accounts / First / Last: names delivered more than once; <strong>Accounts</strong> = distinct senders (full period).</li>
+<li><strong>Largest files</strong> &mdash; the 50 largest Files: Size / Throughput (size &divide; the File&rsquo;s wall-clock span) / Start Time / Account / Destination Subscription / Outcome / File.</li>
+<li><strong>Size regime</strong> &mdash; flows with 20+ Files whose median size changed 3&times;+ between the first and second half of their own Files (split by count); &infin; = a first-half median of 0 bytes.</li>
+<li><strong>Stub shippers</strong> &mdash; flows with 10%+ stubs, files smaller than the <strong>Stub limit</strong> = max(1 KB, 1% of the flow&rsquo;s median).</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>The <strong>0 B</strong> bucket is dominated by failed Files: a transfer that never delivered often has no size recorded. The failed 0-byte attempts stay in that bucket; only the OK ones move to the empty-files table.</li>
-<li>Files and Error of the duplicates table re-aggregate over the selected dates.</li>
+<li>All tabs but By type count Files; Error = Failed or Expired.</li>
+<li>The 0 B bucket is mostly failed Files (no size recorded); only the OK ones reach Empty files.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Click an Error or OK count for that outcome&rsquo;s 10 most recent Files (per file type: transfers), newest first; click an empty-files or duplicates row for its 10 most recent Files.</li>
+<li>Duplicates with Error below Files usually mean a failed transfer was re-sent successfully.</li>
+<li>A data file plus a 0-byte semaphore gives a steady ~50% stub share by design; a sudden surge is the interesting row.</li>
 </ul>
 </main>
 </body>

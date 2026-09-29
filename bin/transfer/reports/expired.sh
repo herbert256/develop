@@ -57,7 +57,8 @@ TMPD=$(mktemp -d "${TMPDIR:-/tmp}/axexp.XXXXXX")
 trap 'rm -rf "$TMPD"' EXIT
 
 # ONE pass over _files.tsv -> the four section extracts + one stats line.
-# Expired = col 2; Collected = a staged file that WAS picked up (col 21 set);
+# Expired = col 2; Collected = a staged file that WAS picked up and delivered
+# (col 21 set, Processed);
 # Waiting = still staged. Ages are calendar days, staging date -> deletion date.
 awk -F'\t' -v D="$TMPD" '
     function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
@@ -82,7 +83,9 @@ awk -F'\t' -v D="$TMPD" '
         printf "%s\t%s %s\t%s\t%s\t%s\n", s, $4, substr($5, 1, 8), substr($22, 1, 19), $11, $1 > (D "/x_files")
         next
     }
-    $21 != "" { cn++; ca[s]++; cwd[j($4) % 7]++; next }
+    # COLLECTED = a DELIVERED File with a pickup wait — the Waiting report and
+    # partner table rule (2026-09-29: a Failed File with a wait counted here too)
+    $21 != "" && $2 == "Processed" { cn++; ca[s]++; cwd[j($4) % 7]++; next }
     $2 == "Waiting" { wn++; wa[s]++ }
     END {
         printf "%d\t%d\t%d\t%d\t%d\n", n+0, b+0, agesum+0, cn+0, wn+0 > (D "/x_stats")
@@ -201,6 +204,7 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
                 if (b >= 1024)    return sprintf("%.1f KB", b/1024)
                 return b " B" }
             BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
+            function z(v) { return (v + 0 == 0) ? "" : v + 0 }   # a count cell shows blank, never 0
             {
                 rate = ($2 + $3) ? $3 * 100 / ($2 + $3) : 0
                 # the Expired cell opens the subscription File page
@@ -208,14 +212,14 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
                 lk = ($1 in SL) ? "@{href=expired/" SL[$1] ".html}" : ""
                 # never collected once = a dead pickup flow (red); collects some
                 # and lets the rest expire = orange
-                printf "ROW\t%s\t%s\t%s%d\t%d\t%d\t%.0f%%\t%.1f d\t%s\t%s\t%s\t%s\t@data:res=%s\n", \
-                    $1, $10, lk, $2, $3, $4, rate, $6 / $2, hsz($5), $7, $8, substr($9, 1, 19), \
+                printf "ROW\t%s\t%s\t%s%d\t%s\t%s\t%.0f%%\t%.1f d\t%s\t%s\t%s\t%s\t@data:res=%s\n", \
+                    $1, $10, lk, $2, z($3), z($4), rate, $6 / $2, hsz($5), $7, $8, substr($9, 1, 19), \
                     ($3 == 0 ? "red" : "orange")
                 te += $2; tc += $3; tw += $4; tv += $5
             }
             END { trate = (te + tc) ? tc * 100 / (te + tc) : 0
-                  printf "TOTAL\tTotal (%d subscription(s))\t\t@{class=num failed}%d\t@{class=num processed}%d\t@{class=num warn}%d\t@{class=num}%.0f%%\t\t@{class=num}%s\t\t\t\n", \
-                      NR, te, tc, tw, trate, hsz(tv) }'
+                  printf "TOTAL\tTotal (%d subscription(s))\t\t@{class=num failed}%d\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num}%.0f%%\t\t@{class=num}%s\t\t\t\n", \
+                      NR, te, z(tc), z(tw), trate, hsz(tv) }'
     else
         printf 'ROW\t@{colspan=11}No expired Files in this data window.\n'
         printf 'TOTAL\tTotal (0 subscriptions)\t\t\t\t\t\t\t\t\t\t\n'
@@ -246,16 +250,17 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
     printf 'KIND\ttext\tnumfailed\tnumprocessed\tnum\n'
     if [ -s "$TMPD/x_wd" ] && [ "$nexp" -gt 0 ]; then
         awk -F'\t' 'BEGIN{ split("Monday Tuesday Wednesday Thursday Friday Saturday Sunday", W, " ") }
+            function z(v) { return (v + 0 == 0) ? "" : v + 0 }   # a count cell shows blank, never 0
             { e = $2; c = $3
-              if (e + c > 0) { printf "ROW\t%s\t%d\t%d\t%.0f%%\n", W[$1 + 1], e, c, e * 100 / (e + c); nr++; te += e; tc += c } }
-            END { printf "TOTAL\tTotal (%d weekday(s))\t@{class=num failed}%d\t@{class=num processed}%d\t@{class=num}%.0f%%\n", nr+0, te+0, tc+0, (te+tc) ? te*100/(te+tc) : 0 }' "$TMPD/x_wd"
+              if (e + c > 0) { printf "ROW\t%s\t%s\t%s\t%.0f%%\n", W[$1 + 1], z(e), z(c), e * 100 / (e + c); nr++; te += e; tc += c } }
+            END { printf "TOTAL\tTotal (%d weekday(s))\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num}%.0f%%\n", nr+0, z(te), z(tc), (te+tc) ? te*100/(te+tc) : 0 }' "$TMPD/x_wd"
     else
         printf 'ROW\t@{colspan=4}No staged UC2 Files in this data window.\n'
         printf 'TOTAL\tTotal (0 weekdays)\t\t\t\n'
     fi
     printf 'NOTE\tThe weekday the file was **STAGED** (not deleted). NOTE one subscription can dominate this split — check the per-subscription table before reading a weekday pattern as partner behaviour.\n'
 
-    printf 'NOTE\tSource: the transfer parse cache (_files.tsv) — outcome **Expired** and the col-22 deletion timestamp set by **bin/expire-files.sh** from the server log'"'"'s "File Maintenance … finished. Deleted files […]" lines (the deletion leaves NO transfer-log record). Collected = staged files with a pickup (col 21); the sweep also removes already-collected staged copies — routine cleanup, not counted here. Expired files count as **Error** on every report; Waiting files count as **OK**.\n'
+    printf 'NOTE\tSource: the transfer parse cache (_files.tsv) — outcome **Expired** and the col-22 deletion timestamp set by **bin/expire-files.sh** from the server log'"'"'s "File Maintenance … finished. Deleted files […]" lines (the deletion leaves NO transfer-log record). Collected = delivered (Processed) staged files with a pickup (col 21) — the Waiting report'"'"'s rule; the sweep also removes already-collected staged copies — routine cleanup, not counted here. Expired files count as **Error** on every report; Waiting files count as **OK**.\n'
     printf 'KEYWORDS\texpired, retention, file maintenance, sweep, deleted, never delivered, uncollected, pickup, staged, uc2, waiting\n'
     printf 'SUMMARY\tExpired: %s Files (%s%% of resolved staged)  |  Volume: %s  |  Average staged to deleted: %s d  |  Still waiting: %s\n' \
         "$nexp" "$share" "$hb" "$avgage" "$nwait"

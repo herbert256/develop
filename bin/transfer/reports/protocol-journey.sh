@@ -41,11 +41,12 @@ agg=$( { cat "$FILES"; printf '###SPLIT###\n'; LC_ALL=C sort -t"$(printf '\t')" 
         ch = chain
         if (!(cur in FOUT)) { reset(); return }   # missing group
         pf = (FOUT[cur] == "Failed" || FOUT[cur] == "Expired")
-        cr[ch]++; cb[ch] += FSZ[cur]; trec++
+        # Volume = the OK Files'"'"' bytes, the Files column'"'"'s own scope (2026-09-29)
+        cr[ch]++; if (!pf) { cb[ch] += FSZ[cur]; tpb += FSZ[cur] }; trec++
         if (pf) { cf[ch]++; tfl++ } else { cp[ch]++; tpr++ }
         if (cr[ch] > maxrec) maxrec = cr[ch]
         d = FDT[cur]
-        if (d != "") { cdr[ch SUBSEP d]++; cdf[ch SUBSEP d] += pf; cdp[ch SUBSEP d] += (!pf); cdb[ch SUBSEP d] += FSZ[cur] }
+        if (d != "") { cdr[ch SUBSEP d]++; cdf[ch SUBSEP d] += pf; cdp[ch SUBSEP d] += (!pf); if (!pf) cdb[ch SUBSEP d] += FSZ[cur] }
         addtop("J" SUBSEP ch SUBSEP (pf ? "F" : "P"), FSK[cur], FDT[cur] " " FTM[cur], cur)
         # last-leg protocol x delivered state
         st = FOUT[cur]; if (st != "Failed" && st != "Expired" && st != "Waiting") st = "Processed"
@@ -77,6 +78,7 @@ agg=$( { cat "$FILES"; printf '###SPLIT###\n'; LC_ALL=C sort -t"$(printf '\t')" 
         maxpr = 0; for (ch in cr) if (cp[ch] + 0 > maxpr) maxpr = cp[ch] + 0
         if (maxpr < 1) maxpr = 1
         for (ch in cr) {
+            if (cp[ch] + 0 == 0) continue   # no OK File: nothing this table counts (2026-09-29)
             sh = tpr > 0 ? sprintf("%.1f", (cp[ch]+0) * 100 / tpr) : "0.0"
             w = int((cp[ch]+0) * 100 / maxpr)
             printf "CHN|%s|%d|%d|%d|%s|%s|%d|%s|%s|%s\n", ch, cr[ch], cf[ch]+0, cp[ch]+0, human(cb[ch]+0), sh, w, bk[ch], buildlist(top["J" SUBSEP ch SUBSEP "F"]), buildlist(top["J" SUBSEP ch SUBSEP "P"])
@@ -87,7 +89,7 @@ agg=$( { cat "$FILES"; printf '###SPLIT###\n'; LC_ALL=C sort -t"$(printf '\t')" 
                 ebk = ebk (ebk ? "," : "") a[2] ":" ldr[k] ":" (lds[p SUBSEP "Failed" SUBSEP a[2]] + lds[p SUBSEP "Expired" SUBSEP a[2]] + 0) ":" (lds[p SUBSEP "Processed" SUBSEP a[2]] + lds[p SUBSEP "Waiting" SUBSEP a[2]] + 0) }
             printf "END|%s|%d|%d|%d|%d|%d|%s|%s|%s\n", p, lr[p], ls[p SUBSEP "Processed"]+0, ls[p SUBSEP "Failed"]+0, ls[p SUBSEP "Waiting"]+0, ls[p SUBSEP "Expired"]+0, ebk, buildlist(top["E" SUBSEP p SUBSEP "F"]), buildlist(top["E" SUBSEP p SUBSEP "P"])
         }
-        printf "TOT|%d|%d|%d\n", trec, tfl+0, tpr+0
+        printf "TOT|%d|%d|%d|%s\n", trec, tfl+0, tpr+0, human(tpb+0)
     }
 ')
 
@@ -96,7 +98,7 @@ if [ -z "$agg" ]; then
     exit 1
 fi
 
-IFS='|' read -r _ tot_rec tot_failed tot_processed <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
+IFS='|' read -r _ tot_rec tot_failed tot_processed tot_vol <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
 
 {
     printf 'TITLE\tProtocol Journey\n'
@@ -117,7 +119,7 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed <<< "$(printf '%s\n' "$agg" |
         [ -z "$chain" ] && continue
         printf 'ROW\t%s\t%s\t%s\t%s%%\t%s\t@data:buckets=%s\n' "$chain" "$pr" "$human" "$sh" "$w" "$bk"
     done <<< "$(printf '%s\n' "$agg" | grep '^CHN|' | sort -t'|' -k5,5nr)"
-    printf 'TOTAL\tTotal\t@{class=num}%s\t\t@{class=num}100.0%%\t\n' "$tot_processed"
+    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}%s\t@{class=num}100.0%%\t\n' "$tot_processed" "$tot_vol"
     printf 'NOTE\tFiles = the delivered (OK) Files of that journey. **?** marks a leg with no protocol logged.\n'
 
     # the last-leg table: Files = the Delivered count (the former Delivered

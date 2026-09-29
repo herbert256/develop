@@ -32,7 +32,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # SERVER lib, not the analyses one: this is a server-DATA report (it reads the
-# server parse cache and writes data/<env>/server/reports/). It lives HERE
+# server parse cache and writes data/server/reports/). It lives HERE
 # because its page sits in the ANALYSES menu, in the Subscriptions group — the
 # same arrangement as cross-reference.sh. bin/server/reports.sh still runs it.
 source "$SCRIPT_DIR/../lib.sh"
@@ -74,12 +74,14 @@ LINK_AWK='
     # DISPLAY the folded name, so the page names the flow as the configuration
     # does. rn_canon_pfx also covers the truncated old spelling the server
     # writes, folding only when every completion agrees.
-    function sitecanon(t,   k, hits, full, c) {
+    function sitecanon(t,   k, hits, full, c, t0) {
+        if (t in SCMEMO) return SCMEMO[t]   # memo (2026-09-29): rows are keyed on it now, per line
+        t0 = t
         c = rn_canon_pfx(t)
-        if (c in ksite) return c
+        if (c in ksite) return (SCMEMO[t0] = c)
         hits = 0
         for (k in ksite) if (index(k, c) == 1) { hits++; full = k; if (hits > 1) { hits = 0; break } }
-        return hits == 1 ? full : c
+        return (SCMEMO[t0] = (hits == 1 ? full : c))
     }
     function sitelink(t,   k, hits, full) {
         t = sitecanon(t)
@@ -152,6 +154,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" -v ucdf="$UCDF" "$LOGLINES_AWK$RENAMES_A
     $5 ~ /Applying the search pattern .* for transfer site / {
         if (!match($5, /for transfer site '\''[^'\'']*'\''/)) next
         psite = substr($5, RSTART + 19, RLENGTH - 20); sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", psite)
+        if (psite != "") psite = sitecanon(psite)   # the same key space as the rows
         pd = substr($1, 1, 10)
         if (psite != "" && pd ~ /^[0-9][0-9][0-9][0-9]-/) {
             psk = substr(pd, 1, 4) substr(pd, 6, 2) substr(pd, 9, 2) $2
@@ -170,6 +173,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" -v ucdf="$UCDF" "$LOGLINES_AWK$RENAMES_A
         p = index(rest, " defined in account "); if (p <= 1) next
         site = substr(rest, 1, p - 1); sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", site)   # clean subscription name
         if (site == "") next
+        site = sitecanon(site)   # the ROW key (2026-09-29): a truncated or old spelling of one flow made a second row
         tail = substr(rest, p + 20)
         q = index(tail, ".")                                  # "ACCOUNT. No such file…"
         acct = (q > 1) ? substr(tail, 1, q - 1) : tail
@@ -305,7 +309,7 @@ day_rows() {
     dir_rows
     printf 'TOTAL\t@{colspan=5}Total (%s subscription(s) · %s director(y/ies))\t@{class=num failed}%s\n' "$n_sub" "$n_path" "$tot_err"
 
-    printf 'TABLE\tPer day\ttab=uc3\n'
+    printf 'TABLE\tMissing remote directories per day\ttab=uc3\n'   # its own heading on the shared UC3 tab (2026-09-29: two tables read "Per day")
     printf 'HEAD\tDate\tErrors\tSubscriptions\n'
     printf 'KIND\ttext\tnumfailed\tnum\n'
     day_rows

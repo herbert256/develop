@@ -104,7 +104,7 @@ n_rows=0; sum_failures=0; sum_successes=0; sum_resubs=0
     while IFS='|' read -r _ never failures account site faildays successes resubs lastfail bk ccf ccp; do
         [ -z "$never" ] && continue                     # blank line guard
         [ -z "$account" ] && account="(no account)"     # blacklisted/blank entity — keep the flow
-        [ -z "$site" ] && site="(no subscription)"      # countable, matching failure-rate's convention
+        [ -z "$site" ] && site="(no subscription)"      # blank subscription — keep the flow countable, like the account above
         printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n' \
             "$account" "$site" "$faildays" "$failures" "$successes" "$resubs" "$lastfail" "$bk" "$ccf" "$ccp"
         n_rows=$((n_rows + 1))

@@ -39,7 +39,7 @@ count=0
 CUR_DATES=$TRANSFER_DATES
 for name in "${transfer_order[@]}"; do
     # the Subscriptions analyses group renders from bin/analyses/publish.sh —
-    # it owns (and clears) docs/<env>/analyses/ and runs AFTER this script
+    # it owns (and clears) docs/analyses/ and runs AFTER this script
     if is_subs_report "$name"; then continue; fi
     rpt="$DATA/transfer/reports/$name.rpt"
     [ -f "$rpt" ] || { echo "  (no data yet: $name)" >&2; continue; }
@@ -97,7 +97,7 @@ if [ ${#expp[@]} -gt 0 ]; then
     CUR_DATES=""; DLINK_BASE="../../details/"
     for f in "${expp[@]}"; do
         b=${f##*/}; b=${b%.rpt}
-        # report key per subscription, the latest/ pages' rule
+        # one report key per subscription: a remembered search or sort belongs to THAT flow's page
         pub_run render_rpt "$f" "$DOCS/transfer/expired/$b.html" "../../assets/style.css" "../../index.html" "TRANSFER - Expired" "" "expired" "expired-$b"
     done
     pub_wait
@@ -121,7 +121,7 @@ if [ ${#waip[@]} -gt 0 ]; then
     CUR_DATES=""; DLINK_BASE="../../details/"
     for f in "${waip[@]}"; do
         b=${f##*/}; b=${b%.rpt}
-        # report key per subscription, the latest/ pages' rule
+        # one report key per subscription: a remembered search or sort belongs to THAT flow's page
         pub_run render_rpt "$f" "$DOCS/transfer/waiting/$b.html" "../../assets/style.css" "../../index.html" "TRANSFER - Waiting" "" "waiting" "waiting-$b"
     done
     pub_wait
@@ -129,14 +129,14 @@ if [ ${#waip[@]} -gt 0 ]; then
     echo "Rendered docs/transfer/waiting/ (${#waip[@]} subscription page(s))." >&2
 fi
 
-# THE FILE PAGES — docs/<env>/files/ (2026-09-21, user request: the error pages
-# and the File pages share ONE directory; docs/<env>/errors/ is gone). failed.sh
+# THE FILE PAGES — docs/files/ (2026-09-21, user request: the error pages
+# and the File pages share ONE directory; docs/errors/ is gone). failed.sh
 # keeps TWO .rpt sets, because its reason-evidence pass globs the first and must
 # not read an OK File's page; both render here, into the one docs directory:
-#   data/<env>/transfer/reports/errors/   one per paged FAILED File (<coreid>),
+#   data/transfer/reports/errors/   one per paged FAILED File (<coreid>),
 #                                         plus one per server-failing subscription
 #                                         (<slug>, named by the subscription)
-#   data/<env>/transfer/reports/files/    one per File of ANY outcome another page
+#   data/transfer/reports/files/    one per File of ANY outcome another page
 #                                         links (Transfer patterns "Last 5 files",
 #                                         Longest Files, the detail "Latest OK" row)
 # ONE level below the env root (like transfer/), so "../assets/style.css".
@@ -151,7 +151,7 @@ errp=("$DATA"/transfer/reports/errors/*.rpt)
 shopt -u nullglob
 # clear even when THIS run has no .rpt set (an env can lose the whole
 # family — production 2026-08 — and stale pages would survive forever); the
-# retired docs/<env>/errors/ goes too (a manual publish over a pre-merge tree)
+# retired docs/errors/ goes too (a manual publish over a pre-merge tree)
 mkdir -p "$DOCS/files"
 rm -f "$DOCS"/files/*.html
 rm -rf "$DOCS/errors"

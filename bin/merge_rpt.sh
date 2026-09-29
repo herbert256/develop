@@ -29,7 +29,7 @@ _merge_pad() {
         size-dist) echo 2 ;;
         connection-diagnostics) echo 4 ;;   # connection-diagnostics 3->5 (2026-08), 5->4 (2026-09-28: Whitelist usage + Test outcomes gone)
         inbound-connections) echo 3 ;;      # 5->4 (2026-09-28), 4->3 (2026-09-29: Connections by protocol gone)
-        ssh-crypto) echo 10 ;;            # 8->10 (2026-08: + negotiation failures + PeSIT TLS)
+        ssh-crypto) echo 10 ;;            # 8->10 (2026-08: + negotiation failures + PeSIT TLS); a PRESENT ssh-crypto has 8, or 10 when it logged hygiene signals (+ Hygiene signals + Certificate chain errors) — ssh-security has no report_tabs, its tables stack on one page, so the pad only sizes a missing component
         uc3-polling|uc2-visits|pickups|no-remote-dir|no-remote-files) echo 0 ;;   # ride the UC2 / UC3 tabs (2026-09-29)            # RIDES the UC3 tab (its tables carry tab=uc3, 2026-09-05): a missing one contributes NO tab page
         *) echo 1 ;;
     esac

@@ -27,22 +27,24 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 names=(Monday Tuesday Wednesday Thursday Friday Saturday Sunday)
 
-clabel="Files"; noun="File"; drillmod=""
+clabel="Files"; noun="File"
 OUT="$REPORTS_DIR/weekday.rpt"
 
 # Bucket the normalized stream by weekday (jdn %% 7, 0=Mon). Same as before,
 # reading cols 1=date 2=jdn 3=time 4=proc 5=size 6=sortkey 7=id.
-agg=$(awk -F'\t' "$COREIDS_AWK"'
+agg=$(awk -F'\t' '
     function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
         while (v >= 1024 && i < 6) { v /= 1024; i++ }
         return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
     {
         iso = $1; size = $5; pf = ($4 == 0); w = ($2 + 0) % 7
-        wr[w]++; wb[w] += size; trec++; tbytes += size
+        # VOLUME follows the Files column = the OK Files bytes (2026-09-29:
+        # every File was summed beside an OK-only count)
+        okb = pf ? 0 : size
+        wr[w]++; wb[w] += okb; trec++; tbytes += okb
         if (!(iso in seendate)) { seendate[iso] = 1; wdays[w]++ }
         if (pf) { wf[w]++; tf++ } else { wp[w]++; tp++ }
-        wdl[w SUBSEP iso]++; wdf[w SUBSEP iso] += pf; wdp[w SUBSEP iso] += (!pf); wdb[w SUBSEP iso] += size
-        addtop("W" SUBSEP w SUBSEP (pf ? "F" : "P"), $6, $1 " " $3, $7)
+        wdl[w SUBSEP iso]++; wdf[w SUBSEP iso] += pf; wdp[w SUBSEP iso] += (!pf); wdb[w SUBSEP iso] += okb
     }
     END {
         for (k in wdl) { split(k, a, SUBSEP); bk[a[1]] = bk[a[1]] (bk[a[1]] ? "," : "") a[2] ":" wdl[k] ":" (wdf[k]+0) ":" (wdp[k]+0) ":" wdb[k] }
@@ -50,7 +52,7 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
             rec = wr[i] + 0; days = wdays[i] + 0
             avg = days > 0 ? sprintf("%d", (wp[i]+0) / days + 0.5) : "0"   # the OK count per observed day (Files = delivered since 2026-09-13); round HALF-UP, exactly report.js'\''s a-token (Math.round) — plain %d truncated and the value flicked by 1 after a date round-trip (audit C3)
             pct = rec > 0 ? sprintf("%.1f", (wf[i]+0) * 100 / rec) : "0.0"
-            printf "WD|%d|%d|%d|%s|%d|%d|%s|%d|%s|%s|%s|%s\n", i, days, rec, avg, wf[i]+0, wp[i]+0, pct, wb[i]+0, human(wb[i]+0), bk[i], buildlist(top["W" SUBSEP i SUBSEP "F"]), buildlist(top["W" SUBSEP i SUBSEP "P"])
+            printf "WD|%d|%d|%d|%s|%d|%d|%s|%d|%s|%s\n", i, days, rec, avg, wf[i]+0, wp[i]+0, pct, wb[i]+0, human(wb[i]+0), bk[i]
         }
         tpct = trec > 0 ? sprintf("%.1f", (tf+0) * 100 / trec) : "0.0"
         printf "TOT|%d|%d|%d|%s|%s\n", trec, tf+0, tp+0, tpct, human(tbytes)
@@ -70,7 +72,7 @@ maxavg=$(printf '%s\n' "$agg" | grep '^WD|' | awk -F'|' 'BEGIN{m=0} $5+0>m{m=$5+
     printf 'DESC\t%s (the delivered ones), average per day, failure rate and volume by day of week, with a load bar.\n' "$clabel"
     printf 'INTRO\t%s by day of week (overall **%s%%** failed). "Avg/day" divides by the number of that weekday actually observed; the bar shows load relative to the busiest weekday (by average per day).\n' \
         "$clabel" "$tot_pct"
-    printf 'TABLE\tBy day of week%s\n' "$drillmod"
+    printf 'TABLE\tBy day of week\n'
     # FILES = the delivered (OK) count (2026-09-13, user request: one Files
     # column, no Error / OK pair, no green/red cells, no drills); the bucket
     # payload keeps all four metrics — Files and the bar read metric 2 (ok),
@@ -80,7 +82,7 @@ maxavg=$(printf '%s\n' "$agg" | grep '^WD|' | awk -F'|' 'BEGIN{m=0} $5+0>m{m=$5+
     printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\tbar\n'
     printf 'RECALC\t-\tc\ts2\ta2\tp1.0\th3\tB2\n'
     # the rows go straight to the report — no per-row command substitution
-    while IFS='|' read -r _ widx days rec avg fa pr pct bytes human bk ccf ccp; do
+    while IFS='|' read -r _ widx days rec avg fa pr pct bytes human bk; do
         [ -z "$widx" ] && continue
         lbar=0; [ "${maxavg:-0}" -gt 0 ] && lbar=$(( (avg * 100 + maxavg / 2) / maxavg ))
         printf 'ROW\t%s\t%s\t%s\t%s\t%s%%\t%s\t%s\t@data:buckets=%s\n' \
@@ -89,7 +91,7 @@ maxavg=$(printf '%s\n' "$agg" | grep '^WD|' | awk -F'|' 'BEGIN{m=0} $5+0>m{m=$5+
     printf 'TOTAL\tTotal (%s weekday(s))\t\t@{class=num}%s\t\t@{class=num}%s%%\t@{class=num}%s\t\n' \
         "$n_wdays" "$tot_processed" "$tot_pct" "$tot_human"
     printf 'NOTE\tOne row = one day of week; Files = the delivered (OK) %ss, Error %% the failures over every File of that weekday.\n' "$noun"
-    printf 'SUMMARY\tTotal %ss: %s  |  Error: %s (%s%%)  |  Volume: %s\n' "$noun" "$tot_rec" "$tot_failed" "$tot_pct" "$tot_human"
+    printf 'SUMMARY\tTotal %ss: %s  |  Error: %s (%s%%)  |  OK volume: %s\n' "$noun" "$tot_rec" "$tot_failed" "$tot_pct" "$tot_human"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT ($tot_rec $noun(s))." >&2

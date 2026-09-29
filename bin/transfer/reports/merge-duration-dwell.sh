@@ -23,7 +23,7 @@
 #                      table + note), its SUMMARY, a fresh FOOT
 #
 # Usage:
-#   ./merge-duration-dwell.sh   # -> data/<env>/transfer/reports/duration-dwell.rpt
+#   ./merge-duration-dwell.sh   # -> data/transfer/reports/duration-dwell.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -56,7 +56,7 @@ awk -F'\t' -v OFS='\t' -v now="$(date '+%Y-%m-%d %H:%M:%S')" '
     }
     function lcfirst(s,   body) { body = substr(s, index(s, "\t") + 1); return tolower(substr(body, 1, 1)) substr(body, 2) }
     END {
-        print "TITLE", "Duration distribution & Store-and-forward"
+        print "TITLE", "Distribution & Store-and-forward"   # = its Reports menu label (2026-09-29)
         print "DESC", "Two clocks on the same Files, side by side: how long the whole trip takes (the wall-clock duration histogram) and how long a file waits inside SecureTransport between its inbound and outbound leg (the store-and-forward dwell), with the dwell per subscription and per day below."
         print "KEYWORDS", "duration,distribution,histogram,bands,buckets,dwell,store-and-forward,queue,latency,gap,wall-clock"
         print "INTRO", "Two clocks on the same Files. **Duration distribution** (left) is the whole trip: " lcfirst(intro[1])

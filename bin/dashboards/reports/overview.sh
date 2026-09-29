@@ -72,7 +72,10 @@ if [ -f "$TR" ]; then
             if (!(r in tmax) || t > tmax[r]) tmax[r] = t
             tc[k]++; vol[k] += $8
             if ($2 == "Failed" || $2 == "Expired") tf[k]++
-            else { ok[k]++; if ($9 + 0 > 0) v[k] = v[k] " " $9 }
+            # the duration percentiles: DELIVERED Files only — the Duration
+            # report'"'"'s scope since 2026-09-28 (F08); a Waiting File'"'"'s span is
+            # its staging wait, not a delivery (2026-09-29: it counted here)
+            else { ok[k]++; if ($2 == "Processed" && $9 + 0 > 0) v[k] = v[k] " " $9 }
         }
         # one RAW failed leg into one resolution bucket — it extends the shared
         # window, so a failed leg trailing the last File start still lands in a
@@ -97,9 +100,13 @@ if [ -f "$TR" ]; then
                 if (v[k] != "") {
                     nk = split(v[k], dl, " ")
                     qsort(dl, 1, nk)
-                    i1 = int(0.50*nk + 0.9999); if (i1 < 1) i1 = 1
-                    i2 = int(0.90*nk + 0.9999); if (i2 < 1) i2 = 1
-                    i3 = int(0.98*nk + 0.9999); if (i3 < 1) i3 = 1
+                    # the site'"'"'s nearest-rank rule (duration.sh, the home Per day
+                    # table): rank = int((n - 1) * P / 100 + 0.5) + 1 — the
+                    # chart opens the Duration report, and a ceiling rank here
+                    # disagreed with it on 61 of 68 days (2026-09-29)
+                    i1 = int((nk - 1) * 0.50 + 0.5) + 1
+                    i2 = int((nk - 1) * 0.90 + 0.5) + 1
+                    i3 = int((nk - 1) * 0.98 + 0.5) + 1
                     sd = sd (sd==""?"":"|") lab ":" dl[i1] ":" dl[i2] ":" dl[i3] ":" d
                 } else
                     sd = sd (sd==""?"":"|") lab "::::" d
@@ -132,8 +139,8 @@ if [ -f "$TR" ]; then
           bump(24, $7)
           next }
         # from here on raw == 1 — the per-record cache (_transfers.tsv): count
-        # the legs whose raw Status is Failed or Failed Subtransmission (the
-        # Transfer errors view); slot = jdn (col 14) + start hour (col 12)
+        # the legs whose raw Status is anything but Processed (the Transfer
+        # errors view); slot = jdn (col 14) + start hour (col 12)
         $11=="" || $12 !~ /^[0-9][0-9]:/ { next }
         {
           h = int(substr($12,1,2))
@@ -158,7 +165,7 @@ if [ -f "$TR" ]; then
               if (!($24 in SES) || hk < SESH[$24]) { SESH[$24] = hk; SES[$24] = ($7 == "User") ? "U" : "S" }
           }
         }
-        $3 == "Failed" || $3 == "Failed Subtransmission" {
+        $3 != "" && $3 != "Processed" {   # every non-Processed leg — the per-row Error rule the Top view counts (2026-09-29: "Failed (aborted)" was missed)
           h = int(substr($12,1,2))
           bumpe(1,  $14*24 + h)
           bumpe(2,  $14*12 + int(h/2))
@@ -715,21 +722,21 @@ fi
     # both publishes) — the view selection carries via them. PeSIT is LAST
     # and conditional, so omitting it never shifts the earlier button indices.
     if [ -n "$dur6" ]; then
-        printf 'CARD\tFile duration percentiles\tP50 dark green, P90 orange, P98 dark red — each band tops out at that percentile of the OK File durations in that slot; click a slot for its day\t../transfer/duration.html\tspan2\tslots\tdur\t%s\t../day/{}.html?axway_hero=Duration\t%s\t%s\t%s\t%s\t%s\n' "$dur6" "60:$dur1" "120:$dur2" "240:$dur4" "720:$dur12" "1440:$dur24"
+        printf 'CARD\tFile duration percentiles\tP50 dark green, P90 orange, P98 dark red — each band tops out at that percentile of the delivered (Processed) File durations in that slot; click a slot for its day\t../transfer/duration.html\tspan2\tslots\tdur\t%s\t../day/{}.html?axway_hero=Duration\t%s\t%s\t%s\t%s\t%s\n' "$dur6" "60:$dur1" "120:$dur2" "240:$dur4" "720:$dur12" "1440:$dur24"
         printf 'CARDALT\tFiles processed\tFiles processed\tOK Files (Processed + Waiting) per slot; click a slot for its day\t../transfer/topview.html\tspan2\tslots\tcount\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$cnt6" "60:$cnt1" "120:$cnt2" "240:$cnt4" "720:$cnt12" "1440:$cnt24"
         printf 'CARDALT\tVolume\tVolume\tbytes moved per slot; click a slot for its day\t../transfer/topview.html\tspan2\tslots\tbytes\t%s\t../day/{}.html?axway_hero=Volume\t%s\t%s\t%s\t%s\t%s\n' "$vol6" "60:$vol1" "120:$vol2" "240:$vol4" "720:$vol12" "1440:$vol24"
         [ -n "$thr6" ] && printf 'CARDALT\tThroughput\tWire throughput\tMB/s per slot — the slot'"'"'s counted bytes over its counted leg durations, from the legs big and slow enough to measure a rate (over 1 MB, over 500 ms); an empty slot had none\t../transfer/route-throughput.html\tspan2\tslots\tspeed\t%s\t../day/{}.html?axway_hero=Duration\t%s\t%s\t%s\t%s\t%s\n' "$thr6" "60:$thr1" "120:$thr2" "240:$thr4" "720:$thr12" "1440:$thr24"
         printf 'CARDALT\tError %% Files\tTransfer error rate\tper slot, the %% of its Files that Failed or Expired — a slot with no Files shows a gap\t../transfer/topview.html\tspan2\tslots\trate\t%s\t../day/{}.html?axway_hero=Error%%20%%25%%20Files\t%s\t%s\t%s\t%s\t%s\n' "$rate6" "60:$rate1" "120:$rate2" "240:$rate4" "720:$rate12" "1440:$rate24"
-        printf 'CARDALT\tTransfer errors\tTransfer errors\tTransfers (raw log records) whose Status is Failed or Failed Subtransmission, per slot — one File can contribute several failed legs; a quiet slot is a real zero\t../transfer/failure-heatmap.html\tspan2\tslots\terrs\t%s\t../day/{}.html?axway_hero=Transfer%%20errors\t%s\t%s\t%s\t%s\t%s\n' "$err6" "60:$err1" "120:$err2" "240:$err4" "720:$err12" "1440:$err24"
+        printf 'CARDALT\tTransfer errors\tTransfer errors\tTransfers (raw log records) whose Status is anything but Processed, per slot — one File can contribute several failed legs; a quiet slot is a real zero\t../transfer/failure-heatmap.html\tspan2\tslots\terrs\t%s\t../day/{}.html?axway_hero=Transfer%%20errors\t%s\t%s\t%s\t%s\t%s\n' "$err6" "60:$err1" "120:$err2" "240:$err4" "720:$err12" "1440:$err24"
         [ -n "$con6" ] && printf 'CARDALT\tConnections\tConnections opened\ttechnical connections (SSH or PeSIT sessions) OPENED in the slot, split by who dialled: the partner'"'"'s client, or us; one session counts once, in the slot it started\t../transfer/connection-efficiency.html\tspan2\tslots\tconns\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$con6" "60:$con1" "120:$con2" "240:$con4" "720:$con12" "1440:$con24"
         # The two CUMULATIVE views. Their slot links deliberately carry
         # ?axway_hero=Files%20processed, NOT their own label: a day page has no
         # "seen" curve to show (a single day is one point on it), so clicking a
         # slot opens that day's Files-processed graph. The link pattern is a
         # free-form string — nothing ties it to the card's own view.
-        [ -n "$ptn6" ] && printf 'CARDALT\tSeen|Partners\tPartners seen\thow many partners the site had seen in the transfer log by then (orange), split into green (its latest File was delivered — expired pickups and waiting files count green, matching the site-wide colours) and red (its latest File FAILED) — green and red move both ways and always sum to orange; click a slot for that day'"'"'s Files processed\t../transfer/entities/partner-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$ptn6" "60:$ptn1" "120:$ptn2" "240:$ptn4" "720:$ptn12" "1440:$ptn24"
-        [ -n "$acc6" ] && printf 'CARDALT\tSeen|Accounts\tAccounts seen\thow many accounts the site had seen in the transfer log by then (orange), split into green (its latest File was delivered — expired pickups and waiting files count green, matching the site-wide colours) and red (its latest File FAILED) — green and red move both ways and always sum to orange; click a slot for that day'"'"'s Files processed\t../transfer/entities/account-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$acc6" "60:$acc1" "120:$acc2" "240:$acc4" "720:$acc12" "1440:$acc24"
-        [ -n "$sub6" ] && printf 'CARDALT\tSeen|Subscriptions\tSubscriptions seen\thow many subscriptions the site had seen in the transfer log by then (orange), split into green and red by the site-wide RESULT colour: red = the flow is failing (its latest File FAILED, or the server log erred after its last delivery — the same red as the home page), green = everything else, expired pickups and waiting files included. Green and red move both ways and always sum to orange; click a slot for that day'"'"'s Files processed\t../transfer/entities/subscription-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$sub6" "60:$sub1" "120:$sub2" "240:$sub4" "720:$sub12" "1440:$sub24"
+        [ -n "$ptn6" ] && printf 'CARDALT\tSeen|Partners\tPartners seen\thow many partners the site had seen in the transfer log by then (orange), split into green (its latest File was delivered — expired pickups and waiting files count green here — the curve has no orange) and red (its latest File FAILED) — green and red move both ways and always sum to orange; click a slot for that day'"'"'s Files processed\t../transfer/entities/partner-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$ptn6" "60:$ptn1" "120:$ptn2" "240:$ptn4" "720:$ptn12" "1440:$ptn24"
+        [ -n "$acc6" ] && printf 'CARDALT\tSeen|Accounts\tAccounts seen\thow many accounts the site had seen in the transfer log by then (orange), split into green (its latest File was delivered — expired pickups and waiting files count green here — the curve has no orange) and red (its latest File FAILED) — green and red move both ways and always sum to orange; click a slot for that day'"'"'s Files processed\t../transfer/entities/account-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$acc6" "60:$acc1" "120:$acc2" "240:$acc4" "720:$acc12" "1440:$acc24"
+        [ -n "$sub6" ] && printf 'CARDALT\tSeen|Subscriptions\tSubscriptions seen\thow many subscriptions the site had seen in the transfer log by then (orange), split into green and red: red = the flow is failing (its latest File FAILED, or the server log erred after its last delivery — the same red as the home page), green = everything else, expired pickups and waiting files included (the curve has no orange). Green and red move both ways and always sum to orange; click a slot for that day'"'"'s Files processed\t../transfer/entities/subscription-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=Files%%20processed\t%s\t%s\t%s\t%s\t%s\n' "$sub6" "60:$sub1" "120:$sub2" "240:$sub4" "720:$sub12" "1440:$sub24"
         # the four UC status stacks — OVERVIEW ONLY, so their labels deliberately
         # match no day-page button (picking one and opening a day page falls back
         # to Duration, exactly as picking "Partners seen" already does)

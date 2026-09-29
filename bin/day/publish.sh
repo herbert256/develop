@@ -60,13 +60,7 @@ render_card() {   # $1 chart id  $2 title  $3 sub  $4 href  $5 span  $6 chart  $
     while [ "$n" -gt 0 ] && [ -z "${args[n-1]}" ]; do unset "args[$((n-1))]"; n=$((n-1)); done
     local svg=""
     case $chart in
-        area)  svg=$(svg_area  ${args[@]+"${args[@]}"}) ;;
-        donut) svg=$(svg_donut ${args[@]+"${args[@]}"}) ;;
-        hbar)  svg=$(svg_hbar  ${args[@]+"${args[@]}"}) ;;
         vbar)  svg=$(svg_vbar  ${args[@]+"${args[@]}"}) ;;
-        stack) svg=$(svg_stack ${args[@]+"${args[@]}"}) ;;
-        heat)  svg=$(svg_heat  ${args[@]+"${args[@]}"}) ;;
-        gauge) svg=$(svg_gauge ${args[@]+"${args[@]}"}) ;;
         slots)
             local BASEIV=30   # the visible default resolution, in minutes
             # CLIENT-SIDE since 2026-07: the card is one placeholder carrying
@@ -254,11 +248,10 @@ tops_html() {   # $1 day rpt
 }
 
 # (the "Grand overview" cross-link row was removed 2026-07 — the top bar's
-# Dashboard link covers it)
-daylinks_html() { :; }
+# Dashboard link covers it; its no-op daylinks_html went 2026-09-29)
 
 # ---- the page writer --------------------------------------------------------
-# Consumes the globals set by the caller: OUT TITLE H1 NAVLINE DAYLINKS
+# Consumes the globals set by the caller: OUT TITLE H1 NAVLINE
 # KPIS_H HERO_CARD ALT_CARDS ALT_BTNS TOPS_H FACTS_H PROBLEMS_H.
 write_page() {
     # nav row: NAVROW<TAB>prev<TAB>next (each "label|href"; empty href = inactive)
@@ -274,7 +267,6 @@ write_page() {
     {
         html_head "$TITLE" "$CSSREL" "" "" "daily" "" "" "" "slotchart.js"
         printf '<div class="daynav">%s<h1>%s</h1>%s</div>\n' "$prevbtn" "$(prose "$H1")" "$nextbtn"
-        printf '%s\n' "$DAYLINKS"
         printf '<main class="dash">\n'
         printf '%s\n' "$KPIS_H"
         if [ -n "$HERO_CARD" ] && [ -n "$ALT_CARDS" ]; then
@@ -311,7 +303,6 @@ _day_page() {   # $1 = date
     CIDN=0
     TITLE=$(field1 TITLE "$rpt"); H1=$(field1 H1 "$rpt")
     NAVLINE=$(grep -m1 '^NAVROW'$'\t' "$rpt" || true)
-    DAYLINKS=$(daylinks_html)
     KPIS_H=$(kpis_html "$rpt")
     hero_html "$rpt"
     FACTS_H=$(facts_html "$rpt")

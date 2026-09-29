@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# bin/skiplist.sh — the ONE reader for input/<env>/skip.txt, the site-local SKIP LIST.
+# bin/skiplist.sh — the ONE reader for input/skip.txt, the site-local SKIP LIST.
 #
 # SOURCED, not run. Mirrors bin/blacklist.sh (same layout, same injection idiom)
 # but a different OPERATION: the blacklist BLANKS one field of a row it keeps,
@@ -8,7 +8,7 @@
 # "Skipped" analyses report.
 #
 # Defines:
-#   SKIPLIST_FILE  the path (input/<env>/skip.txt — per environment since 2026-08-31)
+#   SKIPLIST_FILE  the path (input/skip.txt — per environment since 2026-08-31)
 #   SKIPLIST_AWK   awk functions to inject with string concatenation:
 #
 #                      awk -F'\t' -v SLF="$SKIPLIST_FILE" "$SKIPLIST_AWK"'
@@ -42,7 +42,7 @@
 # flat token list keeps working unchanged.
 #
 SCRIPT_DIR_SL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# PER ENVIRONMENT since 2026-08-31 (user request): input/<env>/skip.txt.
+# PER ENVIRONMENT since 2026-08-31 (user request): input/skip.txt.
 SKIPLIST_FILE="${SKIPLIST_FILE:-$(cd "$SCRIPT_DIR_SL/.." && pwd)/input/skip.txt}"
 export SKIPLIST_FILE
 

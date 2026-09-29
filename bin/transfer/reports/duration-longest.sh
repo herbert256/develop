@@ -17,12 +17,12 @@
 # request: it took the Size column's place), CoreId, Destination Subscription,
 # File — the former "Duration
 # (ms)" and "Account" columns went with the split (user request). EVERY
-# listed File gets a File page docs/<env>/files/<coreid>.html (the sidecar
+# listed File gets a File page docs/files/<coreid>.html (the sidecar
 # _longest-files.tsv, paged by failed.sh; 2026-09-03, user request — the
 # one-hour threshold it started with was dropped 2026-09-06, user request).
 #
 # Usage:
-#   ./duration-longest.sh    # -> data/<env>/transfer/reports/duration-longest.rpt
+#   ./duration-longest.sh    # -> data/transfer/reports/duration-longest.rpt
 #
 set -euo pipefail
 
@@ -56,7 +56,7 @@ top_list() {
         { ms = $9 + 0; if (ms <= 0) next
           s = clean($12); if (s == "") s = "(no subscription)"
           printf "%d\t%s\t%s %s\t%s\t%s\t%s\t%s\n", ms, $1, $4, $5, s, clean($24), clean($11), humandur(ms) }
-    ' "$FILES" | sort -t$'\t' -k1,1nr | awk -v n="$TOP_N" 'NR<=n'
+    ' "$FILES" | LC_ALL=C sort -t$'\t' -k1,1nr | awk -v n="$TOP_N" 'NR<=n'
 }
 # the scope total (delivered Files with a duration), for the TOTAL row
 count_scope() { awk -F'\t' '$2 == "Processed" && ($9 + 0) > 0 { n++ } END { print n + 0 }' "$FILES"; }
@@ -66,7 +66,7 @@ n_ok=$(count_scope)
 shown_ok=$(printf '%s\n' "$slow_ok" | awk 'length($0) { n++ } END { print n+0 }')
 
 # the FILE-page list (2026-09-03, user request): EVERY listed File gets a
-# File page docs/<env>/files/<coreid>.html, the errors-page layout for a
+# File page docs/files/<coreid>.html, the errors-page layout for a
 # File of any outcome; failed.sh writes it from this sidecar (unioned with
 # the Transfer patterns list) and the CoreId cell of every row opens it (the
 # one-hour threshold went 2026-09-06, user request: at most TOP_N pages).

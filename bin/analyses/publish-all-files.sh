@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 #
-# publish-all-files.sh — the ALL FILES SEARCH, "Implementation 2, all files" (3 until 2026-09-29)
-# (2026-09-27, user request): search/all-files.html over EVERY File of the
-# transfer cache, where Implementation 1 covers the newest 30 data days and
-# Implementation 2 the newest 1000 Files per subscription.
+# publish-all-files.sh — the ALL FILES SEARCH (2026-09-27, user request):
+# search/all-files.html over EVERY File of the transfer cache (the File search
+# window pages and the Latest files pages it once sat beside went 2026-09-29).
+# Its data also feeds every subscription page's Files table (the per-
+# subscription day lists s/<slug>.js below, 2026-09-29).
 #
 # THE BALANCE between the end user's wait and the size of docs/:
 #   - ONE SHARD PER DATA DAY, docs/search/all/d-<yyyy-mm-dd>.js — the day's
@@ -43,7 +44,7 @@
 # Usage: bin/analyses/publish-all-files.sh
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; render_rpt, file_search_impl_row, …
+source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; render_rpt, …
 source "$SCRIPT_DIR/../ranges.sh"        # grp_par: PASS 2 per day-aligned slice (2026-09-28)
 ensure_assets
 
@@ -100,7 +101,7 @@ case $_pj in ""|*[!0-9]*) _pj=2 ;; esac
 # PASS 2 — the day shards + the manifest lines + the bloom filters, per
 # DAY-ALIGNED slice of the rows in parallel (grp_par: the rows are sorted on
 # the day, a day is never split, the manifest parts join in slice order)
-grp_par "$TMPD/rows" "$TMPD/pass2" "$_pj" env LC_ALL=C awk -F'\t' -v OUTD="$OUTD" -v MAN="$TMPD/days" -v GSIF="$TMPD/gsi" '
+grp_par "$TMPD/rows" "$TMPD/pass2" "$_pj" env LC_ALL=C awk -F'\t' -v OUTD="$OUTD" -v MAN="$TMPD/days" -v SUBSF="$TMPD/subdays" -v GSIF="$TMPD/gsi" '
     function tl(s) { gsub(/\\/, "\\\\", s); gsub(/`/, "\\`", s); gsub(/\$\{/, "\\${", s); return s }   # template-literal escape
     function hsh(s, b,   i, h) { h = 0; for (i = 1; i <= length(s); i++) h = (h * b + ORD[substr(s, i, 1)]) % 2147483647; return h }
     function item(s) { if (!(s in IT)) { IT[s] = 1; nit++ } }
@@ -135,8 +136,10 @@ grp_par "$TMPD/rows" "$TMPD/pass2" "$_pj" env LC_ALL=C awk -F'\t' -v OUTD="$OUTD
         sl = ""; for (i = 1; i <= nd; i++) sl = sl (i > 1 ? "," : "") DL[i]
         split("", DL)
         printf "%s\t%d\t%s\t%d\t%s\n", day, nrow, sl, m, enc > MAN
+        # the subscription pages\047 day lists: name, local index, Files
+        for (i = 1; i <= nls; i++) printf "%s\t%s\t%d\t%d\n", day, LSN[i], i - 1, LC[i - 1] > SUBSF
         day = ""; nrow = 0; nls = 0; nit = 0
-        split("", LSI); split("", LSN); split("", IT); split("", DS)
+        split("", LSI); split("", LSN); split("", IT); split("", DS); split("", LC)
     }
     BEGIN {
         for (i = 1; i < 256; i++) ORD[sprintf("%c", i)] = i
@@ -145,12 +148,14 @@ grp_par "$TMPD/rows" "$TMPD/pass2" "$_pj" env LC_ALL=C awk -F'\t' -v OUTD="$OUTD
         while ((getline l < GSIF) > 0) { n = split(l, a, "\t"); GSI[a[1]] = a[2] + 0 }
         close(GSIF)
         MAN = MAN "." ENVIRON["GRP_PART"]; printf "" > MAN
+        SUBSF = SUBSF "." ENVIRON["GRP_PART"]; printf "" > SUBSF
     }
     {
         if ($1 != day) { flush(); day = $1; sf = OUTD "/d-" day ".js"; printf "AXWAY_AFD(\"%s\",`", day > sf }
         sb = $5
         if (!(sb in LSI)) { LSI[sb] = nls++; LSN[nls] = sb }
         DS[GSI[sb]] = 1
+        LC[LSI[sb]]++
         printf "%s%s\t%s\t%s\t%s\t%s\t%s", (nrow ? "\n" : ""), tl($3), $4, LSI[sb], $6, $7, $8 > sf
         nrow++
         items($3)
@@ -158,10 +163,10 @@ grp_par "$TMPD/rows" "$TMPD/pass2" "$_pj" env LC_ALL=C awk -F'\t' -v OUTD="$OUTD
     }
     END {
         flush()
-        close(MAN)
+        close(MAN); close(SUBSF)
     }' -
-: > "$TMPD/days"
-for ((_i = 1; _i <= GRP_N; _i++)); do cat "$TMPD/days.$_i" >> "$TMPD/days"; done
+: > "$TMPD/days"; : > "$TMPD/subdays"
+for ((_i = 1; _i <= GRP_N; _i++)); do cat "$TMPD/days.$_i" >> "$TMPD/days"; cat "$TMPD/subdays.$_i" >> "$TMPD/subdays"; done
 : >> "$TMPD/subs"
 
 # the manifest: the global subscription dictionary (name ⇥ detail slug; the
@@ -176,10 +181,42 @@ for ((_i = 1; _i <= GRP_N; _i++)); do cat "$TMPD/days.$_i" >> "$TMPD/days"; done
         v=$(cksum < "$OUTD/d-$d.js" | awk '{print $1}')
         [ "$first" = 1 ] || printf '\n'
         printf '%s\t%s\t%s\t%s\t%s\t%s' "$d" "$n" "$sl" "$m" "$enc" "$v"
+        printf '%s\t%s\n' "$d" "$v" >> "$TMPD/dayv"
         first=0
     done < "$TMPD/days"
     printf '`};\n'
 } > "$OUTD/index.js"
+
+# THE SUBSCRIPTION DAY LISTS (2026-09-29, user request): docs/search/all/
+# s/<slug>.js per subscription detail page — the Files table of
+# details/subscriptions/<slug>.html (assets/sub-files.js) reads it to page
+# through the subscription's Files, 25 at a time, loading only the day
+# shards a page needs:
+#   AXWAY_AFS("<slug>", `day \t Files \t shard cksum \t local index(es)`)
+# one line per day that holds a File of it, NEWEST FIRST; the local indices
+# (",") are the shard dictionary entries of its name(s) — several names can
+# share one detail page (the slug map), a name without a page has no list.
+mkdir -p "$OUTD/s"
+LC_ALL=C awk -F'\t' -v OFS='\t' -v SUBS="$TMPD/subs" -v DV="$TMPD/dayv" '
+    BEGIN {
+        while ((getline l < SUBS) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[2] != "") SL[a[1]] = a[2] }
+        close(SUBS)
+        while ((getline l < DV) > 0) { split(l, a, "\t"); V[a[1]] = a[2] }
+        close(DV)
+    }
+    ($2 in SL) && $4 > 0 {
+        k = SL[$2] SUBSEP $1
+        if (!(k in C)) { K[++nk] = k; I[k] = $3 } else I[k] = I[k] "," $3
+        C[k] += $4
+    }
+    END { for (i = 1; i <= nk; i++) { split(K[i], a, SUBSEP); print a[1], a[2], C[K[i]], V[a[2]], I[K[i]] } }
+' "$TMPD/subdays" | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2r | LC_ALL=C awk -F'\t' -v OUTD="$OUTD/s" '
+    function js(x) { gsub(/\\/, "\\\\", x); gsub(/"/, "\\\"", x); return x }
+    function close1() { if (cur != "") { printf "`);\n" > f; close(f) } }
+    $1 != cur { close1(); cur = $1; f = OUTD "/" cur ".js"; printf "AXWAY_AFS(\"%s\",`", js(cur) > f; nl = 0 }
+    { printf "%s%s\t%s\t%s\t%s", (nl++ ? "\n" : ""), $2, $3, $4, $5 > f }
+    END { close1() }'
+nsubl=$(find "$OUTD/s" -name '*.js' -type f | wc -l | tr -d ' ')
 ndays=$(wc -l < "$TMPD/days" | tr -d ' '); nrows=$(wc -l < "$TMPD/rows" | tr -d ' ')
 
 # the page: an EMPTY table the engine fills (rangehook: the shared From/To)
@@ -192,5 +229,4 @@ _ev=$(cksum < "$DOCS/assets/all-files-search.js" 2>/dev/null | awk '{print $1}')
 awk -v a="<script src=\"all/index.js?v=$_mv\" defer></script>" -v b="<script src=\"../assets/all-files-search.js?v=$_ev\" defer></script>" \
     '/<script src=[^>]*report\.js/ && !done { print a; print b; done = 1 } { print }' "$PAGE" > "$PAGE.tmp.$$" \
     && mv "$PAGE.tmp.$$" "$PAGE"
-_inject_after_h1 "$PAGE" "$(file_search_impl_row 2)"
-echo "Wrote search/all-files.html + search/all/ ($ndays day shard(s), $nrows File(s))." >&2
+echo "Wrote search/all-files.html + search/all/ ($ndays day shard(s), $nrows File(s), $nsubl subscription day list(s))." >&2

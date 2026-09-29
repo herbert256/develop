@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Entities coverage cells — Cloud Reports</title>
+<title>Help: Configured entities — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,23 +15,25 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the page</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Entities coverage cells</h1>
+<h1>Configured entities</h1>
 <h2>What it shows</h2>
-<p>The items behind one cell of the <strong>Entities</strong> or <strong>Logical, Partners, Domains, Applications &amp; BL</strong> pages: exactly the configured names (or whitelisted IPs) that cell counts. The title repeats the cell: entity group, column, count.</p>
+<ul>
+<li>Five pages &mdash; Logical flows, External Partners, Internal Domains, Internal Applications, BL &mdash; each listing every configured name of that entity with what it is built from.</li>
+<li>The <a href="home.html">home page</a>&rsquo;s status table opens them from the <strong>Total</strong> cell of the Logical, Partners, Domains, Applications and BL rows.</li>
+</ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Name</strong> &mdash; the configured name, linking its detail page when seen in the transfer logs; on Whitelist pages the allowed <strong>IP</strong>, with the account(s) whose <code>AllowIP</code> whitelist carries it.</li>
-<li><strong>Direction</strong> &mdash; Configured pages only: <em>In</em> (the partner connects into SecureTransport) or <em>Out</em> (SecureTransport connects out); on External Partners the pair <em>connection/movement</em> &mdash; who dials whom, then which way the file travels.</li>
-<li><strong>Last transfer</strong>, <strong>Result</strong> &mdash; the newest transfer&rsquo;s timestamp and Error (red) / OK (green); blank on a Configured page = never seen. Not Seen pages show <strong>Seen</strong> instead; External Partners drops Last transfer (the tint tells the outcome).</li>
-<li><strong>Accounts</strong> / <strong>Endpoints</strong> &mdash; on External Partners, Internal Applications, Internal Domains: member accounts and, in the same order, each one&rsquo;s endpoint (In: the login the partner uses; Out: the host SecureTransport delivers to); collapsed to a count, click to expand, matching line by line.</li>
+<li><strong>Logical flow</strong> / <strong>Partner</strong> / <strong>Domain</strong> / <strong>Application</strong> / <strong>BL</strong> &mdash; the name, linking its detail page.</li>
+<li><strong>Direction</strong> &mdash; connection/movement: who dials whom, then which way its subscriptions move the Files (a relay counts as both).</li>
+<li><strong>Subscriptions</strong>, <strong>Accounts</strong>, <strong>Endpoints</strong> (inbound logins and outbound hosts), <strong>Whitelisted IPs</strong> &mdash; folded to a count; click to expand.</li>
+<li><strong>UC1</strong>&ndash;<strong>UC4</strong> &mdash; how many of its subscriptions are that use case: the name prefix, else the use case derived from the configuration.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Row tint = the item&rsquo;s current result (the Entities Status figures): light green last transfer OK, light orange never seen, light red last transfer Error.</li>
-<li><strong>In &amp; Out</strong> table: each side counted whole; an item flowing both ways counts in both (its row reads <em>In + Out</em>), so In + Out can exceed Total. <strong>Direction as a partition</strong>: In only / Both / Out only, summing to Total.</li>
-<li>External Partners: the <strong>Connection</strong>, <strong>Movement</strong> and <strong>Use case</strong> buttons each narrow to one value; they combine, <em>All</em> lifts that group&rsquo;s filter.</li>
-<li>Sort: Result pages newest first; Configured and Seen pages alphabetical; External Partners on the partner name throughout.</li>
-<li>Rebuilt every publish from the Show Seen reports&rsquo; data; each list reconciles with its table number.</li>
+<li>A logical flow is a FlowID family condensed to <code>domain_application_partner</code>; domain, application and partner are its three parts. Partners merge into one organisation by shared endpoints, whitelist IPs, whitelisted host addresses and aliases.</li>
+<li>A BL is a subscription&rsquo;s <code>BL</code> tag or BL number; its members are the subscriptions carrying it.</li>
+<li>The <strong>Connection</strong>, <strong>Movement</strong> and <strong>Use case</strong> selectors each narrow to one value; they combine, <em>All</em> lifts one.</li>
+<li>Row tint = the entity&rsquo;s result colour (<a href="general.html">Generic help</a>).</li>
 </ul>
 </main>
 </body>

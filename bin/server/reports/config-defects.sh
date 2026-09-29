@@ -18,7 +18,7 @@
 #       W "Value of 'Server.ProtocolCommands.batchSize' is too low..." — the
 #       recurring server-tuning warning.
 #
-# Not a .rpt — no page of its own; data/<env>/server/reports/config-defects.tsv.
+# Not a .rpt — no page of its own; data/server/reports/config-defects.tsv.
 #
 # Usage:
 #   ./config-defects.sh

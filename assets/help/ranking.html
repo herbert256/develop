@@ -17,28 +17,28 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Ranking</h1>
 <h2>What it shows</h2>
-<p>Where every entity stands against the others of its <strong>own type</strong> on the five metrics its detail page ranks it by.</p>
-<p>Each metric is two columns, the <strong>position</strong> and the <strong>value</strong> behind it, a divider between the pairs. Sorted on the Files position by default; every column sorts.</p>
+<ul>
+<li>The five rankings of the detail pages&rsquo; <strong>Ranking</strong> section, for every entity of one type at once; the tabs pick one of the nine types (Subscriptions &hellip; BL).</li>
+<li>Each metric is two columns: the position <strong>#</strong> and the value it stands on.</li>
+</ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Files</strong> &mdash; most Files first; <code>#1</code> is the busiest of its type.</li>
-<li><strong>Volume</strong> &mdash; most bytes first (a flow can be #1 by volume and unremarkable by count).</li>
-<li><strong>Errors</strong> &mdash; highest error percentage first: <code>#1</code> is the worst; a flawless entity sorts last.</li>
-<li><strong>Duration per leg</strong> &mdash; shortest average OK transfer leg first (<code>#1</code> = fastest); a leg, not a File &mdash; the File spans are on <a href="duration.html">Duration</a>.</li>
-<li><strong>Throughput per leg</strong> &mdash; highest bytes per second over the OK legs first (<code>#1</code> = fastest).</li>
+<li><strong>Files</strong> &mdash; most Files first.</li>
+<li><strong>Volume</strong> &mdash; most bytes first.</li>
+<li><strong>Errors</strong> &mdash; <strong>Error %</strong>, highest first: <code>#1</code> is the worst; a flawless entity sorts last.</li>
+<li><strong>Duration per leg</strong> &mdash; <strong>Average</strong> OK transfer leg, shortest first; a leg, not a File (File spans are on <a href="duration.html">Duration</a>).</li>
+<li><strong>Throughput per leg</strong> &mdash; <strong>Bytes/s</strong> over the OK legs, highest first.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Ranks never cross types; the second button row picks one of the nine entity types.</li>
-<li>Only entities <strong>seen</strong> with real transfers are ranked; an entity without a transfer has no metric and is left out, as on its own page. Never timed: <code>-</code> for Duration and Throughput, still ranked on the other three.</li>
-<li>Positions are not computed here: each detail page writes its five positions to a sidecar as it renders; this page collates them &mdash; the same numbers by construction.</li>
-<li>A tie shares a position (the next ones are skipped).</li>
-<li><strong>From/To re-ranks</strong>: narrowing recomputes every value <em>and</em> position over the selected days alone; an entity with nothing in range drops out of the table and the population. Duration and Throughput average the <em>timed</em> transfers in range. Widening back restores the baked figures exactly.</li>
+<li>Ranks never cross types, and only entities seen with real transfers are ranked. Nothing timed: <code>-</code> for Duration and Throughput, still ranked on the other three.</li>
+<li>The positions are the detail pages&rsquo; own, so the two never disagree; a tie shares a position and skips the next ones.</li>
+<li>From/To re-ranks: every value and position is recomputed over the selected days; an entity with nothing in range drops out.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Every row of an entity&rsquo;s <strong>Ranking</strong> box links here: the page opens at that type, sorted on the clicked metric (<code>#1</code> on top), turned to the page holding the entity and scrolled to its outlined row &mdash; the neighbourhood shows whether the field is packed or the entity an outlier.</li>
-<li>Such a link always opens at the <strong>full period</strong> (the clicked position is a full-period figure); your remembered range is left alone, and picking a new one here saves as usual.</li>
+<li>A row of a detail page&rsquo;s Ranking section opens this page at its type, sorted on that metric, scrolled to the entity&rsquo;s outlined row, at the full period.</li>
+<li>Look for mismatches: #1 by volume but #40 by throughput.</li>
 </ul>
 </main>
 </body>

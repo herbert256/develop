@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Transfer Duration — Cloud Reports</title>
+<title>Help: Duration — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,27 +15,27 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Transfer Duration</h1>
+<h1>Duration</h1>
 <h2>What it shows</h2>
-<p>How long Files take, per day: two tables side by side &mdash; the percentiles and the min / avg / median / max. The intro states the overall min, median, p95, p99 and max over the window.</p>
+<ul>
+<li>How long Files take, per day, in two tables side by side; the summary line gives the File count, median, p95, p99 and max over the window.</li>
+<li>Two views: <strong>OK transfers</strong> (delivered Files only) and <strong>All transfers</strong> (every File with a measured duration).</li>
+</ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Percentiles</strong> (left) &mdash; p10, p25, p50 (median), p75, p90, p95, p98, p99 and p100 per day. A percentile is the duration this share of the day&rsquo;s Files finished at or below: p95 = 95% were at least this fast.</li>
-<li><strong>p100</strong> &mdash; the day&rsquo;s longest File, the same value as Max; next to p99, the gap says how far the worst case sits from the rest.</li>
-<li><strong>Min / Avg / Median / Max</strong> (right) &mdash; the shortest, mean, middle and longest duration per calendar day.</li>
+<li><strong>Duration per day &mdash; percentiles</strong> &mdash; Date / Files / p10 / p25 / p50 / p75 / p90 / p95 / p98 / p99 / p100: p95 = 95% of the day&rsquo;s Files finished at or below it; p100 = the longest.</li>
+<li><strong>Duration per day &mdash; min / avg / median / max</strong> &mdash; Date / Files / Min / Avg / Median / Max.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li><strong>OK transfers</strong> (default, the button row) counts delivered (Processed) Files only: Error transfers &mdash; mostly instant 0-byte attempts &mdash; would flatten every statistic toward zero.</li>
-<li><strong>All transfers</strong> counts every File with a measured duration; a failed transfer&rsquo;s duration is how long it ran before failing (a 2-hour timeout, say), so that view&rsquo;s Max can far exceed the OK view&rsquo;s.</li>
-<li>A File = all records sharing one CoreId; its duration is the wall-clock span from first record start to last record end, in milliseconds &mdash; store-and-forward gap and retry idle included, not the sum of the record durations.</li>
-<li>Raw log durations are compound and mixed-unit (<code>574 ms</code>, <code>1.314 s</code>, <code>1 min 0.550 s</code>); they are normalised to milliseconds when the caches are built and shown here in whole seconds, minutes or hours.</li>
-<li>Percentiles use the nearest-rank method and resist the single outlier that dominates Max.</li>
-<li>Per-day min / avg / max and percentiles are <strong>not additive</strong>: a narrowed date range keeps each day row but blanks those columns in the total row (&ldquo;&ndash;&rdquo;); the Files count re-totals normally.</li>
+<li>A File&rsquo;s duration is its wall-clock span, first record start to last record end: the store-and-forward gap and retry idle time included, not the sum of the record durations.</li>
+<li>OK transfers leaves out the Error transfers, mostly instant 0-byte attempts that would flatten every figure; in All transfers a failure counts as long as it ran before giving up, so its Max can far exceed the OK view&rsquo;s.</li>
+<li>Percentiles use the nearest-rank method. They are not additive: a narrowed date range keeps the day rows but blanks them in the total row; Files re-totals.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Own pages in this group: <a href="duration-longest.html">Longest Files</a> (the 50 slowest transfers), <a href="duration-dwell.html">Duration distribution &amp; Store-and-forward</a> (histograms; the buckets re-count over the date range). The slowest subscriptions are the <a href="entities-subscription.html">Entities &rsaquo; Subscriptions</a> page sorted on p95.</li>
+<li>A gap between p99 and p100 shows how far the worst case sits from the rest; <a href="duration-longest.html">Longest Files</a> names them.</li>
+<li>The slowest flows: the <a href="entities-subscription.html">Entities</a> Subscriptions page sorted on a Duration column.</li>
 </ul>
 </main>
 </body>

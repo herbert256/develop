@@ -7,7 +7,7 @@
 # each subscription against its OWN rhythm, one by the hour, one by the gap.
 #
 # Usage:
-#   ./merge-punctuality.sh    # -> data/<env>/transfer/reports/punctuality.rpt
+#   ./merge-punctuality.sh    # -> data/transfer/reports/punctuality.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -133,6 +133,8 @@ awk -F'\t' -v PF="$PARSED" -v OUTF="$AGG" -v ALLF="$ALLF.tmp" -v DIMS="$DIMS" -v
 '  "$PARSED" "$FILES"
 LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 "$ALLF.tmp" > "$ALLF.tmp2" && mv "$ALLF.tmp2" "$ALLF" && rm -f "$ALLF.tmp"
 
+nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }   # a count cell shows blank, never 0
+
 for which in this previous; do
     [ "$which" = this ] && mon=$THIS || mon=$PREV
     for dim in $DIMS; do
@@ -140,7 +142,7 @@ for which in this previous; do
             account)      title="Accounts";      chead="Account";      nkind=acct;  noun="account" ;;
             subscription) title="Subscriptions"; chead="Subscription"; nkind=site;  noun="subscription" ;;
             login)        title="Logins";        chead="Login";        nkind=login; noun="login" ;;
-            remote-host)  title="Remote Hosts";  chead="Remote Host";  nkind=host;  noun="remote host" ;;
+            remote-host)  title="Hosts";         chead="Remote Host";  nkind=host;  noun="remote host" ;;   # title = the menu label (entities.sh)
             logical)      title="Logical";       chead="Logical";      nkind=lgc;   noun="logical" ;;
             partner)      title="Partners";      chead="Partner";      nkind=ptn;   noun="partner" ;;
             application)  title="Applications";  chead="Application";  nkind=app;   noun="application" ;;
@@ -151,12 +153,13 @@ for which in this previous; do
         IFS='|' read -r _ _ _ tc tin tout tfe tra tmo tme twt tex ns \
             <<< "$({ grep "^T|$mon|$dim|" "$AGG" || true; } | awk 'NR == 1')"
         : "${tc:=0}" "${tin:=0}" "${tout:=0}" "${tfe:=0}" "${tra:=0}" "${tmo:=0}" "${tme:=0}" "${twt:=0}" "${tex:=0}" "${ns:=0}"
-        # rows busiest first (Total files desc, name tiebreak); In / Out never show a 0
+        # rows busiest first (Total files desc, name tiebreak); no count cell
+        # ever shows a 0 (2026-09-29: only In / Out were blanked)
         rows=$({ grep "^S|$mon|$dim|" "$AGG" || true; } | LC_ALL=C sort -t'|' -k5,5nr -k4,4f -k4,4 | awk -F'|' '
             function nz(x) { return (x + 0 == 0) ? "" : x + 0 }
             $4 == "" { next }
-            { printf "ROW\t%s\t%d\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\n", $4, $5, nz($6), nz($7), $8, $9, $10, $11, $12, $13 }')
-        [ "$which" = this ] && wlabel="this month" || wlabel="previous month"
+            { printf "ROW\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", $4, $5, nz($6), nz($7), nz($8), nz($9), nz($10), nz($11), nz($12), nz($13) }')
+        [ "$which" = this ] && wlabel="the current month" || wlabel="the previous month"
         {
             printf 'TITLE\tMonth stats — %s — %s\n' "$title" "$mon"
             printf 'DESC\tThe %ss with Files that started in %s (%s): total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired Files.\n' "$noun" "$mon" "$wlabel"
@@ -166,7 +169,7 @@ for which in this previous; do
             printf 'KIND\t%s\tnum\tnum\tnum\tnumfailed\tnumwarn\tnumwarn\tnumfailed\tnumwarn\tnumfailed\n' "$nkind"
             [ -n "$rows" ] && printf '%s\n' "$rows"
             printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s\t@{class=num warn}%s\t@{class=num failed}%s\n' \
-                "$ns" "$noun" "$tc" "$([ "$tin" = 0 ] && printf '' || printf '%s' "$tin")" "$([ "$tout" = 0 ] && printf '' || printf '%s' "$tout")" "$tfe" "$tra" "$tmo" "$tme" "$twt" "$tex"
+                "$ns" "$noun" "$tc" "$(nz0 "$tin")" "$(nz0 "$tout")" "$(nz0 "$tfe")" "$(nz0 "$tra")" "$(nz0 "$tmo")" "$(nz0 "$tme")" "$(nz0 "$twt")" "$(nz0 "$tex")"
             printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
         } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     done

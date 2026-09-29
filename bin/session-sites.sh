@@ -10,7 +10,7 @@
 # "Initializing route: {UC4_SI_VPS_VDN}" and the ARRC/AR "[account] [route]"
 # bracket tokens. That is the platform's own attribution, not a guess.
 #
-# Writes data/<env>/transfer/cache/_sessionsites.tsv (session <TAB>
+# Writes data/transfer/cache/_sessionsites.tsv (session <TAB>
 # subscription) — the map bin/transfer/parse.sh's SESSION JOIN pass reads (the
 # Z records of its fallback map). Rules, all refusal-shaped like the other
 # fallbacks:
@@ -39,7 +39,7 @@
 # stays Waiting. (When the error end comes last, the leg stays in its File
 # as Failed — bin/bookend-ok.sh settles that one.) The JSON bookends join
 # the two: the same "transferId" under both CoreIds. Written to
-# data/<env>/transfer/cache/_rekeys.tsv (lone CoreId <TAB> transfer id <TAB>
+# data/transfer/cache/_rekeys.tsv (lone CoreId <TAB> transfer id <TAB>
 # original CoreId) — the K records of the parse's fallback map, which move
 # the leg back into its File. Refusal-shaped like the session map:
 #   - only LONE legs are candidates (a CoreId group of one row);

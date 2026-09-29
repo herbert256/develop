@@ -23,7 +23,7 @@
 # Config/analysis page: every table is `nofilter`.
 #
 # Usage:
-#   ./app-partners.sh   # -> data/<env>/analyses/reports/app-partners.rpt
+#   ./app-partners.sh   # -> data/analyses/reports/app-partners.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

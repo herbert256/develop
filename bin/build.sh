@@ -28,7 +28,7 @@
 #   1. parse    bin/flow-manager.sh (pre-parse: input/flow-manager/*.json -> data/flow-manager/*.tsv
 #               configured entity lists), then bin/transfer/parse.sh +
 #               bin/server/parse.sh tokenize the input CSVs into the gitignored
-#               caches (only when stale — new/changed input or a changed parse.sh),
+#               caches (in full, every build — fresh-only since 2026-09-28),
 #               then bin/session-sites.sh, bin/expire-files.sh, bin/bookend-ok.sh
 #               (the three server-log -> transfer joins) and bin/build/result.sh
 #               (fill the base result columns: green / red / orange)
@@ -99,7 +99,7 @@ bin/check-syntax.sh || exit 1
 # PREFLIGHT (2026-09-28 audit F05): every file the docs/ seed below copies
 # must exist BEFORE anything is cleared — a missing asset used to fail the
 # seed's cp AFTER data/ and docs/ were already gone: no site, no report.
-SEED_ASSETS="style.css report.js slotchart.js file-search.js all-files-search.js"
+SEED_ASSETS="style.css report.js slotchart.js all-files-search.js sub-files.js"
 _miss=""
 for _a in $SEED_ASSETS; do [ -f "assets/$_a" ] || _miss="$_miss assets/$_a"; done
 [ -d assets/help ] || _miss="$_miss assets/help/"
@@ -200,7 +200,7 @@ echo "build.sh: data/ and docs/ moved aside in $(( $(date +%s) - _fc0 ))s (delet
 # the hand-authored files from the repo-root assets/ (the build report lands
 # back in docs/tools/build.html at the very end, from the EXIT trap —
 # 2026-09-12). assets/ is the ONE place to edit style.css / report.js /
-# slotchart.js / file-search.js / all-files-search.js and
+# slotchart.js / all-files-search.js / sub-files.js and
 # the help pages (see assets/README.txt); .nojekyll and topbar-data.js stay
 # generated (ensure_assets).
 echo "build.sh: seeding docs/ from assets/ ..." >&2
@@ -443,8 +443,9 @@ HTML
         if [ -n "${BUILD_TB:-}" ]; then printf '%s' "$BUILD_TB"
         else
             # (the brand's text is the environment label, like render_topbar)
-            printf '<div class="topbar"><a class="brand" href="%sindex.html">%s</a><nav class="nav"><a href="%stransfer/index.html">Transfer reports</a><a href="%sserver/index.html">Server reports</a><a href="%sdashboards/index.html">Dashboards</a><a href="%sanalyses/index.html">Analyses</a></nav><span class="tr-group"><span class="tright">Build report</span></span></div>\n' \
-                "$base" "$(printf '%s' "${ENV_LABEL:-Cloud}" | esc)" "$base" "$base" "$base" "$base"
+            # (the three area start pages went 2026-09-29 — reports/index.html is THE start page)
+            printf '<div class="topbar"><a class="brand" href="%sindex.html">%s</a><nav class="nav"><a href="%sreports/index.html">Reports</a><a href="%sdashboards/index.html">Dashboards</a></nav><span class="tr-group"><span class="tright">Build report</span></span></div>\n' \
+                "$base" "$(printf '%s' "${ENV_LABEL:-Cloud}" | esc)" "$base" "$base"
         fi
         # THE TIMINGS LIVE IN THE TITLE (2026-08): start → end and the
         # duration are the h1's tail, not a fact block — the end collapses to
@@ -633,6 +634,10 @@ trap 'exit 129' HUP
 # 3. publish — per-area publishes, then bin/build/publish.sh (the index pages
 #    live in dirs the per-area scripts clear; it also writes the home).
 export GENERATED_AT="$(date '+%Y-%m-%d %H:%M')"   # one footer stamp shared by all publish processes
+# the BUILD ID (2026-09-29): render_rpt.awk stamps it as data-v on a
+# subscription page's Files table — the cache-buster of its day list
+# docs/search/all/s/<slug>.js, which is written after the pages render
+export AXWAY_BUILD_ID="$BUILD_T0"
 
 # bg_step_start LABEL COMMAND [ARG...] / bg_step_wait — one step running in
 # the background beside the foreground run_steps: output goes to its own log
@@ -842,7 +847,7 @@ run_step "publish: analyses + coverage pages"                             bin/an
 # THE EVIDENCE CATCH-UP (2026-08): reports that read evidence steps AFTER
 # them produce — failed.sh the kaput/boxes classifications (the server
 # reports and publish-insights above), failed-files.sh the reasons failed.sh
-# classifies, failing-reasons.sh reads failed.rpt. Their first runs happen
+# classifies, failing-reasons.sh reads failed-files.rpt. Their first runs happen
 # before that evidence exists, so they run AGAIN here, and the pages they
 # feed are re-rendered below.
 # THE DRILL-CELL FILES (2026-09-21, user request): the first File of every red /
@@ -853,7 +858,7 @@ run_step "report catch-up: failed subscriptions"                          bin/tr
 run_step "report catch-up: failed files"                                  bin/transfer/reports/failed-files.sh   # 2026-09-14: the reasons the failed.sh catch-up just classified
 run_step "report catch-up: error reasons"                                 bin/analyses/reports/failing-reasons.sh
 # The DETAIL-PAGES re-render runs in the BACKGROUND beside everything
-# below (2026-08): it touches only docs/details + docs/latest, which none of
+# below (2026-08): it touches only docs/details, which none of
 # the remaining steps read; the pages bake the error/File rosters and the
 # failed-sub reasons the catch-up above rewrote. The detail .rpt files
 # themselves need no second run: the one input the catch-up could change for
@@ -912,9 +917,10 @@ if [ ! -f input/.sample-estate ]; then
     run_step "archive: st-reports-${ENV_KEY:-?} .7z -> build/ + outbox"  bin/build/st-reports-archive.sh
 fi
 
-# (The docs/build.html publish was REMOVED 2026-08-29 — the report lives only
-# in build/index.html, written by the EXIT trap. The former stage-4 git
-# commit + push was removed 2026-07: the build only renders; committing and
-# pushing docs/ is a separate, manual decision.)
+# (The report is written by the EXIT trap to build/index.html AND, since
+# 2026-09-12, to the site copy docs/tools/build.html — linked from the sitemap
+# Tools card. The former stage-4 git commit + push was removed 2026-07: the
+# build only renders; committing and pushing docs/ is a separate, manual
+# decision.)
 
 echo "Done." >&2

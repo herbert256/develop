@@ -9,13 +9,12 @@
 # The components stay unpublished intermediates (merge_rpt).
 #
 # Usage:
-#   ./trends.sh    # -> data/<env>/transfer/reports/trends.rpt
+#   ./trends.sh    # -> data/transfer/reports/trends.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 source "$SCRIPT_DIR/../../merge_rpt.sh"
 OUT="$REPORTS_DIR/trends.rpt"
-rm -f "$REPORTS_DIR/volume.rpt" "$REPORTS_DIR/volume-src.rpt"   # the retired Volume page and its component
 comps=("$REPORTS_DIR/trend.rpt" "$REPORTS_DIR/duration-trend.rpt")
 merge_rpt "$OUT" "Trends" "The window split in half, each subscription compared across the halves: the flows whose Files grew or shrank, and the flows whose transfers got slower or faster." "Which flows are changing: the data window split at its midpoint and every subscription compared across the two halves — **growers** and **shrinkers** by Files and volume, and the flows whose median duration got **slower** or **faster**." "trend, growth, shrink, decline, slower, faster, regression, duration trend, first half, second half" "${comps[@]}"

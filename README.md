@@ -35,7 +35,7 @@ removes any copy an earlier refresh left behind, so a runtime `bin/` carries
 pipeline code only. Which environment a checkout serves is written in its
 hand-maintained `input/environment.txt` (`Acceptance` / `Production`; `Sample`
 here) — the top-bar label, the home title, and the prefix of the update
-archives its build ingests from the inbox (`acc*.7z` / `prd*.7z`); the log
+archives its build ingests from the inbox (`acc*.7z` / `prd*.7z` or `prod*.7z`); the log
 exports inside land as `logEntry_yyyy-mm-dd.csv` / `fileTransfer_yyyy-mm-dd.csv`
 and stay in `input/` (the retention step that moved exports older than the past
 month to `archive/` was removed 2026-09-28).
@@ -43,19 +43,24 @@ month to `archive/` was removed 2026-09-28).
 ## What it publishes
 
 A static HTML site under `docs/` — one environment per checkout, its home page
-at the docs root:
+(status tables, the per-day table, the red worklists) at the docs root:
 
-- **Transfer reports** — counts, volume, failure rate, protocol, activity,
-  performance, notable transfers and AV scan over the FlowManager transfer
-  logs, plus a detail page per account, subscription, login, host, partner,
-  application and domain, and seven Entities views.
-- **Server reports** — records per day, errors and error reasons, logons and
-  connections, PeSIT link health, and entities seen in the server logs but
-  missing from the transfer logs.
-- **Analyses** — configured-vs-seen coverage, first seen, configuration
-  hygiene and the Boxes pages.
-- **Dashboards and day pages** — the graphical overview, the CFT end-to-end
-  Monitor and one page per calendar day.
+- **Reports** — ONE top-bar menu of 14 groups over both logs and the
+  FlowManager configuration: Overview · Entities · Failures · Server log
+  errors · Use cases & delivery · Activity & volume · Performance · Flow
+  patterns · Protocols & security · Logons & connections · Partners ·
+  Configuration · Coverage · Cleanup, with a start page
+  (`reports/index.html`); the reports of a group link each other through
+  the first row of buttons.
+- **Entities** — nine types (subscription, logical flow, partner, account,
+  login, host, domain, application, BL) × six views (All · Seen · Not seen
+  · OK · Warning · Error), plus a detail page per entity of the nine types.
+- **Search** — the All files search (every File, by name or CoreId) and the
+  Entity Search.
+- **Dashboard, Monitor and day pages** — the graphical overview, the CFT
+  end-to-end Monitor and one page per calendar day.
+- **Tools** — the site map, the report finder, what's new and the build
+  report.
 
 ## How it works
 
@@ -79,8 +84,8 @@ Computation is separated from presentation, in three stages:
   `data/<area>/reports/` — no HTML.
 - **Publish** — the publish scripts (sharing `bin/publish_lib.sh`) render the
   `.rpt` files into `docs/…`; `bin/build/publish.sh` writes the index
-  pages and the shared home **last** (the per-area publishes clear the dirs
-  its pages live in).
+  pages, the shared home and every report's group row **last** (the
+  per-area publishes clear the dirs its pages live in).
 
 The whole chain is one command:
 
@@ -93,9 +98,10 @@ bin/sample/verify.sh      # assert the built site covers every planted scenario
 Every build is a FRESH build: it wipes `build/`, `data/` and `docs/`,
 re-seeds `docs/` from `assets/` and runs every step in full — there are no
 incremental builds. Each run writes an HTML **build report** to
-`build/index.html` (local only, gitignored; one row per step with duration and
-OK/FAILED, plus captured output — written even when a step fails) and its
-console to `build/build.log`. Only one build can run at a time
+`build/index.html` (gitignored; one row per step with duration and
+OK/FAILED, plus captured output — written even when a step fails), its site
+copy `docs/tools/build.html` (linked from the site map) and its console to
+`build/build.log`. Only one build can run at a time
 (`build/.buildlock`).
 
 For running individual stages, the full dependency rules, the `.rpt` protocol
@@ -121,7 +127,7 @@ and every convention, see **`CLAUDE.md`**; deep subsystem notes live in
   `rm -rf data/` is safe and never touches the exports.
 - `docs/` — the rendered site, PURE build output: every build clears it
   wholesale and re-seeds the hand-authored assets from the repo-root `assets/`
-  (`style.css`, `report.js`, `slotchart.js`, `file-search.js`,
+  (`style.css`, `report.js`, `slotchart.js`, `all-files-search.js`, `sub-files.js`,
   `assets/help/`). **Edit in `assets/`, never in `docs/`** — a build
   overwrites the docs copies.
 

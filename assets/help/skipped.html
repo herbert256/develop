@@ -17,23 +17,22 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Skipped</h1>
 <h2>What it shows</h2>
-<p>The audit of what the <strong>skip list</strong> removed: the ignored accounts, subscriptions and logins, the transfer-log and server-log records set aside with them, and the raw transfer records dropped for other reasons. Skipped names appear in no report, coverage table, detail page or search result. </p>
-<h2>Sections</h2>
 <ul>
-<li>Info boxes: skipped <strong>accounts</strong>, <strong>subscriptions</strong>, <strong>transfer log lines</strong>, <strong>server log lines</strong>, dropped <strong>raw records</strong>.</li>
-<li><strong>Skip rules</strong>: one row per rule with its count of accounts, subscriptions, logins, transfer-log and server-log lines.</li>
-<li>One table each of the skipped accounts, subscriptions and comm-profile logins, with the <strong>Rule</strong> that caught them; a last table of the dropped raw records with their reason (<strong>http</strong>, <strong>empty ssh probe</strong>, otherwise <strong>no subscription</strong>).</li>
+<li>What the <strong>skip list</strong> removed at parse time &mdash; accounts, subscriptions, logins and the log lines set aside with them &mdash; plus the raw transfer records dropped for other reasons. No other report, detail page or search counts them.</li>
+<li>Six boxes: skipped <strong>accounts</strong>, <strong>subscriptions</strong>, <strong>logins</strong>, <strong>transfer log lines</strong>, <strong>server log lines</strong> and <strong>no-subscription / http / probe lines</strong>.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Skip rules</strong> &mdash; Rule, then what it caught: Accounts, Subscriptions, Logins, Transfer log lines, Server log lines.</li>
+<li><strong>Skipped accounts</strong> / <strong>subscriptions</strong> / <strong>logins</strong> &mdash; the name and the <strong>Rule</strong> that caught it.</li>
+<li><strong>No subscription / http / empty probe</strong> &mdash; the dropped raw records: Date &amp; time, <strong>Reason</strong>, Status, Account, Login, Direction, Protocol, File, Size, CoreId.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>The rules live in <code>input/skip.txt</code>, this checkout&rsquo;s own, one token per line (e.g. <code>CRG</code>, <code>SWIFT</code>). Edit and rebuild &mdash; a changed list re-derives the FlowManager config and re-parses both logs.</li>
-<li>Config-side matching is a <strong>case-insensitive substring</strong> of the account, subscription or comm-profile login name (<code>CRG</code> matches <code>IPO_CRG-OK01_RABOBANK</code>); log records follow the rule kind (contains, exact or regex).</li>
-<li>A <code>login</code> rule drops the matching comm-profile login from the configuration (its detail page and login pairs with it); the partner stays. A server-log mention of that login is scrubbed only by a <code>message</code> or <code>any</code> rule &mdash; to hide a login completely, use <code>any</code>.</li>
-<li>Applied at <strong>parse time</strong>: <code>bin/flow-manager.sh</code> writes a filtered copy of the exports to <code>data/flow-manager/filtered/</code> (every base list, pair, Partner/Domain/Application group and config-derived analyses page excludes the names); <code>bin/transfer/parse.sh</code> drops a record whose attributed account or subscription matches into <code>data/transfer/_skipped.tsv</code>; <code>bin/server/parse.sh</code> drops a record whose message contains a token into <code>data/server/_skipped.tsv</code>.</li>
-<li>Raw records dropped for another reason (kept verbatim in <code>data/transfer/_skipped.csv</code>, counted nowhere): a CoreId with <strong>neither subscription nor account</strong> after every attribution pass (platform-internal traffic the blacklist blanked); an <strong>http</strong> leg (web-UI hand traffic); an <strong>empty ssh probe</strong> &mdash; one lone Outbound ssh record of size 0 whose Application reads <code>none</code>, no file moved.</li>
-<li>A record with an account but no subscription is never dropped. A pickup the platform logged under a fresh CoreId (it lost the transfer&rsquo;s session state mid-download) first rejoins its File: the server log names the same transfer id under both CoreIds. The parser then asks the server log which flow the connection executed (the session id joins the logs, the route lines name the subscription), then lets a partner-delivered Inbound leg pick the account&rsquo;s single receiving flow when only a response leg contradicts it.</li>
-<li>Failing both, it counts under the synthetic <code>UCx_account</code> (<code>UCx</code> = the use case nothing could determine): in the transfer counts, the Entities views and Not in Flow Manager, never in First seen or the coverage figures. A <code>UCx_</code> row is a routing gap to investigate, not a configured flow.</li>
-<li>An estate where nothing matches shows zeros and empty lists &mdash; expected. Static audit, no From/To.</li>
+<li>The rules are <code>input/skip.txt</code>, one token per line, this checkout&rsquo;s own; edit it and rebuild.</li>
+<li>Configuration names match on a case-insensitive <strong>substring</strong> (<code>CRG</code> matches <code>IPO_CRG-OK01_RABOBANK</code>); log records follow the rule kind (contains, exact or regex). A skipped login loses its detail page; to hide it from the server log too, use an <code>any</code> rule.</li>
+<li>Reasons: <strong>http</strong> = the CoreId has an http leg (web-UI traffic); <strong>empty ssh probe</strong> = one lone outbound ssh record of size 0, Application <code>none</code>; otherwise <strong>no subscription</strong> = no leg carried a subscription or account.</li>
+<li>A record with an account but no subscription is kept, under the synthetic <code>UCx_&lt;account&gt;</code>: a routing gap to investigate.</li>
 </ul>
 </main>
 </body>

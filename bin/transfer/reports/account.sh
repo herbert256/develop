@@ -2,13 +2,15 @@
 #
 # account.sh
 #
-# Per-account report from the logical-transfer cache (data/_files.tsv):
-#   - a summary per Account (Files, Failed, Processed, Volume, % of
-#     Files, First/Last seen) — the same column set as every Entities report
-#   - a detail per Account / Date (Files, Failed, Processed)
-# Both tables count Files — one logical transfer per CoreId — split into Failed /
-# Processed by the delivered outcome; clicking a Failed or Processed cell reveals
-# that outcome's 10 most recent Files (click-to-expand).
+# Per-account DATA from the logical-transfer cache (data/_files.tsv): ONE
+# table, a summary per Account (Files, Error, OK, Retry, Resubmit, Volume,
+# First/Last seen, the per-day buckets and the 10-newest drill lists). It
+# counts Files — one logical transfer per CoreId — split into Error / OK by the
+# delivered outcome. NO PAGE of its own: the Entities pages render from
+# entities.sh's grouped entities/account.rpt (2026-09-13); this .rpt is read
+# — its FIRST (Summary) table only — by showseen.sh, entity-search.sh and the
+# server rosters (known_names). (The "Detail per Account / Date" table went
+# 2026-09-29: no reader, ~90% of the file.)
 #
 # Usage:
 #   ./account.sh    # reads input/*.csv (via the caches), writes data/account.rpt
@@ -40,7 +42,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # the transfer count split Error/OK, the volume, the first/last seen
 # date, the per-date base metrics (count:failed:processed:bytes:retry:resubmit) for the date
 # filter, and (via COREIDS_AWK) the 10 most-recent transfers of each outcome for
-# the drill-down — both summary (per account) and detail (per account/day).
+# the drill-down.
 # Transfers with no account or no valid date are skipped.
 # ---------------------------------------------------------------------------
 agg=$(awk -F'\t' -v PF="$PARSED" "$COREIDS_AWK"'
@@ -58,8 +60,6 @@ agg=$(awk -F'\t' -v PF="$PARSED" "$COREIDS_AWK"'
         addtop("S" SUBSEP a SUBSEP (f ? "F" : "P"), sk, disp, cid)
         if (rt) addtop("R" SUBSEP a SUBSEP "T", sk, disp, cid); if (rs) addtop("R" SUBSEP a SUBSEP "S", sk, disp, cid)   # the Retry / Resubmit drill lists, 10 newest each (2026-09-13, user request)
         dk = a SUBSEP date; ds[dk] = 1; dl[dk]++; if (f) dfl[dk]++; else dpr[dk]++; if (rt) drt[dk]++; if (rs) drs[dk]++; ddb[dk] += size
-        addtop("D" SUBSEP a SUBSEP date SUBSEP (f ? "F" : "P"), sk, disp, cid)
-        if (rt) addtop("Q" SUBSEP a SUBSEP date SUBSEP "T", sk, disp, cid); if (rs) addtop("Q" SUBSEP a SUBSEP date SUBSEP "S", sk, disp, cid)
         tc++; if (f) tfl++; else tpr++; if (rt) trt++; if (rs) trs++; tvol += size
     }
     END {
@@ -69,10 +69,7 @@ agg=$(awk -F'\t' -v PF="$PARSED" "$COREIDS_AWK"'
             sh = tc > 0 ? sprintf("%.1f", sc[a] * 100 / tc) : "0.0"
             printf "S|%s|%d|%d|%d|%d|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", a, sc[a], sfl[a]+0, spr[a]+0, srt[a]+0, srs[a]+0, human(sv[a]+0), sh, fst[a], lst[a], \
                 bk[a], buildlist(top["S" SUBSEP a SUBSEP "F"]), buildlist(top["S" SUBSEP a SUBSEP "P"]), buildlist(top["R" SUBSEP a SUBSEP "T"]), buildlist(top["R" SUBSEP a SUBSEP "S"]) }
-        for (dk in ds) { split(dk, x, SUBSEP); nd++
-            printf "D|%s|%s|%d|%d|%d|%d|%d|%s|%s|%s|%s\n", x[1], x[2], dl[dk], dfl[dk]+0, dpr[dk]+0, drt[dk]+0, drs[dk]+0, \
-                buildlist(top["D" SUBSEP x[1] SUBSEP x[2] SUBSEP "F"]), buildlist(top["D" SUBSEP x[1] SUBSEP x[2] SUBSEP "P"]), buildlist(top["Q" SUBSEP x[1] SUBSEP x[2] SUBSEP "T"]), buildlist(top["Q" SUBSEP x[1] SUBSEP x[2] SUBSEP "S"]) }
-        printf "T|%d|%d|%d|%s|%d|%d|%d|%d\n", tc+0, tfl+0, tpr+0, human(tvol+0), ns+0, nd+0, trt+0, trs+0
+        printf "T|%d|%d|%d|%s|%d|%d|%d\n", tc+0, tfl+0, tpr+0, human(tvol+0), ns+0, trt+0, trs+0
     }
 ' "$PARSED" "$FILES")
 
@@ -81,7 +78,7 @@ if [ -z "$agg" ]; then
     exit 1
 fi
 
-IFS='|' read -r _ tot_records tot_failed tot_processed tot_human summary_row_count detail_row_count tot_retry tot_resub <<< "$(printf '%s\n' "$agg" | grep '^T|')"
+IFS='|' read -r _ tot_records tot_failed tot_processed tot_human summary_row_count tot_retry tot_resub <<< "$(printf '%s\n' "$agg" | grep '^T|')"
 
 # Summary rows, busiest first (by transfer count). ONE awk pass formats the
 # sorted stream into finished ROW lines — a bash while-read with a $(printf)
@@ -93,16 +90,9 @@ summary_rows=$({ printf '%s\n' "$agg" | grep '^S|' || true; } | sort -t'|' -k3,3
       printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\t@data:coreids-retry=%s\t@data:coreids-resubmit=%s\n", \
           $2, $3, $4, $5, $6, $7, $8, $10, $11, $12, $13, ccp, $15, $16 }')
 
-# Detail rows, sorted by account then date (repeated account blanked in-browser).
-detail_rows=$({ printf '%s\n' "$agg" | grep '^D|' || true; } | sort -t'|' -k2,2 -k3,3 | awk -F'|' '
-    $2 == "" { next }
-    { ccp = $10   # field 10 = the OK list; 11/12 = the Retry / Resubmit lists (2026-09-13)
-      printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\t@data:coreids-retry=%s\t@data:coreids-resubmit=%s\n", \
-          $2, $3, $4, $5, $6, $7, $8, $9, ccp, $11, $12 }')
-
 {
     printf 'TITLE\tAccounts\n'
-    printf 'DESC\tFiles per account: a per-account summary and a per-day detail, both split into Error/OK.\n'
+    printf 'DESC\tFiles per account, split into Error/OK.\n'
     printf 'INTRO\tEvery account with its **Files** (one per CoreId), Error/OK split (**Retry** / **Resubmit** = the OK Files that needed a retry — a failed leg, then delivered — healed by the platform'\''s own retry or by an operator'\''s resubmit, the log'\''s Resubmitted flag), volume and last sighting. The view tabs switch between the logged accounts (**Seen**), the whole configuration (**All** / **Not seen**) and the status subsets (**OK** / **Warning** / **Error**) — rows tint by each account'\''s status.\n'
 
     printf 'TABLE\tSummary per Account\twide\n'
@@ -112,13 +102,6 @@ detail_rows=$({ printf '%s\n' "$agg" | grep '^D|' || true; } | sort -t'|' -k2,2 
     [ -n "$summary_rows" ] && printf '%s\n' "$summary_rows"
     printf 'TOTAL\tTotal (%s account(s))\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num}%s\t\t\n' \
         "$summary_row_count" "$tot_records" "$tot_failed" "$tot_processed" "$tot_retry" "$tot_resub" "$tot_human"
-
-    printf 'TABLE\tDetail per Account / Date\tgroup\n'
-    printf 'HEAD\tAccount\tDate\tFiles\tError\tOK\tRetry\tResubmit\n'
-    printf 'KIND\tacct\ttext\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumwarn\n'
-    [ -n "$detail_rows" ] && printf '%s\n' "$detail_rows"
-    printf 'TOTAL\t@{colspan=2}Total (%s row(s))\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num warn}%s\n' \
-        "$detail_row_count" "$tot_records" "$tot_failed" "$tot_processed" "$tot_retry" "$tot_resub"
 
     printf 'NOTE\tCounts Files — one logical transfer each; volume is the file counted once. First/Last seen stay full-period under the date filter. Click an Error or OK count for that outcome'\''s 10 most recent Files (newest first, by start time).\n'
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"

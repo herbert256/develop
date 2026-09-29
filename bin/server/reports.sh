@@ -18,7 +18,7 @@ source "$SCRIPT_DIR/../timing.sh"   # timed: one TIME line per pooled report (20
 source "$SCRIPT_DIR/../merge_rpt.sh"   # append_rpt_tables (2026-09-29)
 rm -f "$REPORTS_DIR"/*.rpt.tmp   # orphaned atomic-write temps from a killed run
 
-NJOBS=${AXWAY_NJOBS:-$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 4 )}   # AXWAY_NJOBS: bin/build.sh caps the parallel production chain
+NJOBS=${AXWAY_NJOBS:-$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 4 )}   # AXWAY_NJOBS: an optional override of the pool size (nothing sets it; default = the core count)
 case $NJOBS in ''|*[!0-9]*) NJOBS=4 ;; esac
 
 POOL_PIDS=()
@@ -77,11 +77,10 @@ pool_run "$SCRIPT_DIR/../analyses/reports/uc1-status.sh"
 pool_run "$SCRIPT_DIR/reports/deploy-errors.sh"
 pool_run "$SCRIPT_DIR/reports/remote-poll.sh"
 # (transfer-site-missing.sh — the "Transfer site missing" report — was removed
-# 2026-09-27, user request; its stale .rpt is dropped here. Likewise the
-# 2026-09-28 fewer-server-reports round: ssh-key-auth — its tables were the
-# Incoming Bad key / Locked columns and a subset of Outgoing — and the three
-# AR-line lists that routing-errors.sh folds into one table.)
-rm -f "$REPORTS_DIR"/{transfer-site-missing,ssh-key-auth,could-not-send,publish-failed,post-client-action}.rpt
+# 2026-09-27, user request. Likewise the 2026-09-28 fewer-server-reports round:
+# ssh-key-auth — its tables were the Incoming Bad key / Locked columns and a
+# subset of Outgoing — and the three AR-line lists that routing-errors.sh folds
+# into one table. Every build is fresh, so no stale .rpt needs dropping.)
 pool_run "$SCRIPT_DIR/../analyses/reports/uc3-status.sh"
 pool_run "$SCRIPT_DIR/reports/no-remote-dir.sh"
 pool_run "$SCRIPT_DIR/reports/no-remote-files.sh"
@@ -106,9 +105,7 @@ append_rpt_tables "$REPORTS_DIR/topview.rpt" "$REPORTS_DIR/errors-day.rpt"
 # (the "Operations & Capacity" group — Platform health, Capacity & sessions,
 # EventQueue — was removed 2026-09-27, user request: its merges and the
 # cluster-health / stuck-events / scheduler-overruns / file-cleanup
-# components went; pesit.sh and event-queue.sh stay for the graph sidecars.
-# Drop what a pre-removal build left behind.)
-rm -f "$REPORTS_DIR"/{platform-health,capacity,cluster-health,stuck-events,scheduler-overruns,file-cleanup}.rpt
+# components went; pesit.sh and event-queue.sh stay for the graph sidecars.)
 "$SCRIPT_DIR/reports/ssh-security.sh"
 "$SCRIPT_DIR/../analyses/reports/uc3-polling.sh"   # the UC3 tab's polling tables: reads remote-poll.rpt + its sidecars — after the pool, before the uc-status merge (2026-09-05)
 "$SCRIPT_DIR/../analyses/reports/polling.sh"   # the flat Polling page (Analyses / Configuration): remote-poll.rpt + sidecars + the cron schedules in ONE table (2026-09-05)

@@ -123,7 +123,7 @@ fi
 
 # overall percentiles from the DWELL lines (no early awk `exit` — it would SIGPIPE
 # the upstream printf under pipefail; just select the row and read to EOF)
-sorted=$(printf '%s\n' "$agg" | awk '/^DWELL /{print $2}' | sort -n)
+sorted=$(printf '%s\n' "$agg" | awk '/^DWELL /{print $2}' | LC_ALL=C sort -n)
 med_idx=$(( (n_meas + 1) / 2 )); [ "$med_idx" -lt 1 ] && med_idx=1
 p95_idx=$(awk -v n="$n_meas" 'BEGIN{i=int(n*0.95); print (i<1?1:i)}')
 med_ms=$(printf '%s\n' "$sorted" | awk -v i="$med_idx" 'NR==i{print}')
@@ -131,14 +131,14 @@ p95_ms=$(printf '%s\n' "$sorted" | awk -v i="$p95_idx" 'NR==i{print}')
 max_ms=$(printf '%s\n' "$sorted" | tail -1)
 med=$(humandur "${med_ms:-0}"); p95=$(humandur "${p95_ms:-0}"); mx=$(humandur "${max_ms:-0}")
 
-dist_rows=$(printf '%s\n' "$agg" | grep $'^B\t' | sort -t"$(printf '\t')" -k2,2n \
+dist_rows=$(printf '%s\n' "$agg" | grep $'^B\t' | LC_ALL=C sort -t"$(printf '\t')" -k2,2n \
     | awk -F'\t' '{ printf "ROW\t%s\t%s\t%s%%\t@data:buckets=%s\t@data:ord=%s\n", $3, $4, $6, $5, $2 }')
 [ -n "$dist_rows" ] && dist_rows+=$'\n'
 
 # -g, not -n (2026-09-28 fix): the max carries the CONVFMT %.6g form, and a
 # dwell of ~17 min or more prints as 1e+06-style — -n read "4.45563e+06" as
 # 4.46, so the slowest subscriptions sorted LAST and fell off the top-N cut
-site_rows=$(printf '%s\n' "$agg" | grep $'^P\t' | sort -t"$(printf '\t')" -k5,5gr \
+site_rows=$(printf '%s\n' "$agg" | grep $'^P\t' | LC_ALL=C sort -t"$(printf '\t')" -k5,5gr \
     | awk -F'\t' -v n="$TOP_N" 'NR<=n { printf "ROW\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids=%s\n", $2, $3, $8, $9, $6, $7 }')
 n_site=$(printf '%s\n' "$agg" | grep -c $'^P\t' || true)
 sitecap=""; [ "$n_site" -gt "$TOP_N" ] && sitecap=$(printf ' (top %s of %s subscriptions by max dwell)' "$TOP_N" "$n_site")

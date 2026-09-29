@@ -2,7 +2,7 @@
 #
 # skipped.sh — "Skipped" (an ANALYSES report published with the transfer pages,
 # like entity-coverage.sh): the accounts and subscriptions IGNORED because
-# their name matches the environment's skip list (input/<env>/skip.txt), plus a count of the
+# their name matches the environment's skip list (input/skip.txt), plus a count of the
 # transfer- and server-log records set aside for the same reason.
 #
 # Writes ONE report (skipped.rpt): a count per skip rule, then the skipped
@@ -13,16 +13,16 @@
 # The actual filtering happens at PARSE time (see bin/flow-manager.sh,
 # bin/transfer/parse.sh, bin/server/parse.sh); this report only reads the
 # sidecars those steps leave behind:
-#   data/<env>/flow-manager/filtered/_skipped.tsv   type<TAB>name  (Account / Subscription)
-#   data/<env>/transfer/_skipped.tsv       the skipped _transfers.tsv rows
-#   data/<env>/server/_skipped.tsv         the skipped _parse.tsv rows
+#   data/flow-manager/filtered/_skipped.tsv   type<TAB>name  (Account / Subscription)
+#   data/transfer/_skipped.tsv       the skipped _transfers.tsv rows
+#   data/server/_skipped.tsv         the skipped _parse.tsv rows
 # No date filter — a static audit of what the skip list removed.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../../transfer/lib.sh"
 mkdir -p "$REPORTS_DIR"
 
-CFG_SKIP="$CONFIG_DIR/filtered/_skipped.tsv"   # data/<env>/flow-manager/filtered/_skipped.tsv (type<TAB>name)
+CFG_SKIP="$CONFIG_DIR/filtered/_skipped.tsv"   # data/flow-manager/filtered/_skipped.tsv (type<TAB>name)
 T_SKIP="$DATA/transfer/_skipped.tsv"       # skipped transfer records
 S_SKIP="$DATA/server/_skipped.tsv"         # skipped server records
 SKIPFILE="$ROOT/input/skip.txt" # the rules (per environment since 2026-08-31)
@@ -31,8 +31,6 @@ source "$ROOT/bin/skiplist.sh"             # SKIPLIST_AWK (sl_load/sl_match) —
 # All the inputs are parse-time products (the two _skipped.tsv sidecars and the
 # config sidecar) plus the rule file and its reader.
 
-# (no per-value reports since 2026-09-29 — clear any a previous build left)
-rm -f "$REPORTS_DIR"/skipped-*.rpt
 
 awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S_SKIP" \
     -v outdir="$REPORTS_DIR" -v now="$(date '+%Y-%m-%d %H:%M:%S')" "$SKIPLIST_AWK"'
@@ -96,7 +94,7 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
         printf "STAT\twhite\t%d\tSkipped logins\n", TL + 0 > main
         printf "STAT\twhite\t%d\tSkipped transfer log lines\n", TT + 0 > main
         printf "STAT\twhite\t%d\tSkipped server log lines\n", TV + 0 > main
-        if (nt == 0) printf "NOTE\tThe skip list (input/<env>/skip.txt) is empty — nothing was skipped.\n" > main
+        if (nt == 0) printf "NOTE\tThe skip list (input/skip.txt) is empty — nothing was skipped.\n" > main
 
         # the per-rule counts, then one table per kind with the rule column
         printf "TABLE\tSkip rules\tnosort\tkeephead\n" > main
@@ -127,7 +125,7 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
     }
 ' </dev/null
 
-# ---- the NO-SUBSCRIPTION / HTTP skip table (data/<env>/transfer/_skipped.csv:
+# ---- the NO-SUBSCRIPTION / HTTP skip table (data/transfer/_skipped.csv:
 # the RAW input lines of the CoreIds bin/transfer/parse.sh dropped because no
 # leg carried a subscription OR an account — a group with an account keeps a
 # synthetic "UCx_<account>" site since 2026-08 and counts — or because a leg
@@ -187,7 +185,7 @@ awk -v rowsfile="$rows_tmp" -v nraw="$nraw" '
         close(rowsfile)
         if (n == 0) printf "ROW\t@{class=desc}(none — every CoreId got a subscription attributed, none ran over http and none was an empty outbound ssh probe)\t\t\t\t\t\t\t\t\t\n"
         printf "TOTAL\tTotal (%d record(s))\t\t\t\t\t\t\t\t\t\n", n
-        printf "NOTE\tThe RAW transfer-log records of the CoreIds dropped at parse time because **no leg** carried a subscription or even an **account** (after the propagation and config/xref/flow-direction fallbacks — a record with an account is never dropped: it keeps the synthetic subscription **UCx_account** and counts everywhere except First seen and the coverage figures), because a leg ran over **http** (web-UI hand traffic, never flow traffic), or because the CoreId is an **empty ssh probe** (2026-09-08): one lone **Outbound ssh** record of **size 0** whose Application field reads **none** — no file moved, so it must not count as a one-legged Error File. Kept verbatim in data/<env>/transfer/_skipped.csv; no other report counts these. Reason **http** = the CoreId has an http leg; **empty ssh probe** = the shape above; otherwise **no subscription**.\n"
+        printf "NOTE\tThe RAW transfer-log records of the CoreIds dropped at parse time because **no leg** carried a subscription or even an **account** (after the propagation and config/xref/flow-direction fallbacks — a record with an account is never dropped: it keeps the synthetic subscription **UCx_account** and counts everywhere except First seen and the coverage figures), because a leg ran over **http** (web-UI hand traffic, never flow traffic), or because the CoreId is an **empty ssh probe** (2026-09-08): one lone **Outbound ssh** record of **size 0** whose Application field reads **none** — no file moved, so it must not count as a one-legged Error File. Kept verbatim in data/transfer/_skipped.csv; no other report counts these. Reason **http** = the CoreId has an http leg; **empty ssh probe** = the shape above; otherwise **no subscription**.\n"
         spliced = 1
     }
     { print }

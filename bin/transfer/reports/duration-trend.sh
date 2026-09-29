@@ -100,11 +100,15 @@ if [ "$(printf '%s\n' "$agg" | awk 'NR==1 { print $1 }')" = "EMPTY" ]; then
         printf 'TITLE\tDuration Trend\n'
         printf 'DESC\tFlows whose median transfer duration changed between the first and second half of the data window — slower and faster movers, with the average file size beside them.\n'
         printf 'INTRO\tNo delivered Files with a measured duration in this dataset.\n'
-        printf 'TABLE\tDuration trend\tnofilter\n'
-        printf 'HEAD\tSubscription\n'
-        printf 'KIND\ttext\n'
-        printf 'ROW\tNo delivered Files with a measured duration in this dataset.\n'
-        printf 'TOTAL\tTotal (0 rows)\n'
+        # BOTH tables of a normal run (2026-09-29: one stub made the merged
+        # Trends report one tab short, its labels shifted)
+        for _t in 'Slower than they were' 'Faster than they were'; do
+            printf 'TABLE\t%s\twide\tnofilter\n' "$_t"
+            printf 'HEAD\tSubscription\n'
+            printf 'KIND\ttext\n'
+            printf 'ROW\tNo delivered Files with a measured duration in this dataset.\n'
+            printf 'TOTAL\tTotal (0 rows)\n'
+        done
         printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     echo "No delivered Files with a duration — wrote empty-state $OUT." >&2

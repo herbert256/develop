@@ -17,21 +17,25 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Not in Flow Manager</h1>
 <h2>What it shows</h2>
-<p>Every entity <strong>value</strong> seen in the transfer logs that the <strong>current FlowManager configuration</strong> does not know &mdash; the traffic running outside the configuration. All ten configured lists are checked: accounts, subscriptions, logins, hosts, whitelist, logical flows, partners, applications, domains, BL tags.</p>
+<ul>
+<li>Every entity <strong>value</strong> in the transfer log that the <strong>current FlowManager configuration</strong> does not know &mdash; traffic running outside the configuration. The summary line gives the unconfigured values, the Files they touched and their volume.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Type</strong> &mdash; Account, Subscription, Login, Host, Whitelist, Logical, Partner, Application, Domain or BL; rows grouped per type.</li>
+<li><strong>Name</strong> &mdash; the logged value; links its detail page where one exists.</li>
+<li><strong>Files</strong>, <strong>Error</strong>, <strong>OK</strong> (by each File&rsquo;s outcome), <strong>Volume</strong> (each file once).</li>
+<li><strong>First seen</strong> / <strong>Last seen</strong> &mdash; the start of the oldest and newest File carrying the value.</li>
+</ul>
 <h2>Rules</h2>
 <ul>
-<li>Walks the logical-transfer cache (one row per File) and compares each attributed value, case-insensitively, against the FlowManager caches extracted from <code>partners.json</code> / <code>subscriptions.json</code>.</li>
-<li>A logged subscription value counts as configured when a configured subscription name <strong>prefixes</strong> it &mdash; the site-wide rule (logged values carry protocol suffixes).</li>
-<li><strong>Host</strong> rows: outbound endpoints we dialed that partners.json does not list. <strong>Whitelist</strong> rows: source addresses of incoming connections that no AllowIP entry covers.</li>
-<li>Counts are Files; the Error/OK split follows each File&rsquo;s delivered outcome; the volume counts each file once.</li>
-<li>A missing FlowManager export makes every logged value of that type appear here.</li>
-<li>The configuration is compared <strong>as it is now</strong>: the report cannot tell whether a value was configured when it was logged &mdash; a since-deleted account and a never-configured one look the same.</li>
+<li>Case-insensitive comparison with the configured lists; a logged subscription counts as configured when a configured name <strong>prefixes</strong> it (logged values carry protocol suffixes).</li>
+<li><strong>Host</strong> = an outbound endpoint we dialed that partners.json does not list; <strong>Whitelist</strong> = an incoming source address no AllowIP entry covers.</li>
+<li>The configuration is compared <strong>as it is now</strong>: a since-deleted object and a never-configured one look the same. A missing FlowManager export lists every logged value of that type.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Typical hits: ad-hoc test uploads (an account created directly on the server), objects renamed or deleted after the logs were written, partner source addresses missing from the AllowIP whitelist.</li>
-<li>Names link to their detail pages where one exists (whitelist addresses have none).</li>
-<li>These are exactly the values that render <strong>untinted</strong> (no status colour) on the Entities pages &mdash; FlowManager has no result to colour them by.</li>
+<li>Typical hits: ad-hoc test uploads, objects renamed or deleted after the log was written, partner addresses missing from the whitelist.</li>
 </ul>
 </main>
 </body>

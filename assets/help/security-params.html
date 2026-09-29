@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Transfer Security Parameters — Cloud Reports</title>
+<title>Help: Security Parameters — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,20 +15,26 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Transfer Security Parameters</h1>
+<h1>Security Parameters</h1>
 <h2>What it shows</h2>
-<p>Connection security per attribute of the log&rsquo;s free-text <strong>SecurityParameters</strong> column, in one table: <strong>Attribute</strong> (TLS version, Cipher, Cipher suite, MAC, Key Exchange, Public Key), <strong>Value</strong> and <strong>Transfers</strong>, each attribute&rsquo;s values busiest first. Search an attribute to see only its rows.</p>
+<ul>
+<li>Every attribute parsed from the transfer log&rsquo;s free-text <strong>SecurityParameters</strong> column, in one table. A summary line gives all transfers with their Error / OK split.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Attribute</strong> &mdash; TLS version, Cipher, Cipher suite, MAC, Key Exchange, Public Key.</li>
+<li><strong>Value</strong> &mdash; each attribute&rsquo;s values, busiest first; a value opens its own page.</li>
+<li><strong>Transfers</strong> &mdash; the OK legs that used it.</li>
+</ul>
 <h2>Rules</h2>
 <ul>
-<li>The table counts <strong>transfers (legs)</strong>, not Files: the parameters are negotiated per leg, so the Inbound and Outbound rows of one File can use different ciphers or versions.</li>
-<li><strong>Transfers</strong> = the OK legs; there is no Error/OK split and no green or red cells.</li>
-<li>The attribute is labelled &ldquo;TLS version&rdquo;, not &ldquo;Protocol&rdquo;, to keep it apart from the transfer protocol &mdash; that distribution is the Protocol report in the same group.</li>
+<li>Counts <strong>transfers (legs)</strong>, not Files: parameters are negotiated per leg, so one File&rsquo;s Inbound and Outbound legs can differ.</li>
 <li>A leg counts once per attribute, so Transfers does not add across attributes: the Total stays blank.</li>
+<li>&ldquo;TLS version&rdquo; is the log&rsquo;s <code>Protocol:</code> key, renamed to keep it apart from the transfer protocol (see <a href="protocol.html">Protocol, Direction &amp; Mode</a>).</li>
+<li><strong>Value pages</strong> &mdash; every <strong>Subscription</strong> that used the value, with its <strong>Partner</strong> and <strong>Transfers</strong>, then a <strong>Partners</strong> table (Partner, Subscriptions, Transfers). Full period. A leg counts under every partner of its subscription and under its remote host&rsquo;s partner.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Click a value (a cipher, MAC, key exchange, public key, cipher suite or TLS version) for a page listing every <strong>subscription</strong> that used it, with its <strong>partner</strong> and transfer counts &mdash; each linking to its detail page &mdash; followed by a <strong>Partners</strong> summary rolling those subscriptions up per partner.</li>
-<li>Those per-value pages are full-period, not date-filtered.</li>
 <li>Deprecated values and who still uses them: <a href="security-outreach.html">Security outreach</a>.</li>
 </ul>
 </main>

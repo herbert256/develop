@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# bin/renames.sh — the ONE reader/writer for input/<env>/renames/, the record of
+# bin/renames.sh — the ONE reader/writer for input/renames/, the record of
 # subscriptions that FlowManager RENAMED.
 #
 # Why this exists (2026-08). A FlowManager export renamed 545 of 570
@@ -26,14 +26,14 @@
 #
 # WHY UNDER input/. The snapshot of the previous export is irreplaceable: once
 # the export is overwritten, the old name is gone for good and no rebuild can
-# recover it. Same argument as input/<env>/ip/ (a DNS answer cannot be
+# recover it. Same argument as input/ip/ (a DNS answer cannot be
 # regenerated) — "rm -rf data/" must stay safe. Both files are therefore
 # per-env data under input/, never under data/.
 #
-#   input/<env>/renames/subscriptions.tsv   <old name> <TAB> <current name>
-#   input/<env>/renames/profiles.tsv        the same, for the transfer PROFILE
+#   input/renames/subscriptions.tsv   <old name> <TAB> <current name>
+#   input/renames/profiles.tsv        the same, for the transfer PROFILE
 #                                           (customAttribute_FlowIdentifier)
-#   input/<env>/renames/flowid-names.tsv    <flowId> <TAB> <subscription>
+#   input/renames/flowid-names.tsv    <flowId> <TAB> <subscription>
 #                                           <TAB> <profile> — the snapshot the
 #                                           next run compares against
 #
@@ -150,7 +150,7 @@ function rnp_canon(v) {
 # completions disagree is left alone, because a wrong fold sends one flow s
 # history to another and the map exists precisely so nothing is guessed.
 # Memoised: the callers run over millions of log rows, and the scan is O(map).
-function rn_canon_pfx(v,   u, k, t, c, bt, bc, bsame, nx) {
+function rn_canon_pfx(v,   u, k, t, c, bt, bc, bsame, nx, ft) {
     if (v == "") return v
     u = toupper(v)
     if (u in RN_S) return rn_canon(v)
@@ -165,8 +165,11 @@ function rn_canon_pfx(v,   u, k, t, c, bt, bc, bsame, nx) {
     for (k in RN_S) {
         if (index(k, u) != 1) continue
         c++
-        if (t == "") t = RN_S[k]
-        else if (t != RN_S[k]) t = "\001"          # the full candidate set disagrees
+        # candidates compared by where their CHAIN ends (2026-09-29: A -> B and
+        # B -> C read as two targets, so a chain blocked the fold)
+        ft = rn_canon(RN_S[k])
+        if (t == "") t = ft
+        else if (t != ft) t = "\001"                  # the full candidate set disagrees
         # A candidate the token stops at a NAME-PART BOUNDARY of — the "_"
         # between the old doubled name s two halves, or its whole length — is
         # stronger evidence than one the token stops mid-part. UC4_ODV-ARE-YARDI
@@ -177,8 +180,8 @@ function rn_canon_pfx(v,   u, k, t, c, bt, bc, bsame, nx) {
         # AGREE — otherwise the token is left alone as before.
         nx = substr(k, length(u) + 1, 1)
         if (nx == "_" || nx == "") { bc++
-            if (bt == "") bt = RN_S[k]
-            else if (bt != RN_S[k]) bsame = 0 }
+            if (bt == "") bt = ft
+            else if (bt != ft) bsame = 0 }
     }
     if (c > 0 && t != "" && t != "\001")      RN_PFX[u] = rn_canon(t)
     else if (bc > 0 && bsame && bt != "")      RN_PFX[u] = rn_canon(bt)

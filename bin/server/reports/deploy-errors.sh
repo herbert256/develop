@@ -62,7 +62,7 @@
 #
 # Reads: $PARSED (the server cache), the transfer $FILES,
 #        xref/_profiles-subscriptions.tsv (the profile -> flow resolution).
-# Writes: data/<env>/server/reports/deploy-errors.rpt
+# Writes: data/server/reports/deploy-errors.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

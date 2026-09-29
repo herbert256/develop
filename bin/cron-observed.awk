@@ -59,7 +59,6 @@ BEGIN {
         u = toupper(a[2])
         if (!(u in PD) || a[3]+0 > PD[u]) { PD[u] = a[3]+0; PT[u] = a[4]; PW[u] = a[5]; PC[u] = a[6] }
     } close(PUNCT)
-    npu = 0; for (u in PD) { npu++; PU[npu] = u }
     # poll-times.tsv (remote-poll.sh): name, polls, days, typical,
     # spread(min), class, polls/day — the schedule firing in the
     # SERVER log, empty polls included

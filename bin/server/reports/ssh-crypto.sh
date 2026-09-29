@@ -73,12 +73,14 @@ LINK_AWK='
     # DISPLAY the folded name, so the page names the flow as the configuration
     # does. rn_canon_pfx also covers the truncated old spelling the server
     # writes, folding only when every completion agrees.
-    function sitecanon(t,   k, hits, full, c) {
+    function sitecanon(t,   k, hits, full, c, t0) {
+        if (t in SCMEMO) return SCMEMO[t]   # memo (2026-09-29): rows are keyed on it now, per line
+        t0 = t
         c = rn_canon_pfx(t)
-        if (c in ksite) return c
+        if (c in ksite) return (SCMEMO[t0] = c)
         hits = 0
         for (k in ksite) if (index(k, c) == 1) { hits++; full = k; if (hits > 1) { hits = 0; break } }
-        return hits == 1 ? full : c
+        return (SCMEMO[t0] = (hits == 1 ? full : c))
     }
     function sitelink(t,   k, hits, full) {
         t = sitecanon(t)
@@ -201,6 +203,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
             acct = "(unknown)"; if (match(m, /Account "[^"]*"/)) acct = substr(m, RSTART + 9, RLENGTH - 10)
             site = "(unknown)"; if (match(m, /Transfer site: "[^"]*"/)) site = substr(m, RSTART + 16, RLENGTH - 17)
             sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", site)                                            # canonical subscription name (drop the _SCP_ / _SSCP_ / _CCP_ tail)
+            if (site != "(unknown)" && site != "") site = sitecanon(site)   # the ROW key (2026-09-29): a truncated / old spelling made a second row
             host = "(unknown)"; if (match(m, /remote host: .+$/)) host = substr(m, RSTART + 13)
             if (acct == "") acct = "(blank)"
             dk = param SUBSEP acct SUBSEP site SUBSEP host

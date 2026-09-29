@@ -18,10 +18,10 @@
 # parse cache. A transfer-DATA report housed with the ANALYSES scripts (like
 # cross-reference.sh): it sources the transfer lib and writes a transfer rpt;
 # bin/analyses/reports.sh runs it (wave 1 — no PDA TSVs, no home.rpt). The
-# PAGE renders into docs/<env>/analyses/ via SUBS_GROUP_REPORTS.
+# PAGE renders into docs/analyses/ via SUBS_GROUP_REPORTS.
 #
 # Usage:
-#   ./account-sharing.sh   # -> data/<env>/transfer/reports/account-sharing.rpt
+#   ./account-sharing.sh   # -> data/transfer/reports/account-sharing.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

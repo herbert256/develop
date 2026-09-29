@@ -3,19 +3,19 @@
 # bin/analyses/publish-partner-groups.sh — one page per multi-token partner
 # GROUP, explaining WHY those partner codes were merged into one organisation.
 #
-#   docs/<env>/details/partner-groups/<slug>.html
+#   docs/details/partner-groups/<slug>.html
 #
 # A "group" partner (a name like GBA_TT_XXLLNC) is several partner tokens —
 # the LAST parts of logical flow names — that bin/flow-manager.sh's PDA
 # union-find combined (shared host / shared whitelist IP / whitelisted host
 # IP / DNS). That step records the merge EVIDENCE it used into
 # these caches (per env):
-#   data/<env>/flow-manager/xref/_partner-groups.tsv         group / members / direction
-#   data/<env>/flow-manager/xref/_partner-group-why.tsv      group / A / B / rule / evidence line
-#   data/<env>/flow-manager/xref/_partner-group-accounts.tsv group / token / account (the
+#   data/flow-manager/xref/_partner-groups.tsv         group / members / direction
+#   data/flow-manager/xref/_partner-group-why.tsv      group / A / B / rule / evidence line
+#   data/flow-manager/xref/_partner-group-accounts.tsv group / token / account (the
 #                                                            accounts behind each code's logical flows)
 # This script renders one page per group from them; the slug is the partner's
-# own detail-page slug (data/<env>/transfer/reports/details/partners/_slugmap.tsv)
+# own detail-page slug (data/transfer/reports/details/partners/_slugmap.tsv)
 # so the group icon on the Entities Partner pages (render_rpt.awk's grpicons)
 # and this page agree. The entity Partner list links each group row to its page.
 #
@@ -97,7 +97,7 @@ while IFS=$'\t' read -r gname members direction; do
                 if(r==3) return "One partner\x27s host resolves to an IP the other whitelists"
                 # (r==4, the curated alias pair, was RETIRED 2026-09-01: a
                 # curated variant is rewritten to its canonical token in
-                # input/<env>/logical_partners.txt BEFORE the merge, so it
+                # input/logical_partners.txt BEFORE the merge, so it
                 # never forms a group. Every group here is DERIVED.)
                 return "Rule " r }
             $1==G {
@@ -112,7 +112,7 @@ while IFS=$'\t' read -r gname members direction; do
         ' "$WHYF"
         printf '</table></div>\n'
 
-        printf '<p class="range">Partner grouping derives from the logical flow names (the last part is the partner code), merged by shared endpoints, shared whitelist IPs, whitelisted host addresses and curated aliases (see <a href="../../help/partner-groups.html">help</a>). Back to the <a href="../partners/%s.html">%s partner page</a> or the <a href="../../transfer/entities/partner-seen.html">Partners list</a>.</p>\n' "$slug" "$gesc"
+        printf '<p class="range">Partner grouping derives from the logical flow names (the last part is the partner code), merged by shared endpoints, shared whitelist IPs, whitelisted host addresses and the partner replacements of input/logical_partners.txt (see <a href="../../help/partner-groups.html">help</a>). Back to the <a href="../partners/%s.html">%s partner page</a> or the <a href="../../transfer/entities/partner-all.html">Partners list</a>.</p>\n' "$slug" "$gesc"
         printf '</body>\n</html>\n'
     } > "$out"
     n=$((n + 1))

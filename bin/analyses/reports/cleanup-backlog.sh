@@ -30,7 +30,7 @@
 # Config/analysis page: the table is `nofilter`.
 #
 # Usage:
-#   ./cleanup-backlog.sh   # -> data/<env>/analyses/reports/cleanup-backlog.rpt
+#   ./cleanup-backlog.sh   # -> data/analyses/reports/cleanup-backlog.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -68,28 +68,30 @@ for u in UC1 UC2 UC3 UC4 UC5 UC6 UC7 UC8; do
     [ "$(uc_meta "$u" | cut -f7)" = "Cronjob" ] && cron_ucs="${cron_ucs}${cron_ucs:+|}$u"
 done
 if [ -n "$cron_ucs" ] && [ -f "$SUBJSON" ] && command -v jq >/dev/null 2>&1; then
-    jq -r --arg re "^($cron_ucs)_" '
-        .[] | select(.name | test($re))
+    # UC-NAMED or DERIVED as a cron use case — missing-cronjobs.sh's rule
+    # (2026-09-29: the name prefix alone missed every hybrid flow)
+    UCDF="$XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
+    ucd_json=$(awk -F'\t' -v re="^($cron_ucs)\$" 'BEGIN { printf "{" } $2 ~ re && $1 != "" { printf "%s\"%s\":\"%s\"", (n++ ? "," : ""), $1, $2 } END { printf "}" }' "$UCDF")
+    jq -r --arg re "^($cron_ucs)_" --argjson ucd "$ucd_json" '
+        .[] | select((.name | test($re)) or ($ucd[.name] != null))
         | select([.parameters // {} | to_entries[]
                   | select(.key | test("cron")) | select(.value != null and .value != "")] | length == 0)
-        | [ .name, (.name | capture("^(?<uc>UC[0-9]+)").uc) ] | @tsv
+        | [ .name, (if (.name | test($re)) then (.name | capture("^(?<uc>UC[0-9]+)").uc) else $ucd[.name] end) ] | @tsv
     ' "$SUBJSON" > "$NOCRON" 2>/dev/null || : > "$NOCRON"
 fi
 
 nul() { [ -f "$1" ] && printf '%s' "$1" || printf '/dev/null'; }
 
-# the server-side inbound connections per source address (the Inbound
-# Connections report's By source address table) — with the server-log
-# mentions (unknown/white.tsv), the ONE "server-seen" rule for a whitelisted
-# IP, shared with the Whitelist audit (2026-09-29: the audit counted these
-# connections and not the mentions, the backlog the mentions only, so an
-# address could be "Never seen" on one page and fine on the other)
+# the server-side INBOUND contact per client address (bin/server-inbound-addr.awk:
+# the inbound connection lines + the SSH logon lines of the address) — with
+# the server-log mentions (unknown/white.tsv), the ONE "server-seen" rule for
+# a whitelisted IP, shared with the Whitelist audit (2026-09-29: the audit
+# counted connections and not the mentions, the backlog the mentions only;
+# and both read the Connections report's top-50 address table, whose lines
+# were mostly OUR outbound connections — targets read as partner sources)
 SRVADDR="$TMPD/srvaddr.tsv"
-: > "$SRVADDR"
-if [ -f "$DATA/server/reports/inbound-connections.rpt" ]; then
-    awk -F'\t' '$1 == "TABLE" { t = $2 } $1 == "ROW" && t == "By source address" && $2 !~ /^@\{/ && $3 + 0 > 0 { print $2 "\t" $3 }' \
-        "$DATA/server/reports/inbound-connections.rpt" > "$SRVADDR"
-fi
+awk -F'\t' -f "$SCRIPT_DIR/../../server-inbound-addr.awk" \
+    "$(nul "$DATA/server/reports/_inbound-addr.tsv")" "$(nul "$DATA/server/cache/_logons-hosts.tsv")" | LC_ALL=C sort > "$SRVADDR"
 
 # ---- one pass over every source, dedup in rank order ------------------------
 # Emits sortable rows: rank, type-order, NAME, type, alink sub-dir, reason,
@@ -162,7 +164,7 @@ awk -F'\t' -v ROWS="$TMPD/rows.pre" -v STATS="$TMPD/stats.tsv" '
             d = (CSD[su] == "I") ? "in" : (CSD[su] == "O") ? "out" : "?"
             uc = "other"; if (match(s, /^UC[0-9]+/)) uc = substr(s, 1, RLENGTH)
             if (su in SMEN) emit(2, 2, s, "subscription", "subscriptions", "never-any-traffic", \
-                "configured " d " (" uc "), zero Files in the logs - seen in the server log only", nev, "server contact only - check first", "orange")
+                "configured " d " (" uc "), zero Files in the logs - named in the server log only", nev, "server contact only - check first", "orange")
             else emit(2, 2, s, "subscription", "subscriptions", "never-any-traffic", \
                 "configured " d " (" uc "), zero Files in the logs", nev, unseen, ures)
         }
@@ -250,7 +252,7 @@ ucol=green; [ -n "$maxd" ] || ucol=orange
     fi
     printf 'TOTAL\tTotal (%s object(s))\t\t\t\t\t\n' "$n_total"
 
-    printf 'NOTE\tEverything here reads SOURCE data — the flow-manager config caches, the coverage TSVs, the transfer cache and the subscriptions export (the SKIP-filtered copy, the same population as every other report) — never another report, so the ranking is stable. "Never seen" for a whitelist address is the Whitelist audit'\''s rule: no transfer from that address, no server-log mention AND no inbound server connection (a server-contact-only address is NOT listed). The no-cron class is the Missing-cronjobs condition (the use-case definitions decide which UCs are cron-triggered); those subscriptions leave no trace in any log, so only the configuration can reveal them. Whitelist entries paired with no account at all are on **Config hygiene**. A partner'\''s recency uses the site-wide UNION attribution, so it matches the lifecycle and Entities views.\n'
+    printf 'NOTE\tEverything here reads SOURCE data — the flow-manager config caches, the coverage TSVs, the transfer cache and the subscriptions export (the SKIP-filtered copy, the same population as every other report) — never another report, so the ranking is stable. "Never seen" for a whitelist address is the Whitelist audit'\''s rule: no transfer from that address, no server-log mention AND no inbound server connection (a server-contact-only address is NOT listed). The no-cron class is the Missing-cronjobs condition (the use-case definitions decide which UCs are cron-triggered); those subscriptions leave no trace in any log, so only the configuration can reveal them. Whitelist entries paired with no account at all are on **Config hygiene**. A partner'\''s recency uses the site-wide UNION attribution, so it matches the Entities views.\n'
     printf 'KEYWORDS\tcleanup,backlog,decommission,orphan,unused,whitelist,never seen,no cron,quiet,dormant,prune,legacy,attack surface\n'
     printf 'SUMMARY\tFindings: %s  |  Orphan accounts: %s  |  Never-seen subscriptions: %s  |  Unused-whitelist accounts: %s (%s addresses)  |  No cron: %s  |  Long quiet: %s\n' \
         "$n_total" "$n_orphan" "$n_never" "$n_white" "$n_whiteips" "$n_nocron" "$n_quiet"

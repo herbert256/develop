@@ -10,8 +10,7 @@
 #
 # Invocation (details.sh, one background job per type over the writer pool):
 #   LC_ALL=C awk -F'\t' -v TYPE=ACC -v ANN=<streams/a.ACC> -v OUTDIR=<dir> \
-#       -v LATESTDIR=<reports/latest> (SITE only — the "Latest files" pages) \
-#       -v SRV=<server cache> -v FWD=<input/<env>/ip/ip-hosts.tsv> \
+#       -v SRV=<server cache> -v FWD=<input/ip/ip-hosts.tsv> \
 #       -v UCF=<ucmeta dump> -v UCDF=<derived-uc dump> -v UNCF=<uncollected dump> -v OKF=<last-ok sidecar> \
 #       -v NOW="YYYY-mm-dd HH:MM:SS" -v NFILES=<n input csvs> \
 #       -f details_writer.awk <streams/s.ACC>
@@ -32,9 +31,8 @@
 #   through printf %.1f (same libc as the bash builtin).
 
 # ===== small helpers =========================================================
-# The page buffer — EXCEPT while DIVERT is on, when the lines go to the
-# subscription's own "Latest files" page instead (latest_page(), 2026-09-16).
-function emitl(s) { if (DIVERT == 1) LP[++nlp] = s; else PG[++npg] = s }
+# The page buffer
+function emitl(s) { PG[++npg] = s }
 
 function wdname(d) {
     if (d == 0) return "Monday";   if (d == 1) return "Tuesday"
@@ -45,7 +43,7 @@ function wdname(d) {
 
 # first getline succeeds = the bash [ -s file ] test (caches never hold a
 # lone empty line, so the size-vs-line nuance cannot bite)
-    # endpoint -> its address(es), from input/<env>/ip/ip-hosts.tsv (keyed on its
+    # endpoint -> its address(es), from input/ip/ip-hosts.tsv (keyed on its
 # HOST column). Loaded once on first use; replaced a fwd/<name>.txt per endpoint.
 function fwd_ips(h,   l, a, k) {
     if (!FWDL) {
@@ -94,8 +92,17 @@ function srt1_sort(L, n,   i, j, t) {
         while (j >= 1 && srt1_before(t, L[j])) { L[j+1] = L[j]; j-- }
         L[j+1] = t }
 }
-# read every line of file f into L[++n]; returns the new n
-function slurp(f, L, n,   l) { while ((getline l < f) > 0) L[++n] = l; close(f); return n }
+# POOL a source into L: a line enters at most as often as ONE source holds it
+# (2026-09-29, the 84-page audit finding): the entity's own cache and its
+# login's / host's caches all hold a line naming both, and the plain slurp
+# listed it once per cache — "a line the log holds twice is shown twice"
+# (2026-09-16) stays true: a line twice in ONE source still shows twice.
+# PC = the pool's per-line count, reset by the caller per pool.
+function pool(f, L, n,   l) {
+    split("", FC)
+    while ((getline l < f) > 0) { FC[l]++; if (FC[l] > PC[l] + 0) { PC[l] = FC[l]; L[++n] = l } }
+    close(f); return n
+}
 
 # sort L[1..n] newest first and keep at most cap in D[1..nd]; NO DEDUP
 # (2026-09-16, user request — it replaced dedup_cap): a line the log holds
@@ -115,25 +122,28 @@ function sort_cap(L, n, cap, D,   i, nd) {
 # TWO TABLES, NO DEDUPLICATION (2026-09-16, user request): the 25 most recent
 # lines and the 10 most recent Error/Warning ones are now SEPARATE tables — a
 # line that is both appears in both, and a line the log holds twice is shown
-# twice. `two` = 0 keeps the single merged table for the per-entity lists a
+# twice (in ONE source — the pools add each source through pool(), so a
+# line two caches share is listed once, 2026-09-29). `two` = 0 keeps the single merged table for the per-entity lists a
 # never-seen page prints through srv_lines_for (no connected pool
 # there, and one table per connected entity is already the unit).
 function emit_srv_table(title, cutoff, two,   i, ewf, nA, nB, nda, ndb, l) {
     if (nrec == 0 && nconn == 0) return
     # pool A — the entity's OWN recent lines, cap 25
-    split("", SA); split("", DA); nA = 0
-    for (i = 1; i <= nrec; i++) nA = slurp(REC[i], SA, nA)
+    split("", SA); split("", DA); nA = 0; split("", PC)
+    for (i = 1; i <= nrec; i++) nA = pool(REC[i], SA, nA)
     nda = sort_cap(SA, nA, 25, DA)
     # pool B — its own _err_warn rings, cap 10 …
-    split("", SB); split("", DB); nB = 0
-    for (i = 1; i <= nrec; i++) { ewf = REC[i]; sub(/\.tsv$/, "_err_warn.tsv", ewf); if (nonempty(ewf)) nB = slurp(ewf, SB, nB) }
+    split("", SB); split("", DB); nB = 0; split("", PC)
+    for (i = 1; i <= nrec; i++) { ewf = REC[i]; sub(/\.tsv$/, "_err_warn.tsv", ewf); if (nonempty(ewf)) nB = pool(ewf, SB, nB) }
     ndb = sort_cap(SB, nB, 10, DB)
+    split("", PC); for (i = 1; i <= ndb; i++) PC[DB[i]]++   # what the table holds — the connected rings pool against it
     # … plus the CONNECTED rings after the cutoff (uncapped), which only the
     # main table has (cutoff "" = the srv_lines_for path)
     if (cutoff != "") for (i = 1; i <= nconn; i++) {
         ewf = CN2[i]; sub(/\.tsv$/, "_err_warn.tsv", ewf)
         if (!nonempty(ewf)) continue
-        while ((getline l < ewf) > 0) { if (keyf(l, 1) " " keyf(l, 2) > cutoff) DB[++ndb] = l }
+        split("", FC)
+        while ((getline l < ewf) > 0) { if (keyf(l, 1) " " keyf(l, 2) > cutoff) { FC[l]++; if (FC[l] > PC[l] + 0) { PC[l] = FC[l]; DB[++ndb] = l } } }
         close(ewf)
     }
     if (two == 0) {                      # one merged table, as before
@@ -166,8 +176,10 @@ function emit_srv_rows(title, L, n,   i, m, C5, lvl, cmp, body, nrows, tj) {
     emitl("TABLE\t" title "\twide\tnofilter")
     emitl("HEAD\tDate\tTime\tLevel\tComponent\tMessage")
     emitl("KIND\ttext\ttext\ttext\ttext\ttext")
-    emitl(sprintf("TOTAL\tTotal (%d line(s))\t\t\t\t", nrows))
     npg++; PG[npg] = body   # pre-joined rows, one buffer slot
+    # the TOTAL row LAST, after the rows (2026-09-29: it came first and ended
+    # last only because the page re-sorted on the date column)
+    emitl(sprintf("TOTAL\tTotal (%d line(s))\t\t\t\t", nrows))
 }
 # srv_lines_for SUBDIR NAME TITLE — one entity's recent (+ Error/Warn) lines,
 # no connected sources (cutoff empty)
@@ -563,22 +575,10 @@ function start_table(s,   WEH, WEK) {
     else if (s == "11") time_table("Load by hour", "Hour", "sxs")
     else if (s == "12.6") { emitl("TABLE\tDwell\tsxs=4"); emitl("HEAD\tDwell\tFiles\tShare"); emitl("KIND\ttext\tnum\tnum") }
     else if (s == "0.9") { emitl("TABLE\tWaiting/Expired\trestint\tnosearch"); emitl("HEAD\tState\tFiles\tFirst staged\tLast staged"); emitl("KIND\ttext\tnum\ttext\ttext") }
-    # SITE: the table lives on its OWN page (docs/latest/<slug>.html, 2026-09-16
-    # user request) — 1000 rows, and there the reader gets the search box and the
-    # From/To selectors a detail page deliberately has none of. Every other type
-    # keeps its Latest 100 on the detail page.
-    else if (s == "9") { emitl((TYPE == "SITE") ? "TABLE\tLatest 1000 files\twide\tpager=25\trestint" : "TABLE\tLatest 100 " cntlabel "\twide\tpager=10\trestint"); s9uc2 = (TYPE == "SITE" && substr(uc_desc(pend_e), 1, 3) == "UC2")   # a UC2 page: the Pickup delay column after Date (2026-09-05)
-        # SITE pages: Start · End (2026-09-12, user request — the first leg's
-        # start and the latest leg's end, was one Date column), Pickup (UC2
-        # only) after them; Recovered ("yes" = finished OK after a failed leg,
-        # like the per-day column) only when some row carries it — the
-        # section is buffered, TMODE 1 says a row does
-        if (TYPE == "SITE") {
-            h9 = "HEAD\tStart\tEnd" (s9uc2 ? "\tPickup" : "") "\tState" (TMODE == 1 ? "\tRecovered" : "") "\tDirection\tSize\tThroughput\tDuration\t" big_col "\tCoreId"
-            k9 = "KIND\ttext\ttext" (s9uc2 ? "\ttext" : "") "\ttext" (TMODE == 1 ? "\ttext" : "") "\ttext\tnum\tnum\tnum\t" big_kind "\tmono"
-            emitl(h9); emitl(k9)
-        }
-        else { emitl("HEAD\tDate\tState\tDirection\tSize\tThroughput\tDuration\t" big_col "\tCoreId"); emitl("KIND\ttext\ttext\ttext\tnum\tnum\tnum\t" big_kind "\tmono") } }
+    # the Latest 100 of every type but SITE (a subscription page has the
+    # browser-built Files table instead — files_table(), 2026-09-29)
+    else if (s == "9") { emitl("TABLE\tLatest 100 " cntlabel "\twide\tpager=10\trestint")
+        emitl("HEAD\tDate\tState\tDirection\tSize\tThroughput\tDuration\t" big_col "\tCoreId"); emitl("KIND\ttext\ttext\ttext\tnum\tnum\tnum\t" big_kind "\tmono") }
     else if (s == "2.6") { emitl("TABLE\tIncoming connections\tsxs=3\tfold=orange|{n} IPs in whitelist without traffic"); emitl("HEAD\tIP\tIn\tOut"); emitl("KIND\tmono\tnum\tnum") }   # no Name column: incoming addresses are the partner's own and never resolve to a configured endpoint (verified 0 of 30k rows)
     else if (s == "2.7") { emitl("TABLE\tOutgoing connections\tsxs=3\tfold=orange|{n} hosts configured without traffic"); emitl("HEAD\tIP\tIn\tOut\tName"); emitl("KIND\tmono\tnum\tnum\tmono") }
     else if (s == "2.8") {
@@ -617,15 +617,9 @@ function finish_section(   i) {
     if (buf_sec != "") {
         TMODE = 0
         if (sec_in == 1 && sec_out == 1) TMODE = 1
-        # the SITE Latest-files section is DIVERTED to its own page (2026-09-16):
-        # the table, its header and every row go to LP[] instead of the page.
-        # Without LATESTDIR the section stays where it always was — the writer
-        # keeps working for a caller that does not pass the dir.
-        if (buf_sec == "9" && TYPE == "SITE" && LATESTDIR != "") DIVERT = 1
         start_table(buf_sec)
         for (i = 1; i <= nbb; i++) emitl(TMODE == 1 ? BB[i] : BP[i])
         if (buf_sec == "1") day_total(TMODE)
-        DIVERT = 0
         nbb = 0; buf_sec = ""; sec_in = 0; sec_out = 0
     } else if (cur_sec == "1") day_total(0)
 }
@@ -1060,7 +1054,10 @@ function strip_page(   i, n2, keep, dir3, line, m, C, out, j) {
         line = PG[i]
         m = split(line, C, "\t")
         if (C[1] == "TABLE") {
-            keep = (C[2] == "Features" || index(C[2], "Last server log messages") == 1 || C[2] == "Incoming connections" || C[2] == "Outgoing connections" || C[2] == "Groups" || C[2] == "Logons") ? 1 : 0
+            # the two server-log tables stay WHOLE (2026-09-29: "Last server log
+            # errors" — added 2026-09-16 — was cut to its Date column and lost
+            # every error line on a never-seen page)
+            keep = (C[2] == "Features" || index(C[2], "Last server log messages") == 1 || index(C[2], "Last server log errors") == 1 || C[2] == "Incoming connections" || C[2] == "Outgoing connections" || C[2] == "Groups" || C[2] == "Logons") ? 1 : 0
             dir3 = 0
             PG2[++n2] = line; continue
         }
@@ -1147,44 +1144,32 @@ function self_features_row(   i, fe0, fe1, d0, ins, n2, selfrow) {
     for (i = 1; i <= n2; i++) PG[i] = PG2[i]
     npg = n2
 }
-# ===== the subscription "Latest files" page (2026-09-16, user request) =======
-# Section 9's table is diverted off the SITE detail page (finish_section) and
-# written here as its own .rpt under LATESTDIR — one per subscription that
-# carries Files — which publish-details.sh renders to docs/latest/<slug>.html.
-# The detail page keeps a Features row pointing at it (latest_features_row).
-# A subscription with no Files writes nothing, so no page and no link exist.
-function latest_page(   i, lp, nrow, txt) {
-    if (TYPE != "SITE" || LATESTDIR == "" || nlp == 0) return
-    nrow = 0
-    for (i = 1; i <= nlp; i++) if (index(LP[i], "ROW\t") == 1) nrow++
-    if (nrow == 0) return
-    lp = LATESTDIR "/" a_slug ".rpt"
-    # a DRILL page, so it keeps its INTRO (the no-prose rule covers report
-    # pages); the count is what the page really holds, the cap what it can
-    txt = "TITLE\tLatest files: " pend_e "\n"
-    txt = txt "DESC\tThe most recent Files of subscription " pend_e ", newest first (at most 1000).\n"
-    txt = txt "INTRO\tThe **" nrow "** most recent File(s) of subscription **" pend_e "**, newest first — at most 1000.\n"
-    for (i = 1; i <= nlp; i++) txt = txt LP[i] "\n"
-    txt = txt "LINK\t../details/subscriptions/" a_slug ".html\tThe subscription page of " pend_e "\n"
-    # the Latest files search over every subscription's page (2026-09-27)
-    txt = txt "LINK\t../search/all-files.html\tSearch all the Files of the transfer logs\n"   # (the Latest files search went 2026-09-29: All files search covers every File)
-    txt = txt "FOOT\tGenerated on " NOW " from " NFILES " file(s)\n"
-    printf "%s", txt > lp
-    close(lp)
-    latest_features_row()
-}
-# the Features row that links it: key "Files", text "Latest 1000 files"
-# (2026-09-16, user request), appended as the LAST row of the Features block —
-# the detail page is rendered from docs/details/subscriptions/, one level
-# deeper than docs/latest/, hence ../../
-function latest_features_row(   i, fe0, fe1, n2, row) {
-    row = "ROW\tFiles\t@{href=../../latest/" a_slug ".html}Latest 1000 files"
-    fe0 = 0
-    for (i = 1; i <= npg; i++) if (index(PG[i], "TABLE\tFeatures") == 1) { fe0 = i; break }
-    if (fe0 == 0) return
-    fe1 = blk_end(fe0)
+# ===== the subscription "Files" table (2026-09-29, user request) =============
+# Every File of the subscription, 25 per page with Previous / Next, built IN
+# THE BROWSER from the All files search data (docs/search/all/: the per-
+# subscription day list s/<slug>.js + the day shards) by assets/sub-files.js —
+# it replaced the "Latest 1000 files" Features row and its docs/latest/ page.
+# The page carries only the empty table: subfiles=<slug> names the day list
+# (render_rpt.awk stamps it + the build id as data-subfiles / data-v, and
+# render_rpt adds the engine script). It sits where the Latest table sat, right
+# above Load by weekday (else last before the FOOT). A page without Files gets
+# none.
+function files_table(   i, j, at, n2, blk, nb) {
+    if (TYPE != "SITE" || have_tot != 1 || a_slug == "") return
+    nb = 0
+    blk[++nb] = "TABLE\tFiles\twide\tnosort\tnosearch\tnofilter\trestint\tsubfiles=" a_slug
+    blk[++nb] = "HEAD\tStart\tState\tSize\tFile\tCoreId"
+    blk[++nb] = "KIND\ttext\ttext\tnum\tmono\tmono"
+    at = 0
+    for (i = 1; i <= npg; i++) if (index(PG[i], "TABLE\tLoad by weekday") == 1) { at = i; break }
+    if (at == 0) for (i = 1; i <= npg; i++) if (PG[i] ~ /^(FOOT|META)\t/) { at = i; break }
+    if (at == 0) at = npg + 1
     n2 = 0
-    for (i = 1; i <= npg; i++) { PG2[++n2] = PG[i]; if (i == fe1) PG2[++n2] = row }
+    for (i = 1; i <= npg; i++) {
+        if (i == at) for (j = 1; j <= nb; j++) PG2[++n2] = blk[j]
+        PG2[++n2] = PG[i]
+    }
+    if (at > npg) for (j = 1; j <= nb; j++) PG2[++n2] = blk[j]
     for (i = 1; i <= n2; i++) PG[i] = PG2[i]
     npg = n2
 }
@@ -1273,7 +1258,7 @@ function close_file(   dircls, resv, out, i) {
     if (pend_t == "LOGIN") { login_feat_row(); login_sxs_row(); login_lasterr_move() }
     if (pend_t == "HOST") host_sxs_row()
     self_features_row()
-    latest_page()              # writes the diverted section 9 + adds its Features row
+    files_table()              # SITE: the browser-built Files table (2026-09-29)
     lastfiles_features_rows()  # the Latest OK / Latest Error rows
     site_sxs_row()             # "Activity per day" | "Features" on one row
     merge_features_rows("BL", "bl")   # several BL rows -> ONE "BL | a, b, c" row
@@ -1281,7 +1266,7 @@ function close_file(   dircls, resv, out, i) {
     for (i = 1; i <= npg; i++) out = out PG[i] "\n"
     printf "%s", out > cur_path
     close(cur_path)
-    npg = 0; nlp = 0; DIVERT = 0
+    npg = 0
 }
 
 # ===== per-entity reset + the stream loop ====================================
@@ -1468,12 +1453,7 @@ NF < 4 { next }
         if (sec == "2.6") had26 = 1
         if (sec == "2.7") had27 = 1
         cur_sec = sec
-        # a SITE page BUFFERS its Latest-500 section (2026-09-05): the Recovered
-        # column shows only when a row carries "yes", so the header waits for
-        # the rows — the push_row/finish_section pair the two-direction
-        # sections use (TMODE 1 = the wide variant = with the column here)
-        if (sec == "9" && TYPE == "SITE") { buf_sec = sec; sec_in = 0; sec_out = 0; s9uc2 = (substr(uc_desc(pend_e), 1, 3) == "UC2") }   # s9uc2 BEFORE the rows: they carry the Pickup cell on a UC2 page
-        else if (sec == "0.9" || sec == "2.6" || sec == "2.7" || sec == "9" || sec == "12.6") { TMODE = 0; start_table(sec) }
+        if (sec == "0.9" || sec == "2.6" || sec == "2.7" || sec == "9" || sec == "12.6") { TMODE = 0; start_table(sec) }
         else if (BOTHMODE == 1) { buf_sec = sec; sec_in = 0; sec_out = 0 }
         else { TMODE = 0; start_table(sec) }
     }
@@ -1523,21 +1503,10 @@ NF < 4 { next }
     else if (sec == "9") {
         split($5, B9, "|")
         res = "green"
-        if (B9[8] == "Errored" || B9[8] == "Expired") res = "red"
-        else if (B9[8] == "Waiting") res = "orange"
-        # B9[9] = the Recovered flag ("yes" / "", a SITE-page column,
-        # 2026-09-05), B9[10] = the pickup delay (UC2 pages), B9[11] = the
-        # File END (2026-09-12) — the SITE pages' End column after Start.
-        # SITE pages are buffered: rb = with the Recovered column, rp = without;
-        # a "yes" marks the section (push_row) so finish_section picks rb
-        if (TYPE == "SITE") {
-            pk9 = (s9uc2 ? B9[10] "\t" : "")
-            rb = sprintf("ROW\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s", B9[1], B9[11], pk9, B9[8], B9[9], B9[7], B9[4], B9[6], B9[5], B9[2], B9[3], res)
-            rp = sprintf("ROW\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s", B9[1], B9[11], pk9, B9[8], B9[7], B9[4], B9[6], B9[5], B9[2], B9[3], res)
-            rv9 = (B9[9] == "yes") ? 1 : 0
-            push_row(rb, rp, rv9, rv9)
-        }
-        else emitl(sprintf("ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s", B9[1], B9[8], B9[7], B9[4], B9[6], B9[5], B9[2], B9[3], res))
+        # the outcome policy (2026-09-29: Waiting read orange here, green on
+        # the All files search): Waiting counts OK, Expired as Error
+        if (B9[8] == "Error" || B9[8] == "Expired") res = "red"
+        emitl(sprintf("ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s", B9[1], B9[8], B9[7], B9[4], B9[6], B9[5], B9[2], B9[3], res))
     }
     else if (sec == "2.6" || sec == "2.7") {
         win = $6; wout = $7; wrev = $8

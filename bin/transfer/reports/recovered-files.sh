@@ -92,6 +92,14 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         for(s in rs){ printf "SUB|%s|%d|%d|%d|%d|%s|%s|%s\n", s, rs[s], rsA[s]+0, rsM[s]+0, sc[s], pc(rs[s], sc[s]), sbk[s], buildlist(top["S" SUBSEP s]); sFC += sc[s]; nsub++ }
         # key | recovered files | retry | resubmit | healed legs | all failed legs | healed % | buckets | drill
         for(p in rp){ printf "PROTO|%s|%d|%d|%d|%d|%d|%s|%s|%s\n", p, rp[p], rpA[p]+0, rpM[p]+0, hl[p], af[p], pc(hl[p], af[p]), pbk[p], buildlist(top["P" SUBSEP p]); pAF += af[p]; pHL += hl[p]; pA += rpA[p]; pM += rpM[p]; np++ }
+        # the TOTAL row own per-day buckets (2026-09-29): Recovered / Retry /
+        # Resubmit as DISTINCT Files per day (a File whose failed legs span two
+        # protocols is one row each), the legs summed — so a narrowed range
+        # re-totals like the full one; days in date order (deterministic bytes)
+        for(k in afd){ split(k,a,SUBSEP); if(a[1] in rp){ tafd[a[2]] += afd[k]; if(!(a[2] in TBD)){ TBD[a[2]]=1; TBL[++ntb]=a[2] } } }
+        for(i=2;i<=ntb;i++){ v=TBL[i]; j=i-1; while(j>0 && TBL[j]>v){ TBL[j+1]=TBL[j]; j-- } TBL[j+1]=v }
+        tb=""; for(i=1;i<=ntb;i++){ d=TBL[i]; tb = tb (tb ? "," : "") d ":" (rd[d]+0) ":" (tAd[d]+0) ":" (tMd[d]+0) ":" (thld[d]+0) ":" (tafd[d]+0) }
+        printf "TB|%s\n", tb
         # key | files | recovered | retry | resubmit | share | drill
         for(d in rd){ printf "DAY|%s|%d|%d|%d|%d|%s|%s\n", d, dayc[d], rd[d], rdA[d]+0, rdM[d]+0, pc(rd[d], dayc[d]), buildlist(top["D" SUBSEP d]); dFC += dayc[d]; nd++ }
         # the STAT boxes per-day payloads (report.js recalcStats data-sb):
@@ -159,7 +167,8 @@ dshare=$(awk -v r="$tR" -v n="$dFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }
     # Recovered / Retry / Resubmit total the DISTINCT Files alike (2026-09-28
     # fix: Recovered was distinct while its split summed the per-protocol rows,
     # so Retry + Resubmit could exceed Recovered on the same footer)
-    printf 'TOTAL\tTotal\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s%%\n' "$tR" "$tA" "$tM" "$pHL" "$pAF" "$hshare"
+    tbk=$(printf "%s\n" "$agg" | awk -F"|" "\$1 == \"TB\" { print \$2; exit }")
+    printf 'TOTAL\tTotal\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s%%%s\n' "$tR" "$tA" "$tM" "$pHL" "$pAF" "$hshare" "${tbk:+$'\t'@data:buckets=$tbk}"
     printf 'NOTE\tThe protocol is the FAILED leg'\''s — where the healed failure actually happened, not what finally delivered the File. A File whose failed legs span two protocols counts once under each, so the Recovered column (and its Retry / Resubmit split — how the File got through, the Top view'\''s Automatic and Manual) can sum past the %s distinct Files. **Healed %%** = failed legs belonging to recovered Files over ALL failed legs of that protocol (recovered or not) — how often a failure on that protocol turns out to be transient.\n' "$tR"
 
     printf 'TABLE\tPer day\tpct=5:2:1\ttab=recfiles\n'

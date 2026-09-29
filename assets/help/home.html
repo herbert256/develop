@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: UC status › UC2: pickup visits — Cloud Reports</title>
+<title>Help: Home — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,27 +15,28 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>UC status › UC2: pickup visits</h1>
+<h1>Home</h1>
 <h2>What it shows</h2>
-<p>For every UC2 flow whose pickup account ever logged on: what the partner&rsquo;s SSH <strong>visits</strong> did. A visit groups an account&rsquo;s logons (a gap of more than 30 minutes starts a new one); each visit is classified by what its window shows in the transfer log.</p>
+<ul>
+<li><strong>Flow manager entities</strong> and <strong>Logical, Partners, Domains, Applications &amp; BL</strong> &mdash; one status row per entity type.</li>
+<li><strong>Failing transfers</strong> and <strong>Failing subscriptions in Server log</strong> &mdash; together every red subscription.</li>
+<li><strong>The log exports</strong> &mdash; per log its input files, records, first and last record, days and <strong>Holes</strong> (missing days).</li>
+</ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Pickups</strong> &mdash; the account&rsquo;s pickup logons (the detail page&rsquo;s Pickup information <strong>Total pickups</strong>); higher than the visit columns, a visit holding several logons.</li>
-<li><strong>Collected</strong> &mdash; visits that took at least one staged file.</li>
-<li><strong>Collected + delivered</strong> &mdash; a two-way exchange: the partner dropped its own files (the UC4 twin flow) and took ours in one visit.</li>
-<li><strong>Delivered only</strong> &mdash; a UC4 delivery, not a pickup; excluded from every pickup figure on the site.</li>
-<li><strong>Same connection</strong> &mdash; distinct technical SSH connections (the transfer log&rsquo;s Session ID) in which the account both delivered and collected a file. The only figure that raises the detail pages&rsquo; <strong>Connection shared with UC4 drop</strong> row and the Pickups report&rsquo;s <strong>UC4 drop</strong> flag.</li>
-<li><strong>Files picked up</strong> &mdash; per subscription; the OK figure of its detail page.</li>
+<li>Status tables: <strong>Total</strong> &middot; <strong>Seen</strong> (% in the transfer log) &middot; <strong>OK</strong> (% green) &middot; <strong>Error</strong> (red) &middot; <strong>Warning</strong> (orange) &middot; <strong>Ok</strong> (green).</li>
+<li><strong>Per day</strong>, newest first: <strong>Transfers</strong> &mdash; Ok &middot; Error &middot; Error % of the log rows (legs).</li>
+<li><strong>Files</strong> &mdash; In &middot; Out (by movement, else by connection side) &middot; Ok &middot; Cured (OK after a retry or resubmit) &middot; Error &middot; Error %.</li>
+<li><strong>UC2 state</strong> &mdash; Waiting &middot; Expired; <strong>Duration</strong> &mdash; p50 &middot; p75 &middot; p90 &middot; p95 &middot; p99 of the delivered (Processed) Files; <strong>First seen</strong> &mdash; new Partners &middot; Subscriptions.</li>
+<li>Failing tables: <strong>Subscription</strong> &middot; <strong>Reason</strong> (the first error on the linked page) &middot; <strong>Last</strong> (the failed File&rsquo;s start, or the newest server-log error).</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Classification is per visit, not per logon: every connection of a visit inherits its class. A visit that collected counts as a pickup even when it also delivered.</li>
-<li>Same connection counts sessions, not visits: an SFTP client typically opens a fresh connection per operation, so a two-way visit whose uploads and downloads travelled separately shows 0.</li>
-<li>The pickup, visit and session figures are the account&rsquo;s and repeat on each of its UC2 subscriptions &mdash; except on an account with several FE logins (production), where they are the flow&rsquo;s own login&rsquo;s. The Total row and the figures above the table count each account (or login) ONCE; a searched table shows &ndash; in those columns.</li>
-<li>Each subscription links to its detail page, whose Pickup information table (first/last pickup, pattern, delivering logons) carries that flow&rsquo;s own figures.</li>
-<li>A partner collecting over CFT/PESIT logs no SSH visit: absent here while its files are collected fine (Files picked up still shows on its detail page). A flow whose account never logged on is not listed.</li>
-<li>The same per-visit classification feeds UC2 status and the detail pages (the <code>uc2-pickups</code> sidecar), so the three never disagree.</li>
-<li>Logons = the server log&rsquo;s successful-SSH-logon lines; deliveries = the account&rsquo;s inbound SSH transfer records; collections = each staged File&rsquo;s final successful outbound (download) record. A session counts once when it carries at least one delivery and one successful collection of the account&rsquo;s files.</li>
+<li>A status figure opens the Entities view it counts; the second table&rsquo;s Total opens the <a href="coverage.html">configured list</a>. Colours: <a href="general.html#colours">Generic help</a>.</li>
+<li>Per day: Date opens the <a href="daily.html">day page</a>, Error that day&rsquo;s Failed files, Cured the Recovered files, Waiting / Expired / Duration their reports, First seen that day&rsquo;s list.</li>
+<li>The newest 14 days (a failing table: 15 rows) show until <strong>Show all</strong>.</li>
+<li><strong>Failing transfers</strong> &mdash; red by its own failed File; one row per subscription, opening its newest failed File&rsquo;s page.</li>
+<li><strong>Failing subscriptions in Server log</strong> &mdash; red by server-log errors after its last File (or a UC3 that cannot connect); a row opens the subscription&rsquo;s error page.</li>
 </ul>
 </main>
 </body>

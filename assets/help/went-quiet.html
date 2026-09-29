@@ -17,28 +17,25 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Went quiet</h1>
 <h2>What it shows</h2>
-<p>The silence report, both units: <strong>subscriptions</strong> that carried Files and then stopped (nothing in the last 7 days of the window, whatever the outcome), and <strong>accounts</strong> idle long against their own cadence.</p>
-<h2>Subscriptions table</h2>
 <ul>
-<li><strong>Subscription</strong> &mdash; configured name, links its detail page.</li>
-<li><strong>Days ago last traffic</strong> &mdash; days from last File to window end; 8 = stopped right after the threshold, large = silent most of the window.</li>
-<li>Quiet = most recent File more than <strong>7 days</strong> before the last day in the data. Newest-quiet first: 8 days is a live question, 31 days probably an unrecorded decommissioning.</li>
-<li>Every outcome counts as traffic (Processed, Failed, Waiting, Expired): the question is &ldquo;is anything happening&rdquo;, not &ldquo;is it working&rdquo;. A daily failer is noisy, not quiet; a green subscription (last File delivered, however long ago) can be listed.</li>
-<li>Health is judged on <a href="failed.html">Failed Subscriptions</a> and the <a href="server-uc1-status.html">UCx status</a> verdicts.</li>
-<li>Never carried a File = cannot go quiet, not listed; the Entities <strong>Not seen</strong> view has those.</li>
-<li>One pass over <code>_files.tsv</code>: per subscription the last day with a File, against the last day in the data. Flat threshold: &ldquo;what stopped?&rdquo; is one list, not a ranking.</li>
+<li>The silence report: <strong>subscriptions</strong> that carried Files and then stopped, and <strong>accounts</strong> idle long against their own cadence. Nothing fails when a flow stops, so no other report shows it.</li>
 </ul>
-<h2>Accounts table</h2>
+<h2>Tabs</h2>
 <ul>
-<li><strong>Days idle</strong> &mdash; against the most recent File across every account; tinted at 7+.</li>
-<li><strong>Median gap</strong> &mdash; typical spacing between the account&rsquo;s active days (its cadence).</li>
-<li><strong>Idle &divide; gap</strong> &mdash; a daily account idle 3 days = 3.0 (three missed cycles), more alarming than a weekly one idle 5 days = 0.7; tinted at 2 or more. Single-day accounts have no gap: &ldquo;-&rdquo;, sorts last.</li>
-<li>Files without account attribution (platform-internal, blanked at parse) are excluded. Always the full period: narrowing From/To would hide exactly the stalest accounts.</li>
+<li><strong>Subscriptions</strong> &mdash; boxes <strong>Subscriptions with Files</strong> and <strong>Went quiet</strong>; per quiet subscription (links its detail page) <strong>Days ago last traffic</strong>, longest-quiet first.</li>
+<li><strong>Accounts</strong> &mdash; <strong>First</strong> / <strong>Last activity</strong>, <strong>Active days</strong>, <strong>Median gap</strong> (typical spacing between active days), <strong>Days idle</strong>, <strong>Idle &divide; gap</strong> (missed cycles), <strong>Files</strong>. The Total row counts the stale and overdue accounts.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Both units measure from the window end, never today, so figures do not drift with the export&rsquo;s age.</li>
-<li>Nothing fails when a flow stops: partner stopped sending, source stopped producing, or decommissioned without cleanup &mdash; only the third is harmless.</li>
+<li>A subscription is quiet when its newest File is more than <strong>7 days</strong> before the last day in the data. Every outcome counts as traffic: the question is &ldquo;is anything happening&rdquo;, not &ldquo;is it working&rdquo;.</li>
+<li>A subscription that never carried a File cannot go quiet; the Entities <strong>Not seen</strong> view lists those.</li>
+<li>Accounts: <strong>Days idle</strong> 7+ is tinted (stale), and so is <strong>Idle &divide; gap</strong> 2 or more (overdue); an account seen on one day has no gap (&ldquo;-&rdquo;). Files without an account are left out.</li>
+<li>Both measure from the window end, never today; always the full period.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>A daily account idle 3 days (ratio 3.0) is more alarming than a weekly one idle 5 days (0.7).</li>
+<li>Health is judged on <a href="failed.html">Failed Subscriptions</a>; each flow against its own rhythm on <a href="expected-arrival.html">Punctuality &rsaquo; Rhythm</a>.</li>
 </ul>
 </main>
 </body>

@@ -8,7 +8,7 @@
 #   docs/analyses/index.html                the analyses catalog page
 #   docs/first-seen/<member>-<key>.html     one page per First seen cell
 #
-# The Entities coverage page and the whole docs/<env>/coverage/ cell tree were
+# The Entities coverage page and the whole docs/coverage/ cell tree were
 # REMOVED 2026-07: the home + analyses Status figures had all moved to the
 # Transfer > Entities views, leaving the page as the only door into 341 cell
 # pages nothing else reached. What the home status tables still need — the
@@ -261,7 +261,8 @@ render_coverage_pages() {
                 -v ipc="$([ "$member" = partners ] && echo 1 || echo 0)" -v aw="$awfile" \
                 -v amf="$amf" -v elf="$elf" -v ehf="$ehf" -v whf="$whf" -v smap="$smap" -v amap="$amap" \
                 -v lmap="$lmap" -v hmap="$hmap" -v resf="$resfile" -v grpf="$grpmapc" \
-                -v fdf="$DATA/flow-manager/xref/_subscriptions-flowdir.tsv" -v msub="$msubf" '
+                -v fdf="$DATA/flow-manager/xref/_subscriptions-flowdir.tsv" -v msub="$msubf" \
+                -v ucdf="$DATA/flow-manager/xref/_subscriptions-ucderived.tsv" '
                 function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
                 # one endpoint value -> a link to its login/host detail page
                 # (type t: "l" login, "h" host); no slugmap entry, no link
@@ -322,7 +323,11 @@ render_coverage_pages() {
                                 # linked at row time once the slugmaps are in)
                                 su=toupper(a[2])
                                 if (!ssdup[ku SUBSEP su]++) { ssn[ku]++; ss[ku] = ss[ku] US a[2] }
-                                if (su ~ /^UC[1-4][_-]/) ucn[ku SUBSEP substr(su,3,1)]++ }
+                                # a name without a UC prefix counts under its DERIVED use case
+                                # (2026-09-29: the columns counted UC-named subscriptions only)
+                                if (!ucdl) { ucdl = 1; while ((getline ul < ucdf) > 0) { uk = split(ul, ua, "\t"); if (uk >= 2 && ua[1] != "") UCD[toupper(ua[1])] = ua[2] } close(ucdf) }
+                                if (su ~ /^UC[1-4][_-]/) ucn[ku SUBSEP substr(su,3,1)]++
+                                else if ((su in UCD) && UCD[su] ~ /^UC[1-4]$/) ucn[ku SUBSEP substr(UCD[su],3,1)]++ }
                             close(msub)
                         }
                     if (aw != "") { while ((getline line < aw) > 0) { split(line, a, "\t"); acc[a[2]] = (acc[a[2]] == "" ? a[1] : acc[a[2]] ", " a[1]) } close(aw) }
@@ -442,7 +447,7 @@ render_coverage_pages() {
 
 write_first_seen_page() {
     local base="first-seen" kp=""
-    local note='Seen means seen in the <strong>transfer</strong> logs. Each count links the list of items behind it.'
+    # (the page's note and DESC subtitle went 2026-09-29 — no prose on a report page; help/first-seen.html)
     local rpt="$ARPT/$base.rpt"
     [ -f "$rpt" ] || { rm -f "$ADIR/$base.html"; return 0; }
     local out="$ADIR/$base.html"
@@ -467,7 +472,6 @@ write_first_seen_page() {
     {
         html_head "First seen" "../assets/style.css" "" "ANALYSES" "first-seen"
         printf '<h1>First seen</h1>\n'
-        printf '<p class="subtitle">%s</p>\n' "$(field1 DESC "$rpt" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')"
         # NOT class="index": index tables get report.js whole-row links, which
         # would make the Date cell navigate to the row's first cell page.
         printf '<div class="tablewrap"><table class="fit" data-nosort="1">\n'
@@ -516,7 +520,6 @@ write_first_seen_page() {
         done < "$rpt"
         printf '%s\n' "$thead"   # the title row repeats at the bottom
         printf '</table></div>\n'
-        printf '<p class="range">%s</p>\n' "$note"
         printf '</body>\n</html>\n'
     } > "$out"
 }
@@ -549,7 +552,7 @@ _ucsearch() {
     local uc=$1 q
     case $uc in UC[0-9]*) ;; *) return 0 ;; esac
     case $2 in
-        total)   q="\"$uc\"" ;;
+        total)   q="\"$uc\" and not \"white\"" ;;   # the skip-listed rows (result white) are not in the Total (2026-09-29: 49 opened 51 rows)
         seen)    q="\"$uc\" and \"green\" or \"$uc\" and \"red\"" ;;
         error)   q="\"$uc\" and \"red\"" ;;
         warning) q="\"$uc\" and \"orange\"" ;;
@@ -655,7 +658,8 @@ write_use_cases_page() {
             printf '</tr>\n'
             Tt=$((Tt+t)); Tns=$((Tns+ns)); Ter=$((Ter+er)); Tok=$((Tok+okc)); Tsn=$((Tsn+sn))
         done <<< "$rows"
-        printf '<tr class="total"><td>Total</td><td></td><td></td><td></td><td></td><td class="num">%s</td><td class="num">%s</td><td class="num">%s</td><td class="num">%s</td><td class="num">%s</td><td></td></tr>\n' \
+        # the Error / Warning / Ok totals keep their column tint (2026-09-29)
+        printf '<tr class="total"><td>Total</td><td></td><td></td><td></td><td></td><td class="num">%s</td><td class="num">%s</td><td class="num st-err">%s</td><td class="num st-warn">%s</td><td class="num st-ok">%s</td><td></td></tr>\n' \
             "$(dotify "$Tt")" "$(dotify "$Tsn")" "$(dotify "$Ter")" "$(dotify "$Tns")" "$(dotify "$Tok")"
         printf '</table></div>\n'
         # the direction-vs-use-case consistency check: only when it finds something
@@ -723,7 +727,6 @@ write_logical_detection_page() {
     {
         html_head "Logical detection" "../assets/style.css" "" "" "logical-detection" "" "" "sort-fresh"
         printf '<h1>Logical detection</h1>\n'
-        printf '<p class="subtitle">How every configured <strong>FlowID</strong> (the <code>customAttribute_FlowIdentifier</code> value) detected to its <strong>Logical</strong> flow group &mdash; one row per FlowID with the <strong>rule trail</strong> the derivation applied, in firing order: the separator normalization, the grouping rule (variant folds, digit tails, prefix folds), an <code>input/&lt;env&gt;/logical.txt</code> pin, and the 3-part reshape. <em>3 parts &mdash; kept as-is</em> means the FlowID needed no work at all. The Logical cell links its detail page; rows tint by the Logical&rsquo;s result.</p>\n'
         printf '<div class="tablewrap"><table class="index fit">\n'
         printf '<tr><th>FlowID</th><th>Logical</th><th>Rules</th></tr>\n'
         [ -n "$rows" ] && printf '%s\n' "$rows"
@@ -749,7 +752,7 @@ write_logical_detection_page() {
 # them (subscriptions.json via jq + bin/cron2human.awk, the same pipeline as
 # polling.sh; blank without a cron), and the ALL-TIME File counts — Total files · In · Out · Errors ·
 # Auto Retries · Resubmit OK / Error · Waiting · Expired — from
-# alltime-counts.sh's _alltime.tsv sidecar (the Entities
+# month-stats.sh's _alltime.tsv sidecar (the Entities
 # definitions; a subscription never seen in the log shows blanks; 0 shows
 # blank). Rows tint by the subscription's result (green / orange / red);
 # baked order use case (the name prefix, else the derived one) then
@@ -1051,8 +1054,8 @@ write_subscriptions_page() {
     [ -f "$RAWS" ] && fmts=$(stat -f '%Sm' -t '%Y-%m-%d %H:%M' "$RAWS" 2>/dev/null || true)
     tcells="$(_subs_tcell "$t1" num)$(_subs_tcell "$t2" num)$(_subs_tcell "$t3" num)$(_subs_tcell "$t4" "num failed")$(_subs_tcell "$t5" "num warn")$(_subs_tcell "$t6" "num warn")$(_subs_tcell "$t7" "num failed")$(_subs_tcell "$t8" "num warn")$(_subs_tcell "$t9" "num failed")"
     {
-        html_head "Subscriptions" "../assets/style.css" "" "" "subscriptions" "" "" "sort-fresh"
-        printf '<h1>Subscriptions%s</h1>\n' "${fmts:+ - FM export $fmts}"
+        html_head "Configured subscriptions" "../assets/style.css" "" "" "subscriptions" "" "" "sort-fresh"
+        printf '<h1>Configured subscriptions%s</h1>\n' "${fmts:+ - FM export $fmts}"
         printf '<div class="tablewrap"><table class="index fit">\n'
         printf '<tr><th>Subscription</th><th>Use case</th><th>Active</th><th>Color</th><th>Direction</th><th>Endpoint</th><th>From</th><th>To</th><th class="num">Total files</th><th class="num">In Files</th><th class="num">Out Files</th><th class="num">Errors</th><th class="num">Auto Retries</th><th class="num">Resubmit OK</th><th class="num">Resubmit Error</th><th class="num">Waiting</th><th class="num">Expired</th><th>Error reason</th><th>Logical</th><th>Account</th><th>Partner</th><th>Domain</th><th>Application</th><th>BL</th><th>Cron expression</th><th>Schedule</th></tr>\n'
         [ -n "$rows" ] && printf '%s\n' "$rows"
@@ -1112,7 +1115,7 @@ write_accounts_page() {
     # re-deriving that here, ask the DERIVATION what it managed to assign — the
     # three xref caches bin/flow-manager.sh composes through the FlowID. The
     # why is binary: no FlowID at all (no subscription of the account carries
-    # one), or a FlowID whose logical is a pinned short name (input/<env>/logical.txt
+    # one), or a FlowID whose logical is a pinned short name (input/logical.txt
     # — no domain/application/partner slots).
     local pda_rows pda_bad
     pda_rows=$(awk -F'\t' '
@@ -1241,9 +1244,8 @@ write_accounts_page() {
         | "\($a.name)\t\(.name)\t\(.login)\t\(.loginName)"' "$P" | LC_ALL=C sort)
     nlnm=$(printf '%s' "$lnm_rows" | grep -c $'\t' || true)
     {
-        html_head "Accounts" "../assets/style.css" "" "" "accounts" "" "" "sort-fresh"
-        printf '<h1>Accounts</h1>\n'
-        printf '<p class="subtitle">An <strong>account</strong> (a partner in the FlowManager config) talks to us through one or more <strong>communication profiles</strong>, each defining how one endpoint connects. This page checks the accounts, their login names and their profiles for configuration slips. A profile name is coded <code>&lt;TYPE&gt;_&lt;partner&gt;_&lt;AUTH&gt;</code>: the <strong>prefix</strong> is the connection type &mdash; <code>SCP</code>/<code>SSCP</code> = server (ST connects out to the partner), <code>CCP</code> = client (the partner connects in) &mdash; and the <strong>suffix</strong> is the authentication &mdash; <code>PWD</code> = password, <code>KEY</code> = public key. Below, both are checked against each profile&rsquo;s real <code>type</code> and <code>clientAuthentication</code>, followed by the account &amp; login checks.</p>\n'
+        html_head "Configured accounts" "../assets/style.css" "" "" "accounts" "" "" "sort-fresh"
+        printf '<h1>Configured accounts</h1>\n'   # = its Reports menu label (2026-09-29)
         printf '<div class="sxs">\n'
         printf '<div class="sxscol"><h2>Connection type</h2><div class="tablewrap"><table class="index fit">\n'
         printf '<tr><th>Type</th><th class="num">Profiles</th></tr>\n'
@@ -1267,7 +1269,6 @@ write_accounts_page() {
             printf '<tr><td>%s</td><td>%s</td><td class="num">%s</td><td>%s</td></tr>\n' "$te" "$mean" "$(dotify "$n")" "$tye"
         done
         printf '</table></div>\n'
-        printf '<p class="range">Every profile&rsquo;s prefix matches its configured <code>type</code> &mdash; <strong>%s of %s consistent</strong>, no exceptions.</p>\n' "$(dotify "$total")" "$(dotify "$total")"
         printf '<h2>Authentication &mdash; the name suffix</h2>\n<div class="tablewrap"><table class="index fit">\n'
         printf '<tr><th>Suffix</th><th>Meaning</th><th class="num">Profiles</th><th class="num">Match auth</th><th class="num">Mismatch</th></tr>\n'
         printf '%s\n' "$suffix_rows" | while IFS=$'\t' read -r tok mean n match; do
@@ -1291,12 +1292,10 @@ write_accounts_page() {
                 printf '<tr data-res="red"><td><code>%s</code></td><td>%s</td><td>%s</td></tr>\n' "$nme" "$sfe" "$ae"
             done
             printf '</table></div>\n'
-            printf '<p class="range">These %s profiles are named for one authentication method but configured for another &mdash; a naming or configuration slip worth reconciling.</p>\n' "$nmm"
         else
             printf '<p class="range">No inconsistencies &mdash; every profile&rsquo;s auth suffix matches its configured authentication.</p>\n'
         fi
         printf '<h2>Breaking naming rules (%s)</h2>\n' "$(dotify "${nm_bad:-0}")"
-        printf '<p class="range">An <strong>incoming</strong> account (the partner connects to us) separates its name parts with <code>-</code>; an <strong>outgoing</strong> one (we connect to the partner) uses <code>_</code>. The same flow configured both ways therefore appears twice, once in each spelling &mdash; <code>DPL-AXINI-AO-IMPRESS</code> inbound and <code>DPL_AXINI-AO_IMPRESS</code> outbound. The separator is read <code>_</code>-primary: <code>_</code> wins unless splitting on <code>-</code> yields more parts, so an internal hyphen inside one part (<code>AIM-FIN_TREASURY-SP</code>) is not mistaken for the separator. (A NAMING audit only &mdash; since the logical-based derivation the partner/domain/application entities no longer come from account names.)</p>\n'
         if [ "${nm_bad:-0}" -gt 0 ]; then
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Direction</th><th>Separator used</th><th>Expected</th></tr>\n'
             printf '%s\n' "$nm_rows" | tr '\t' '\036' | while IFS=$'\036' read -r nm dir prim want res; do
@@ -1306,14 +1305,10 @@ write_accounts_page() {
                     "${res:-orange}" "$nme" "$( [ "$dir" = in ] && printf 'incoming' || printf 'outgoing' )" "$prim" "$want"   # lowercase Direction, site-wide rule
             done
             printf '</table></div>\n'
-            printf '<p class="range">%s of %s directional accounts follow the rule.%s A break is a naming slip rather than a fault &mdash; the flow still works &mdash; but it hides the pairing: the twin spelling is how an incoming and an outgoing half of the same flow are recognised as one route.</p>\n' \
-                "$(dotify "${nm_ok:-0}")" "$(dotify "$(( ${nm_ok:-0} + ${nm_bad:-0} ))")" \
-                "$( [ "${nm_none:-0}" -gt 0 ] && printf ' %s account(s) carry no separator at all and cannot be judged.' "${nm_none}" )"
         else
             printf '<p class="range">No breaks &mdash; all %s directional accounts follow the rule.</p>\n' "$(dotify "${nm_ok:-0}")"
         fi
         printf '<h2>Not clear domain-application-partner (%s)</h2>\n' "$(dotify "${pda_bad:-0}")"
-        printf '<p class="range">An account is meant to be connected to a <strong>logical flow</strong>, whose three-part name reads <strong>domain_application_partner</strong> &mdash; <code>ODV_MAIA_AKZO</code> is domain <code>ODV</code>, application <code>MAIA</code>, partner <code>AKZO</code>. These accounts could not be resolved into all three. The check does not re-read any names: it asks the derivation itself what it managed to assign, so a blank column is a value the rest of the site genuinely does not have for that account.</p>\n'
         if [ "${pda_bad:-0}" -gt 0 ]; then
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Domain</th><th>Application</th><th>Partner</th><th>Missing</th><th>Why</th></tr>\n'
             # \037, not TAB: a TAB is IFS whitespace, so consecutive empty
@@ -1327,13 +1322,10 @@ write_accounts_page() {
                     "${res:-orange}" "$nme" "${dme:-&mdash;}" "${ape:-&mdash;}" "${pte:-&mdash;}" "$mse" "$whe"
             done
             printf '</table></div>\n'
-            printf '<p class="range">%s of %s accounts resolve to all three. A gap is not a fault &mdash; the flow works either way &mdash; but the account is then absent from that entity&rsquo;s Files, coverage and cross-reference figures, so a partner can look quieter than it is.</p>\n' \
-                "$(dotify "${pda_ok:-0}")" "$(dotify "$(( ${pda_ok:-0} + ${pda_bad:-0} ))")"
         else
             printf '<p class="range">All %s accounts resolve to a domain, an application and a partner.</p>\n' "$(dotify "${pda_ok:-0}")"
         fi
         printf '<h2>FTP endpoints (%s) &mdash; insecure</h2>\n' "$(dotify "$nftp")"
-        printf '<p class="range"><strong>FTP transfers credentials and data in clear text</strong> and cannot use a public key, so these are the site&rsquo;s only insecure profiles. They are also exactly the %s profiles outside the <code>PWD</code>/<code>KEY</code> naming convention above (their name ends in a partner tag and their <code>clientAuthentication</code> is unset). Migrating them to SFTP would close the last plaintext links.</p>\n' "$(dotify "$nftp")"
         printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Communication profile</th><th>Name suffix</th><th>Authentication</th></tr>\n'
         printf '%s\n' "$ftp_rows" | tr '\t' '\036' | while IFS=$'\036' read -r nm suf auth; do
             [ -n "$nm" ] || continue
@@ -1343,7 +1335,6 @@ write_accounts_page() {
         printf '</table></div>\n'
         printf '<h2>Incoming partners without IP whitelisting (%s)</h2>\n' "$(dotify "$niw")"
         if [ "$niw" -gt 0 ]; then
-            printf '<p class="range">An <strong>incoming</strong> partner (a CLIENT profile &mdash; it connects in to us) should be restricted by an <code>AllowIP</code> whitelist. The following %s have none, so any source IP could attempt to connect, relying on authentication alone (weakest when that is a password).</p>\n' "$(dotify "$niw")"
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Partner</th><th>Protocol</th><th>Authentication</th><th>Status</th></tr>\n'
             printf '%s\n' "$iw_rows" | tr '\t' '\036' | while IFS=$'\036' read -r p proto auth; do
                 [ -n "$p" ] || continue
@@ -1358,7 +1349,6 @@ write_accounts_page() {
         fi
         printf '<h2>Remote hosts with conflicting setup</h2>\n'
         if [ -n "$hc_stream" ]; then
-            printf '<p class="range">A remote host reached from more than one profile should be configured the same way everywhere. Checking <strong>every</strong> host-intrinsic connection attribute, <strong>%s host(s)</strong> differ across <strong>%s attribute(s)</strong> &mdash; one table per differing attribute below. A port pair means one is probably stale; a host-key pair (verification or stored key) is a security gap: one connection is protected against a man-in-the-middle, the other is not. Per-account client credentials are excluded (they are not a property of the host). Each distinct value is a row, grouped by host.</p>\n' "$(dotify "$hc_nhosts")" "$(dotify "$hc_nattr")"
             local aspec arows anh prevh
             for aspec in "port|Port" "serverVerification|Host-key verification" "storedPublicKey|Stored host key" \
                          "protocol|Protocol" "fipsEnabled|FIPS mode" "enabled|Profile enabled"; do
@@ -1382,7 +1372,6 @@ write_accounts_page() {
         fi
         printf '<h2>Whitelisted IPs with conflicting incoming setup</h2>\n'
         if [ -n "$wc_stream" ]; then
-            printf '<p class="range">The inbound mirror of the check above: a source IP whitelisted for more than one incoming (CLIENT) partner should present the same way. Checking <strong>every</strong> incoming attribute, <strong>%s IP(s)</strong> differ across <strong>%s attribute(s)</strong> &mdash; one table per differing attribute below. Often deliberate (one source, per-account credentials), but worth confirming. Per-account logins are excluded. Each distinct value is a row, grouped by IP.</p>\n' "$(dotify "$wc_nips")" "$(dotify "$wc_nattr")"
             local waspec warows wanh previp
             for waspec in "clientAuthentication|Authentication" "protocol|Protocol" "fipsEnabled|FIPS mode" "enabled|Profile enabled"; do
                 wfield=${waspec%%|*}; wlabel=${waspec#*|}
@@ -1405,11 +1394,9 @@ write_accounts_page() {
         fi
         # ---- Account & login checks ------------------------------------------
         printf '<h2>Account &amp; login checks</h2>\n'
-        printf '<p class="subtitle">Configuration checks on the accounts and the login names their communication profiles use.</p>\n'
         # 1. non-standard login names
         printf '<h3>Non-standard login names (%s)</h3>\n' "$(dotify "$nnsl")"
         if [ "$nnsl" -gt 0 ]; then
-            printf '<p class="range">A partner connecting in (a CLIENT profile) authenticates with a provisioned <code>FE&lt;digits&gt;</code> login. These %s use a different login name.</p>\n' "$(dotify "$nnsl")"
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th>Login</th></tr>\n'
             printf '%s\n' "$nsl_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a p l; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$p"; pe=$ESC; esc "$l"; le=$ESC
@@ -1420,7 +1407,6 @@ write_accounts_page() {
         # 2. one login on more than one account
         printf '<h3>Login used by more than one account (%s)</h3>\n' "$(dotify "$nshl")"
         if [ "$nshl" -gt 0 ]; then
-            printf '<p class="range">A login should belong to one account. These %s are configured on several &mdash; often <code>-</code>/<code>_</code> spelling twins of the same partner, but worth confirming.</p>\n' "$(dotify "$nshl")"
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Login</th><th class="num">Accounts</th><th>On</th></tr>\n'
             printf '%s\n' "$shl_rows" | while IFS=$'\t' read -r l n ac; do
                 [ -n "$l" ] || continue; esc "$l"; le=$ESC; esc "$ac"; ace=$ESC
@@ -1431,7 +1417,6 @@ write_accounts_page() {
         # 3. communication profiles with more than one host
         printf '<h3>Communication profiles with more than one host (%s)</h3>\n' "$(dotify "$nmh")"
         if [ "$nmh" -gt 0 ]; then
-            printf '<p class="range">A server endpoint should resolve to exactly one host. These %s list several.</p>\n' "$(dotify "$nmh")"
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th class="num">Hosts</th><th>Host list</th></tr>\n'
             printf '%s\n' "$mh_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a p n hl; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$p"; pe=$ESC; esc "$hl"; hle=$ESC
@@ -1442,7 +1427,6 @@ write_accounts_page() {
         # 4. incoming password profiles with no stored password
         printf '<h3>Incoming password profiles with no stored password (%s)</h3>\n' "$(dotify "$nnpw")"
         if [ "$nnpw" -gt 0 ]; then
-            printf '<p class="range">These %s incoming (CLIENT) profiles are set to <strong>password</strong> authentication, yet the login credential holds no password (<code>hasPassword=false</code>). Many rely on IP whitelisting instead &mdash; still worth confirming the authentication is what was intended.</p>\n' "$(dotify "$nnpw")"
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th>Login</th></tr>\n'
             printf '%s\n' "$npw_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a p l; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$p"; pe=$ESC; esc "$l"; le=$ESC
@@ -1453,7 +1437,6 @@ write_accounts_page() {
         # 5. accounts with more than one communication profile
         printf '<h3>Accounts with more than one communication profile (%s)</h3>\n' "$(dotify "$nmcp")"
         if [ "$nmcp" -gt 0 ]; then
-            printf '<p class="range">An account normally has one endpoint. These %s carry several &mdash; confirm they are intentional (a profile named for a <em>different</em> account is a likely mix-up).</p>\n' "$(dotify "$nmcp")"
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th class="num">Profiles</th><th>Communication profiles</th></tr>\n'
             printf '%s\n' "$mcp_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a n ps; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$ps"; pse=$ESC
@@ -1464,7 +1447,6 @@ write_accounts_page() {
         # 6. login vs loginName mismatch
         printf '<h3>Login / login-name mismatch (%s)</h3>\n' "$(dotify "$nlnm")"
         if [ "$nlnm" -gt 0 ]; then
-            printf '<p class="range">A profile&rsquo;s <code>login</code> and its display <code>loginName</code> should match. These %s differ.</p>\n' "$(dotify "$nlnm")"
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th>login</th><th>loginName</th></tr>\n'
             printf '%s\n' "$lnm_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a p l ln; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$p"; pe=$ESC; esc "$l"; le=$ESC; esc "$ln"; lne=$ESC
@@ -1505,24 +1487,18 @@ _aplap "insights (the boxes, audits)"
 render_subs_group_pages
 _aplap "subscription group pages"
 
-# The Failed Subscriptions VIEW pages (failed-<sel>-<fil>.rpt, written by
+# The Failed Subscriptions VIEW page (failed-sub-all.rpt, written by
 # bin/transfer/reports/failed.sh beside the default failed.rpt, which
-# render_subs_group_pages just rendered as a Boxes-group member): five
-# variants, not in any order — no menu, sitemap or finder entry, reached
-# only through the selector row below — rendered as the SAME report: the
-# analyses Boxes group row with Failed Subscriptions active (injected after the
-# h1, like every subs-group page gets), the "failed" help slug and the
-# "failed" search/sort persistence key (like a tabbed report's pages, so a
-# typed search survives a view switch).
-rm -f "$ADIR"/failed-all-*-data.js   # the retired search-on-demand payloads (2026-08)
+# render_subs_group_pages just rendered): the All view — reached only through
+# the selector row below, rendered as the SAME report (the "failed" help slug
+# and search/sort persistence key, so a typed search survives a view switch;
+# its group row comes from bin/build/publish.sh apply_report_groups).
 _fsaved_dates=${CUR_DATES:-}; CUR_DATES=$TRANSFER_DATES
 for _frpt in "$DATA"/transfer/reports/failed-*.rpt; do
     [ -f "$_frpt" ] || continue
     _fname=${_frpt##*/}; _fname=${_fname%.rpt}
-    # the view variants ONLY (failed-sub-* / failed-all-*): the glob also matches
-    # failed-files.rpt — the Failed files report, a transfer page of its own —
-    # and rendered it here as analyses/failed-files.html, a page nothing links
-    # (linkcheck's one standing orphan until 2026-09-21)
+    # the view variants ONLY (failed-sub-*): the glob also matches
+    # failed-files.rpt — the Failed files report, a transfer page of its own
     case $_fname in failed-sub-*) ;; *) continue ;; esac
     RPT_NOPROSE=1 render_rpt "$_frpt" "$ADIR/$_fname.html" "../assets/style.css" "index.html" \
         "TRANSFER - Failed Subscriptions" 1 "failed" "failed"   # a report page: no INTRO / NOTE prose (the help page carries it)
@@ -1533,83 +1509,29 @@ _aplap "failed pages"
 # (The Error reasons DRILL pages, failing-reasons-<slug>.html, went
 # 2026-09-29: a reason row opens the Failed files page searched on it.)
 
-# (No selector row on Error reasons since 2026-09-14, user request: ONE page
-# counting every failed File — failing-reasons.sh.)
-
-# THE VIEW SELECTOR ROW, injected into all six Failed Subscriptions pages BELOW
-# the From/To date controls (report.js hoists its controls anchor back over a
-# p.tabs.undertabs row, so the baked tablewrap-adjacent row comes out
-# controls -> row -> table). Two button groups in one row, a tabsep gap
-# between: the SELECTION (All / Subscription) and the
-# FILTER (All / Still failing) — switching one keeps the other, each
-# combination its own page, the default (Subscription x Still failing) being
-# failed.html itself.
-_fpage() {   # $1 sel  $2 fil -> page basename
-    if [ "$1" = sub ] && [ "$2" = failing ]; then echo "failed.html"
-    else echo "failed-$1-$2.html"; fi
+# THE VIEW SELECTOR ROW — Still failing (failed.html, the default, FIRST since
+# 2026-09-29) · All (failed-sub-all.html) — injected into both pages BELOW the
+# From/To date controls (report.js hoists its controls anchor back over a
+# p.tabs.undertabs row, so the row comes out controls -> row -> table).
+# (The Selection group — All files / Subscription — went 2026-09-29 with the
+# every-File views: the Failed files page is that list.)
+_fpage() {   # $1 filter -> page basename
+    if [ "$1" = failing ]; then echo "failed.html"; else echo "failed-sub-$1.html"; fi
 }
-# (the Selection group — All files / Subscription — went 2026-09-29 with the
-# every-File views: the Failed files page is that list)
-for _fsel in sub; do
-    for _ffil in failing all; do
-        _ff="$ADIR/$(_fpage "$_fsel" "$_ffil")"
-        [ -f "$_ff" ] || continue
-        _frow='<p class="tabs undertabs">'
-        for _fs in "all:All" "failing:Still failing"; do
-            _fk=${_fs%%:*}; _flbl=${_fs#*:}
-            if [ "$_fk" = "$_ffil" ]; then _frow+="<span class=\"tab active\">$_flbl</span>"
-            else _frow+="<a class=\"tab\" href=\"$(_fpage "$_fsel" "$_fk")\">$_flbl</a>"; fi
-        done
-        _frow+='</p>'
-        _inject_before_table "$_ff" "$_frow"
+for _ffil in failing all; do
+    _ff="$ADIR/$(_fpage "$_ffil")"
+    [ -f "$_ff" ] || continue
+    _frow='<p class="tabs undertabs">'
+    for _fs in "failing:Still failing" "all:All"; do
+        _fk=${_fs%%:*}; _flbl=${_fs#*:}
+        if [ "$_fk" = "$_ffil" ]; then _frow+="<span class=\"tab active\">$_flbl</span>"
+        else _frow+="<a class=\"tab\" href=\"$(_fpage "$_fk")\">$_flbl</a>"; fi
     done
+    _frow+='</p>'
+    _inject_before_table "$_ff" "$_frow"
 done
 
-# The File search pages: one per window (2026-08; seven since 2026-09-28 —
-# 24-hours … month and older, "> 1 month"), each with its OWN data file. Since the
-# compact v2 payload (2026-08) the report script writes the sidecar itself
-# (file-search-<key>-data.js, dictionary-coded data — ~95 B/row where the
-# lifted <tr> markup ran 300-525 B/row): the .rpt renders an EMPTY table and
-# this block copies the sidecar beside the page, injecting its tag AND the
-# DEDICATED engine docs/assets/file-search.js (as-you-type search, the NAV row
-# carrying ?q= between the windows), each with its own cksum ?v=, before
-# report.js (defer order). CUR_DATES cleared: no date filter; DLINK_BASE for
-# any residual site cell.
-# THE PAGES LIVE UNDER docs/search/ (2026-09-12, user request — at the docs
-# root before), beside search/search.html: css depth 1, the engine-derived
-# links (file-search.js) and DLINK_BASE carry ../, the payload tag stays a
-# bare sibling name, the engine loads from ../assets/. Stale root copies are
-# swept for a manual publish (a build clears docs/ anyway).
-_fs_dir="$DOCS/search"; mkdir -p "$_fs_dir"
-rm -f "$DOCS"/file-search-*.html "$DOCS"/file-search-*-data.js "$_fs_dir/file-search.html" "$_fs_dir/file-search-data.js"
-# the 2026-08 Errors/OK page pair — swept so no stale twin survives the merge
-for _fs_k in 48-hours-errors 48-hours-ok week-errors week-ok 2-weeks-errors 2-weeks-ok 3-weeks-errors 3-weeks-ok month-errors month-ok; do
-    rm -f "$_fs_dir/file-search-$_fs_k.html" "$_fs_dir/file-search-$_fs_k-data.js"
-done
-_fs_n=0
-_fs_jsv=$(cksum < docs/assets/file-search.js 2>/dev/null | awk '{print $1}')   # publish_lib cd'd to the repo root
-for _fs_k in 24-hours 48-hours week 2-weeks 3-weeks month older; do
-    if [ ! -f "$ARPT/file-search-$_fs_k.rpt" ] || [ ! -f "$ARPT/file-search-$_fs_k-data.js" ]; then
-        rm -f "$_fs_dir/file-search-$_fs_k.html" "$_fs_dir/file-search-$_fs_k-data.js"
-        continue
-    fi
-    _fs_sd=${CUR_DATES:-}; CUR_DATES=""; _fs_dl=${DLINK_BASE:-}; DLINK_BASE="../details/"
-    RPT_NOPROSE=1 render_rpt "$ARPT/file-search-$_fs_k.rpt" "$_fs_dir/file-search-$_fs_k.html" "../assets/style.css" "../index.html" \
-        "ANALYSES - File search" 1 "file-search" "file-search-$_fs_k"   # a report page: no INTRO / NOTE prose
-    DLINK_BASE=$_fs_dl; CUR_DATES=$_fs_sd
-    cp "$ARPT/file-search-$_fs_k-data.js" "$_fs_dir/file-search-$_fs_k-data.js"
-    _fs_dver=$(cksum < "$_fs_dir/file-search-$_fs_k-data.js" | awk '{print $1}')
-    awk -v d="<script src=\"file-search-$_fs_k-data.js?v=$_fs_dver\" defer></script>" \
-        -v e="<script src=\"../assets/file-search.js?v=$_fs_jsv\" defer></script>" \
-        '/<script src=[^>]*report\.js/ && !done { print d; print e; done = 1 } { print }' \
-        "$_fs_dir/file-search-$_fs_k.html" > "$_fs_dir/file-search-$_fs_k.html.tmp.$$" \
-        && mv "$_fs_dir/file-search-$_fs_k.html.tmp.$$" "$_fs_dir/file-search-$_fs_k.html"
-    # the FIRST tab row: Implementation 1 (these window pages) | 2 (search/all-files.html)
-    _inject_after_h1 "$_fs_dir/file-search-$_fs_k.html" "$(file_search_impl_row 1)"
-    _fs_n=$((_fs_n + 1))
-done
-[ "$_fs_n" -gt 0 ] && echo "Wrote $_fs_n File search page(s) (+ per-page data files)." >&2
-_aplap "the rest + file search pages"
+_aplap "the rest"
 rm -f "$ADIR/index.html"   # the Analyses start page went 2026-09-29 (one Reports pulldown: docs/reports/index.html)
 
 echo "Wrote docs/analyses (index + the analysis pages)." >&2

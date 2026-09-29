@@ -42,7 +42,7 @@
 # the SAME partner group are kept and marked — they are usually a pull-then-
 # stage flow rather than a true partner-to-partner handover.
 #
-# Reads data/<env>/transfer/cache/_files.tsv. Writes data/<env>/transfer/reports/file-in-file-out.rpt.
+# Reads data/transfer/cache/_files.tsv. Writes data/transfer/reports/file-in-file-out.rpt.
 #
 # Usage:
 #   ./file-in-file-out.sh    # reads input/*.csv (via the cache)
@@ -114,7 +114,7 @@ awk -F'\t' -v W="$((WINDOW_H * 3600))" '
         }
     }
     function flush() { if (n > 0) { pass("in", "out"); pass("out", "in") }; n = 0 }
-    $1 != prev { flush(); prev = $1 }
+    ($1 "") != prev { flush(); prev = $1 }   # a STRING compare: mawk compared "0123" and "123" numerically, one group (2026-09-29)
     { n++; f[n]=$1; ts[n]=$2; mv[n]=$3; sub_[n]=$4; sz[n]=$5; pt[n]=$6; dt[n]=$7; tm[n]=$8; cid[n]=$9; used[n]=0 }
     END { flush() }' "$TMP" > "$TMP.pairs"
 

@@ -11,7 +11,7 @@ Source CSV field indices (transfer log): `1`=Status, `2`=Account, `3`=Login, `6`
 `19`=Size, `20`=Protocol, `22`=Mode, `23`=Start Time, `24`=End Time, `25`=Duration, `26`=Remote Host,
 `29`=Transfer ID, `30`=Session ID (the technical connection — one SSH/PESIT connection = one id),
 `34`=CoreId, `35`=Resubmitted, `38`=SecurityParameters. Server logs: `1`=Time,
-`2`=Level, `3`=Component, `5`=Message. Timestamps are `MM/DD/YYYY HH:MM:SS.mmm`.
+`2`=Level, `3`=Component, `5`=Message, `18`=Session ID (`_parse.tsv` col 6). Timestamps are `MM/DD/YYYY HH:MM:SS.mmm`.
 
 ## Merged report lists
 
@@ -22,7 +22,8 @@ consumer keeps reading them. Transfer: `activity` (weekly+hourly+weekday — `da
 (retry+attempts+resubmissions+recovered-files), `file-journey` (patterns+legs-count+protocol-journey+arrived-left),
 `file-in-file-out` (file-in-file-out-src+uc4-to-uc2), `files` (size-dist+file-type+duplicate-files+top-transfers+size-profile),
 `trends` (trend+duration-trend — was `volume`, whose volume-src went), `episodes` (episodes-src+recovered),
-`went-quiet` (went-quiet-src+stale-accounts), `duration-dwell`. Server: `errors`
+`went-quiet` (went-quiet-src+stale-accounts), `duration-dwell`, `punctuality`
+(punctuality-src+expected-arrival, `merge-punctuality.sh` — Arrival time / Rhythm). Server: `errors`
 (error-reasons+error-timing+top-messages), `connections`, `logons`, `ssh-security`; the server
 Top view takes errors-day's levels-per-component table through `append_rpt_tables` (2026-09-29).
 Analyses: `uc-status` (uc1-status · uc2-status+uc2-visits+pickups on the UC2 tab · uc3-status+uc3-polling+no-remote-dir+no-remote-files
@@ -60,14 +61,19 @@ its .rpt, and every link to it points at `server/failure-flows.html` now.)
 
 ## The attribution chain (parse time, in this order)
 
+0. **Rename fold** — the logged subscription and profile names folded to the names the config
+   uses NOW (`input/renames/`, `bin/renames.sh`); fully specified in CLAUDE.md, step 0.
 1. **Blacklist — `input/blacklist.txt`** (TSV `<field>⇥drop|keep⇥<value>`: `drop`
    blanks on exact match, `keep` = a regex every kept value must match), read through the sourced
-   **`bin/blacklist.sh`** (`BLACKLIST_FILE` + `BLACKLIST_AWK`) by its two script consumers —
-   transfer `parse.sh` (the authoritative blanking) and server `unknown-entities.sh` — plus the
-   generated `docs/assets/blacklist-data.js`.
+   **`bin/blacklist.sh`** (`BLACKLIST_FILE` + `BLACKLIST_AWK`) by transfer `parse.sh` (the
+   authoritative blanking), server `unknown-entities.sh`, and the logon matchers `logon.sh` +
+   `bin/logons.sh` (the pseudo-logins stay out of Incoming and the logon summary); the manual
+   `flow-manager-synth.sh` reads the drop values itself.
    COMMITTED in develop (the whole `input/` tree is, CSVs included; a runtime repo keeps its own).
    Blanked (row kept): account
-   `SECURETRANSPORT`; any filled site NOT starting with `UC` (catches the `Clone - …` artifacts);
+   `SECURETRANSPORT`; any filled site NOT starting with `UC` (catches the `Clone - …` artifacts) —
+   unless it names a configured subscription (`base/.configured.tsv`: the configuration outranks
+   the keep rule, 2026-08-31 — the hybrid production flows carry no UC prefix);
    logins `SECURETRANSPORT`/`P14303_CFT01`/`*nobody`/`UNKNOWN`; the internal cluster hosts
    (`localhost`/`145.219.156.40`/`.20`/`.21`, applied AFTER the endpoint-map fill). Login
    `@`-fallback: a blanked login falls back to the part after `@` in its account
@@ -143,9 +149,10 @@ its .rpt, and every link to it points at `server/failure-flows.html` now.)
    on not-in-flow-manager — EXCEPT that **first-seen.sh drops `UCx_` names** at both its base
    and coverage intake (nothing was configured, so no first sighting can be dated). `uc_meta`
    returns empties for it.
-6. **NO-SUBSCRIPTION / HTTP SKIP**: a CoreId with neither site nor ACCOUNT anywhere after all
-   passes — or an http leg on any row (web-UI hand traffic) — is dropped from
-   `_transfers.tsv`/`_files.tsv`; its raw
+6. **NO-SUBSCRIPTION / HTTP / PROBE SKIP**: a CoreId with neither site nor ACCOUNT anywhere after
+   all passes — or an http leg on any row (web-UI hand traffic), or (2026-09-08) the EMPTY
+   OUTBOUND SSH PROBE, one record Outbound + ssh + size 0 + Application "none"/empty (col 25) — is
+   dropped from `_transfers.tsv`/`_files.tsv` (the Skipped report names each reason); its raw
    CSV lines go verbatim to `data/transfer/_skipped.csv`, recomputed each derive (a later
    export adding a subscription leg brings the CoreId back). Distinct from the **`input/skip.txt`
    SKIP LIST**: same layout as the blacklist but a matched rule DROPS THE WHOLE RECORD (field
@@ -167,7 +174,8 @@ Cross reference: an unconfigured sighting is red; data-diff; the cleanup backlog
 is `data/colour/`; `result.sh` drops the old directory.
 
 **`bin/build/result.sh`** fills the base result column: a **subscription** goes green/red by
-   its LAST File's outcome (red when Failed or Expired, green otherwise incl. Waiting; orange =
+   its LAST File's outcome (red when Failed; ORANGE when Expired — a pickup problem, still a
+   candidate for the after-last-transfer rule below; green otherwise incl. Waiting; orange =
    never seen in the transfer log). **The after-last-transfer rule (2026-08)**: a would-be-green subscription flips
    RED when the server log holds an E-level line NEWER than that last transfer — newer than its
    END since 2026-09-12 (user rule): the cut is the last File's start raised to the newest OK
@@ -264,7 +272,7 @@ S = server/, A = analyses/):
 - **Use cases & delivery** — Use cases (A use-cases) · UC status (A uc-status) · Polling (A) ·
   Punctuality (T: Arrival time / Rhythm) · Waiting (T) · Expired (T) · Went quiet (T)
 - **Activity & volume** — Activity (T) · Trends (T) · Ranking (T) · Sizes & types (T files) · Route
-  throughput (T)
+  throughput (T) · Month stats (transfer/month-stats/this — every page of that directory)
 - **Performance** — Duration (T; + duration-all) · Longest Files (T duration-longest) ·
   Distribution & Store-and-forward (T duration-dwell) · Anomalies (T)
 - **Flow patterns** — File journey (T) · File in - File out (T) · Inbound and Outbound same
@@ -276,18 +284,16 @@ S = server/, A = analyses/):
   Application dependencies (A app-partners)
 - **Configuration** — Subscriptions (A) · Accounts (A) · Logical detection (A) · Sources and
   Targets (T) · Cross References (analyses/xref, its pair selector under the group row)
-- **Coverage** — Entity coverage (T) · First seen (A) · Not in Flow Manager (T) · Skipped (T)
+- **Coverage** — Entity coverage (T) · First seen (A) · Not in Flow Manager (T) · Skipped (T) ·
+  Missing entities (S)
 - **Cleanup** — Cleanup backlog (A) · Config hygiene (A) · Whitelist audit (A) · Account sharing
   (A) · Twins (A)
 
 Entity Search (search/search.html) sits behind the top bar's search icon, the Files search behind
 its Files link, the Dashboard and Monitor behind their own links — none of them in a group.
 
-(Until 2026-09-29 the groups were per AREA — the Transfer groups topview · entity-search ·
-account-login-site · time · volume-files · failures · flow-shape · protocol-security ·
-performance-session · cross, the Server groups srv-overview · srv-errors · srv-connections ·
-srv-security, the Analyses groups Coverage & seen · Configuration · Partners · Boxes · Errors —
-each area with its own dropdown and start page, plus the Goodies short cuts.)
+(Until 2026-09-29 the groups were per AREA, each area with its own dropdown and start page, plus
+the Goodies short cuts.)
 
 ## PDA derivation (partners, domains, applications)
 
@@ -403,11 +409,16 @@ first data day on a shorter estate. "This month" is **Current month** since the 
 Linear/Log row of a card** sits in its `.chartbtns` wrapper, beside the chart, not above it:
 slotchart.js finds the card's chart from the enclosing `.chartbox` (2026-09-29 fix — the
 `parentNode` lookup found none and stored every click under kind `count`). The card titles carry no "per slot" / "up to each slot" tail — the slot semantics live in
-the card subtitles. Twelve hero views, all
-chart type `slots` at 6-hour slots: Duration (hero) /
-Files processed / Volume / Error % Files / Transfer errors (raw `Failed` + `Failed Subtransmission`
-legs from `_transfers.tsv`) / cumulative Subscriptions seen + Partners seen / the four
-UC1–UC4 status stacks / PeSIT (LAST and conditional, so its omission never shifts button indices).
+the card subtitles. Sixteen hero views on the sample, all chart type `slots` at 6-hour slots
+(`overview.sh`), the first button row: Duration (hero) · Files processed · Volume · Throughput ·
+Error % Files · Transfer errors (raw `Failed` + `Failed Subtransmission` legs from
+`_transfers.tsv`) · Connections (sessions opened, by who dialled) · PeSIT · EventQueue — PeSIT and
+EventQueue LAST of the flat views and conditional on their sidecars, so their omission never
+shifts a button index — then two GROUP buttons (a `<group>|<member>` CARDALT label) whose second
+row appears while picked: **Seen** (Partners · Accounts · Subscriptions, cumulative) and **Use
+cases** (the UC1–UC4 status stacks). Throughput, Connections and every Seen / UC view are
+conditional too. Each card carries its own Linear/Log row (not `dur`); the choice is stored per
+chart KIND (sessionStorage `axway-chart-scale:<kind>` — seen opens Linear, the rest Log).
 First CARD = hero; CARDALT lines render hidden `.althero` siblings; report.js `setupHeroToggle`
 swaps positionally (button 0 "Duration" hardcoded in both publishes; rpt directive `HERO0`
 overrides).
@@ -449,8 +460,9 @@ value; partner attribution = col 20 ∪ subscription partners ∪ host partners;
 exactly. Orange is transfer evidence only.
 **Cross-check after any change**: orange ends at `first-seen.rpt`'s DATED Seen (Seen minus the
 no-date bucket; acceptance 2026-08-22: subscriptions 283, partners 97, accounts 221).
-These six overview-only views are not on the day pages; their slot links carry
-`?axway_hero=Files%20processed`.
+The overview-only views (Throughput, Connections, Seen, Use cases) are not on the day pages:
+Throughput's slots open the day's Duration, Connections' and the Seen curves' its Files processed,
+a UC stack's the UC's status page.
 
 **Slot charts are drawn CLIENT-SIDE** by `docs/assets/slotchart.js`; every other chart type
 renders at publish time in `charts_lib.sh`. One placeholder per card (`div.slotchart`, each
@@ -501,8 +513,9 @@ carry no day link: an empty CARD a3 makes `render_card` fall back to the CARD's 
 LINKPAT. `Files processed` is the one card that FILLS a3
 (`../transfer/entities/subscription-all.html?axway_date=<d>`), so its plot and title point at
 different pages — its subtitle says so. The PeSIT view reads `pesit-slots.tsv`, the sidecar
-`bin/server/reports/pesit.sh` writes (a missing sidecar forces a pesit.sh rebuild; pesit.sh
-removes it with pesit.rpt), the EventQueue view `event-queue-slots.tsv` (event-queue.sh); both
+`bin/server/reports/pesit.sh` writes (a missing sidecar leaves the day view an all-zero series —
+the Overview omits the view; pesit.sh removes it with pesit.rpt), the EventQueue view
+`event-queue-slots.tsv` (event-queue.sh); both
 scripts have no page since 2026-09-27, so those two views' titles link nowhere. `setupHeroToggle` stores the label in sessionStorage `axway-day-hero`,
 SHARED with the Overview; `?axway_hero=` overrides and persists.
 
@@ -523,8 +536,8 @@ publish_lib's `area_dates`, `bin/build/publish.sh`, `bin/dashboards/lib.sh`,
 (Automatic · Manual: the OK Files that carried a failed leg, Manual when a leg carries
 `Resubmitted=true`, `_transfers.tsv` col 22) | **Resubmit** (Ok · Failed: every File with a
 resubmitted leg, by outcome) | Transfers (Count · Ok · Error · Error %) | State (Processed ·
-Failed · Waiting · Expired) — ROW fields 2-20 in that order; the home page's Cured cell is
-Automatic + Manual (fields 9-10).
+Failed · Waiting · Expired) | Volume (since 2026-09-29, when Activity's per-day tab went) — ROW
+fields 2-21 in that order; the home page's Cured cell is Automatic + Manual (fields 9-10).
 
 ## Click-to-expand drill-down
 
@@ -560,19 +573,25 @@ listed File without a page. Never the OK lists, the whole-row lists or the serve
 ## The home page
 
 `bin/build/publish.sh` writes the centered shared home (body class `home`): the two status tables
-plus the per-day figures — ONE wide "Per day" table (2026-08-31, user request; the 2026-08
-five-table `.sxs` flex row with its blanked Date spine is retired — it could fall out of
-row-sync whenever a header's height changed, which the csv-hotspot did): a `gband` banner row
-(Files · Duration · Red/Green switch · First seen) over a shared Date column whose cells link
-the day dashboard; the group dividers are POSITIONAL CSS on `table.dayrows` (columns 2/8/12/14
-+ the `gbrow` banner cells), so adding a column means moving them. The days are the transfer
-`topview.rpt`'s only — all four data groups are transfer-derived, so a server-only day (the
+plus the per-day figures — ONE wide "Per day" table (`write_home_block`; 2026-08-31, user
+request; the 2026-08 five-table `.sxs` flex row with its blanked Date spine is retired — it could
+fall out of row-sync whenever a header's height changed): a `gband` banner row over a shared Date
+column whose cells link the day page, then five groups, each behind a SPACER column
+(`th/td.spc` — no borders, page background, so every group keeps its own edges; report.js
+`syncGroups` re-hides a spacer with its group and sets the edge classes after a move or hide):
+**Transfers** (Ok · Error · Error % — the legs) · **Files** (In · Out · Ok · Cured · Error ·
+Error %) · **UC2 state** (Waiting · Expired) · **Duration** (p50 · p75 · p90 · p95 · p99; the
+banner, headers and Total open `transfer/duration.html?axway_date=all`, each day's cells
+`?axway_row=<date>` via `data-href` / `setupCellLinks`) · **First seen** (Partners ·
+Subscriptions). (The Red/Green switch group, its `docs/switches/` pages and the Logical /
+Accounts First-seen columns went 2026-09-06, user request.) The days are the transfer
+`topview.rpt`'s only — every data group is transfer-derived, so a server-only day (the
 server export running a day ahead of the transfer export) would render a fully empty row. The
 table is `data-nosort` — **capped to the newest 14 days** (2026-08), the older rows and the
 Total row carrying class `capx`, hidden while the table carries `cap14` (a sort would
 interleave the class-hidden oldest rows), and the "Show all" button under the tablewrap (baked
 only when there are more than 14 days) lifts the cap — report.js `setupShowAll` uncaps every
-capped table inside the button's adjacent wrapper. The baked Total keeps the full-window figures, since
+capped table inside the button's adjacent wrapper; the Total row exists only from 10 days up. The baked Total keeps the full-window figures, since
 `recomputeTotals` counts inline display only; the First-seen counts join `first-seen.rpt` by date —
 its summary lines stay out of the day rows, and each First-seen Total cell shows the report's
 SEEN figure — equal to the status tables' Seen by construction, the day cells
@@ -584,7 +603,7 @@ Records = the log's own rows — the server topview's Records column, the transf
 Transfers Count (`$13` since 2026-09-12 — the Recovered and Resubmit groups sit before it — one per physical leg), never a Files or percentage column: until
 2026-08-31 the transfer half read `$13`, the Transfers Error %, so a clean 0.0 % day counted as a
 hole and an estate with no failed transfer showed the Transfer row without Records/First/Last/Days).
-Every status cell opens the **Transfer > Entities view whose row
+Every status cell opens the **Entities view whose row
 count IS that figure** (columns Entity · Total · Seen · OK · Error · Warning · Ok — the
 Transfer/Server columns and the "including server log" switch went with the blue result,
 2026-09-27): Total links `<e>-all`, Seen `<e>-seen`, the counts their result views; the
@@ -600,9 +619,9 @@ the derived Logical/PDA members re-run their both-ways merge over `coverage/<mem
 ## The Entities report pages
 
 Nine entity reports — subscription, logical, partner, account, login, remote-host, domain,
-application, bl (group `account-login-site`, label "Entities") — each rendered as TEN pages under
-`docs/transfer/entities/` by `render_entity_report`: `<entity>-{all,ok,error,server}.html` +
-`<entity>-{seen,not-seen,warning}[-transfer].html`. The page data is
+application, bl (group `account-login-site`, label "Entities") — each rendered as SIX pages under
+`docs/transfer/entities/` by `render_entity_report`:
+`<entity>-{all,seen,not-seen,ok,warning,error}.html`. The page data is
 `data/transfer/reports/entities/<name>.rpt`, written by ONE writer for the nine,
 `bin/transfer/reports/entities.sh` (2026-09-13, user request — built that day as the
 `transfer/entities2/` twin experiment and adopted the same day; the classic Name · Direction · Files ·
@@ -655,7 +674,7 @@ First / Last agree row for row with their `.rpt`); totals per (name, File) pair 
 subscription / login / remote-host, once per File for the rest — the classic `T|` rule; rows baked
 busiest-first with no `sort=`.
 
-Render (`render_entity_report`): the same views and scopes as always (below), over the grouped `.rpt`
+Render (`render_entity_report`): the six views (below), over the grouped `.rpt`
 which is already in display order — no Direction injection and no reorder; the seen rows keep their
 baked order and the never-seen / ghost rows follow by name; `entity_res_block` re-sums the OK /
 Warning / Error subset totals into the writer's own TOTAL template (the count cells, Files and bytes
@@ -875,18 +894,19 @@ SAME row (it reuses the id it finds on the Features line instead of its own `sxs
   same-movement flows — the EQUENS UC3/UC4 pair does); an estate without any qualifying pair must degrade
   to no rows. The cell is `@{alink=…}`, tinted by the TWIN's own result.
 - A KPI Summary table (`nosearch`, not date-aware) renders before section 10 on seen pages.
-- Section 9, the latest 100 Files — on SUBSCRIPTION pages the whole table is DIVERTED to its own
-  page (2026-09-16, user request): `details_writer.awk` `latest_page()` writes
-  `data/transfer/reports/latest/<slug>.rpt` (1000 rows, `addbig` bound), `publish-details.sh`
-  renders it to `docs/latest/<slug>.html` WITH the transfer date list — so unlike a detail page it
-  has the search box and the From/To selectors — and `latest_features_row()` adds the detail
-  page's Features row "Files → Latest 1000 files". A subscription with no Files writes no page and
-  gets no row: State = Delivered/Errored/Waiting/Expired (row tinted via
-  `restint`+`@data:res`); Direction = the FILE MOVEMENT (col 12 via `FLOWMAP`); paged 10 at a
-  time (20 on subscription pages). Subscription pages open with Start · End (2026-09-12, user
-  request): the File's first leg start and its latest leg end (`g_end` in the `aggregate_files`
-  leg walk — raw `_transfers.tsv` col 18 End Time, else start + duration — payload field 11);
-  the other pages keep the single Date.
+- Section 9, the latest 100 Files — every type EXCEPT the subscription (SITE) pages: State =
+  OK/Error/Waiting/Expired (row tinted via `restint`+`@data:res`, Waiting green); Direction = the
+  FILE MOVEMENT (col 12 via `FLOWMAP`); paged 10 at a time. A SUBSCRIPTION page has no section 9
+  (2026-09-29, user request — its 1000-row list, the `docs/latest/` page it fed since 2026-09-16
+  and the Features row "Files → Latest 1000 files" are gone): `details_writer.awk` `files_table()`
+  puts an EMPTY **Files** table (`subfiles=<slug>`) right above Load by weekday on every page with
+  Files, and `assets/sub-files.js` fills it in the browser — every File of the subscription, 25 per
+  page, Previous / Next — from the all-files data: the per-subscription day list
+  `docs/search/all/s/<slug>.js` (publish-all-files.sh: day ⇥ Files ⇥ shard cksum ⇥ the shard's
+  local subscription index(es), newest first; `?v=` = the build id `AXWAY_BUILD_ID`, render_rpt.awk
+  `data-v`, since the list is written after the pages render) and only the day shards the shown page
+  covers (`?v=` their cksum). Columns Start · State · Size · File · CoreId; a File with a page links
+  it; a total row counts them all.
 - Sections 2.6/2.7 (`whitelist_rows()`): 2.7 = configured endpoints ∪ observed outgoing hosts;
   2.6 = the AllowIP whitelist ∪ observed incoming sources (no Name column — an incoming address
   never resolves to a configured endpoint). Green = configured + traffic, red = unconfigured
@@ -906,8 +926,7 @@ SAME row (it reuses the id it finds on the Features line instead of its own `sxs
   table, `emit_srv_table`'s third argument picks one or two). The per-entity lists a
   never-seen page prints (`srv_lines_for`) stay ONE table each. Any Error/Warn after the last
   transfer opens a red ALERT banner. Only the five classic types have per-name caches.
-- **Partners - Incoming** (2026-09-13, user request), `bin/analyses/reports/partners-in.sh` → `analyses/partners-in.html`: a MERGED report — fe-overview.rpt (the FE overview, renamed back from "Partners - Incoming" the same day) joined with the Incoming table of the server pool's `logon.rpt`, one row per login (the union; funnel-only logins untinted with empty transfer cells), the funnel cell drills re-keyed to their new columns; trimmed the same day (user request) to Login … Pickups + Allowed · Disallowed · Authenticated · Auth Failed (= Bad key + Key failures + Auth failed, its drill the 5 newest lines of the three) · Locked · Pattern. Runs after analyses wave 1. Both source pages stay until the user retires them.
-- **Partners - Outgoing** (2026-09-13, user request; RETIRED 2026-09-29): `hosts-overview.sh` and its page went — the Entities Remote hosts view carries the same per-host figures; the Goodies menu links that view instead.
+- **Partners - Incoming** (2026-09-13, user request), `bin/analyses/reports/partners-in.sh` → `analyses/partners-in.html`: a MERGED report — fe-overview.rpt (the FE overview, renamed back from "Partners - Incoming" the same day) joined with the Incoming table of the server pool's `logon.rpt`, one row per login (the union; funnel-only logins untinted with empty transfer cells), the funnel cell drills re-keyed to their new columns; trimmed the same day (user request) to Login … Pickups + Allowed · Disallowed · Authenticated · Auth Failed (= Bad key + Key failures + Auth failed, its drill the 5 newest lines of the three) · Locked · Pattern. Runs after analyses wave 1. The FE overview page went 2026-09-29 (`fe-overview.sh` stays its pageless producer); the Logons report keeps its Incoming tab. (**Partners - Outgoing**, `hosts-overview.sh`, went 2026-09-29: the Entities Hosts view carries the same per-host figures.)
 
 report.js `hideEmptyTables()` (detail pages only) hides emptied sections; `setupSectionTabs()`
 builds the sticky header (`div.detailhead`). The sticky-header CSS comment must never contain a
@@ -924,38 +943,15 @@ IP-named page.
 
 ## The special pages
 
-**File search** (2026-08, SIX pages — SEVEN since 2026-09-28: `older`, "> 1 month", takes every File past data day 30, which was on no page before — under `docs/search/` since 2026-09-12, beside `search/search.html`; the engine-derived links carry `../`): `file-search-<window>-<outcome>.html` for
-windows `48-hours` (the newest 2 data days, anchored on the newest day in `_files.tsv`), `week`,
-`2-weeks`, `3-weeks` (the 5 days, then a week each, before) and `month` (through data day 30; older files are on no page — the windows PARTITION, a file is on exactly one page), outcomes
-`errors` (Failed/Expired) and `ok`. `bin/analyses/reports/file-search.sh` writes one `.rpt` per
-page (rows = Name/Date/Subscription/State/Size/CoreId, newest first — the OK pages carry NO State
-column, nearly every row would read Delivered; the 48-hours/week ERROR pages carry neither State
-— a sub-7-day window cannot hold an Expired file, the sweep runs at ~11 days — nor Size, their
-Subscription cell is PLAIN text, and every cell + the row itself (`@data:href`, the shared
-rowlink class, a delegated click in file-search.js) opens the file's own error page where one
-exists: `failed.sh` grants drill pages for the FAILED files of ALL File search windows (the
-newest 30 data days — Failed only, never Expired: a pickup problem is the detail page's story)
-since 2026-08, CAPPED at 10 pages per subscription (list pages included, newest failures first —
-a busy flow's older rows stay unlinked) — drill-only entries beside its 250-row list); the
-analyses publish renders each (an EMPTY table) and copies the per-page COMPACT data sidecar
-`file-search-<key>-data.js` the report script writes itself (v2, 2026-08 — it used to lift the
-rendered `<tr>` markup at 300-525 B/row; the dictionary-coded data runs ~95 B/row, 2.8-6x
-smaller: `AXWAY_FSEARCH_D` the date dictionary, `_S` the subscription dictionary with the detail
-slug from the subscriptions `_slugmap.tsv`, `_R` one File per line with dictionary indices — the
-engine DOM-renders only the matches). **The BUDGET cap** (`AXWAY_FILE_SEARCH_BUDGET`, default
-64 MiB per page — a backstop, not a routine trim): a page's rows stop at the newest WHOLE data
-days that fit; the window figures
-still count everything and the intro states the searchable-from day (the SUMMARY line went 2026-09-27) while the build report raises a red banner — production-scale
-volumes cap instead of shipping tens of MB.
-The pages are searched by the DEDICATED hand-authored `docs/assets/file-search.js` (injected with
-its own cksum `?v=`), NOT report.js's esearch: search runs AS THE USER TYPES (a 150 ms pause, Enter at once — the Search button and the "N files searchable" idle text went 2026-09-27),
-matches on the Name cell (case-insensitive; `*`/`?` globs, space-separated words AND), shows the
-newest 500, and carries the query as `?q=` — synced onto the page URL and rewritten onto the NAV
-row's five sibling links, so switching windows re-runs the search and a reload repeats it. The
-table is `nosort nosearch nofilter` so report.js keeps its hands off. The Analyses menu, index
-card, sitemap and finder link the leader (`file-search-48-hours-errors.html`); the other five are
-reachable through the NAV row. linkcheck maps each `*-data.js` to its page by name and checks the
-row links inside it.
+**File search** — the SEVEN window pages `docs/search/file-search-<window>.html` (2026-08 ..
+2026-09-29: `bin/analyses/reports/file-search.sh`, their `-data.js` payloads and the dedicated
+`assets/file-search.js`) are GONE (user request: "keep only search/all-files.html"), with the
+publish_lib `file_search_impl_row` Implementation 1 | 2 row that joined them to the all-files
+search. The ONE file search is `search/all-files.html` — the top bar's **Files** link (CLAUDE.md,
+the all-files search). What outlived them: `failed.sh`'s 30-DAY GUARANTEE — every FAILED File of
+the newest 30 data days gets its `files/<coreid>.html` page (never Expired — a pickup problem is
+the detail page's story), at most 10 per subscription per DAY (its leg-selection pages included,
+newest first); the all-files shards flag those CoreIds and link them.
 
 - **Entity Search** — `docs/search/search.html` (+ `search/search-data.js`; at the root until 2026-09-12). Columns: Name · Direction · Type · Error · OK ·
   Last seen (Direction = the same `XXX/YYY` pair that titles the detail page; a row with no page
@@ -964,7 +960,7 @@ row links inside it.
   attribution for Partner/Application, the host column for Whitelist/IP rows, the subscription's
   stamp for Source/Target — a multi-subscription path shows the newest and its subrows payload
   carries each member's own). **Rows ship as DATA**:
-  `split_search_rows` lifts every rendered `<tr>` into `docs/search-data.js` (loaded BEFORE
+  `split_search_rows` lifts every rendered `<tr>` into `docs/search/search-data.js` (loaded BEFORE
   report.js) and leaves an empty `data-start-empty` table; `esBuild` inserts only matching rows.
   Two rebuild invariants: the header and TOTAL rows keep their ORIGINAL DOM nodes, and
   non-matching rows are counted into `data-es-omitted` so `recomputeTotals` sees the table as
@@ -977,14 +973,14 @@ row links inside it.
 - **Report finder** — `docs/tools/report-finder.html` (`write_report_finder`; under `docs/tools/` with the sitemap, whats-new and the build report since 2026-09-12 — their hrefs carry `../`, the palette strips it): the report catalog
   searched client-side; TITLE matches rank above intro-only matches; rows carry KEYWORDS
   (`rpt_keywords`: `KEYWORDS` + every TABLE heading and HEAD column name) via `data-k`.
-- **Failed Subscriptions** — `bin/transfer/reports/failed.sh`, leader of the Analyses ERRORS
-  group since 2026-08 (`SUBS_GROUP_REPORTS` `transfer:failed` — data in
+- **Failed Subscriptions** — `bin/transfer/reports/failed.sh`, the first member of the Failures
+  group (`SUBS_GROUP_REPORTS` `transfer:failed` — data in
   `data/transfer/reports/`, pages in `docs/analyses/`; the group's second member is
   **Error reasons** — `bin/analyses/reports/failing-reasons.sh`, basename `failing-reasons`
   because `error-reasons` is a SERVER merged component: every Reason that occurs with the count of
   Files in error (Failed or Expired) and the newest occurrence; a row opens Failed files searched
   on that reason as a whole cell — the per-reason `failing-reasons-<slug>.html` drill pages went
-  2026-09-29; both are Failures-group members of the Reports pulldown): since 2026-09-29 TWO pages over the Files in error
+  2026-09-29): since 2026-09-29 TWO pages over the Files in error
   (Failed AND Expired — the site-wide Error rule; Expired reads "Expired (not collected)"), one row
   per subscription (its newest): **Still failing** (default, `analyses/failed.html`) and **All**
   (`failed-sub-all.html`, green-again subscriptions kept) — the "All files" views went (Failed
@@ -998,47 +994,38 @@ row links inside it.
   subscription with NO failed File (server-log-reddened) gets one row per list — `@data:srv=1` (the
   marker the failed-sub-all.rpt consumers skip), Date/time = the redflip/kaput evidence stamp,
   Reason = the classified kaput E line else its box — so the pages cover ALL failing
-  subscriptions, transfer and server alike.  subscriptions, transfer and server alike. Each server-failing subscription ALSO gets its own
+  subscriptions, transfer and server alike. Each server-failing subscription ALSO gets its own
   drill page `files/<slug>.html`, NAMED BY THE SUBSCRIPTION (lowercased, non-alnum → `-`; a
   separator-twin collision suffixes; a slug never collides with a UUID CoreId page): the facts +
   the flow's server-log mention ring, written BEFORE the evidence-sidecar pass so its E/W lines
   join `_errpage-evidence.tsv`; the row opens it like a file row opens its CoreId page. Paged
   file rows link `docs/files/<coreid>.html` — a second `.rpt` per paged file under
   `data/transfer/reports/errors/`, listing every leg of that CoreId.
-- **CFT to ST delay** — REMOVED 2026-08-29 on request (the `cft-delay.sh` report, its menu
-  entry, single-member group, index/sitemap/finder cards and help page). Three page
-  mechanisms it introduced stay available to every report: `topsel=` (per-day top-N
-  candidate rows baked, report.js `recalcTopsel` re-picks the visible N for the range),
-  `period=` (the aggregated-period span on the `<h2>`, kept on the selected range), and
-  **DATE-AWARE STAT cards** — a STAT line's cells 4+ may carry `@data:NAME=VALUE`
-  (render_rpt.awk emits them as `data-NAME` on the box; the first PLAIN cell >=4 stays the
-  historical `data-pf` filter key) — report.js `recalcStats` recomputes a `data-tok` box
-  from its `data-sb` per-day payload on every range change (`sum` · `share` · `maxdur`
-  exact; `p50`/`p90` nearest-rank over per-day histograms QUANTIZED TO THE humandur
-  DISPLAY GRID, so the shown figure equals the exact one), retints via `data-thr`
-  (`le:A:B`/`ge:A:B`), and restores the baked value and class at the full range.
 - **Cross References** — `cross-reference.sh` → 72 pages in `docs/analyses/xref/`: every
   pair of the nine entities both ways, existence only (no counts/drills/date filter); rows =
   seen-together pairs + configured-never-seen (`@data:seen`); table `group`; each cell tinted by
   its own entity's RESULT; two full entity NAV rows (row 1 first entity, row 2 second).
-- **Entity coverage** — `transfer/entity-coverage[-once|-ok|-diff]-{accounts,partners,domains,applications}.html`
-  (4 rules x 4 entities): is each configured DIRECTION working? The RULE rides on the BASENAME
-  (shared help slug and group slot); its NAV is emitted INSIDE each table block (per-entity —
-  switching rule keeps the entity) and hoisted onto the table-tab row (`@sep`) — the only report
-  emitting a NAV inside a table block. Rules: **Current** (default, owns the unsuffixed basename)
-  = the most recent File that way OK, or a logon/poll proof; **Once** = any File, or a proof;
-  **OK transfers** = the most recent File itself OK — no server-log proof; **Difference between
-  Current & Once** = the regressions list (worked once, not currently). Proofs (communication
-  rules only): In = successful SSH logons (auth-activity.rpt), Out = successful UC3 remote polls
-  (remote-poll.rpt — an unpublished intermediate since 2026-09-05; its polls table is copied onto the UC status / UC3 tab). Assert after a change, on all four views: **OK ⊆ Current ⊆ Once**. Accounts
-  is the default entity. Two row colours only (green covered / red not); a side with 0 configured
-  subscriptions is trivially covered. The STAT boxes sit AFTER each TABLE line (`segment_rpt`
-  files them per tab). No date filter.
+- **Entity coverage** — `bin/analyses/reports/entity-coverage.sh` → six pages
+  `transfer/entity-coverage-{accounts,logical,partners,domains,applications,bl}.html` (one per
+  entity, `report_tabs`; 24 pages — 4 rules × the entities — until 2026-09-29): is each
+  configured DIRECTION working? Columns Name · Direction | In (Subs · Files · Logons) | Out (Subs ·
+  Files · Polls) | Covered — the verdict COLUMNS **Current** (the row colour: the most recent File
+  that way OK, or a logon/poll proof) · **Once** (any File, or a proof) · **OK transfers** (the
+  most recent File itself OK — no server-log proof) · **Regressed** (covered Once but not
+  Current). Proofs: In = successful SSH logons (auth-activity.rpt), Out = successful UC3 remote
+  polls (remote-poll.rpt — an unpublished intermediate since 2026-09-05). Assert after a change:
+  **OK transfers ⊆ Current ⊆ Once**. Accounts is the default entity. Two row colours only (green
+  covered / red not); a side with 0 configured subscriptions is trivially covered. The STAT boxes
+  sit AFTER each TABLE line (`segment_rpt` files them per tab). No date filter.
 - **The INSIGHT pages** (`bin/analyses/publish-insights.sh`, each with a same-slug help page):
-  `whitelist-audit` (whitelisted IPs vs observed sources; `_white.tsv` is the EXPANDED list) and
+  `whitelist-audit` (whitelisted IPs vs observed sources; `_white.tsv` is the EXPANDED list; its
+  "Server contacts (in)" — and the Cleanup backlog's never-seen rule — come from
+  `bin/server-inbound-addr.awk`: the INBOUND connection lines (`_inbound-addr.tsv`) plus the SSH
+  logon lines of `_logons-hosts.tsv`, 2026-09-29 — they read the Connections report's top-50 address
+  table before, whose lines were mostly OUR outbound connections) and
   `config-hygiene` (case/separator twins + orphaned config objects; includes the "one name, two
   roles" double sections, `emit_double_sections`; orphans first, twins last). It also writes the
-  two Boxes pages. Every page degrades gracefully when a source is missing.
+  Boxes page. Every page degrades gracefully when a source is missing.
 - **UC3 polling tables** (`bin/analyses/reports/uc3-polling.sh` → `uc3-polling.rpt`, merged behind
   `uc3-status.rpt` with `tab=uc3` so they stack on `uc-status-uc3.html`, 2026-09-05 — the one
   report about us polling partners; the Remote polls page and the hand-written Cronjobs page are
@@ -1049,18 +1036,20 @@ row links inside it.
   punctuality's arrival slot `· files`; name matching exact-first then prefix BOTH ways (the server
   truncates long site names); a dark-red `obsbad` Observed cell contradicts its cron — and
   **Schedules that never complete a poll** from `poll-failures.tsv` (S/C/L rows by site, A rows by
-  host via the subscription→host xref). A vanished input (no `remote-poll.rpt`, no config export)
-  drops the affected tables and the .rpt so the next build regenerates it.
+  host via the subscription→host xref). A missing input drops the tables it feeds; with neither
+  `remote-poll.rpt` nor a config export there is no `.rpt` at all.
 - **Polling** (`bin/analyses/reports/polling.sh` → `polling.rpt` → `analyses/polling.html`, 2026-09-05,
-  the flat twin of the UC3 polling tables, at the old Cronjobs slot of the Configuration row): ONE
-  table, one row per polling subscription = the union of `remote-poll.rpt`'s polls rows, its listing-
-  failure rows and the configured cron schedules (exact name join, else the unique prefix either way);
-  columns Subscription · Cron expression · Schedule · Observed (`obsbad` when contradicting) · Polls ·
-  Empty polls · Files matched · Empty % · Listing errors · Poll starts · Failure lines · What goes
-  wrong · Active days · First · Last, date-aware via merged `date:polls:empty:matched:listing` buckets
-  and the copied `@data:loglines` drill. The schedule-vs-observed classifier is the shared
-  `bin/cron-observed.awk` (also used by uc3-polling.sh); its FOOT records `inputs: polls=… cron=…` so
-  a vanished input forces a rebuild. Runs in `bin/server/reports.sh` right after uc3-polling.sh.
+  the flat twin of the UC3 polling tables; a Use cases & delivery member): ONE table, one row per
+  UC3 polling subscription (UC3 ONLY since 2026-09-13 — the UC3 status roster, name-prefixed or
+  derived, plus UC3-named flows the server log shows polling) joined with `remote-poll.rpt`'s polls
+  and listing-failure rows and the configured cron schedules (exact name join, else the unique
+  prefix either way); columns Subscription · Active (2026-09-20, `bin/subscription-active.jq`) ·
+  Cron expression · Schedule (a UC3 without one reads "no cron" — the former Missing cronjobs page)
+  · Observed (`obsbad` when contradicting) · Polls · Empty polls · Files matched · Empty % ·
+  Listing errors · Poll starts · Failure lines · What goes wrong, the poll counts date-aware
+  (RECALC over the merged buckets) with the copied `@data:loglines` drill. The schedule-vs-observed
+  classifier is the shared `bin/cron-observed.awk` (also used by uc3-polling.sh). Runs in
+  `bin/server/reports.sh` right after uc3-polling.sh.
 - **The Logical derivation** (`bin/flow-manager.sh`, which writes `base/_logicals.tsv` + the
   `_profiles-logicals` FlowID → Logical map; 2026-08-30, a FULL entity since 2026-08-31 — it
   outlived the acceptance-vs-production comparison pages it was first built for, retired with
@@ -1075,11 +1064,23 @@ row links inside it.
 - **UC status** — the four `uc<n>-status` reports merged into ONE tabbed report `uc-status`
   (server-area `.rpt`s; its `SUBS_GROUP_REPORTS` entry `server:uc-status` — the full value is
   `SUBS_GROUP_REPORTS` in publish_lib — routes its PAGES to
-  `docs/analyses/uc-status-uc<n>.html`, rendered by the analyses publish). Presented as a
-  **Use-cases VIEW**: the 4th button of the Use Case traffic/definitions/patterns/status row
-  (Configuration group).
+  `docs/analyses/uc-status-uc<n>.html`, rendered by the analyses publish); a Use cases & delivery
+  member, beside Use cases and Polling.
 
-## The Boxes pages
+### Page mechanisms (available to every report)
+
+Introduced by the CFT to ST delay report (removed 2026-08-29 on request): `topsel=` (per-day
+top-N candidate rows baked, report.js `recalcTopsel` re-picks the visible N for the range),
+`period=` (the aggregated-period span on the `<h2>`, kept on the selected range), and
+**DATE-AWARE STAT cards** — a STAT line's cells 4+ may carry `@data:NAME=VALUE` (render_rpt.awk
+emits them as `data-NAME` on the box; the first PLAIN cell >=4 stays the historical `data-pf`
+filter key) — report.js `recalcStats` recomputes a `data-tok` box from its `data-sb` per-day
+payload on every range change (`sum` · `share` · `maxdur` exact; `p50`/`p90` nearest-rank over
+per-day histograms QUANTIZED TO THE humandur DISPLAY GRID, so the shown figure equals the exact
+one), retints via `data-thr` (`le:A:B`/`ge:A:B`), and restores the baked value and class at the
+full range.
+
+## The Boxes page
 
 One hand-written analyses page (plus Triage) over ONE producer — `_subs_box_rows`
 (publish-insights) emits the `<box>⇥<subscription>` memberships (the Accounts in boxes twin went
@@ -1091,7 +1092,7 @@ boxes over one row each (the first box counts the whole estate; box ids 12 "Serv
 report's own `.rpt` (from-green-to-red, went-kaput, only-red, no-remote-dir/-files,
 missing-cronjobs, deploy-errors, went-quiet, site-failures — all but went-kaput and went-quiet
 pageless since 2026-09-28/29; each box note links the page that shows those rows now: Failed
-Subscriptions, UC status UC3, Polling "no cron", Advanced Routing errors, Per flow); (b) derived from `_files.tsv` (One-legged, Waiting,
+Subscriptions, UC status UC3, Polling "no cron", Routing errors, Per flow); (b) derived from `_files.tsv` (One-legged, Waiting,
 Expired); (c) no report at all, read from the same sources as the Entities views: not seen
 (`coverage/subscriptions.tsv` col 3 = 0), seen (col 3 ≠ 0, so **Seen + Not seen = Total**, the
 invariant to re-assert), ok (green), error (red). Login errors in/out come from logon.rpt via the `_logins-subscriptions` /

@@ -25,11 +25,11 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
-clabel="Files"; noun="File"; drillmod=""
+clabel="Files"; noun="File"
 OUT="$REPORTS_DIR/weekly.rpt"
 
 # Group the normalized stream by ISO week (the week of the date's Thursday).
-agg=$(awk -F'\t' "$COREIDS_AWK"'
+agg=$(awk -F'\t' '
     function jdn(y,m,d,   a) { a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     function fromjdn(j,   a,b,c,dd,e,mm,day,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
     function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
@@ -41,18 +41,20 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         split(fromjdn(thu), yy, "-")
         wk = int((thu - jdn(yy[1]+0, 1, 1)) / 7) + 1
         k = yy[1] * 100 + wk
-        cnt[k]++; vol[k] += $5; tcnt++; tvol += $5
+        # VOLUME follows the Files column = the OK Files bytes (2026-09-29:
+        # every File was summed beside an OK-only count)
+        okb = ($4 == 1) ? $5 : 0
+        cnt[k]++; vol[k] += okb; tcnt++; tvol += okb
         if ($4 == 1) { proc[k]++; tproc++ } else { fail[k]++; tfail++ }
         if (!((k, $1) in dseen)) { dseen[k, $1] = 1; wdays[k]++ }
         monday[k] = thu - 3
         wlabel[k] = sprintf("%04d-W%02d", yy[1], wk)
-        addtop(k SUBSEP ($4 == 1 ? "P" : "F"), $6, $1 " " $3, $7)   # drill: 10 most recent of each outcome, that week
     }
     END {
         for (k in cnt) {
             pct = cnt[k] > 0 ? sprintf("%.1f", (fail[k]+0) * 100 / cnt[k]) : "0.0"
-            printf "WK|%d|%s|%s|%s|%d|%d|%d|%d|%s|%d|%s|%s|%s\n", k, wlabel[k], fromjdn(monday[k]), fromjdn(monday[k] + 6), \
-                wdays[k], cnt[k], fail[k]+0, proc[k]+0, pct, vol[k], human(vol[k]), buildlist(top[k SUBSEP "F"]), buildlist(top[k SUBSEP "P"])
+            printf "WK|%d|%s|%s|%s|%d|%d|%d|%d|%s|%d|%s\n", k, wlabel[k], fromjdn(monday[k]), fromjdn(monday[k] + 6), \
+                wdays[k], cnt[k], fail[k]+0, proc[k]+0, pct, vol[k], human(vol[k])
         }
         tpct = tcnt > 0 ? sprintf("%.1f", tfail * 100 / tcnt) : "0.0"
         printf "TOT|%d|%d|%d|%s|%s\n", tcnt, tfail+0, tproc+0, tpct, human(tvol)
@@ -89,14 +91,14 @@ rows=$(printf '%s\n' "$agg" | grep '^WK|' | sort -t'|' -k2,2n | awk -F'|' '
     printf 'TITLE\tPer Week\n'
     printf 'DESC\t%s, failure rate, volume and week-over-week change per ISO week.\n' "$clabel"
     printf 'INTRO\t**%s** ISO week(s) (Mon-Sun). "Δ %ss" compares each week'\''s count with the previous week; **(partial)** marks a week observed on fewer than 7 days — the edges of the data window — whose delta is not meaningful.\n' "$nweeks" "$noun"
-    printf 'TABLE\tPer ISO week\twide%s\n' "$drillmod"
+    printf 'TABLE\tPer ISO week\twide\n'
     printf 'HEAD\tWeek\tFrom\tTo\tDays\t%s\tAvg/day\tError %%\tVolume\tΔ %ss\n' "$clabel" "$noun"
     printf 'KIND\ttext\ttext\ttext\tnum\tnum\tnum\tnum\tnum\tnum\n'
     printf '%s\n' "$rows"
     printf 'TOTAL\tTotal (%s week(s))\t\t\t\t@{class=num}%s\t\t@{class=num}%s%%\t@{class=num}%s\t\n' \
         "$nweeks" "$tot_proc" "$tot_pct" "$tot_vol"
     printf 'NOTE\tOne row = one ISO week (Monday-Sunday) by start date. "Days" counts the calendar days with data; Avg/day divides by it. The From/To dates make the date filter hide out-of-range weeks.\n'
-    printf 'SUMMARY\tWeeks: %s  |  Total %ss: %s  |  Error: %s (%s%%)  |  Volume: %s\n' "$nweeks" "$noun" "$tot_cnt" "$tot_fail" "$tot_pct" "$tot_vol"
+    printf 'SUMMARY\tWeeks: %s  |  Total %ss: %s  |  Error: %s (%s%%)  |  OK volume: %s\n' "$nweeks" "$noun" "$tot_cnt" "$tot_fail" "$tot_pct" "$tot_vol"
     printf 'FOOT\tGenerated on %s from %s file(s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${#files[@]}"
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT ($nweeks week(s), $tot_cnt $noun(s))." >&2

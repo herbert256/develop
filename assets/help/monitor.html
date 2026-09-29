@@ -17,27 +17,26 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Monitor</h1>
 <h2>What it shows</h2>
-<p>The <strong>end-to-end monitor</strong>: a small file dropped on the CFT every 15 minutes travels through <strong>all four use cases</strong> with ourselves as the remote partner &mdash; out via the ST Edge across the internet and back in, twice &mdash; and ends up back on the CFT.</p>
-<p>Three latency views cut each trip into <em>disjoint</em> segments, so an incident shows up in exactly the segment that owns it.</p>
-<h2>Views</h2>
 <ul>
-<li><strong>Monitor CFT pickup</strong> &mdash; from the drop on the CFT (the timestamp in the name, <code>monitor_ccyymmdd_hhmmss.txt</code>) to the start of the inbound UC1 leg into ST: CFT directory pickup plus PeSIT delivery, the segment <em>before</em> ST. A slow CFT scanner shows here only. Healthy: roughly a minute.</li>
-<li><strong>Monitor duration</strong> &mdash; from entering ST (UC1 inbound leg) to the final hand-off to CFT (UC3 outbound leg), joined on the file name (the four monitor subscriptions share no CoreId): the whole loop &mdash; push to ourselves, UC4, CFT relay, UC2 staging, poll wait, collect. The UC3 poll fires at :05, so this view is <strong>floored at ~5 minutes</strong>; a file missing the first poll reads ~20.</li>
-<li><strong>Monitor staging</strong> &mdash; from entering ST to <em>staged for pickup</em> (the UC2 flow&rsquo;s inbound routing leg): the delivery path <em>without</em> the poll wait. Shows ST-internal drift first. Healthy: 1&ndash;2 minutes; flat through a slow CFT scanner (pickup&rsquo;s segment) and a dead poll (the loop view&rsquo;s).</li>
+<li>The end-to-end monitor: a file dropped on the CFT every 15 minutes travels through all four use cases, with ourselves as the partner, back to the CFT.</li>
+<li>Three views cut each trip into disjoint segments, so an incident shows in the segment owning it; each draws P50 / P90 / P98 bands per slot.</li>
+</ul>
+<h2>Tabs</h2>
+<ul>
+<li><strong>Monitor CFT pickup</strong> &mdash; from the drop on the CFT (the time in its name) to the start of the inbound UC1 leg into ST: CFT pickup plus PeSIT delivery. Healthy: about a minute.</li>
+<li><strong>Monitor duration</strong> &mdash; from entering ST (UC1 inbound leg) to the hand-off back to CFT (UC3 outbound leg): the whole loop. The UC3 poll fires at :05, so it is floored at about 5 minutes.</li>
+<li><strong>Monitor staging</strong> &mdash; from entering ST to staged for pickup (the UC2 inbound routing leg): the loop without the poll wait, so ST-internal drift shows here first. Healthy: 1&ndash;2 minutes.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>P50 / P90 / P98 percentile bands (dark green / orange / dark red) per slot on the fixed duration axis; Line / Bar / Solid styles; 4-hour to 1-day interval switch.</li>
-<li>Each view has its <strong>own duration scale</strong>, fitted to its data: the loop view can never beat the ~5-minute poll floor, so a shared scale would flatten it.</li>
-<li>Source: the transfer log&rsquo;s monitor rows &mdash; files named <code>monitor_ccyymmdd_hhmmss.txt</code> on the <code>UC1/UC2/UC3-INFRA_ST-MONITOR_INFRA</code> subscriptions; earliest leg per side, so a retry never shifts a measurement.</li>
-<li>Each resolution is aggregated from the raw measurements (a median of medians is not a median).</li>
-<li>A file that never completed counts as <strong>1 hour</strong> (or the slowest completed file, when longer), so losses stay visible in the percentiles. Exception: no end leg and <em>younger than one hour</em> against the newest monitor row &mdash; skipped, not penalised: the export was cut mid-flight.</li>
-<li>Exists only where the transfer log carries monitor traffic; the top-bar <strong>Monitor</strong> link and this page appear and disappear with the data.</li>
+<li>Source: the <code>monitor_ccyymmdd_hhmmss.txt</code> files of the <code>INFRA_ST-MONITOR_INFRA</code> subscriptions, joined on the name; the earliest leg per side, so a retry never shifts a measurement.</li>
+<li>A file that never completed counts as 1 hour (or the slowest completed file, when longer); one younger than an hour against the newest monitor row is skipped.</li>
+<li>Each view fits its own duration scale; intervals 4 hours &hellip; 1 day; Line / Bar / Solid.</li>
+<li>The page and its top-bar link exist only when the transfer log carries monitor traffic.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Clicking a slot opens that day&rsquo;s page on its Files-processed view (day pages carry no monitor graphs).</li>
-<li>The monitor itself (scripts, scheduling, CFT-side logs under <code>e:\admin\monitor\9-logs</code>) is documented on the CFT server in <code>8-docs</code>.</li>
+<li>A slot click opens that day&rsquo;s <a href="daily.html">day page</a>.</li>
 </ul>
 </main>
 </body>

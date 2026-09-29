@@ -37,20 +37,19 @@ OUT="$REPORTS_DIR/day.rpt"
 
 # Per day: count, Error/OK, volume, first/last time. Emits
 # date|count|failed|processed|bytes|human|first|last.
-raw_stats=$(awk -F'\t' "$COREIDS_AWK"'
+raw_stats=$(awk -F'\t' '
     function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
         while (v >= 1024 && i < 6) { v /= 1024; i++ }
         return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
     {
-        d = $1; t = $3; pf = ($4 != 1)
+        d = $1; t = $3
         count[d]++; bytes[d] += $5
         if ($4 == 1) proc[d]++; else fail[d]++
         if (!(d in first) || t < first[d]) first[d] = t
         if (!(d in last)  || t > last[d])  last[d]  = t
-        addtop(d SUBSEP (pf ? "F" : "P"), $6, $1 " " $3, $7)   # drill: 10 most recent of each outcome, that day
     }
     END {
-        for (d in count) printf "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", d, count[d], fail[d]+0, proc[d]+0, bytes[d]+0, human(bytes[d]+0), first[d], last[d], buildlist(top[d SUBSEP "F"]), buildlist(top[d SUBSEP "P"])
+        for (d in count) printf "%s|%s|%s|%s|%s|%s|%s|%s\n", d, count[d], fail[d]+0, proc[d]+0, bytes[d]+0, human(bytes[d]+0), first[d], last[d]
     }
 ' <(activity_stream))
 
@@ -59,7 +58,7 @@ sorted_stats=$(printf '%s\n' "$raw_stats" | sort -t'|' -k1,1)
 
 total_records=0; total_days=0; total_failed=0; total_processed=0; total_bytes=0
 first_record=""; last_record=""
-while IFS='|' read -r day count failed processed bytes human first last ccf ccp; do
+while IFS='|' read -r day count failed processed bytes human first last; do
     [ -z "$day" ] && continue
     total_records=$((total_records + count)); total_failed=$((total_failed + failed))
     total_processed=$((total_processed + processed)); total_bytes=$((total_bytes + bytes))
@@ -76,21 +75,20 @@ total_human=$(awk -v b="$total_bytes" 'BEGIN { split("B KB MB GB TB PB", u, " ")
 rows_html=$(printf '%s\n' "$sorted_stats" | awk -F'|' '
     function jdn(y,m,d,   a) { a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     function fromjdn(j,   a,b,c,dd,e,mm,day,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
-    { split($1, p, "-"); date[NR]=$1; cnt[NR]=$2; fa[NR]=$3; pr[NR]=$4; hu[NR]=$6; ft[NR]=$7; lt[NR]=$8; ccf[NR]=$9; ccp[NR]=$10; jday[NR]=jdn(p[1], p[2], p[3]); n=NR
+    { split($1, p, "-"); date[NR]=$1; cnt[NR]=$2; fa[NR]=$3; pr[NR]=$4; hu[NR]=$6; ft[NR]=$7; lt[NR]=$8; jday[NR]=jdn(p[1], p[2], p[3]); n=NR
       sub(/\.[0-9]+$/, "", ft[NR]); sub(/\.[0-9]+$/, "", lt[NR]) }   # display without milliseconds (like topview.sh)
     END {
         for (i = 1; i <= n; i++) {
             # FILES = the delivered (OK) count (2026-09-13, user request: the
             # Activity over Time tables carry ONE Files column, no Error / OK
-            # pair, no green/red cells, no drills); the all-outcomes count and
-            # the failures ride a non-rendered META day line for the dashboards
-            # (bin/dashboards/lib.sh tday_series), gap days included
-            if (i > 1) for (g = jday[i-1] + 1; g < jday[i]; g++) { printf "ROW\t%s\t0\t0 B\t-\t-\n", fromjdn(g); printf "META\tday\t%s\t0\t0\n", fromjdn(g) }
+            # pair, no green/red cells, no drills; the non-rendered META day
+            # lines that carried the all-outcomes count for a dashboards helper
+            # went 2026-09-29 with that unused helper), gap days included
+            if (i > 1) for (g = jday[i-1] + 1; g < jday[i]; g++) printf "ROW\t%s\t0\t0 B\t-\t-\n", fromjdn(g)
             mark = ""
             if ((i == 1 || jday[i] - jday[i-1] > 1) && ft[i] > "02:00:00") mark = " (partial start)"
             if ((i == n || (i < n && jday[i+1] - jday[i] > 1)) && lt[i] < "22:00:00") mark = (mark == "" ? " (partial end)" : " (partial)")
             printf "ROW\t%s%s\t%s\t%s\t%s\t%s\n", date[i], mark, pr[i], hu[i], ft[i], lt[i]
-            printf "META\tday\t%s\t%s\t%s\n", date[i], cnt[i], fa[i]
         }
     }
 ')

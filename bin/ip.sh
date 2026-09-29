@@ -3,7 +3,7 @@
 #
 # ONE file per env:
 #
-#     input/<env>/ip/ip-hosts.tsv     <ip> <TAB> <host>
+#     input/ip/ip-hosts.tsv     <ip> <TAB> <host>
 #
 # Address-sorted, host as tiebreaker. Several rows may share a host (an endpoint
 # with several A records) and several may share an address (two endpoints behind
@@ -45,7 +45,7 @@
 #   IP_DIR / IP_HOSTS_FILE   the paths
 #   ip_put [KEEPFILE]   read "ip<TAB>host" pairs on stdin and publish the map
 #
-# An absent file reads as an empty map everywhere, so an EMPTY input/<env>/ip/ is
+# An absent file reads as an empty map everywhere, so an EMPTY input/ip/ is
 # a valid starting state: the next flow-manager.sh rebuild fills it.
 
 IP_DIR="${IP_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/input/ip}"

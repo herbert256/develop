@@ -18,7 +18,7 @@
 # Full-period semantics (`nofilter`, like stale-accounts): an episode is a
 # sequence in time, so narrowing the date range would break the runs.
 #
-# Reads data/_files.tsv (2=outcome, 4=date_iso, 5=time, 6=sortkey, 7=jdn,
+# Reads data/_files.tsv (2=outcome, 4=date_iso, 5=time, 6=sortkey,
 # 12=dest_site), sorted per subscription. Writes data/episodes.rpt.
 #
 # Usage:
@@ -43,16 +43,15 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Stream _files.tsv grouped by subscription, chronological inside each group.
 # Emits pipe-separated (drill lists carry no pipes):
-#   S|site|files|fails|episodes|maxrun|tailrun|tailsince|taildays|lastok|lastd|r1h|r24|rgt|drill
-#   TOT|sites|nfail|open|worsttail|closed|b5m|b1h|b24|b3d|bgt|neverok|maxrecdays|lastdate
+#   S|site|files|fails|episodes|maxrun|lastok|r1h|r24|rgt|drill
+#   TOT|sites|nfail|open|worsttail|closed|b5m|b1h|b24|b3d|bgt|neverok|maxrecdays
 agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' -v OPENMIN="$OPEN_MIN" "$COREIDS_AWK"'
     function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     function tsec(d,t){ split(d,p,"-"); return jdn(p[1]+0,p[2]+0,p[3]+0)*86400 + substr(t,1,2)*3600 + substr(t,4,2)*60 + substr(t,7,2) }
     function flush(   i) {
         if (site == "") return
         n++
-        L[n] = site "|" files "|" fails "|" episodes "|" maxrun "|" run "|" tailsince "|" lastok "|" lastd "|" r1h+0 "|" r24+0 "|" rgt+0 "|" buildlist(top["F" SUBSEP site])
-        TJ[n] = (run > 0) ? tailjd : -1
+        L[n] = site "|" files "|" fails "|" episodes "|" maxrun "|" lastok "|" r1h+0 "|" r24+0 "|" rgt+0 "|" buildlist(top["F" SUBSEP site])
         if (fails > 0) nfail++
         if (run >= OPENMIN) { open++; if (run > worsttail) worsttail = run
             if (lastok == "") neverok++ }
@@ -61,10 +60,8 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' -v OP
     {
         if ($12 != site) { flush()
             site = $12; files=0; fails=0; episodes=0; maxrun=0; run=0
-            tailsince=""; tailjd=0; lastok=""; lastd=""; r1h=0; r24=0; rgt=0 }
+            lastok=""; r1h=0; r24=0; rgt=0 }
         files++
-        lastd = $4
-        if ($7 + 0 > maxjd) { maxjd = $7 + 0; maxdate = $4 }
         if ($2 != "Failed" && $2 != "Expired") {
             if (run > 0) {  # an episode just closed: time to recovery
                 rec = tsec($4, $5) - fs; closed++
@@ -81,7 +78,7 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' -v OP
             run = 0; lastok = $4
         } else {
             fails++
-            if (run == 0) { episodes++; tailsince = $4 " " substr($5, 1, 8); tailjd = $7 + 0; fs = tsec($4, $5) }
+            if (run == 0) { episodes++; fs = tsec($4, $5) }
             run++
             if (run > maxrun) maxrun = run
             addtop("F" SUBSEP site, $6, $4 " " $5, $1)
@@ -89,12 +86,8 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' -v OP
     }
     END {
         flush()
-        for (i = 1; i <= n; i++) {
-            split(L[i], f, "|")
-            taildays = (TJ[i] >= 0 && f[6] + 0 > 0) ? maxjd - TJ[i] : ""
-            printf "S|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", f[1], f[2], f[3], f[4], f[5], f[6], f[7], taildays, f[8], f[9], f[10], f[11], f[12], f[13]
-        }
-        printf "TOT|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%.1f|%s\n", n+0, nfail+0, open+0, worsttail+0, closed+0, b5m+0, b1h+0, b24+0, b3d+0, bgt+0, neverok+0, maxrec/86400, maxdate
+        for (i = 1; i <= n; i++) print "S|" L[i]
+        printf "TOT|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%.1f\n", n+0, nfail+0, open+0, worsttail+0, closed+0, b5m+0, b1h+0, b24+0, b3d+0, bgt+0, neverok+0, maxrec/86400
     }
 ' OPENMIN="$OPEN_MIN")
 
@@ -103,10 +96,10 @@ if [ -z "$agg" ]; then
     exit 1
 fi
 
-IFS='|' read -r _ n_sites n_fail n_open worst_tail n_closed b5m b1h b24 b3d bgt n_neverok max_rec last_date <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
+IFS='|' read -r _ n_sites n_fail n_open worst_tail n_closed b5m b1h b24 b3d bgt n_neverok max_rec <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
 
-# S fields: 2=site 3=files 4=fails 5=episodes 6=maxrun 7=tailrun 8=tailsince
-#           9=taildays 10=lastok 11=lastd 12=r1h 13=r24 14=rgt 15=drill
+# S fields: 2=site 3=files 4=fails 5=episodes 6=maxrun 7=lastok 8=r1h 9=r24
+#           10=rgt 11=drill
 # ONE awk pass per view formats the sorted stream into finished ROW lines
 # (filter included) — a bash while-read with a $(printf) per row forked a
 # subshell per subscription. The drill takes the line's remainder, like read
@@ -114,9 +107,9 @@ IFS='|' read -r _ n_sites n_fail n_open worst_tail n_closed b5m b1h b24 b3d bgt 
 ep_rows=$({ printf '%s\n' "$agg" | grep '^S|' || true; } | LC_ALL=C sort -t'|' -k5,5nr -k6,6nr -k2,2 | awk -F'|' '
     $2 == "" { next }
     $4 + 0 > 0 {
-        ok = $10; if (ok == "") ok = "@{class=failed}never"
-        d = $15; for (i = 16; i <= NF; i++) d = d "|" $i
-        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\n", $2, $3, $4, $5, $6, $12, $13, $14, ok, d }')
+        ok = $7; if (ok == "") ok = "@{class=failed}never"
+        d = $11; for (i = 12; i <= NF; i++) d = d "|" $i
+        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\n", $2, $3, $4, $5, $6, $8, $9, $10, ok, d }')
 [ -n "$ep_rows" ] && ep_rows+=$'\n'
 [ -z "$ep_rows" ] && ep_rows='ROW	@{colspan=9}No failed Files in this data window.'$'\n'
 
@@ -134,7 +127,7 @@ else
 fi
 
 {
-    printf 'TITLE\tFailure Episodes\n'
+    printf 'TITLE\tEpisodes\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tConsecutive failures collapsed into episodes: how often each subscription breaks, and how long outages last before they recover.\n'
     printf 'KEYWORDS\topen incident, outage, broken, recovery, consecutive failures, time to recovery, never delivered\n'
     printf 'INTRO\tFailure RUNS in time, per subscription: **%s** of **%s** subscription(s) failed at least once; **%s** are in an **open incident** right now (latest File failed, %s+ consecutive failures — worst run: **%s**), **%s** of them have NEVER delivered an OK File. Of the **%s** closed episode(s), most self-heal quickly but the slow tail is real (longest recovery: **%s** days). The other failure reports show failure rates; this one shows how failures cluster and how long they last. Click a row for its 10 most recent failed Files.\n' \

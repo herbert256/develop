@@ -29,7 +29,7 @@
 # table is `nofilter`.
 #
 # Usage:
-#   ./blast-radius.sh   # -> data/<env>/analyses/reports/blast-radius.rpt
+#   ./blast-radius.sh   # -> data/analyses/reports/blast-radius.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -145,7 +145,7 @@ n_out=$(sv outhosts); n_single=$(sv single); n_multi=$(sv multi); n_inonly=$(sv 
 n_shared=$(sv shared); n_ptn=$(sv ptn)
 
 {
-    printf 'TITLE\tEndpoint blast radius\n'
+    printf 'TITLE\tBlast radius\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tWhat dies with each remote host: per outbound endpoint the Files, volume, subscriptions, applications, domains and partners routed over it — plus which partners have no second endpoint and which endpoints serve several partners at once.\n'
     printf 'INTRO\tAn endpoint outage is never one flow. The first table answers **"if this host dies, what stops?"** — one row per outbound endpoint we dial, everything behind it counted; a **red** row is the sole recorded endpoint of the partners it names, so there is no second address to fail over to. Per partner: **%s** partner(s) ride a single endpoint, **%s** have more than one, and **%s** are inbound-only — they dial us, so no endpoint of theirs can strand us (a legitimate class, not a gap). The last table lists the endpoints shared by several partner organisations: one address, several relationships in the blast radius.\n' \
         "$n_single" "$n_multi" "$n_inonly"

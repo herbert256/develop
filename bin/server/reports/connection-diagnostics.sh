@@ -243,20 +243,20 @@ fp_rows() {
     else
         printf 'TABLE\tHost-key mismatches\tnofilter\tnosort\n'
     fi
-    printf 'HEAD\tPresented fingerprint\tExpected fingerprint\tWarnings\tFirst\tLast\n'
-    printf 'KIND\tmono\tmono\tnumwarn\ttext\ttext\n'
+    printf 'HEAD\tPresented fingerprint\tExpected fingerprint\tMismatches\tFirst\tLast\n'   # a line count whatever its level — the sample's (and ST's) lines are Error-level; "Warnings" + amber until 2026-09-29
+    printf 'KIND\tmono\tmono\tnumfailed\ttext\ttext\n'
     printf 'RECALC\t-\t-\ts0\t-\t-\n'
     if [ "${fp_tot:-0}" -gt 0 ]; then
         fp_rows
     else
-        printf 'ROW\t@{colspan=5}No host-key mismatch warnings in this data window.\n'
+        printf 'ROW\t@{colspan=5}No host-key mismatches in this data window.\n'
     fi
-    printf 'TOTAL\tTotal (%s pair(s))\t\t@{class=num warn}%s\t\t\n' "${fp_pairs:-0}" "${fp_tot:-0}"
+    printf 'TOTAL\tTotal (%s pair(s))\t\t@{class=num failed}%s\t\t\n' "${fp_pairs:-0}" "${fp_tot:-0}"
     if [ -n "${fp_topgot:-}" ] && [ "${fp_topcnt:-0}" -gt 0 ]; then
-        printf 'NOTE\tThe "Wrong server fingerprint: got X, expected Y" warnings, per fingerprint pair: a partner endpoint presenting an SSH host key that does not match the stored known-host entry. One presented key (`%s`) accounts for **%s** of the **%s** warning(s), checked against **%s** different expected keys — ONE endpoint presenting a NEW key that many stored entries no longer match (a server-side key rotation), not many endpoints drifting at once. A short "got" value is the log itself truncating; shown as logged. Click a pair for its 10 most recent warnings.\n' \
+        printf 'NOTE\tThe "Wrong server fingerprint: got X, expected Y" lines, per fingerprint pair: a partner endpoint presenting an SSH host key that does not match the stored known-host entry. One presented key (`%s`) accounts for **%s** of the **%s** line(s), checked against **%s** different expected keys — ONE endpoint presenting a NEW key that many stored entries no longer match (a server-side key rotation), not many endpoints drifting at once. A short "got" value is the log itself truncating; shown as logged. Click a pair for its 10 most recent lines.\n' \
             "$fp_topgot" "$fp_topcnt" "$fp_tot" "$fp_topexp"
     else
-        printf 'NOTE\tThe "Wrong server fingerprint: got X, expected Y" warnings, per fingerprint pair: a partner endpoint presenting an SSH host key that does not match the stored known-host entry.\n'
+        printf 'NOTE\tThe "Wrong server fingerprint: got X, expected Y" lines, per fingerprint pair: a partner endpoint presenting an SSH host key that does not match the stored known-host entry.\n'
     fi
 
     printf 'SUMMARY\tConnection failures: %s  |  Reasons: %s  |  Remote hosts: %s  |  Test connections: %s  |  Host-key mismatches: %s\n' "$t_fail" "$n_reason" "$n_host" "$t_test" "${fp_tot:-0}"

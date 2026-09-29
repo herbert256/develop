@@ -2,8 +2,9 @@
 #
 # failing-reasons.sh — "Error reasons": every possible error Reason (Reason /
 # Count / Last) on ONE page counting every File in ERROR (2026-09-14, user
-# request: no selector buttons, count all errors, not subscriptions), and one
-# drill page per nonzero reason listing ALL those Files.
+# request: no selector buttons, count all errors, not subscriptions); a row
+# opens the Failed files page searched on its reason (the per-reason drill
+# pages went 2026-09-29).
 #
 # SOURCE: data/transfer/reports/failed-files.rpt (bin/transfer/reports/
 # failed-files.sh) — one row per File that ended Failed or Expired, with its
@@ -17,7 +18,7 @@
 # row per server-failing subscription — first on a four-page view grid, then
 # on All / Subscription pages; the drills were capped at 500 rows.)
 #
-# The Errors group's second member.
+# A member of the Failures group of the Reports menu.
 #
 # The ROW SET is every possible Reason, listed even when empty: the
 # bin/flip-reason.awk vocabulary — PARSED FROM THE CLASSIFIER ITSELF (its
@@ -46,7 +47,7 @@ SRC="$DATA/transfer/reports/failed-files.rpt"
 OUT="$REPORTS_DIR/failing-reasons.rpt"
 if [ ! -f "$SRC" ]; then
     echo "failing-reasons: missing $SRC (the transfer reports have not run) — pages not published." >&2
-    rm -f "$OUT" "$REPORTS_DIR"/failing-reasons-*.rpt
+    rm -f "$OUT"
     exit 0
 fi
 
@@ -113,9 +114,6 @@ LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" -v TMPD="$TMP" -v gen=
     }
 ' "$SRC"
 
-# (the per-reason drill pages went 2026-09-29 — a row opens the Failed files
-# page searched on its reason; the sweep removes any a previous build left)
-rm -f "$REPORTS_DIR"/failing-reasons-*.rpt
 mv "$OUT.tmp" "$OUT"
 n=$(command grep -c '^ROW' "$OUT" || true)
 echo "Data written to $OUT ($n reason row(s))." >&2

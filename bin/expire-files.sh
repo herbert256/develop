@@ -21,10 +21,10 @@
 # (or previously Expired) rows are touched — a deleted file whose transfer
 # was Processed/Failed is ordinary retention cleanup, not an expiry.
 #
-# Idempotent + self-healing: Waiting and Expired rows are RECOMPUTED from the
-# deletion list every run (a transfer parse rebuild resets col 2 to Waiting
-# and col 22 to empty; the next run re-marks). The server parse cache scan
-# writes _expired.tsv (the extracted deletion list).
+# Idempotent: Waiting and Expired rows are RECOMPUTED from the deletion list
+# every run (the parse writes col 2 Waiting and col 22 empty; this step
+# marks). The server parse cache scan writes _expired.tsv (the extracted
+# deletion list).
 #
 # OUTCOME POLICY (2026-07): Expired counts as ERROR on every report (Waiting
 # stays OK) — consumers compare Error = ("Failed" || "Expired") — and the
@@ -102,8 +102,7 @@ awk -F'\t' -v OFS='\t' '
         dd[k] = dd[k] "\037" $3 " " $4          # datetime list per (ACCT,file)
         next
     }
-    {
-        if (NF < 22) $22 = ""                    # normalize a fresh 21-col parse
+    {   # (parse.sh cfg_join writes all 24 columns, col 22 empty — no row needs padding)
         if ($2 == "Waiting" || $2 == "Expired") {
             k = toupper($3) SUBSEP $11; hit = ""
             if (k in dd) {

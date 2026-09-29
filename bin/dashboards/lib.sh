@@ -18,15 +18,14 @@ mkdir -p "$REPORTS_DIR"
 
 # the sources every aggregate reads
 TR="$DATA/transfer/cache/_files.tsv"; RW="$DATA/transfer/cache/_transfers.tsv"
-SV="$DATA/server/reports/topview.rpt"; SER="$DATA/server/reports/error-reasons.rpt"
+SV="$DATA/server/reports/topview.rpt"
 
 humanbytes(){ awk -v b="${1:-0}" 'BEGIN{ s="B KB MB GB TB PB"; n=split(s,u," "); i=1; v=b+0; while(v>=1024&&i<n){v/=1024;i++} printf (i==1)?"%d %s":"%.2f %s", v, u[i] }'; }   # %.2f like every report table
-pipejoin(){ awk 'BEGIN{ORS=""}{print (NR>1?"|":"") $0}'; }   # stdin lines -> a|b|c
-onlynum(){ grep -oE "$1" "$2" 2>/dev/null | grep -oE '[0-9]+' | head -1; }
 
-# big-number abbreviations — three exact variants (kept apart so the display
-# stays byte-identical to the original dashboards)
-knum(){       awk -v n="${1:-0}" 'BEGIN{printf (n>=1e3)?"%.1fk":"%d",(n>=1e3)?n/1e3:n}'; }
+# big-number abbreviations — two exact variants (kept apart so the display
+# stays byte-identical to the original dashboards; the per-day series helpers
+# tday_ / sday_ / tacct_series and knum / onlynum / pipejoin went 2026-09-29 —
+# nothing called them)
 knum_files(){ awk -v n="${1:-0}" 'BEGIN{printf (n>=1e6)?"%.2fM":(n>=1e3)?"%.1fk":"%d", (n>=1e6)?n/1e6:(n>=1e3)?n/1e3:n}'; }
 knum_recs(){  awk -v n="${1:-0}" 'BEGIN{printf (n>=1e6)?"%.1fM":(n>=1e3)?"%.0fk":"%d",(n>=1e6)?n/1e6:(n>=1e3)?n/1e3:n}'; }
 
@@ -49,23 +48,3 @@ server_basics(){
     S_EPCT=$(awk -v e="$S_ERR" -v r="$S_REC" 'BEGIN{printf "%.1f", r? e*100/r : 0}')
 }
 
-# per-day Files + Failed series (chronological, from day.rpt) -> tday_lab/tday_fl
-# Read from the non-rendered "META day <date> <files> <failed>" lines
-# (2026-09-13): the rendered Per day table shows the delivered count as its
-# one Files column — the all-outcomes count and the failures live here only.
-tday_series(){
-    tday_lab=$(awk -F'\t' '$1=="META" && $2=="day"{print $3 ":" $4}' "$DATA/transfer/reports/day.rpt" | pipejoin)
-    tday_fl=$(awk -F'\t' '$1=="META" && $2=="day"{print $3 ":" $5}' "$DATA/transfer/reports/day.rpt" | pipejoin)
-}
-
-# per-day server records + errors series -> sday_rec/sday_err
-sday_series(){
-    # per-DAY rows only (the appended per-component table — see server_basics)
-    sday_rec=$(awk -F'\t' '$1=="ROW"{d=$2; sub(/^@\{[^}]*\}/,"",d); if (d ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/) print d ":" $3}' "$SV" | pipejoin)
-    sday_err=$(awk -F'\t' '$1=="ROW"{d=$2; sub(/^@\{[^}]*\}/,"",d); if (d ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/) print d ":" $7}' "$SV" | pipejoin)
-}
-
-# top 8 accounts by volume -> tacct (transfer + volume dashboards)
-tacct_series(){
-    tacct=$(awk -F'\t' '$3!=""{v[$3]+=$8} END{for(a in v)print v[a]"\t"a}' "$TR" | sort -t"$(printf '\t')" -k1,1nr | awk -F'\t' 'NR<=8{print $2":"$1}' | pipejoin)
-}

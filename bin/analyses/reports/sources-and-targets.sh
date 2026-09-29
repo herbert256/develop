@@ -15,10 +15,10 @@
 # each row is tinted by its subscription RESULT (base/_subscriptions.tsv col 3).
 # No date filter — a configuration analysis (render_report clears CUR_DATES).
 #
-# Reads:  data/<env>/transfer/reports/details/subscriptions/*.rpt,
-#         data/<env>/transfer/reports/subscription.rpt,
+# Reads:  data/transfer/reports/details/subscriptions/*.rpt,
+#         data/transfer/reports/subscription.rpt,
 #         base/_subscriptions.tsv, xref/_subscriptions-{hosts,flowdir}.tsv.
-# Writes: data/<env>/transfer/reports/sources-and-targets.rpt
+# Writes: data/transfer/reports/sources-and-targets.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

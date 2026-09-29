@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # flow-manager-synth.sh — SYNTHESIZE the two FlowManager exports
-# (input/<env>/flow-manager/{subscriptions,partners}.json) from the TRANSFER
+# (input/flow-manager/{subscriptions,partners}.json) from the TRANSFER
 # LOGS, for an environment that has real log exports but no configuration
 # export (production, 2026-08). A MANUAL stopgap: run it once per log drop
 # until a real export exists — a real export simply overwrites these files
@@ -50,7 +50,7 @@
 #                 account's endpoint set.
 #   hosts         the DNS-named remote hosts seen with the account (an IP is
 #                 never a configured endpoint here — outbound IPs resolve
-#                 through input/<env>/ip/ once real, inbound ones belong in
+#                 through input/ip/ once real, inbound ones belong in
 #                 the whitelist).
 #   AllowIP       the IPv4 sources of the account's INBOUND legs.
 #

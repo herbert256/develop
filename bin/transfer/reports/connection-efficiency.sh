@@ -94,7 +94,7 @@ agg=$(awk -F'\t' -v minsess="$MIN_SESS" -v marathon="$MARATHON" '
 
 if [ "$(printf '%s\n' "$agg" | awk 'NR==1 { print $1 }')" = "EMPTY" ]; then
     {
-        printf 'TITLE\tConnection Efficiency\n'
+        printf 'TITLE\tConnection efficiency\n'
         printf 'DESC\tHow the technical connections (Session IDs) are used: Files per connection per account, connection storms per minute, and the anatomy of failing sessions.\n'
         printf 'INTRO\tNo records with a usable Session ID in this dataset.\n'
         printf 'TABLE\tConnection efficiency\tnofilter\n'
@@ -124,20 +124,24 @@ storm_tot=$(printf '%s\n' "$agg" | { grep $'^S\t' || true; } | LC_ALL=C sort -t"
     | awk -F'\t' -v n="$TOP_N" 'NR<=n { c++; s += $5 } END { printf "%d\t%d", c+0, s+0 }')
 IFS=$'\t' read -r n_storm storm_sess <<< "$storm_tot"
 
+# a count cell shows blank, never 0 (2026-09-29: a row qualifies on ANY of
+# its three counts, so the other two were often 0)
 fail_rows=$(printf '%s\n' "$agg" | { grep $'^F\t' || true; } | LC_ALL=C sort -t"$(printf '\t')" -k3,3nr -k2,2 \
-    | awk -F'\t' -v n="$TOP_N" 'NR<=n { printf "ROW\t%s\t%s\t%s\t%s\n", $2, $3, $4, $5 }')
+    | awk -F'\t' -v n="$TOP_N" 'function z(v) { return (v + 0 == 0) ? "" : v }
+        NR<=n { printf "ROW\t%s\t%s\t%s\t%s\n", $2, z($3), z($4), z($5) }')
 fail_tot=$(printf '%s\n' "$agg" | { grep $'^F\t' || true; } | LC_ALL=C sort -t"$(printf '\t')" -k3,3nr -k2,2 \
     | awk -F'\t' -v n="$TOP_N" 'NR<=n { c++; a += $3; m += $4; r += $5 } END { printf "%d\t%d\t%d\t%d", c+0, a+0, m+0, r+0 }')
 IFS=$'\t' read -r n_fail f_af f_mx f_rm <<< "$fail_tot"
+nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }
 
 {
-    printf 'TITLE\tConnection Efficiency\n'
+    printf 'TITLE\tConnection efficiency\n'
     printf 'DESC\tHow the technical connections (Session IDs) are used: Files per connection per account, connection storms per minute, and the anatomy of failing sessions.\n'
-    printf 'INTRO\tA **session** is one technical connection — an SFTP login, a PeSIT session — identified by the log'\''s Session ID column (added to the exports 2026-08). One session can carry many Files, but on this platform it mostly does not: **%s** sessions carried **%s** Files (**%s** Files per connection) and **%s%%** of all sessions moved a single File. **%s** sessions were User-initiated (the partner connected in), the rest Server-initiated; **%s** record(s) without a usable Session ID are excluded. A session is attributed to the account of its first record.\n' \
+    printf 'INTRO\tA **session** is one technical connection — an SFTP login, a PeSIT session — identified by the log'\''s Session ID column (added to the exports 2026-08). One session can carry many Files, but on this platform it mostly does not: **%s** sessions carried **%s** Files between them (a File counted once per session it used — **%s** per connection) and **%s%%** of all sessions moved a single File. **%s** sessions were User-initiated (the partner connected in), the rest Server-initiated; **%s** record(s) without a usable Session ID are excluded. A session is attributed to the account of its first record.\n' \
         "$p_sess" "$p_files" "$p_ratio" "$p_sf" "$p_user" "$p_unk"
 
     printf 'TABLE\tFiles per connection\twide\tnofilter\n'
-    printf 'HEAD\tAccount\tSessions\tFiles\tFiles per session\tSingle-File sessions\n'
+    printf 'HEAD\tAccount\tSessions\tFiles carried\tFiles per session\tSingle-File sessions\n'   # a File counts once per session it used (in + out: twice) — so "carried", not a distinct File count (2026-09-29)
     printf 'KIND\tacct\tnum\tnum\tnum\tnum\n'
     if [ -n "$lg_rows" ]; then
         printf '%s\n' "$lg_rows"
@@ -167,7 +171,7 @@ IFS=$'\t' read -r n_fail f_af f_mx f_rm <<< "$fail_tot"
     if [ -n "$fail_rows" ]; then
         printf '%s\n' "$fail_rows"
         printf 'TOTAL\tTop %s of %s account(s)\t@{class=num failed}%s\t@{class=num warn}%s\t@{class=num}%s\n' \
-            "$n_fail" "$p_facct" "$f_af" "$f_mx" "$f_rm"
+            "$n_fail" "$p_facct" "$(nz0 "$f_af")" "$(nz0 "$f_mx")" "$(nz0 "$f_rm")"
     else
         printf 'ROW\t@{colspan=4}No failing sessions in this dataset.\n'
         printf 'TOTAL\tTotal (0 accounts)\t\t\t\n'

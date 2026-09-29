@@ -4,7 +4,7 @@ Guidance for Claude Code (claude.ai/code) when working with this repository.
 
 **Deep subsystem notes live in `ARCHITECTURE.md`** (repo root, not auto-loaded): the attribution
 chain and result colours in full, PDA derivation, dashboards + Monitor, day pages, drill-down,
-home, Entities views, detail pages, special pages, Boxes pages, group lists. **Read the relevant
+home, Entities views, detail pages, special pages, the Boxes page, group lists. **Read the relevant
 section there BEFORE changing one of those subsystems.**
 
 ## What this is
@@ -22,7 +22,8 @@ is where every change happens and holds ONLY the **SAMPLE ESTATE**: synthetic in
 (seed `AXWAY_SAMPLE_SEED`), committed, regenerable; `bin/sample/verify.sh` asserts a built site
 covers every planted scenario. **runtime-acceptance** and **runtime-production**
 (`~/axway/runtime-acceptance`, `~/axway/runtime-production`; github `herbert256/runtime-acceptance`
-/ `runtime-production`, private, no Pages) are the operational twins with the REAL exports of ONE
+/ `runtime-production`, private; each serves its `docs/` through GitHub Pages — the two remote
+URLs in publish_lib `ENV_SITES_JS`) are the operational twins with the REAL exports of ONE
 environment each — **never read, edit or build them from an AI session**; they have no CLAUDE.md
 by design. (The old combined `runtime` repo — two environments in one checkout — is RETIRED since
 2026-09-11, left in place for Herbert to delete; `bin/acc.sh` / `bin/prd.sh` refuse it.) Code flows one way
@@ -88,16 +89,20 @@ cell's `sortval` (the wait in seconds — the humanized text does not sort), lis
 outcome; the separate `errors/` directory is GONE. Only the DATA stays split —
 `data/transfer/reports/errors/` + `files/`, because failed.sh's reason-evidence pass globs the
 first — and `bin/transfer/publish.sh` renders both sets into `docs/files/`, the errors set last),
-`latest/` (2026-09-16: one page per subscription — its newest 1000 Files, the table the
-subscription detail pages used to carry, linked from their Features "Files" row; since
-2026-09-27, user request, the rows ship as DATA in the sibling `<slug>.js` — `split_table_rows`
-lifts them, each payload REGISTERS on `window.AXWAY_LATEST` as `{s, n, h, r}` (slug, name, HEAD
-labels, rendered rows) and report.js `latestRows()` puts them back into the `data-latest` table
-first thing in `init()` (the Latest files search `latest/search.html` + `latest-search.js`,
-2026-09-27..28, WENT 2026-09-29: the all-files search below finds the same Files and more);
-the seven `search/file-search-*.html` pages and `search/all-files.html` are ONE group — the top bar's **Files** link opens the ALL FILES search (2026-09-28, user request; both bar renderers, `linkcheck` and `verify.sh` model it) — a FIRST tab row right after the
-`<h1>`, **Implementation 1, period** (→ `search/file-search-24-hours.html`) | **Implementation
-2, all files** (→ `search/all-files.html`), from publish_lib `file_search_impl_row`),
+(`latest/` — one "Latest files" page per subscription, 2026-09-16 — is GONE since 2026-09-29,
+user request, with its Features row "Files → Latest 1000 files": every subscription detail page
+with Files carries the browser-built **Files table** instead — ALL its Files, 25 per page with
+Previous / Next, built by `assets/sub-files.js` from the all-files data below: the page bakes an
+empty `TABLE … subfiles=<slug>` (details_writer.awk `files_table`, above Load by weekday;
+render_rpt.awk stamps `data-subfiles` + `data-v` = the build id `AXWAY_BUILD_ID` + `data-nocolmove`,
+render_rpt adds the script), the engine loads `search/all/s/<slug>.js`
+(`AXWAY_AFS(slug, day ⇥ Files ⇥ shard cksum ⇥ local indices)`, newest first, written by
+publish-all-files.sh) and only the day shards the shown page needs; SITE no longer gets a
+section-9 list at all (details_lib.sh `addbig` skips it); never bring `latest/` back)
+the top bar's **Files** link opens the ALL FILES search (2026-09-28, user request; both bar renderers, `linkcheck` and `verify.sh` model it) — the ONE file search since 2026-09-29 (user
+request: "keep only search/all-files.html" — the seven `search/file-search-*.html` window pages,
+`file-search.sh`, `assets/file-search.js` and the Implementation 1 | 2 tab row are GONE; never
+bring them back),
 **the ALL FILES SEARCH** (2026-09-27, user request: every File, balancing the user's wait against
 the size of docs/) — `bin/analyses/publish-all-files.sh`, its OWN build step after the transfer
 publish catch-up (its rows link the files/ pages the failed.sh catch-ups settle; a manual
@@ -115,10 +120,10 @@ pasted CoreId: ~its own day), newest first, 4 at a time, stops at the newest 500
 a `rangehook` table (From/To narrows the days; the page counts as a TRANSFER-area page in
 render_rpt). linkcheck models the shard links (section 3b), display-rename sweeps the shards,
 verify.sh checks that the shards hold every dated File),
-`first-seen/`, `coverage/`, `switches/` (the per-use-case `use-cases/` pages and the
+`first-seen/`, `coverage/` (the per-use-case `use-cases/` pages and the
 `transfers/duration/` record pages went 2026-09-29: a Subscriptions page search and the files/
-pages hold them), plus
-`search/` (`search.html` + `search-data.js`, the six `file-search-*.html` + their `-data.js` payloads — 2026-09-12, user request; at the root before) and `tools/` (`sitemap.html`, `report-finder.html`, `whats-new.html` and the build report `build.html` — 2026-09-12, user request; at the root before, the build report local-only 2026-08-29..09-12). `input/` carries
+pages hold them; `switches/` went 2026-09-06 with the home Red/Green switch group), plus
+`search/` (`search.html` + `search-data.js`, `all-files.html` + the `all/` day shards — 2026-09-12, user request; at the root before) and `tools/` (`sitemap.html`, `report-finder.html`, `whats-new.html` and the build report `build.html` — 2026-09-12, user request; at the root before, the build report local-only 2026-08-29..09-12). `input/` carries
 the exports — logs AND the FlowManager JSONs (the real production flows are the HYBRID pattern
 generation: no folder parameters, flowdir from `{source,target}_hybrid_participant`; the sample
 estate carries both shapes). The manual `bin/flow-manager-synth.sh` stays as the fallback for a
@@ -163,8 +168,7 @@ report runners wrap each report in `timed` (sourced `bin/timing.sh` → `TIME Ns
 replayed when it is waited for — a runtime build is profiled from its console alone. Writes an HTML run report to
 `build/index.html` (also on FAILED, EXIT trap) AND, since 2026-09-12 (user request), the SITE copy
 `docs/tools/build.html` — one render with an `@B@` docs-root placeholder, two copies — linked from
-the sitemap Tools card (local-only 2026-08-29..09-12; before that, in `docs/`); still
-no page on the site references a build. A checkout without the two flow-manager JSON exports
+the sitemap Tools card (local-only 2026-08-29..09-12; before that, in `docs/`). A checkout without the two flow-manager JSON exports
 exits 1 with a hint. **A checkout with the JSONs but NO log CSVs builds fully** (2026-08, the
 config-only estate — what a fresh clone is, the exports being gitignored): both parses write
 EMPTY-but-valid cache sets and exit 0, every report either renders its zero-row tables (the
@@ -185,7 +189,7 @@ side-by-side tables — Server log files | Transfer log files — Name · First 
 export in `input/`, sorted on First (`log_inventory`, one awk pass per file cached under
 name+size+mtime in `data/.buildstats/loginv/`, gathered before the clock). Trap: glob
 file lists into an ARRAY, not `IFS=$'\t' read … <<<"$(f $(ls …))"` (word-splits under the
-assignment's IFS). Nothing on the site links the report.
+assignment's IFS).
 
 Order, ONE linear chain (the rationale of every position is in the script's comments):
 (runtime only) `bin/build/exchange-in.sh` (the inbox, by prefix; it calls
@@ -223,7 +227,8 @@ boxes reasons now on disk), failed-files.sh, failing-reasons.sh, the detail-page
 (`publish-details.sh` only, in the BACKGROUND beside the analyses publish catch-up — the detail
 .rpt files need no second run: their one catch-up input, the REDUCED `_srvsubs-map.tsv`,
 name⇥slug⇥stamp, is final after failed.sh's first run), the transfer publish catch-up,
-dashboards, day → `bin/build/publish.sh` (index pages + the home, reads every area) →
+the all-files search (`bin/analyses/publish-all-files.sh` — its rows link the files/ pages the
+catch-ups settle), dashboards, day → `bin/build/publish.sh` (index pages + the home, reads every area) →
 `bin/build/display-rename.sh` → (runtime only) `bin/build/st-reports-archive.sh`.
 
 Dependency rules: transfer reports before server and analyses reports; dashboards + day after both areas;
@@ -256,7 +261,8 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
   STARTING in its range): subsets, session-sites, expire-files, bookend-ok, failed.sh passes 1
   and 2, result.sh's session vote, the mention rescan. A scan whose result depends on line ORDER
   across parts needs an order-preserving merge (result.sh's vote shows one); `unknown-entities`
-  stays on its `FNR % 6` slicing on purpose (its tie rule depends on the slicing).
+  stays on its `FNR % NW` slicing (NW = the core count, capped at 6) on purpose (its tie rule
+  depends on the slicing).
 - **Server-cache subsets** (`bin/server/subsets.sh`, `srv_subset NAME` in `bin/server/lib.sh`):
   the RARE message families of uc1/uc3-status, remote-poll, connection-diagnostics and
   ssh-sessions, copied once per cache; every line a consumer acts on must contain one of its
@@ -340,32 +346,38 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
 
 Every script takes no arguments and resolves paths from its own location. Three stages — **parse →
 report → publish**. Per tool set, `parse.sh`/`lib.sh`/`reports.sh`/`publish.sh` live in
-`bin/<area>/`; report scripts in `bin/<area>/reports/` — EXCEPT reports whose PAGE renders into
-`docs/analyses/` (the former Analyses menu), which live in `bin/analyses/reports/` and source `../../<area>/lib.sh`. **Where a
-script lives says where its PAGE goes; which `lib.sh` it sources says where its DATA goes.** All
+`bin/<area>/`; report scripts in `bin/<area>/reports/`, plus cross-area ones in
+`bin/analyses/reports/` that source `../../<area>/lib.sh`. **Which `lib.sh` a script sources says
+where its DATA goes, and that area's publish renders its PAGE** — except the `SUBS_GROUP_REPORTS`
+members (publish_lib: rendered into `docs/analyses/` whatever their area — Failed Subscriptions,
+UC status, Polling, …), the cross-reference pages (transfer data, `docs/analyses/xref/`), Entity
+Search (`docs/search/search.html`) and the All files search (its own step → `docs/search/`). All
 paths are centralized in `lib.sh` (derived from `LIB_DIR`, its own location): `INPUT_DIR`,
 `CACHE_DIR`, `REPORTS_DIR`, `CONFIG_DIR`, the cross-area cache/report vars, `PARSED`, `FILES` —
 don't reintroduce `../../data`-style paths or path arguments.
 
 ```bash
 bin/build.sh                          # everything, always fresh: wipe build/ data/ docs/, seed assets/, build (no git)
-bin/build/linkcheck.sh                # verify: 0 broken links, 0 orphan pages
+bin/build/linkcheck.sh                # verify: 0 broken links, 0 orphan pages (MANUAL gate — build.sh never runs it)
 bin/transfer/parse.sh                 # -> _transfers.tsv + _files.tsv (AXWAY_DERIVE_ONLY=1: re-derive from _transfers0.tsv);
                                       #    a manual parse must be followed by bin/session-sites.sh, bin/expire-files.sh,
                                       #    bin/bookend-ok.sh (the build does) — else Expired reads Waiting, settled Files Failed
 bin/transfer/reports.sh [phase1|phase2]
-bin/transfer/reports/details.sh [TYPE]   # TYPE = ACC SITE LOGIN HOST PTN APP DOM
+bin/transfer/reports/details.sh [TYPE]   # TYPE = ACC SITE LOGIN HOST LGC PTN APP DOM BL
 bin/server/parse.sh                   # -> _parse.tsv (+ per-entity mention caches; AXWAY_SKIP_MENTIONS / AXWAY_MENTIONS_ONLY)
 bin/server/reports.sh
 bin/analyses/reports.sh; bin/dashboards/reports.sh; bin/day/reports.sh
 bin/transfer/publish.sh               # …and the other per-area publishes; then:
 bin/analyses/publish-partner-groups.sh
-bin/build/publish.sh                  # index pages + the home; run LAST
+bin/analyses/publish-all-files.sh     # the all-files search (day shards + index); after the transfer publish
+bin/build/publish.sh                  # index pages + the home + the group rows/tags; run LAST
 bash -n script.sh                     # syntax check — there is no test suite
 ```
 
-**Manual re-publish gotcha**: `publish-partner-groups.sh` runs OUTSIDE the per-area publishes;
-skipping it after a publish sweep leaves its pages missing. The DISPLAY-RENAME sweep
+**Manual re-publish gotcha**: `publish-partner-groups.sh` and `publish-all-files.sh` run OUTSIDE
+the per-area publishes; skipping them after a publish sweep leaves their pages missing or stale.
+The group rows and `← Group` tags come ONLY from `bin/build/publish.sh` (`apply_report_groups`), so
+run it after any area publish. The DISPLAY-RENAME sweep
 (`bin/build/display-rename.sh`, `input/rename.txt` — presentation renames applied to the
 RENDERED pages as the build's last page-touching step; caches/.rpt keep the real values,
 slugs/links untouched) also runs only in `bin/build.sh`: a manually republished page shows real
@@ -378,9 +390,10 @@ in localStorage under the report key + the built header labels
 index — anything that addresses a column by number (RECALC tokens, `data-noagg`/`data-pct`, the
 group column, the total label, the remembered sort, which now stores the built index) goes through
 `cellByCi`/`ciOf`/`colByCi`, never through `cells[n]`. A spanned total label is split on the first
-move. Not movable: a grouped header band (GHEAD), `data-heat`, the Boxes pages (`th[data-pf]`),
-Entity Search, `dayrows`, spacer columns, any spanned DATA row; a `nocolmove` TABLE modifier can be
-added if a report needs to opt out. New column-addressing code must use the built index.
+move. Not movable: a grouped header band (GHEAD), `data-heat`, the Boxes page (`th[data-pf]`),
+Entity Search, `dayrows`, spacer columns, any spanned DATA row; report.js also honours
+`data-nocolmove`, but render_rpt.awk has no `nocolmove` TABLE modifier yet — add one if a report
+must opt out. New column-addressing code must use the built index.
 
 **Five more runtime features (2026-09-05, report.js)**: the column PICKER (`cols` hotspot bottom-RIGHT of the
 last visible cell of the TOTAL row, else of the last visible data row — `colHostCell`; that cell is
@@ -427,7 +440,11 @@ server parse's `AXWAY_SKIP_MENTIONS` / `AXWAY_MENTIONS_ONLY`, the transfer parse
 `AXWAY_DERIVE_ONLY`, went-kaput / monitor run once). Within-build DEPENDENCY guards stay:
 `ensure_logons` builds the logon summary only when it is not there yet (the background step
 normally has), `srv_subset` falls back to the whole cache without `subsets/.done`, and the
-appended-names mention rescan is skipped when it cannot change anything.
+appended-names mention rescan is skipped when it cannot change anything. ONE tracked file outside
+`docs/` is build output: **`bin/build/whats-new-history.tsv`** — a develop build (the `.sample-estate`
+marker) rewrites it from `git log` over the report generators (`bin/build/publish.sh`), acc/prd
+ship it with `bin/`, and every build renders What's new from it (a runtime's own git log knows
+only the import) — commit it with the code change.
 
 ## Tool sets
 
@@ -465,18 +482,23 @@ read the name prefix alone and silently dropped the hybrid flows), `_{accounts,s
 `_partner-group{s,-why,-accounts}` and `_templates.tsv` (optional export). It also forward-resolves the configured hosts into
 `input/ip/`.
 
-Nothing downstream reads the JSONs directly (except `publish-insights.sh`); everything goes via
-the caches `flow-manager.sh` writes in the build's config step (no early exit — it rebuilds every
-build); a missing cache degrades to an empty list.
+Downstream reads the caches `flow-manager.sh` writes in the build's config step (no early exit —
+it rebuilds every build); a missing cache degrades to an empty list. The DIRECT JSON readers, for
+what the caches do not carry (cron expressions, Active codes, folders, credentials):
+`publish-insights.sh`, `bin/analyses/publish.sh` (the Subscriptions page), `polling.sh`,
+`uc3-polling.sh`, `missing-cronjobs.sh`, `cleanup-backlog.sh` and `details.sh` (the Active codes
+via `bin/subscription-active.jq`) — each on the SKIP-filtered copies in
+`data/flow-manager/filtered/` when `flow-manager.sh` wrote them (`FM_CONFIG_DIR` in publish_lib,
+`FM_INPUT_DIR` in the area libs; the Subscriptions page's skipped rows read the raw export).
 **PDA derivation** is owned here too and is LOGICAL-BASED (2026-08-30, user request): the
 three-part Logical name `D_A_P` gives part 1 = domain, part 2 = application, part 3 = partner
 token; partner tokens merge (same host / shared whitelist IP / whitelisted host IP — every merge
 DERIVED since 2026-09-01, the curated alias file having become a part replacement; details in
 ARCHITECTURE.md), and every partner/app/domain pair cache is composed
 through the FlowID. The account-name split machinery, the subscription-name fallback and the
-prune are RETIRED. So is the **Logical derivation** itself (FlowID families → three-part group
-names; a `-` inside a part marks parts the derivation combined, which is why Logical names are
-never separator-folded) — it runs FIRST, the PDA pass consumes it. The coverage TSVs
+prune are RETIRED. The **Logical derivation** (FlowID families → three-part group names; a `-`
+inside a part marks parts the derivation combined, which is why Logical names are never
+separator-folded) is owned here too — it runs FIRST, the PDA pass consumes it. The coverage TSVs
 `data/transfer/reports/coverage/*.tsv` are the materialized product (`ensure_pda_tsvs`).
 
 ### bin/dashboards/ and bin/day/
@@ -489,8 +511,8 @@ hero → problem lists → facts → six Top-5 tables. Both run after the two ar
 UC-status stacks and cumulative "seen" views carry strict invariants — see ARCHITECTURE.md before
 touching them. Consumers reading topview Date cells strip the `@{href=…}` cell attr first; the
 transfer `topview.rpt` per-day table has six column groups since 2026-09-12 (Files, Recovered =
-Automatic · Manual, Resubmit = Ok · Failed, Transfers, State — ROW fields 5-20 in that order),
-see ARCHITECTURE.md.
+Automatic · Manual, Resubmit = Ok · Failed, Transfers, State — ROW fields 5-20 in that order,
+then Volume, field 21, since 2026-09-29), see ARCHITECTURE.md.
 
 ## Architecture
 
@@ -525,12 +547,12 @@ the row of buttons for the group's members is the FIRST row, directly after the 
 report's own tab / view rows and the intro; a row with NO group members sits under the intro.
 Since 2026-09-29 every group row comes from `apply_report_groups` (see "Report groups and menus")
 except the Entities combined row and the cross pair selector, which their renderers write
-(`_hdr_with_nav`); `_inject_after_h1` / `_inject_after_intro` place the other rows.
+(`_hdr_with_nav`); `_inject_before_table` places the Failed Subscriptions view row under the From/To.
 
 **TABLE modifiers**: `wide` · `group` · `nosearch` · `nofilter` (full-period semantics) ·
 `drill=UNIT` · `totaltop` · `datereset` (always open at the full range) · `seenrows` (green =
 logged, red = configured only) · `restint` (`@data:res` paints the whole row; the SERVER pages get
-it automatically — see below) · `nosort` · `rangehook` (2026-09-27: the rows are built by a page ENGINE that takes the From/To range through a window hook — report.js counts the table date-aware and calls every function on the `window.AXWAY_RANGEHOOKS` list; paired with `nofilter`, latest/search.html + search/all-files.html) · `sxs`
+it automatically — see below) · `nosort` · `rangehook` (2026-09-27: the rows are built by a page ENGINE that takes the From/To range through a window hook — report.js counts the table date-aware and calls every function on the `window.AXWAY_RANGEHOOKS` list; paired with `nofilter`; its one user is search/all-files.html) · `sxs`
 (side-by-side; `sxs=ID` — a different id starts a new flex row) · `esearch` · `fold=` · `noagg=` ·
 `sort=` · `startempty` (first paint empty until searched) · `pfnoun=` (the stat-filter total-row
 noun) · `seenmode=all|seen|notseen` · `seenword=` (the Show-Seen intro noun) · `heat` (hour ×
@@ -756,8 +778,9 @@ Seven passes (0–6), fully specified in ARCHITECTURE.md; the order is deliberat
    takes the account's single configured movement-in subscription (39-0 validation; the
    session-joined groups agree 7-for-7). When even that fails, the group keeps the SYNTHETIC
    site **`UCx_<account>`** — counted like any logged-but-unconfigured subscription (result.sh
-   `discover_logged` appends it to the base cache), EXCEPT that first-seen.sh excludes it by the
-   `UCx_` prefix; it surfaces on not-in-flow-manager.
+   `discover_logged` appends it to the base cache) — First seen included since 2026-09-29 (its
+   exclusion left the Total / Seen cells one short of the Entities views they open); it surfaces
+   on not-in-flow-manager.
 6. **NO-SUBSCRIPTION / HTTP / PROBE SKIP** — a CoreId with neither site nor ACCOUNT anywhere, or any
    http leg, is dropped from both caches; its raw CSV lines go to `_skipped.csv`. So is (2026-09-08,
    user request) the **EMPTY OUTBOUND SSH PROBE**: a CoreId whose ONE record is Outbound + ssh +
@@ -772,7 +795,7 @@ the transfer must stay countable.
 ### _files.tsv — the logical-transfer cache
 
 A **logical transfer** = all records sharing one CoreId (commonly 2–7 rows). `parse.sh` collapses
-`_transfers.tsv` into one row per CoreId, 22 columns (`$FILES`, documented in `data/_files.txt`):
+`_transfers.tsv` into one row per CoreId, 24 columns (`$FILES`; legend `data/transfer/cache/_files.txt`, written by the parse):
 
 ```
  1 coreid                                    12 dest_site (last row)
@@ -874,8 +897,8 @@ file's legs and the server lines of their connection join on it; `""` where the 
 UNKNOWN — no session at all on PESITD/SSHD records, ~96% of TM records carry one; the parser
 walks to field 18 for it, ~15 % of the tokenize). The exports are newest-first within a file, so cache order is NOT chronological. Runs in
 parallel (per-file tokenize+sort, then per-date merges — byte-identical to a global merge); also
-builds the per-entity mention caches `_{accounts,subscriptions,logins,hosts}.tsv` with per-name
-dirs (last 25 rows + the last 10 Error AND the last 10 Warning lines, merged newest first — one
+builds the per-entity mention caches — per-name dirs `{accounts,subscriptions,logins,hosts}/`
+(`<name>.tsv` + `<name>_err_warn.tsv`) plus the flat `_accounts.tsv` / `_subscriptions.tsv` (last 25 rows + the last 10 Error AND the last 10 Warning lines, merged newest first — one
 ring per level since 2026-09-28, so a burst of warnings never pushes the errors out; hosts match
 case-insensitively).
 
@@ -896,17 +919,10 @@ anchored rule would otherwise match the bare form and miss the tagged twin of th
 a `<Word> Default` tag is stripped — the odd `[server #173 @…]` lines keep their text — and every
 rule then covers both forms, which is why no rule names a tag.
 Deliberately NOT `input/skip.txt`: a skip rule archives its records for the Skipped report, which
-is the cost this filter exists to avoid; every parse applies the list as it stands. **Four server reports read those lines and were removed with them**:
-`concurrency` (a `capacity` component), `event-feed` (a `platform-health` component), and
-`transfer-outcomes` + `file-freshness` — both components of the merged `transfers` report, which
-therefore went too, leaving `pickups` alone in the srv-transfers group (the group went 2026-09-29: Pickups stacks on the UC status UC2 tab). **`advanced-routing` went
-the same way** (2026-08) when `AR0011/76/77` joined the list: its Routes table counted Executions
-as the AR0076 total and Fail % as failures ÷ executions, so the report could not survive the
-filter — `remote-poll` then led srv-routing alone, and since 2026-09-05 it is an unpublished
-intermediate whose tables ride the UC status / UC3 tab (`uc3-polling.sh`; the srv-routing group, then only
-`transfer-site-missing`, went with that report 2026-09-27, user request). Verified first that nothing else depended on
-those lines: 0 of 136 blue entities evidenced by one, 0 of 905 entity mention caches made only of
-them, 0 of 732 unknown-* seeds. The failed-file error
+is the cost this filter exists to avoid; every parse applies the list as it stands. The server
+reports that read those lines went with them (2026-08: `concurrency`, `event-feed`,
+`transfer-outcomes`, `file-freshness`, `advanced-routing` — none of the colours, mention caches or
+unknown-* seeds rested on them). The failed-file error
 pages lost their JSON id join with them and now rest on the SESSION join, plus an ANY-MENTION id join
 (2026-08-24: every bare UUID in a message looked up against the page's CoreId + transfer ids —
 the `.stfs` segments never matched one; what it reaches is the `Error while resubmitting transfer
@@ -1032,9 +1048,9 @@ server logs "Start login process" + "Allowed user" again with no new authenticat
 column (kind `num`, never a problem, never the row-tint verdict) and are NOT in Allowed — nor
 in the host file's Allowed. **Session errors** are the Error/Warning `[Ssh Default]` lines of no
 counted family ("Stream read/write error. Exception message is: CMS parsing has failed"),
-attributed to the login of their session; a `numfailed` column with drills, a 7th field of the
-`_logon-problems.tsv` sidecar (the FE overview's Logon problems sum) and sidecar fields 22-25 of
-`_logons.tsv`. Both need the whole cache read first (the exports are newest-first, not
+attributed to the login of their session; a `numfailed` column with drills and sidecar fields
+22-25 of `_logons.tsv` (the `_logon-problems.tsv` sidecar went 2026-09-29 — its one reader, the
+retired FE overview Logon problems column, was gone). Both need the whole cache read first (the exports are newest-first, not
 chronological), so every Allowed line is booked in END. The sample estate plants one persistent
 connection for the first login (`bin/sample/gen-events.awk` env_ambient, fixed session id, no
 rint()). Drill-cell numbering on Incoming: 1 Allowed, 2 Disallowed, 3 Authenticated, 4 No account,
@@ -1064,8 +1080,8 @@ deploy-errors' `Account or subscription` — never the plural `Subscriptions`, a
 `restint` and each row takes that entity's RESULT colour. Decided per TABLE inside
 `emit_header`, so it needs no writer change; a row the report tinted itself (`@data:res`) is left
 alone, an unconfigured name stays untinted, and the **Error/OK cells keep their own background**
-(the restint CSS excludes `.failed`/`.processed`). The four server members whose PAGE lands in
-Analyses get the same treatment via `render_subs_group_pages`. Kept in its own array — the detail
+(the restint CSS excludes `.failed`/`.processed`). The two server members whose PAGE lands in
+Analyses (uc-status, polling) get the same treatment via `render_subs_group_pages`. Kept in its own array — the detail
 pages' `resmaps` tint entity CELLS and must not switch this on for a whole area.
 
 The analyses, dashboards and day publishes hand-render their pages but source publish_lib;
@@ -1080,30 +1096,24 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   Entities view whose row count IS that figure (Entity · Total · Seen · OK · Error · Warning ·
   Ok; no scope switch since 2026-09-27); `check_status_consistency`
   verifies each figure; the SEEN figures come from `home.rpt`. The per-day figures are ONE wide
-  "Per day" table (2026-08-31, user request — the 2026-08 five-table flex row with its Date
-  spine is retired: it could fall out of row-sync whenever a header's height changed): a `gband`
-  banner row (Files · Duration · Red/Green switch · First seen) over a shared Date column (its
-  cells link the day dashboard), then the group columns — Files (In · Out · Ok · Cured ·
-  Error · Error %; Cured = the transfer topview.rpt's Recovered group, Automatic + Manual; the In/Out split is the movement direction, `_files.tsv` col 17 — a File with none (an
-unconfigured subscription, the synthetic `UCx_` ones) counts by its connection side, col 16, so
-In + Out = Ok + Error (2026-09-28; entities.sh and month-stats.sh apply the same fallback); the count
-  column is gone — In + Out carries it), Duration (p50 · p75 · p90 · p95 · p99 — p99 last since 2026-09-13, user request; EVERY cell of the group, banner and headers included, carries `data-href="transfer/duration.html"` and opens the Duration report WITHOUT a date — report.js `setupCellLinks`, which outranks the index row link that would open the day page), Red/Green switch
-  (Red · Green) and First seen (Logical · Partners · Subscriptions · Accounts). Group dividers
-  are POSITIONAL CSS on `table.dayrows` (columns 2/8/12/14 + the `gbrow` banner cells — adding
-  a column means moving them). Still `data-nosort` (the 14-day cap hides the OLDEST rows by
-  class, which a sort would interleave); the cap is lifted by the "Show all" button under the
-  tablewrap (setupShowAll uncaps every capped table in its adjacent wrapper).
-  **Red/Green switch** (2026-08): how many
-  subscriptions FLIPPED that day, Red = green→red and Green = red→green, from a
-  (subscription, sortkey) walk of `_files.tsv` in `daily_loglines_tsv`. The comparison is
-  **END-OF-DAY state against the previous ACTIVE day**, never per File: the last File of a day
-  sets that day's state (site-wide outcome policy, Waiting counts as OK), so a flow that broke and
-  recovered inside one day ends it green and is NOT a flip; a day the flow carried nothing keeps
-  the state, so the flip lands on the day the state actually changed. A flow's first active day
-  only establishes its state. Each nonzero cell links `docs/switches/<date>.html#red|#green`
-  — one page per day with flips, listing the subscriptions behind the two cells (tinted by their
-  CURRENT colour, each row opening the detail page); the pages are written by the same
-  `write_env_block` pass from the names side-file `daily_loglines_tsv` fills. Then the RED worklist
+  "Per day" table (`write_home_block`; 2026-08-31, user request — the 2026-08 five-table flex
+  row is retired): a `gband` banner over a shared Date column (its cells link the day page), then
+  five groups separated by SPACER columns (`th/td.spc`; report.js `syncGroups` keeps the spacers
+  and group edges right after a column move or hide): **Transfers** (Ok · Error · Error % — the
+  legs) · **Files** (In · Out · Ok · Cured · Error · Error %; Cured = the transfer topview.rpt's
+  Recovered group, Automatic + Manual, linking Recovered files for that day; Error links Failed
+  files for that day; In/Out = the movement direction, `_files.tsv` col 17 — a File with none (an
+  unconfigured subscription, the synthetic `UCx_` ones) counts by its connection side, col 16, so
+  In + Out = Ok + Error (2026-09-28; entities.sh and month-stats.sh apply the same fallback)) ·
+  **UC2 state** (Waiting · Expired) · **Duration** (p50 · p75 · p90 · p95 · p99 — p99 last since
+  2026-09-13; banner, headers and Total carry `data-href="transfer/duration.html?axway_date=all"`,
+  each day's cells `?axway_row=<date>` — report.js `setupCellLinks`, which outranks the row link)
+  · **First seen** (Partners · Subscriptions, linking `first-seen/<type>-<date>.html`).
+  `data-nosort` (the 14-day cap hides the OLDEST rows by class, which a sort would interleave):
+  the newest 14 days show, the "Show all" button under the tablewrap lifts the cap
+  (setupShowAll), and the Total row appears only from 10 days up. The Red/Green switch group, its
+  `docs/switches/` pages and the Logical / Accounts First-seen columns went 2026-09-06 (user
+  request). Then the RED worklist
   (`write_failing_now`, 2026-08), split in TWO tables because a red flow is red for one of two
   reasons and they want different columns and destinations: **Failing transfers** — it has a
   failed File, so the rows are `failed-sub-all.rpt`'s own, red only and ONE PER SUBSCRIPTION (its
@@ -1147,8 +1157,9 @@ In + Out = Ok + Error (2026-09-28; entities.sh and month-stats.sh apply the same
   Out by MOVEMENT, `_files.tsv` col 17, a File without one by its connection side col 16 ·
   Error · Error %) · Retry / Resubmit (Auto = an OK File
   with a failed leg and no resubmitted leg; Ok / Error = every resubmitted File by outcome — the
-  Top view's Automatic + Resubmit Ok/Failed rule) · Duration (p90 · p95 · p99 · p100 of the OK
-  Files' wall-clock span, the Duration report's scope and nearest-rank rule, FOLLOWING the date
+  Top view's Automatic + Resubmit Ok/Error rule) · Duration (p90 · p95 · p99 · p100 of the DELIVERED
+  (Processed) Files' wall-clock span — a Waiting File's span is its staging wait, excluded since
+  2026-09-29 — the Duration report's scope and nearest-rank rule, FOLLOWING the date
   filter: per-day display-grid histograms `@data:durdays` + the RECALC tokens `P90`…`P100`, rows
   and TOTAL alike, the publish-time subset totals merging the same payload) · Volume (Total · Avg
   per File) · Transfers (Ok · Error · Error % — the LEGS of the entity's Files) · State (Waiting ·
@@ -1182,19 +1193,16 @@ In + Out = Ok + Error (2026-09-28; entities.sh and month-stats.sh apply the same
   of the nine types, every configured name gets one; slugs via the comprehensive `_slugmap.tsv`;
   no From/To, no search box, no RECALC.
 - **The special pages**: Entity Search (rows ship as DATA in `search-data.js`; the Type cell is
-  read by INDEX in report.js — adding a column means shifting it), the SEVEN File search pages
-  (`search/file-search-{24-hours,48-hours,week,2-weeks,3-weeks,month,older}.html` — `older` = "> 1 month",
-  every File before the month window, 2026-09-28, user request — ALWAYS present since 2026-09-29, empty or not, like 24 hours; a window of the other five holding no File gets no page; the windows partition the dated Files — under `docs/search/` since 2026-09-12, beside `search/search.html`; the engine-derived links carry `../` — 2026-08: ONE page per
-  window — result rows tint green/red by outcome via restint + a per-row `data-res` — with
-  per-page `-data.js` payloads (v5; no row cap since 2026-09-28, user request — every File of a
-  window ships), searched by the DEDICATED
-  `docs/assets/file-search.js` — as you type (no Search button, no idle text since 2026-09-27), the NAV row carrying
-  `?q=` between the windows; 24 hours = the newest full day + the partial newest day, 48 hours
-  = the second full day), the Report finder, the TWO Failed Subscriptions
-  view pages (+ per-CoreId error pages, and since 2026-09-03 the FILE pages `docs/files/<coreid>.html` — the same layout for a File of ANY outcome, written by `failed.sh` for the CoreIds the Transfer patterns page's "Last 5 files" cells link, `_patterns-files.tsv`, and for every File the Longest Files page lists (DELIVERED Files only since 2026-09-13, user request — no Failed / Expired / Waiting and no "All transfers" view; the one-hour threshold went 2026-09-06), `_longest-files.tsv` — its CoreId cell opens the File page), Cross References, Entity coverage
-  (assert OK ⊆ Current ⊆ Once), whitelist-audit, config-hygiene, UC status (its UC3
-  tab also carrying the polling tables — the former Remote polls report and Cronjobs page, 2026-09-05), Polling (the SAME polling information as ONE flat table, one row per polling subscription — `bin/analyses/reports/polling.sh` → `polling.rpt`, a `SUBS_GROUP_REPORTS` server member rendered into analyses/, sitting at the old Cronjobs slot of the Configuration row, 2026-09-05)
-  (a Use-cases view; pages in analyses/).
+  read by INDEX in report.js — adding a column means shifting it), the All files search
+  (`search/all-files.html`, see above — its data also feeds the subscription pages' Files table; the seven File search window pages went
+  2026-09-29), the Report finder, the TWO Failed Subscriptions
+  view pages (+ per-CoreId error pages, and since 2026-09-03 the FILE pages `docs/files/<coreid>.html` — the same layout for a File of ANY outcome, written by `failed.sh` for the CoreIds the File journey Patterns tab's "Last 5 files" cells link, `_patterns-files.tsv`, and for every File the Longest Files page lists (DELIVERED Files only since 2026-09-13, user request — no Failed / Expired / Waiting and no "All transfers" view; the one-hour threshold went 2026-09-06), `_longest-files.tsv` — its CoreId cell opens the File page), Cross References, Entity coverage
+  (six pages, the rules as verdict columns; assert OK transfers ⊆ Current ⊆ Once),
+  whitelist-audit, config-hygiene, UC status (its UC3 tab also carrying the polling tables — the
+  former Remote polls report and Cronjobs page, 2026-09-05) and Polling (the same polling
+  information as ONE flat table, one row per UC3 polling subscription — `bin/analyses/reports/polling.sh`
+  → `polling.rpt`, a `SUBS_GROUP_REPORTS` server member, 2026-09-05) — both Use cases & delivery
+  members, pages in analyses/.
 - **The Boxes page** (subscriptions-in-boxes, written by publish-insights; its accounts twin
   accounts-in-boxes went 2026-09-29): the shared `_subs_box_rows` producer; any account join is
   `xref/_subscriptions-accounts.tsv` and ONLY that — **never match subscriptions to accounts by
@@ -1216,7 +1224,7 @@ former boxes-only reports included).
 
 - **`_report_groups`** (`bin/publish_lib.sh`) is THE single source of truth: one line per group,
   `Label|dir/stem=Label|…` — `dir` the docs directory the page renders into (transfer / server /
-  analyses, plus `transfer/entities` and `analyses/xref`), `stem` the report basename or the
+  analyses, plus `transfer/entities`, `transfer/month-stats` and `analyses/xref`), `stem` the report basename or the
   hand-written page name. It feeds `REPORTS_MENU` (topbar-data.js `reports`, the ONE menu key;
   report.js `buildTopbar` + `render_topbar` draw ONE `.dd`; `TB_VER` folds it), the start page
   (`write_reports_index` + `rg_desc`: a report's DESC, fixed texts for the hand-written pages),
@@ -1257,7 +1265,8 @@ errors-day levels-per-component table that way. **The 2026-09-29 consolidation**
 reports", user request) folded pages into tabs and stacked tables (`tab=KEY`) instead of
 separate pages: Trends (Growers / Shrinkers / Slower / Faster — trend + duration-trend,
 `trends.sh`), Sizes (files + top-transfers + size-profile), File in - File out (+ UC4 to UC2),
-Retries (+ Recovered files), Episodes (+ Recovered flows, `merge-episodes.sh`), UC status UC2 /
+Retries (+ Recovered files), Episodes (+ Recovered flows, `merge-episodes.sh`), Punctuality
+(+ Rhythm = expected-arrival, `merge-punctuality.sh`), UC status UC2 /
 UC3 tabs (+ UC2 pickup visits, Pickups, No remote dir / files), Failed Subscriptions (+ From
 green to red / Only red as the Last green day · Days red · Failures in a row columns), Routing
 errors (+ Deploy errors), Polling (+ Missing cronjobs as Schedule "no cron"), Entity coverage
@@ -1294,7 +1303,7 @@ both MANUAL.
 - **`docs/` is PURE committed build output** (2026-08-29): every `bin/build.sh` run CLEARS
   `docs/` wholesale and RE-SEEDS the
   hand-authored files from the repo-root **`assets/`** — `style.css`, `report.js`, `slotchart.js`,
-  `file-search.js` → `docs/assets/`, `assets/help/` → `docs/help/`. **EDIT IN `assets/`, never in
+  `all-files-search.js` → `docs/assets/` (build.sh `SEED_ASSETS`), `assets/help/` → `docs/help/`. **EDIT IN `assets/`, never in
   `docs/`** — a build overwrites the docs copies. (`.nojekyll` and `topbar-data.js` stay
   generated.)
 - **`assets/help/*.html`** — a help page per report (or shared per group/family) plus `general.html`
@@ -1304,14 +1313,16 @@ both MANUAL.
   file is a silent 404, not a build error.
 - **The `.rpt` files and parse caches are NOT committed.** Keep them on disk for HTML/CSS
   iteration; a fresh clone must run parse + reports before the publishes produce a site.
-- **All generated links are relative** — the site lives under `/axway/` and Pages is
-  case-sensitive; keep paths lowercase and exact. The assets' `cksum` is the `?v=` cache-buster on
+- **Pages is case-sensitive** — keep generated paths lowercase and exact (the links are relative,
+  so the site works under any base path). The assets' `cksum` is the `?v=` cache-buster on
   every page (`ASSET_VER`), so an asset edit wants a full re-publish.
 - **To add a transfer report**: a script in `bin/transfer/reports/` sourcing `../lib.sh`,
-  aggregating `$PARSED` or `$FILES` into `$REPORTS_DIR/<name>.rpt` — no freshness check (every
-  build is fresh; see "No incremental machinery"). Add it to
-  `bin/transfer/reports.sh` and `transfer_order` (+ `group_of`/`member_label`, `report_tabs` if
-  multi-table), and write its help page. Phase 1 unless it reads another report's output (phase 2
+  aggregating `$PARSED` or `$FILES` into `$REPORTS_DIR/<name>.rpt` (TITLE on line 1, a one-line
+  DESC) — no freshness check (every build is fresh; see "No incremental machinery"). Add it to
+  `bin/transfer/reports.sh` and `transfer_order` (+ `report_tabs` if multi-table), put it in ONE
+  group of `_report_groups` (without that: no menu line, no first row, no sitemap card;
+  `group_of`/`member_label` matter only for Entities / Cross), and write its help page
+  `assets/help/<slug>.html`. Phase 1 unless it reads another report's output (phase 2
   = `showseen.sh`); build.sh overlaps the phases with `details.sh` in the background, so **a new
   phase-1 report must be safe to run beside the server reports**.
 - **Every `.rpt` write is ATOMIC** (2026-08): `} > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"` — never a
@@ -1345,6 +1356,57 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   `sort | head`/`tail`, and cap top-N lists with `awk 'NR<=n'`, never `head` — the early
   pipe-close SIGPIPEs `sort` and silently kills the script.
 
+## Rules from the 2026-09-29 site audit (user request: "a very very deep analyse & audit … fix all")
+
+- **A report page's TITLE is its Reports-menu label** (`_report_groups`): "Transfer top view",
+  "Server top view", "One-legged", "Episodes", "Per flow", "Routing errors", "Waiting", "Activity",
+  "Sizes & types", "Duration", … — the finder and whats-new read the TITLE, the help `<h1>` repeats
+  it. The Configuration pair is **Configured subscriptions** / **Configured accounts** (the Entities
+  group keeps Subscriptions / Accounts). A new report: label and TITLE the same.
+- **Connections split In / Out** (`inbound-connections.sh`, the three volume tabs): a TM
+  "had initiated a connection" line that names a login is a partner connecting IN, `login name ""`
+  is SecureTransport connecting OUT (bin/logons.sh's reading). Its sidecar `_inbound-addr.tsv`
+  (every inbound address, uncapped) + the SSH logon lines of `_logons-hosts.tsv` are the
+  server-side inbound contact the Whitelist audit and the Cleanup backlog read
+  (`bin/server-inbound-addr.awk`) — never the page's top-50 address table. The SAMPLE plants both
+  kinds: `gen-events.awk` `s_initconn` writes our outbound `login name ""` lines and `s_authok` a
+  partner's login-naming line beside every partner authentication (verify.sh fails when
+  `_inbound-addr.tsv` is empty); `bin/logons.sh` counts only the `login name ""` lines as our
+  outbound targets.
+- **Engine tables** (`rangehook`, `subfiles=`) get `data-nocolmove` — no cols picker, their rows
+  arrive after report.js ordered the columns; report.js `hideEmptyTables` (detail pages) skips a
+  `data-subfiles` table, which is empty until sub-files.js fills it.
+- **0 in a count cell is blank** in the UC status tables (UC1 / UC3 / UC4, rows + totals), Month
+  stats, Expired, Connection efficiency and the UC3 polling tables; the "ok -> error" Status cell is
+  red like its row. Activity (weekly / hourly / weekday) Volume = OK File bytes, the Protocol summary
+  reads "OK transfers | OK volume"; Expired › Collected counts delivered Files only (as Waiting).
+- **A TOTAL row may ship its OWN `@data:buckets`** — the DISTINCT per-day totals of a table whose
+  rows overlap (a File counts for every BL / partner / application: `entities.sh`; Recovered files
+  per protocol): report.js `recalcTable` re-totals a narrowed range from them as long as only the
+  date filter hides rows (a search / view filter → the visible-row sum). The OK / Warning / Error
+  subset views never inherit them (their totals are row sums).
+- **A Volume column follows its table's count scope**: Leg count, Protocol journey and Protocol
+  count OK Files / legs, so their Volume is the OK bytes and a row with no OK File is dropped.
+- **Durations everywhere = DELIVERED Files, nearest-rank** (`int((n-1)*P/100+0.5)+1`): the Duration
+  report, the Entities Duration group, the dashboard / day duration charts. The Transfer errors
+  chart counts every non-Processed leg (the per-row Error rule).
+- **render_rpt**: an EMPTY `@data:loglines` / `@data:coreids` is no drill (the row stays inert); a
+  `LINK` opens in the same tab (an absolute http(s) link in a new one).
+- **report.js**: `thLabel(th)` is THE header label (text without the csv / cols / arrow hotspots —
+  a regex strip ate "Protocols"); `sort=` and a numeric `?axway_sort=N` are BUILT indexes (a stored
+  column order moves positions); the Entities pages remember EVERY sort key (`k` list, labels);
+  a sort sends the pager to page 1; a table without a search box still shows the date-range empty
+  message; `fitTopbar` pads the body to the wrapped top bar on a narrow window; the CSV header of a
+  grouped table prefixes each column with its group; a search hides a catalog's group heading row
+  with no match under it; the finder says when nothing matches; `initSeen` only touches seenmode /
+  seenrows tables.
+- **Dark theme**: `bin/darken-css.awk` skips only the navy bar itself (`.topbar`, `.ddlabel`, brand
+  / buttons) — the Reports menu and the cols button get dark twins; `td.bar span` has its own navy
+  `#25405c` (dark `#6f95bd`) so load bars stay visible on dark cells.
+- **Help**: the home page opens `help/home.html`; Failed files its own `failed-files.html`.
+- The report finder and whats-new describe a report by its one-line DESC (`rg_desc` for the
+  hand-written pages); `bin/build/whats-new-history.tsv` is written SORTED (stable diffs).
+
 ## Conventions / gotchas
 
 - **Endpoints are canonically LOWERCASE everywhere, data files included** — lowercased at the
@@ -1361,8 +1423,8 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   counting unit. **CoreId** stays the internal term.
 - **UI terms "Error" / "OK"**: the outcome split displays as Error/OK in ALL rendered text; every
   INTERNAL name keeps the failed/processed vocabulary (the raw `Status`, the outcome column, KIND
-  tokens, CSS classes, `@data:coreids-*`, the coverage TSVs' P|F). Exceptions: raw status values
-  shown verbatim, the server "Failed logins" report name, file-freshness's "Processed" column.
+  tokens, CSS classes, `@data:coreids-*`, the coverage TSVs' P|F). Exception: raw status values
+  shown verbatim.
 - **Status handling**: per-ROW splits treat `Status == "Processed"` as OK, else Error. For FILES,
   the outcome policy (Waiting = OK, Expired = Error).
 - **`transfer-profile` is PARSE-INTERNAL ONLY** — no pages, no xref tables, no
@@ -1382,12 +1444,13 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
 ## Directory layout
 
 Every pipeline script lives under **`bin/`** — `bin/acc.sh` + `bin/prd.sh` (the develop→runtime code
-sync) included; the committed repo top is `bin/ assets/ docs/`,
-the three `.md` docs, `.gitignore`/`.gitattributes` and **`input/`** — in
+sync) included; the committed repo top is `bin/ assets/ docs/`, `tools/` (two STANDALONE
+raw-export helpers, `one-leg.sh` / `uc2-waiting.sh` — Git-for-Windows-safe, no site libs, not
+part of the build), the three `.md` docs, `.gitignore`/`.gitattributes` and **`input/`** — in
 THIS repo committed IN FULL, sample CSVs included (the whole estate is synthetic and small;
 `bin/sample/generate.sh` — no argument — rewrites it as ONE estate, the union of the former
-acceptance and production sample rosters; its `KEY="acceptance"` constant is only the PRNG
-namespace that keeps the generated identities stable). `input/` holds the flow-manager JSONs, the
+acceptance and production sample rosters; the `KEY = "acceptance"` constant in
+`bin/sample/estate.awk` is only the PRNG namespace that keeps the generated identities stable). `input/` holds the flow-manager JSONs, the
 `ip/` and `renames/` maps, the `.sample-estate` marker + `.sample/` spec, and the hand-maintained
 files at its root: **`environment.txt`** (the checkout's label — see "Environment"),
 `blacklist.txt` + `skip.txt` (see the attribution chain),
@@ -1398,7 +1461,7 @@ became a full entity; a listed FlowID skips the derivation),
 `BL.txt` (BL numbers per subscription, `<subscription> <BL>[,<BL>...]` — several numbers
 comma-separated in the second field — a SECOND source of BL entities beside the subscriptions.json tags,
 unioned in `bin/flow-manager.sh`; the real files live in the runtime repos' `input/`, develop's are
-the sample template), `logons_old.txt` (2026-09-02: the FE logins' last logon on the OLD gateway, `<login> <stamp>` per line — the Analyses → Configuration "Partners - Incoming" page's Gateway column; hand-maintained, sample template in develop), `coreid-url.txt` (2026-09-07: the SecureTransport File Tracking URL every CoreId on the site links to — ONE line, `@COREID@` where the id goes; hand-maintained per checkout, the REAL admin hosts live only in the runtime copies, develop's sample carries an `.example` host — read by `publish_lib.sh` into topbar-data.js) and
+the sample template), `logons_old.txt` (2026-09-02: the FE logins' last logon on the OLD gateway, `<login> <stamp>` per line — the Partners - Incoming page's (Reports › Partners) Gateway column; hand-maintained, sample template in develop), `coreid-url.txt` (2026-09-07: the SecureTransport File Tracking URL every CoreId on the site links to — ONE line, `@COREID@` where the id goes; hand-maintained per checkout, the REAL admin hosts live only in the runtime copies, develop's sample carries an `.example` host — read by `publish_lib.sh` into topbar-data.js) and
 `logical_{domains,apps,partners}.txt` (hand-curated FROM→TO PART replacements for the
 Logical-based PDA derivation: part 1/2/3 of a three-part Logical name is replaced before it
 becomes the domain / application / partner-merge token — and since 2026-09-06 the Logical NAME ITSELF is recreated as Domain_Application_Partner from the replaced parts (the STREAM partner rule included), in the LOGICAL block before the base list / pair caches / PDA read the map, so two Logicals replacing to the same parts become one (the rule trail says "parts replaced").
@@ -1409,7 +1472,7 @@ does the same earlier — the variant never becomes a token, so there is no grou
 merge rule 4 plus the alias star went with it. ONE HARD-CODED rule sits beside them in `bin/flow-manager.sh`, 2026-09-03,
 user request: a Logical whose name contains `STREAM` takes the partner `ACCEPTEMAIL`, exempt from
 the merges), plus a
-README.txt per directory. Gitignored: the `data/` root, `/build/` and `/archive/` (the retired retention step's 7z files). A step script that
+README.txt per directory. Gitignored: the `data/` root, `/build/`, `/archive/` (the retired retention step's 7z files) and `input/secrets/` (RUNTIME only: the st-reports archive password, generated by `st-reports-archive.sh`). A step script that
 only `bin/build.sh` ever invokes lives in **`bin/build/`** — the placement rule; the sample-data
 generator lives in **`bin/sample/`** (guarded by the marker, seeds in `bin/sample/seed/`).
 
@@ -1426,7 +1489,14 @@ bin/ranges.sh           the byte-range split of the parallel server-cache scans 
 bin/publish_lib.sh      shared renderer + globals     bin/cron2human.awk cron -> prose
 bin/render_rpt.awk      the one-pass page-body renderer
 bin/merge_rpt.sh        component .rpt -> merged tabbed report
+bin/check-syntax.sh     bash -n over every bin/**/*.sh (the build's and the sync's first gate)
+bin/timing.sh           `timed` -> the TIME lines      bin/darken-css.awk the dark theme from style.css
+bin/logons.sh           ensure_logons -> the logon summary (_logons.tsv + _logons-hosts.tsv; logon.sh's twin matcher)
+bin/flip-reason.awk     server-log line -> Reason      bin/subname.awk   which configured subscription a line names
+bin/cron-observed.awk   schedule vs observed firing    bin/subscription-active.jq  the Active codes
+bin/server-inbound-addr.awk  a whitelisted IP's server-side inbound contact (whitelist audit, cleanup backlog)
 bin/flow-manager.sh     config exports -> data/flow-manager/{base,xref}
+bin/flow-manager-synth.sh  MANUAL fallback: the two config JSONs synthesized from the transfer logs
 bin/expire-files.sh     Waiting -> Expired from the File Maintenance sweep lines
 bin/bookend-ok.sh       Failed -> Processed on the server log's own ok "Transfer end logged." bookend (no reason line)
 bin/session-sites.sh    UCx groups -> real subscription via the server log's session route lines; re-keyed lone legs -> their original CoreId (_rekeys.tsv)
@@ -1435,14 +1505,26 @@ bin/session-sites.sh    UCx groups -> real subscription via the server log's ses
 bin/build/result.sh              fill the base result columns
 bin/build/publish.sh             index pages + the home; run LAST
 bin/build/drill-files.sh         the first File of every red / orange drill cell -> _drill-files.tsv (failed.sh pages them)
+bin/build/logon-summary.sh       the logon summary, once per build (background slot 1)
 bin/build/display-rename.sh      the display-rename sweep (input/rename.txt); the last page-touching step
-bin/build/linkcheck.sh           every link resolves + every page is reachable (manual gate)
+bin/build/whats-new-history.tsv  TRACKED data: What's new's history, rewritten by a develop build (see "No incremental machinery")
+bin/build/linkcheck.sh           every link resolves + every page is reachable — a MANUAL gate, build.sh never runs it
+
+# DEVELOP-ONLY (never synced to a runtime):
+bin/acc.sh  bin/prd.sh           sync bin/ + assets/ into ../runtime-<env> and build it (shared code: bin/runtime-lib.sh)
+bin/sample/                      the sample-estate generator + verify.sh
 
 # RUNTIME-ONLY (skipped on the sample estate — the .sample-estate marker):
 bin/build/exchange-in.sh         the inbox (a git repo, ~/exchange by default — never named in output): this environment's <prefix>*.7z -> st-reports-update.sh
 bin/build/st-reports-update.sh   one archive -> input/ (the log exports renamed logEntry_yyyy-mm-dd.csv / fileTransfer_yyyy-mm-dd.csv)
 bin/build/st-reports-archive.sh  docs/ -> st-reports-<env>_<stamp>.7z -> build/ + the outbox (the same repo, st-reports-<env>.7z)
 ```
+
+Environment overrides: `AXWAY_NJOBS` (the pool size, default the core count), `AXWAY_EXCHANGE_DIR`
+(the inbox/outbox repo, default `~/exchange`), `AXWAY_ERR_LOGCAP` (failed.sh's server-log lines
+per error-page connection, default 2000), `AXWAY_TOK_SPLIT` (see BUILD SPEED), `AXWAY_SAMPLE_SEED`;
+the stage modes `AXWAY_SKIP_MENTIONS` / `AXWAY_MENTIONS_ONLY` / `AXWAY_DERIVE_ONLY` /
+`AXWAY_WAIT_FAILED` are set at their call sites (`bin/build.sh`, `session-sites.sh`).
 
 All data lives under two roots at the repo top (`data/` gitignored wholesale; a runtime repo
 additionally ignores the `*.csv` exports under `input/`, its one bulk item):
@@ -1451,8 +1533,8 @@ additionally ignores the `*.csv` exports under `input/`, its one bulk item):
   (irreplaceable); `templates.json` optional. `input/blacklist.txt` and `input/skip.txt` — see
   the attribution chain. `input/environment.txt` — the checkout's label (see "Environment"),
   never synced, never delivered by an archive.
-- `input/renames/` — `subscriptions.tsv` (old⇥current) and `flowid-names.tsv` (the previous
-  export's `flowId`⇥name snapshot). **Machine-maintained, never hand-written**; under `input/`
+- `input/renames/` — `subscriptions.tsv` (old⇥current), `profiles.tsv` (the same for the
+  Transfer Profile) and `flowid-names.tsv` (the previous export's `flowId`⇥name snapshot). **Machine-maintained, never hand-written**; under `input/`
   for the same reason as the DNS map — once an export is overwritten its names cannot be
   recovered, and `rm -rf data/` must stay safe. See the attribution chain, step 0.
 - `input/ip/ip-hosts.tsv` — the address ↔ endpoint map (`ip⇥host`), **fully
@@ -1460,7 +1542,8 @@ additionally ignores the `*.csv` exports under `input/`, its one bulk item):
   cmp-guarded — the one kind of guard kept: the file outlives the build; an empty dir is valid). **There is NO reverse DNS anywhere, and none may be
   reintroduced** — the configuration names endpoints. Writers: `flow-manager.sh` forward-resolves
   the configured hosts (with `base/_hosts.tsv` as the KEEP list); `parse.sh` records each new
-  OUTGOING IPv4 under the host configured for its account (no row on disagreement; an INCOMING
+  OUTGOING IPv4 under the host configured for its SUBSCRIPTION first, its account only as a
+  fallback (no row on disagreement; an INCOMING
   address gets no row — it stays raw in col 16). **`ip_put` UNIONS, never replaces.** Under
   `input/` because a DNS answer cannot be regenerated — `rm -rf data/` must stay safe.
 - `data/<area>/cache/` — the tokenized caches + companions; `data/<area>/reports/` —

@@ -86,6 +86,14 @@ BEGIN {
     nhead = 0; nkind = 0
 }
 
+# the build id for data-v: build.sh exports AXWAY_BUILD_ID (its start epoch);
+# a publish run outside a build falls back to this run's own clock
+function buildid(   t) {
+    if (BUILDID != "") return BUILDID
+    BUILDID = ENVIRON["AXWAY_BUILD_ID"]
+    if (BUILDID == "") { srand(); BUILDID = srand() }
+    return BUILDID
+}
 function esc(s) {
     gsub(/&/,  "\\&amp;",  s)
     gsub(/</,  "\\&lt;",   s)
@@ -600,9 +608,18 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             else if (mi == "datereset")  tattr = tattr " data-date-reset=\"1\""
             else if (mi == "nofilter")   tattr = tattr " data-nofilter=\"1\""
             # rangehook (2026-09-27): a page ENGINE builds the rows and takes the
-            # From/To range through a window hook (latest/search.html) — date-aware
+            # From/To range through a window hook (search/all-files.html) — date-aware
             # for report.js, paired with nofilter so report.js never hides its rows
-            else if (mi == "rangehook")  tattr = tattr " data-rangehook=\"1\""
+            # (an engine table gets no cols picker — data-nocolmove: its rows
+            # arrive after report.js ordered / hid the columns and would not
+            # follow a moved or hidden column)
+            else if (mi == "rangehook")  tattr = tattr " data-rangehook=\"1\" data-nocolmove=\"1\""
+            # subfiles=<slug> (2026-09-29): the subscription page's Files table,
+            # built in the browser (assets/sub-files.js) from the day list
+            # docs/search/all/s/<slug>.js; data-v = the build id, that list's
+            # cache-buster (it is written after the detail pages render, so no
+            # cksum of it exists yet — a new build = a new id)
+            else if (index(mi, "subfiles=") == 1) tattr = tattr " data-subfiles=\"" esc(substr(mi, 10)) "\" data-v=\"" buildid() "\" data-nocolmove=\"1\""
             else if (index(mi, "pfnoun=") == 1) tattr = tattr " data-pf-noun=\"" esc(substr(mi, 8)) "\""   # the noun setupStatFilter puts in the recomputed total row
             else if (mi == "seenrows")   tattr = tattr " data-seenrows=\"1\""
             else if (mi == "restint")    tattr = tattr " data-restint=\"1\""   # rows tint by their data-res RESULT even when seen (beats the seenrows green)
@@ -735,6 +752,10 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
                 # so no report-dates meta) has no consumer for the buckets
                 # re-aggregation payload — drop it instead of shipping it
                 if (dropbuckets && nm == "buckets") continue
+                # an EMPTY drill payload (2026-09-29: the server Top view's
+                # SSHD row, no Error/Warning line to show) is no drill — the
+                # row looked clickable and expanded nothing
+                if ((nm == "loglines" || nm == "coreids") && vv == "") continue
                 attrs = attrs " data-" nm "=\"" esc(vv) "\""
                 # a ROW-LEVEL drill (the whole row is click-to-expand): an
                 # entity cell in it renders as plain name + a detail-page
@@ -782,7 +803,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     }
     # NOTE/LINK/SUMMARY are FULL-WIDTH blocks: also close an open sxs flex
     # row, or they render as a flex item BESIDE the last side-by-side table
-    else if (dir == "NOTE")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; if (!noprose) printf "<p class=\"note\">%s</p>\n", prose(rest) }    else if (dir == "LINK")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; split_cells(); if (ok_href(CELL[1])) printf "<p class=\"report-link\"><a href=\"%s\" target=\"_blank\" rel=\"noopener\">%s</a></p>\n", esc(CELL[1]), esc(CELL[2]); else printf "<p class=\"report-link\">%s</p>\n", esc(CELL[2]) }
+    else if (dir == "NOTE")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; if (!noprose) printf "<p class=\"note\">%s</p>\n", prose(rest) }    else if (dir == "LINK")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; split_cells(); if (ok_href(CELL[1])) printf "<p class=\"report-link\"><a href=\"%s\"%s>%s</a></p>\n", esc(CELL[1]), (CELL[1] ~ /^https?:\/\// ? " target=\"_blank\" rel=\"noopener\"" : ""), esc(CELL[2]); else printf "<p class=\"report-link\">%s</p>\n", esc(CELL[2]) }
     else if (dir == "SUMMARY") { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; printf "<div class=\"summary\">%s</div>\n", esc(rest) }
     else if (dir == "FOOT")    close_table()
     # DESC, META and anything unknown: not rendered

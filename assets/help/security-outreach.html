@@ -17,18 +17,25 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Security outreach</h1>
 <h2>What it shows</h2>
-<p>The partner call list for deprecated connection-security values &mdash; the outreach view of <a href="security-params.html">Security parameters</a>: who still connects with a deprecated value, who already cut over, who runs a mixed fleet.</p>
-<h2>Sections</h2>
 <ul>
-<li><strong>Outreach list</strong> &mdash; one row per (partner, deprecated parameter) seen in the <strong>last 7 days</strong> of the window, busiest first; Transfers = every leg in the window negotiated with that value. A partner that stopped earlier (a completed cutover) is not listed here.</li>
-<li><strong>Upgrades</strong> &mdash; every partner that used a deprecated <em>and</em> a modern value of the same parameter. A <strong>clean cutover</strong> shows its date: the modern value&rsquo;s first sighting on or after the deprecated value&rsquo;s last (same-day switches count as clean). <strong>Mixed fleet</strong>: the deprecated value kept appearing after the modern one started &mdash; several partner systems or keys, only some upgraded; those partners stay on the outreach list while the old value shows up.</li>
+<li>The partner call list for the two deprecated connection-security values: who still connects with one, who already cut over, who runs a mixed fleet. All three tables cover the full period; a summary line closes the page.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Outreach list</strong> (first table) &mdash; Partner, Deprecated parameter, <strong>Transfers</strong> (every leg with that value), <strong>First seen</strong>, <strong>Last seen</strong>. Only pairs seen in the <strong>last 7 days</strong>; <strong>(none)</strong> = no partner attributed.</li>
+<li><strong>Upgrades in the window</strong> &mdash; partners that used a deprecated and a modern value of the same parameter: <strong>Upgraded to</strong>, <strong>Old last seen</strong>, <strong>New first seen</strong>, <strong>Cutover</strong> (the date, or <em>mixed fleet</em>).</li>
+<li><strong>Deprecated-parameter timeline</strong> &mdash; per value: <strong>Partners still on it</strong> (last 7 days), <strong>Partners in window</strong>, <strong>Transfers</strong>, <strong>Newest seen</strong>.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li><strong>Public Key ssh-rsa</strong> &mdash; an RSA key still signing with SHA-1; OpenSSH disables it by default since 8.8. The same key works with rsa-sha2-256/-512, so it is a partner software or config upgrade, not a new key.</li>
-<li><strong>TLSv1.2</strong> &mdash; the legacy TLS version; TLSv1.3 is current.</li>
-<li>On an <strong>outbound</strong> leg the Public Key is the remote server&rsquo;s host key (the partner upgrades their server); on an <strong>inbound</strong> leg it is the connecting client&rsquo;s authentication key (the fix is in the partner&rsquo;s client software).</li>
-<li>Partners follow the site-wide union attribution: a leg counts for every partner of its subscription plus the host-resolved one.</li>
+<li><strong>Public Key ssh-rsa</strong> = an RSA key signing with SHA-1, disabled by default since OpenSSH 8.8; the same key works with rsa-sha2-256/-512 (a software upgrade, not a new key). <strong>TLSv1.2</strong> = legacy; TLSv1.3 is current.</li>
+<li>Clean cutover: the modern value first seen on or after the deprecated value&rsquo;s last sighting (same day counts). Mixed fleet: the old value kept appearing; those partners stay on the outreach list.</li>
+<li>Outbound leg: the Public Key is the partner server&rsquo;s host key. Inbound leg: the partner client&rsquo;s authentication key.</li>
+<li>A leg counts for every partner of its subscription plus its remote host&rsquo;s partner.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Every value in use: <a href="security-params.html">Security Parameters</a>.</li>
 </ul>
 </main>
 </body>

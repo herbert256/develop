@@ -14,7 +14,7 @@
 # leg's PROTOCOL as the second element of every line ("Protocol on":
 # "Outbound / ssh / Processed"). report.js shows one at a time behind a
 # button row (the TABLE switch= modifier). Both list the 5 most recent Files
-# of each pattern, each a LINK to that File's own page (docs/<env>/files/
+# of each pattern, each a LINK to that File's own page (docs/files/
 # <coreid>.html — the error-page layout for any outcome, written by
 # bin/transfer/reports/failed.sh from the sidecar this report leaves behind:
 # $REPORTS_DIR/_patterns-files.tsv, one CoreId per line).
@@ -93,7 +93,7 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k13,13 "$PARSED" | awk -F'\t
             split(k, a, SUBSEP); v = a[1]; p = a[2]
             rows = split(p, tmp, US)
             # the last-N cell: one LINK line per File ("href|label", the clinks
-            # kind) to its page under docs/<env>/files/, most recent first
+            # kind) to its page under docs/files/, most recent first
             cc = ""; n = split(top[k], arr, US)
             for (i = 1; i <= n; i++) { split(arr[i], f, SUBSEP); cc = cc (cc ? US : "") "../files/" f[3] ".html|" f[2] "  " f[3]
                 if (v == "A" && !(f[3] in linked)) { linked[f[3]] = 1; print "L\t" f[3] } }

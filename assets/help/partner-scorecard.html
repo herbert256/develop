@@ -17,23 +17,22 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Partner scorecard</h1>
 <h2>What it shows</h2>
-<p>One composite 0&ndash;100 health score per partner relation with at least <strong>100 Files</strong>, worst first, every ingredient in its own column so a low score is checkable per row.</p>
-<p>Concentration boxes show how heavily the estate leans on a few organisations.</p>
+<ul>
+<li>A 0&ndash;100 health score per partner with at least 100 Files, worst first, every ingredient in its own column.</li>
+<li>Boxes: partners seen and scored, the <strong>Top-1</strong> / <strong>Top-3</strong> / <strong>Top-10</strong> share of Files and the <strong>Gini coefficient</strong> &mdash; how heavily the estate leans on a few partners.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Score</strong>, <strong>Files</strong>, <strong>Error %</strong> (Failed or Expired), <strong>Volume</strong>, <strong>Last seen</strong>.</li>
+<li><strong>Trend (14d)</strong> &mdash; the last 14 days&rsquo; Error % against the 14 before: &#9650; worse, &#9660; better (over 1 point), &#8213; steady or too little data.</li>
+<li><strong>Avg pickup wait</strong> &mdash; UC2 Files only (UC2-named, or a flow derived as UC2). <strong>Weakest security</strong> &mdash; ssh-rsa and/or TLSv1.2, with its share of the legs.</li>
+<li><strong>Hosts</strong> &mdash; distinct endpoints we dial. <strong>Direction</strong> &mdash; in, out or two-way, by connection side.</li>
+</ul>
 <h2>Rules</h2>
 <ul>
-<li>The score starts at <strong>100 minus the Error %</strong> (Failed or Expired Files &mdash; the heaviest weight by far).</li>
-<li>Minus <strong>0.5 points per percentage point</strong> the last-14-days Error % worsened against the 14 days before (capped at 15; improving never adds).</li>
-<li>Minus <strong>5 points</strong> when the average UC2 partner pickup wait exceeds 24 h.</li>
-<li>Minus up to <strong>5 points</strong>, scaled by the share of transfer legs on a weak security parameter (ssh-rsa host key or TLSv1.2).</li>
-<li>Minus <strong>3 points</strong> when everything we send the partner rides a single outbound endpoint.</li>
-<li>Minus <strong>10 points</strong> when the partner has been quiet for 14+ days.</li>
-<li>All measured against the newest log day, then clamped to 0&ndash;100.</li>
-<li>Partner attribution is the site-wide UNION rule (the subscription&rsquo;s configured partners unioned with the parse attribution).</li>
-<li>The concentration boxes (top-1/3/10 share, Gini) cover all seen partners; the scorecard only those with at least 100 Files. A top-N share = the distinct Files touching one of the N busiest partners, over every File with a partner (a File of two partners counts once).</li>
-</ul>
-<h2>Tips</h2>
-<ul>
-<li>The biggest byte mover is not the biggest file counter: the <a href="../transfer/entities/partner-all.html">Entities &rsaquo; Partners</a> view sorted on Volume or on Files gives both rankings, for any date range.</li>
+<li>Score = 100 &minus; Error %, minus 0.5 per point the trend worsened (max 15), 5 when the pickup wait averages over 24 h, up to 5 for the weak-security share, 3 for a single endpoint, 10 when quiet 14+ days; clamped 0&ndash;100.</li>
+<li>Row tint: score under 40 red, under 70 orange, else green.</li>
+<li>A File counts for its own partner and every configured partner of its subscription. The share boxes cover all seen partners, each File once.</li>
 </ul>
 </main>
 </body>

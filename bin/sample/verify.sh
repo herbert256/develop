@@ -23,8 +23,10 @@ check() {   # check <condition-result 0|1> <label>
 }
 # rows <file> -> data row count (0 when absent)
 rows() { [ -f "$1" ] && wc -l < "$1" | tr -d ' ' || echo 0; }
-# rpt_rows <rpt> -> ROW-directive count
-rpt_rows() { [ -f "$1" ] && grep -c $'^ROW\t' "$1" || echo 0; }
+# rpt_rows <rpt> -> ROW-directive count (0 when absent). NOT `grep -c … ||
+# echo 0`: grep -c prints 0 AND exits 1 on no match, so that printed "0\n0"
+# and garbled every numeric test downstream
+rpt_rows() { local c=""; [ -f "$1" ] && c=$(grep -c $'^ROW\t' "$1"); echo "${c:-0}"; }
 exp() {   # exp <key> -> expected figure (0 when absent)
     awk -F'\t' -v k="$1" '$1 == k { print $2; f = 1 } END { if (!f) print 0 }' "input/.sample/_expected.tsv"
 }
@@ -79,9 +81,9 @@ check $([ -f "data/dashboards/reports/monitor.rpt" ] && echo 0 || echo 1) "monit
 
 # BOTH config shapes in the one export (2026-09-11): the classic folder
 # parameters and the HYBRID participant parameters
-n=$(command grep -c 'source_folder_monitoring_scan_dir' input/flow-manager/subscriptions.json 2>/dev/null || echo 0)
+n=$(command grep -c 'source_folder_monitoring_scan_dir' input/flow-manager/subscriptions.json 2>/dev/null || true)
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "subscriptions.json carries no classic (scan_dir) subscription"
-n=$(command grep -c '_hybrid_participant' input/flow-manager/subscriptions.json 2>/dev/null || echo 0)
+n=$(command grep -c '_hybrid_participant' input/flow-manager/subscriptions.json 2>/dev/null || true)
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "subscriptions.json carries no HYBRID subscription"
 
 # the Logical entity derivation (bin/flow-manager.sh): every configured
@@ -128,13 +130,13 @@ check $([ "${n:-0}" -eq 1 ] && echo 0 || echo 1) "BL10042 is not an entity in ba
 # Incoming carries every column): the rows carry the login tints, and the
 # retired page is gone
 check $([ ! -f "docs/analyses/fe-overview.html" ] && echo 0 || echo 1) "docs/analyses/fe-overview.html still published (retired 2026-09-29)"
-n=$(command grep -c '@data:res=' "data/analyses/reports/fe-overview.rpt" 2>/dev/null || echo 0)
+n=$(command grep -c '@data:res=' "data/analyses/reports/fe-overview.rpt" 2>/dev/null || true)
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "fe-overview.rpt has 0 tinted rows"
 # Partners - Incoming (2026-09-13): the merged page exists and carries every FE overview row plus the funnel cell drills
 check $([ -f "docs/analyses/partners-in.html" ] && echo 0 || echo 1) "docs/analyses/partners-in.html missing"
-n=$(command grep -c '^ROW' "data/analyses/reports/partners-in.rpt" 2>/dev/null || echo 0); m=$(command grep -c '^ROW' "data/analyses/reports/fe-overview.rpt" 2>/dev/null || echo 1)
+n=$(command grep -c '^ROW' "data/analyses/reports/partners-in.rpt" 2>/dev/null || true); m=$(command grep -c '^ROW' "data/analyses/reports/fe-overview.rpt" 2>/dev/null || true)
 check $([ "${n:-0}" -ge "${m:-1}" ] && [ "${m:-0}" -gt 0 ] && echo 0 || echo 1) "partners-in.rpt has $n row(s), fewer than the FE overview ($m)"
-n=$(command grep -c '@data:drill-cell-12=' "data/analyses/reports/partners-in.rpt" 2>/dev/null || echo 0)
+n=$(command grep -c '@data:drill-cell-12=' "data/analyses/reports/partners-in.rpt" 2>/dev/null || true)
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "partners-in.rpt carries no re-keyed funnel drill (Allowed at column 12)"
 # Partners - Outgoing retired 2026-09-29 (= Entities › Remote Hosts column for column)
 check $([ ! -f "docs/analyses/hosts-overview.html" ] && echo 0 || echo 1) "docs/analyses/hosts-overview.html still published (retired 2026-09-29)"
@@ -204,11 +206,13 @@ check $([ "$st" = "Nothing" ] && echo 0 || echo 1) "UC2_CD_PARCELX_BLUTH uc2-sta
 # alone (FE624205 stays empty), and the 8-flow GLOBEX account's count
 # lands once on FE243615 (never the x8 per-subscription repeat)
 R="data/analyses/reports/fe-overview.rpt"; SC="data/server/reports/uc2-pickups.tsv"
-# the Logon problems column (2026-09-04): the sample plants Disallowed
-# lines for configured logins, so at least one row carries a problem
-# cell whose lines link the Incoming page
-pc=$(awk -F'\t' '$1=="HEAD" { for (i=2;i<=NF;i++) if ($i=="Logon problems") c=i } $1=="ROW" && c && index($c, "logons-incoming.html?axway_row=") { n++ } END { print n+0 }' "$R" 2>/dev/null)
-check $([ "${pc:-0}" -ge 1 ] && echo 0 || echo 1) "Partners - Incoming has $pc row(s) with a Logon problems cell, expected at least 1 (the Disallowed logins)"
+# the sample plants Disallowed lines for configured logins, so at least one
+# Partners - Incoming row carries a Disallowed count (the funnel column; the
+# FE overview's summed "Logon problems" column and its _logon-problems.tsv
+# sidecar went 2026-09-29)
+pc=$(awk -F'\t' '$1=="HEAD" { for (i=2;i<=NF;i++) if ($i=="Disallowed") c=i } $1=="ROW" && c { v=$c; sub(/^@\{[^}]*\}/, "", v); if (v+0 > 0) n++ } END { print n+0 }' "data/analyses/reports/partners-in.rpt" 2>/dev/null)
+check $([ "${pc:-0}" -ge 1 ] && echo 0 || echo 1) "Partners - Incoming has $pc row(s) with a Disallowed count, expected at least 1 (the planted Disallowed logins)"
+check $([ ! -e "data/server/reports/_logon-problems.tsv" ] && echo 0 || echo 1) "the retired data/server/reports/_logon-problems.tsv still exists"
 pk=$(awk -F'\t' '$1=="HEAD" { for (i = 2; i <= NF; i++) if ($i == "Pickups") c = i } $1=="ROW" && $2=="FE186976" { print $c+0; exit }' "$R" 2>/dev/null)
 sp=$(awk -F'\t' '$1=="UC2_CD_PARCEL_BLUTH" { print $5+0; exit }' "$SC" 2>/dev/null)
 check $([ "${pk:-0}" -gt 0 ] && [ "$pk" = "${sp:-x}" ] && echo 0 || echo 1) "fe-overview FE186976 pickups '${pk:-absent}' != sidecar UC2_CD_PARCEL_BLUTH '${sp:-absent}'"
@@ -254,7 +258,7 @@ if [ "$(exp sshprobe)" -gt 0 ]; then
     check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "$n probe CoreId(s) (Outbound ssh, size 0, Application none) survived in _transfers.tsv"
     n=$(awk -F'\t' '$2=="Outbound" && $10=="ssh" && ($9+0)==0 && tolower($25)=="none" && NF>=25 { n++ } END { print n+0 }' "$T")
     check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "$n probe record(s) survived in _transfers.tsv"
-    n=$(command grep -c ',"none",' "data/transfer/_skipped.csv" 2>/dev/null || echo 0)
+    n=$(command grep -c ',"none",' "data/transfer/_skipped.csv" 2>/dev/null || true)
     check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "_skipped.csv holds no Application-none record (the planted probes were not set aside)"
     n=$(awk -F'\t' '$1=="ROW" && $3=="empty ssh probe" { n++ } END { print n+0 }' "data/transfer/reports/skipped.rpt" 2>/dev/null)
     check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "skipped.rpt lists no 'empty ssh probe' row"
@@ -420,7 +424,8 @@ check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n page(s) render an EMPTY group
 
 # the Top view's six column groups (2026-09-12, user request): Files WITHOUT
 # Recovered, then the Recovered group (Automatic · Manual) and the Resubmit
-# group (Ok · Failed) between Files and Transfers — Manual = a recovered
+# group (Ok · Error — the UI Error/OK terms; "Failed" until 2026-09-29)
+# between Files and Transfers — Manual = a recovered
 # File with a Resubmitted=true leg (col 22), Resubmit = every File with such
 # a leg, Ok/Failed by outcome; every figure on the File's START day. The
 # totals must equal an independent recount of the two caches, all four new
@@ -428,7 +433,7 @@ check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n page(s) render an EMPTY group
 # Manual, ROW fields 9-10) must still equal the recovered total.
 TV="data/transfer/reports/topview.rpt"
 h=$(awk -F'\t' '$1 == "HEAD" { print; exit }' "$TV" 2>/dev/null)
-check $([ "$h" = $'HEAD\tDate\tFirst\tLast\tCount\tOk\tError\tError %\tAutomatic\tManual\tOk\tFailed\tCount\tOk\tError\tError %\tProcessed\tFailed\tWaiting\tExpired\tVolume' ] && echo 0 || echo 1) "topview.rpt HEAD is '$h' — expected the seven groups Date|Files|Recovered|Resubmit|Transfers|State|Volume"
+check $([ "$h" = $'HEAD\tDate\tFirst\tLast\tCount\tOk\tError\tError %\tAutomatic\tManual\tOk\tError\tCount\tOk\tError\tError %\tProcessed\tFailed\tWaiting\tExpired\tVolume' ] && echo 0 || echo 1) "topview.rpt HEAD is '$h' — expected the seven groups Date|Files|Recovered|Resubmit|Transfers|State|Volume"
 # the TOTAL cells carry an @{class=…} prefix; a blank amber cell is 0
 read -r rva rvm rso rsf <<< "$(awk -F'\t' '$1 == "TOTAL" { a = $9; b = $10; c = $11; e = $12; sub(/^@\{[^}]*\}/, "", a); sub(/^@\{[^}]*\}/, "", b); sub(/^@\{[^}]*\}/, "", c); sub(/^@\{[^}]*\}/, "", e); print a + 0, b + 0, c + 0, e + 0; exit }' "$TV" 2>/dev/null)"
 # independent recounts (the topview rule: every File with a start day)
@@ -499,56 +504,60 @@ n=$(grep -l '>Latest OK<' docs/details/subscriptions/*.html 2>/dev/null | wc -l 
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "no sample subscription page carries a Features 'Latest OK' row"
 
 # the search pages live under docs/search/ (2026-09-12, user request):
-# search.html + search-data.js and the seven file-search pages + payloads —
-# nothing of them left at the docs root, the pages load their engine and
-# payload from the right places, and the top bar / sitemap link there
-for p in search.html search-data.js file-search-24-hours.html file-search-24-hours-data.js file-search-month.html file-search-month-data.js file-search-older.html file-search-older-data.js; do
+# search.html + search-data.js and all-files.html — nothing of them left at
+# the docs root, and the top bar / sitemap / finder link there
+for p in search.html search-data.js all-files.html; do
     check $([ -f "docs/search/$p" ] && echo 0 || echo 1) "docs/search/$p is missing"
     check $([ ! -e "docs/$p" ] && echo 0 || echo 1) "docs/$p still sits at the docs root"
 done
-check $([ "$(ls docs/search/file-search-*.html 2>/dev/null | wc -l | tr -d ' ')" = 7 ] && echo 0 || echo 1) "docs/search/ has $(ls docs/search/file-search-*.html 2>/dev/null | wc -l | tr -d ' ') file-search pages, expected 7 (the sample spans 68 data days: every window holds files)"
-check $([ "$(grep -c '<script src="../assets/file-search.js?v=' docs/search/file-search-24-hours.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "search/file-search-24-hours.html does not load ../assets/file-search.js"
-check $([ "$(grep -c '<script src="file-search-24-hours-data.js?v=' docs/search/file-search-24-hours.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "search/file-search-24-hours.html does not load its sibling payload"
+# the seven File search window pages went 2026-09-29 (user request): the
+# All files search is the one file search
+check $([ -z "$(ls docs/search/file-search-* docs/assets/file-search.js docs/help/file-search.html 2>/dev/null)" ] && echo 0 || echo 1) "the File search pages (search/file-search-*, assets/file-search.js, help/file-search.html) are still published"
 check $([ "$(grep -c 'href="../search/search.html"' docs/tools/sitemap.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "tools/sitemap.html does not link ../search/search.html"
-check $([ "$(grep -c 'search/file-search-24-hours.html' docs/tools/report-finder.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "tools/report-finder.html does not link search/file-search-24-hours.html"
+check $([ "$(grep -c 'search/all-files.html' docs/tools/report-finder.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "tools/report-finder.html does not link search/all-files.html"
 check $([ "$(grep -c 'href="../search/search.html"' docs/help/index.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "the baked top bar does not link ../search/search.html"
 check $([ "$(grep -c 'href="\.\./details/' docs/search/search-data.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "search/search-data.js rows do not link ../details/ (one level below the root)"
 
-# the Latest files pages ship their rows as DATA (2026-09-27, user request):
-# docs/latest/<slug>.js beside each page — registered on AXWAY_LATEST, loaded
-# before report.js, the page's table stamped data-latest and left without
-# rows
-nl=0; nj=0; nd=0; nb=0
-for f in docs/latest/*.html; do
+# the SUBSCRIPTION FILES TABLE (2026-09-29, user request): docs/latest/ and
+# the "Latest 1000 files" Features row are gone; every subscription page
+# with Files carries the empty browser-built Files table (data-subfiles =
+# its slug, data-v = the build id), loads assets/sub-files.js, and has its
+# day list docs/search/all/s/<slug>.js whose Files add up to the page's own
+# "<strong>N</strong> Files" count; every day it names has its shard
+check $([ ! -e docs/latest ] && echo 0 || echo 1) "docs/latest/ is still published (the Latest files pages went 2026-09-29)"
+check $([ -z "$(grep -l 'Latest 1000 files' docs/details/subscriptions/*.html 2>/dev/null)" ] && echo 0 || echo 1) "a subscription page still carries the Latest 1000 files row"
+check $([ -f docs/assets/sub-files.js ] && echo 0 || echo 1) "docs/assets/sub-files.js is missing"
+nsp=0; nst=0; nss=0; nsl=0; nsc=0; nsd=0
+for f in docs/details/subscriptions/*.html; do
     [ -f "$f" ] || continue
-    b=${f##*/}; b=${b%.html}; [ "$b" = search ] && continue
-    nl=$((nl + 1))
-    [ -f "docs/latest/$b.js" ] && grep -q 'window.AXWAY_LATEST' "docs/latest/$b.js" && grep -q '^<tr' "docs/latest/$b.js" && nj=$((nj + 1))
-    grep -q "<script src=\"$b.js?v=" "$f" && grep -q "data-latest=\"$b\"" "$f" && nd=$((nd + 1))
-    grep -q '^<tr[^>]*><td' "$f" && nb=$((nb + 1))
+    b=${f##*/}; b=${b%.html}
+    pc=$(grep -o '<strong>[0-9]*</strong> Files' "$f" | head -1 | tr -dc '0-9')
+    [ -n "$pc" ] && [ "$pc" -gt 0 ] || continue
+    nsp=$((nsp + 1))
+    grep -q "data-subfiles=\"$b\" data-v=\"[0-9][0-9]*\"" "$f" && nst=$((nst + 1))
+    grep -q '<script src="../../assets/sub-files.js?v=' "$f" && nss=$((nss + 1))
+    l="docs/search/all/s/$b.js"
+    [ -f "$l" ] || continue
+    nsl=$((nsl + 1))
+    lc=$(awk -F'\t' '{ sub(/^AXWAY_AFS\("[^"]*",`/, ""); sub(/`\);$/, ""); n += $2 } END { print n + 0 }' "$l")
+    [ "$lc" = "$pc" ] && nsc=$((nsc + 1))
+    miss=$(awk -F'\t' '{ sub(/^AXWAY_AFS\("[^"]*",`/, ""); print $1 }' "$l" | while read -r d; do [ -f "docs/search/all/d-$d.js" ] || echo "$d"; done)
+    [ -z "$miss" ] && nsd=$((nsd + 1))
 done
-check $([ "$nl" -gt 0 ] && echo 0 || echo 1) "docs/latest/ has no subscription pages"
-check $([ "$nj" = "$nl" ] && echo 0 || echo 1) "docs/latest/: $nj of $nl pages have a <slug>.js payload with rows"
-check $([ "$nd" = "$nl" ] && echo 0 || echo 1) "docs/latest/: $nd of $nl pages load their payload and carry data-latest"
-check $([ "$nb" = 0 ] && echo 0 || echo 1) "docs/latest/: $nb page(s) still bake their rows"
-check $([ ! -f docs/latest/search.html ] && echo 0 || echo 1) "docs/latest/search.html still published (the Latest files search went 2026-09-29)"
+check $([ "$nsp" -gt 0 ] && echo 0 || echo 1) "no subscription page with Files found"
+check $([ "$nst" = "$nsp" ] && echo 0 || echo 1) "Files table: $nst of $nsp subscription pages with Files carry data-subfiles + data-v"
+check $([ "$nss" = "$nsp" ] && echo 0 || echo 1) "Files table: $nss of $nsp subscription pages load assets/sub-files.js"
+check $([ "$nsl" = "$nsp" ] && echo 0 || echo 1) "Files table: $nsl of $nsp subscription pages have a search/all/s/<slug>.js day list"
+check $([ "$nsc" = "$nsl" ] && echo 0 || echo 1) "Files table: $nsc of $nsl day lists add up to their page's File count"
+check $([ "$nsd" = "$nsl" ] && echo 0 || echo 1) "Files table: $nsd of $nsl day lists name only days that have a shard"
+check $([ -z "$(grep -l 'data-subfiles=' docs/details/accounts/*.html docs/details/partners/*.html 2>/dev/null)" ] && echo 0 || echo 1) "a non-subscription detail page carries the subscription Files table"
 # the top bar's Files link opens the ALL FILES search (2026-09-28, user
 # request; the Latest files search until then) — checked on the BAKED bar
 # (help pages); report.js buildTopbar draws the same link
 check $(grep -q '<a class="dashlink" href="../search/all-files.html">Files</a>' docs/help/index.html 2>/dev/null && echo 0 || echo 1) "the baked top bar's Files link does not open ../search/all-files.html"
-# the File search group (2026-09-27, user request): the seven window pages
-# and search/all-files.html share a FIRST tab row — Implementation 1 | 2
-# (the latest-1000 implementation went 2026-09-29) — right after the <h1>,
-# the page's own one active
-I1='Implementation 1, period'; I2='Implementation 2, all files'
-H1='../search/file-search-24-hours.html'; H2='../search/all-files.html'
-n=0
-for f in docs/search/file-search-*.html; do
-    [ -f "$f" ] || continue
-    awk '/<\/h1>/ { getline; print; exit }' "$f" | grep -qF "<span class=\"tab active\">$I1</span><a class=\"tab\" href=\"$H2\">$I2</a>" || n=$((n + 1))
-done
-check $([ "$n" = 0 ] && echo 0 || echo 1) "$n search/file-search-*.html page(s) lack the Implementation row (1 active) right after the <h1>"
-check $(awk '/<\/h1>/ { getline; print; exit }' docs/search/all-files.html 2>/dev/null | grep -qF "<a class=\"tab\" href=\"$H1\">$I1</a><span class=\"tab active\">$I2</span>" && echo 0 || echo 1) "search/all-files.html lacks the Implementation row (2 active) right after the <h1>"
+# the Implementation 1 | 2 tab row went with the File search pages
+# (2026-09-29): the all-files page is the only implementation left
+check $(grep -q 'Implementation 1, period' docs/search/all-files.html 2>/dev/null && echo 1 || echo 0) "search/all-files.html still carries the Implementation tab row"
 
 # the ALL FILES SEARCH (2026-09-27, user request): the page loads its manifest
 # and engine, has the shared From/To (rangehook), and the day shards hold
@@ -580,7 +589,7 @@ check $([ "$(grep -c 'href="\.\./assets/style.css"' docs/tools/build.html 2>/dev
 check $([ "$(grep -c 'href="\.\./docs/assets/style.css"' build/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "build/index.html (the local copy) does not load ../docs/assets/style.css"
 check $([ "$(grep -c 'tools/report-finder.html\|tools/sitemap.html' docs/assets/report.js 2>/dev/null)" -ge 3 ] && echo 0 || echo 1) "report.js does not point the top bar and the palette at tools/"
 hdr=$(grep -o '<th[^>]*>[^<]*</th>' "docs/transfer/topview.html" 2>/dev/null | sed 's/<[^>]*>//g' | tr '\n' '|')
-check $([ "$hdr" = "|Files|Recovered|Resubmit|Transfers|State||Date|First|Last|Count|Ok|Error|Error %|Automatic|Manual|Ok|Failed|Count|Ok|Error|Error %|Processed|Failed|Waiting|Expired|Volume|" ] && echo 0 || echo 1) "transfer/topview.html headers are '$hdr'"
+check $([ "$hdr" = "|Files|Recovered|Resubmit|Transfers|State||Date|First|Last|Count|Ok|Error|Error %|Automatic|Manual|Ok|Error|Count|Ok|Error|Error %|Processed|Failed|Waiting|Expired|Volume|" ] && echo 0 || echo 1) "transfer/topview.html headers are '$hdr'"
 n=$(grep -c '<table' docs/transfer/topview.html 2>/dev/null || true)
 check $([ "${n:-0}" = 1 ] && echo 0 || echo 1) "transfer/topview.html has ${n:-0} table(s), expected exactly 1 (the six groups share one per-day table)"
 
@@ -669,17 +678,13 @@ check $([ "$(grep -c 'function setupCellLinks' docs/assets/report.js 2>/dev/null
 # the Activity over Time tables carry ONE Files column — the delivered
 # count — and no Error / OK pair (2026-09-13, user request): no green/red
 # cells on the four activity pages, the Per day Files total = the OK count
-# of the caches, and the dashboards still get their per-day series from the
-# day.rpt META day lines (files + failed, gap days included)
+# of the caches
 for h in $(awk -F'\t' '$1 == "HEAD" { print $0 }' data/transfer/reports/activity.rpt 2>/dev/null | grep -c $'\tOK\t\|\tOK$'); do
     check $([ "$h" = 0 ] && echo 0 || echo 1) "activity.rpt still has $h table header(s) with an OK column"
 done
 check $([ ! -f docs/transfer/activity-per-day.html ] && echo 0 || echo 1) "docs/transfer/activity-per-day.html still published (its table = the Top view, 2026-09-29)"
 n=$(grep -c 'class="num failed"\|class="num processed"\|numfailed\|numprocessed' docs/transfer/activity-per-week.html docs/transfer/activity-per-hour.html docs/transfer/activity-per-weekday.html 2>/dev/null | awk -F: '{ s += $2 } END { print s + 0 }')
 check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n green/red (OK/Error) cells left on the four Activity over Time pages"
-m=$(awk -F'\t' '$1 == "META" && $2 == "day" { n++; if ($4 + 0 < $5 + 0) bad++ } END { print n + 0, bad + 0 }' data/transfer/reports/day.rpt 2>/dev/null)
-check $([ "${m%% *}" -gt 0 ] && [ "${m##* }" = 0 ] && echo 0 || echo 1) "day.rpt META day lines: ${m:-none} (count, rows with failed > files)"
-check $([ "$(grep -c '\$1=="META" && \$2=="day"' bin/dashboards/lib.sh 2>/dev/null)" = 2 ] && echo 0 || echo 1) "dashboards/lib.sh does not read the per-day series from the META day lines"
 
 # the Patterns group tables carry ONE Files column — the delivered count —
 # and no Error / OK (Delivered / Errored) pair (2026-09-13, user request):
@@ -852,8 +857,10 @@ n=$(frt data/analyses/reports/failing-reasons.rpt); en=$(rpt_rows data/transfer/
 check $([ "${n:-x}" = "${en:-y}" ] && [ "${en:-0}" -gt 0 ] && echo 0 || echo 1) "failing-reasons counts ${n:-?}, failed-files.rpt lists ${en:-?}"
 t=$(grep -m1 $'^TABLE\t' data/analyses/reports/failing-reasons.rpt 2>/dev/null)
 check $(printf '%s' "$t" | grep -q 'sort=2:-1' && ! printf '%s' "$t" | grep -q 'totaltop' && echo 0 || echo 1) "failing-reasons main table lacks the Last-descending default sort or still pins the total on top (TABLE: $t)"
-# 2026-09-15 (user request): no row for a reason with nothing counted
-z=$(awk -F'\t' '$1 == "ROW" && $3 == "" { n++ } END { print n + 0 }' data/analyses/reports/failing-reasons.rpt 2>/dev/null)
+# 2026-09-15 (user request): no row for a reason with nothing counted (the
+# Count cell carries its @{href=…,class=num} prefix — strip it, then an empty
+# or zero count is the failure)
+z=$(awk -F'\t' '$1 == "ROW" { c = $3; sub(/^@\{[^}]*\}/, "", c); if (c == "" || c + 0 == 0) n++ } END { print n + 0 }' data/analyses/reports/failing-reasons.rpt 2>/dev/null)
 check $([ "${z:-1}" = 0 ] && echo 0 || echo 1) "failing-reasons main table still lists ${z:-?} reason(s) with no count"
 # the per-reason drill pages went 2026-09-29: a reason row opens the Failed
 # files page searched on it (a quoted, whole-cell search)
@@ -1042,10 +1049,17 @@ check $([ "${n:-0}" = 3 ] && [ "${h:-0}" = 2 ] && echo 0 || echo 1) "transfer/pu
 # Entity coverage: ONE page per entity with the verdicts as columns; the
 # Regressed count equals Covered once minus Covered (Current), OK transfers
 # is never above Current (OK transfers ⊆ Current ⊆ Once)
+# (a missing .rpt or a missing STAT label FAILS — the all-zero default used
+# to satisfy every relation vacuously)
 cov=$(awk -F'\t' '$1 == "TABLE" { t = $2 } $1 == "STAT" && t == "Accounts" { v = $3; sub(/ .*/, "", v); S[$4] = v }
-    END { print S["Covered (Current)"] + 0, S["Covered once"] + 0, S["OK transfers"] + 0, S["Regressed"] + 0 }' data/transfer/reports/entity-coverage.rpt 2>/dev/null)
-read -r cc co ck cx <<< "${cov:-0 0 0 0}"
-check $([ "$cx" -eq $(( co - cc )) ] && [ "$ck" -le "$cc" ] && [ "$cc" -le "$co" ] && echo 0 || echo 1) "entity-coverage Accounts: Current $cc / Once $co / OK $ck / Regressed $cx break OK <= Current <= Once or Regressed = Once - Current"
+    END { if (!("Covered (Current)" in S) || !("Covered once" in S) || !("OK transfers" in S) || !("Regressed" in S)) { print "missing"; exit }
+          print S["Covered (Current)"] + 0, S["Covered once"] + 0, S["OK transfers"] + 0, S["Regressed"] + 0 }' data/transfer/reports/entity-coverage.rpt 2>/dev/null)
+if [ -z "$cov" ] || [ "$cov" = missing ]; then
+    fail "entity-coverage.rpt missing, or its Accounts table lacks a Covered (Current) / Covered once / OK transfers / Regressed STAT box"
+else
+    read -r cc co ck cx <<< "$cov"
+    check $([ "$cx" -eq $(( co - cc )) ] && [ "$ck" -le "$cc" ] && [ "$cc" -le "$co" ] && echo 0 || echo 1) "entity-coverage Accounts: Current $cc / Once $co / OK $ck / Regressed $cx break OK <= Current <= Once or Regressed = Once - Current"
+fi
 # the server Top view carries the per-component table (append_rpt_tables) —
 # no reader may take its TM/PESITD/SSHD rows for days: every day page is
 # date-named, and the dashboard's server record total equals the per-day sum
@@ -1054,6 +1068,51 @@ check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "docs/day/ holds ${n:-?} page(s) 
 # Blast radius: the Partner redundancy table went; Sole endpoint for names partners
 n=$(grep -c '^TABLE\tPartner redundancy' data/analyses/reports/blast-radius.rpt 2>/dev/null)
 check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "blast-radius.rpt still carries the Partner redundancy table (retired 2026-09-29)"
+
+# ---- the 2026-09-29 site-audit fixes -----------------------------------------
+# Failed Subscriptions: the Environment letter column went — Subscription leads
+fh=$(grep -o '<tr><th[^>]*>[^<]*</th>' docs/analyses/failed.html 2>/dev/null | head -1 | sed 's/<[^>]*>//g')
+n=$(grep -c '<th[^>]*>Environment</th>' docs/analyses/failed.html 2>/dev/null || true)
+check $([ "$fh" = "Subscription" ] && [ "${n:-0}" = 0 ] && echo 0 || echo 1) "analyses/failed.html header starts with '${fh:-absent}' / carries ${n:-?} Environment column(s), expected Subscription first and no Environment"
+# Entities › Remote Hosts: the group banner follows the columns — a Transfers
+# band, and no State band (the sample hosts carry no Waiting / Expired)
+n=$(grep -c 'class="gband[^"]*">Transfers</th>' docs/transfer/entities/remote-host-all.html 2>/dev/null || true)
+m=$(grep -c 'class="gband[^"]*">State</th>' docs/transfer/entities/remote-host-all.html 2>/dev/null || true)
+check $([ "${n:-0}" -ge 1 ] && [ "${m:-1}" = 0 ] && echo 0 || echo 1) "entities/remote-host-all.html group banner: ${n:-0} Transfers band(s), ${m:-?} State band(s), expected Transfers and no State"
+# the Subscriptions page's all-time counts sidecar (month-stats.sh) and its count cells
+check $([ -s data/transfer/reports/_alltime.tsv ] && echo 0 || echo 1) "data/transfer/reports/_alltime.tsv missing or empty"
+n=$(grep -oE '<td class="num[^"]*">(<a [^>]*>)?[1-9][0-9]*(</a>)?</td>' docs/analyses/subscriptions.html 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "analyses/subscriptions.html: every count cell is blank"
+# Connections split In / Out (the per-day volume tab)
+n=$(grep -c '<th[^>]*>In</th>' docs/server/connections-per-day.html 2>/dev/null || true)
+m=$(grep -c '<th[^>]*>Out</th>' docs/server/connections-per-day.html 2>/dev/null || true)
+check $([ "${n:-0}" -ge 1 ] && [ "${m:-0}" -ge 1 ] && echo 0 || echo 1) "server/connections-per-day.html header lacks the In / Out columns"
+# the sample plants INBOUND connection lines (2026-09-29: gen-events.awk
+# s_authok names the partner's login on its connection line) — without them
+# the In side of Connections and the whitelist audit's inbound contacts go
+# untested
+check $([ -s data/server/reports/_inbound-addr.tsv ] && echo 0 || echo 1) "the sample plants no inbound connection (data/server/reports/_inbound-addr.tsv is empty)"
+n=$(awk '/<tr class="total"/ { n = split($0, C, "<td"); if (n >= 3) { c = C[3]; sub(/^[^>]*>/, "", c); sub(/<.*/, "", c); print c } exit }' docs/server/connections-per-day.html 2>/dev/null)
+check $([ "${n:-0}" -gt 0 ] 2>/dev/null && echo 0 || echo 1) "server/connections-per-day.html: the TOTAL row's In cell is empty ('${n:-}')"
+# an overlapping-rows TOTAL ships its own distinct per-day buckets
+n=$(grep -c '<tr class="total"[^>]* data-buckets="[^"]' docs/transfer/entities/bl-all.html 2>/dev/null || true)
+check $([ "${n:-0}" -ge 1 ] && echo 0 || echo 1) "entities/bl-all.html: no TOTAL row carries data-buckets"
+# the help pages: the home opens help/home.html, Failed files its own page
+check $(grep -q 'data-help="home"' docs/index.html 2>/dev/null && echo 0 || echo 1) "docs/index.html does not link help home (data-help=\"home\")"
+check $(grep -q 'data-help="failed-files"' docs/transfer/failed-files.html 2>/dev/null && echo 0 || echo 1) "transfer/failed-files.html does not carry data-help=\"failed-files\""
+# a report page's title is its Reports-menu label: the two Top views are
+# "Transfer top view" / "Server top view", never a bare "Top view"
+n=$(grep -rhoE --include='*.html' '<h1[^>]*>[^<]*' docs 2>/dev/null | sed 's/<h1[^>]*>//; s/[[:space:]]*$//' | grep -cx 'Top view' || true)
+check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "$n page(s) still titled a bare \"Top view\" (<h1>)"
+# retired 2026-09-29: the Skipped sub-pages (the main skipped.html stays), the
+# Slowest subscriptions, Failure rate, Volume and Missing cronjobs pages and
+# the Failed Subscriptions every-File views
+check $([ -f docs/transfer/skipped.html ] && echo 0 || echo 1) "docs/transfer/skipped.html missing"
+for g in 'transfer/skipped-*.html' 'transfer/duration-slowest*.html' 'transfer/failure-rate*.html' 'transfer/volume*.html' \
+         'transfer/missing-cronjobs*.html' 'analyses/missing-cronjobs*.html' 'analyses/failed-all-*.html'; do
+    n=$(ls docs/$g 2>/dev/null | wc -l | tr -d ' ')
+    check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "docs/$g: $n retired page(s) still published (retired 2026-09-29)"
+done
 
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2

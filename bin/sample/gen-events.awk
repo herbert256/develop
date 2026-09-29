@@ -119,11 +119,19 @@ function inicap() {
 # ---- server message helpers (wording == the report matchers) ---------------
 function s_authok(abs, sid, addr) {
     S(abs, "I", "TM", sid, "[Ssh Default] User with login name \"" LOGIN "\", associated with account \"" ACCT "@" LOGIN "\", successfully authenticated over SSH by local authentication agent. Remote address: " addr ". Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac-sha2-256; Public Key: ssh-rsa.")
+    # the partner's INBOUND connection line (2026-09-29): a connection line
+    # that NAMES a login is a partner connecting in (inbound-connections.sh,
+    # the Connections In columns + _inbound-addr.tsv); SecureTransport's own
+    # connections out log login name "" (s_initconn). Every s_authok caller
+    # is a partner session (UC2 collect, UC4 upload, the empty visits, the
+    # bluelogon evidence). Same session and address as the authentication
+    # and NO PRNG draw, so no other line of the flow-day moves.
+    S(abs + 40, "I", "TM", sid, "User with login name \"" LOGIN "\", associated with account \"" ACCT "@" LOGIN "\", had initiated a connection over " toupper(PROTO) ". Remote address: " addr ".")
 }
 function s_allowed(abs, sid, addr) {
     S(abs, "I", "TM", sid, "[Ssh Default] Allowed user '" LOGIN "' from address '" addr "', corresponding account '" ACCT "@" LOGIN "' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level.")
 }
-function s_initconn(abs, sid) {
+function s_initconn(abs, sid) {   # OUR connection OUT (login name ""); the partner's IN line is in s_authok
     S(abs, "I", "TM", sid, "User with login name \"\", associated with account \"" ACCT "\", had initiated a connection over SSH. Remote address: " anyip() ".")
 }
 function s_poll(abs, sid, nfound) {

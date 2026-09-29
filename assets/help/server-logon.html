@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Logon — Cloud Reports</title>
+<title>Help: Logons — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,36 +15,28 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Logon</h1>
+<h1>Logons</h1>
 <h2>What it shows</h2>
-<p>The SSH authentication story. <strong>Incoming</strong>: one row per configured login (the SSH username), columns following the screening funnel, plus door knockers and successful logons. <strong>Outgoing</strong>: this server failing to authenticate at partners.</p>
-<h2>Incoming columns</h2>
 <ul>
-<li><strong>Allowed</strong> &mdash; source address passed the account&rsquo;s <code>AllowIP</code> whitelist.</li>
-<li><strong>Authenticated</strong> &mdash; credentials passed too; logged for every account, whitelisted or not, so it can exceed Allowed.</li>
-<li><strong>Disallowed</strong> &mdash; address rejected by the whitelist: the partner (or someone with its credentials) uses an unlisted address; the drill shows address and corresponding account.</li>
-<li><strong>No account</strong> &mdash; username on no account (a configured login the server does not know, or a misconfigured partner).</li>
-<li><strong>Bad key</strong> &mdash; presented key matches no certificate stored for the user (drill: the fingerprint).</li>
-<li><strong>Key failures</strong> &mdash; repeated-key-failure notices, the counter before a lockout.</li>
-<li><strong>Locked</strong> &mdash; the lockout itself (&ldquo;locked due to too many failed login attempts&rdquo;) and every attempt while the user &ldquo;is locked&rdquo;; repeated lockouts deserve a look.</li>
-<li><strong>Auth failed</strong> &mdash; the anonymous <code>Authentication failed using local.</code> line (no username or address: whitelist passed, no evaluable credential). Counted for the login whose Allowed precedes it within one second (an Allowed consumed by its own authentication does not compete); two candidates = neither &mdash; a floor, not a total.</li>
-<li><strong>Session errors</strong> &mdash; Error/Warning <code>[Ssh Default]</code> lines of no other column (<code>Stream read/write error. Exception message is: CMS parsing has failed</code> and kin), attributed by session id.</li>
-<li><strong>Re-screens</strong> (last) &mdash; an Allowed on an already-authenticated connection: a partner holding a connection open re-keys about hourly, logging <code>Start login process</code> + <code>Allowed user</code> again without new authentication. Not in Allowed; neither attempt nor problem; never moves the row colour.</li>
-<li><strong>First / Last logon, Logons, Pattern</strong> &mdash; the detail pages&rsquo; logon summary: successful authentications over <em>any</em> protocol (Logons can exceed the SSH-only Authenticated; <strong>Never</strong> = never authenticated). Pattern = typical spacing (<em>Continuous</em>, <em>Every 15 minutes</em>, <em>Hourly</em>, <em>Daily</em>, <em>Rarely</em>&hellip;; <em>Once</em> = one visit, the spacing between two when too few for a median &mdash; a gap over 30 minutes starts a visit; <em>Irregular</em> = fewer than six gaps in ten within half and double the typical). Full-period under a date range.</li>
+<li>SSH authentication from the server log, counted in log lines.</li>
+</ul>
+<h2>Tabs</h2>
+<ul>
+<li><strong>Incoming</strong> &mdash; every configured login through the screening funnel: <strong>Allowed</strong> (passed the whitelist), <strong>Disallowed</strong> (rejected by it), <strong>Authenticated</strong>, <strong>No account</strong>, <strong>Bad key</strong>, <strong>Key failures</strong>, <strong>Locked</strong>, <strong>Auth failed</strong>, <strong>Session errors</strong>.</li>
+<li><strong>Incoming</strong> continues with <strong>First logon</strong> / <strong>Last logon</strong> / <strong>Logons</strong> / <strong>Pattern</strong> (successful logons over any protocol, full period) and <strong>Re-screens</strong>.</li>
+<li><strong>Outgoing</strong> &mdash; this server failing to log on at a partner: <strong>Remote host</strong>, <strong>User</strong>, <strong>Failures</strong> = <strong>Password</strong> + <strong>Key</strong> + <strong>Certificate</strong> + <strong>Other</strong>, <strong>Reason (last seen)</strong>, <strong>First</strong>, <strong>Last</strong>.</li>
+<li><strong>Near misses</strong> &mdash; unknown <code>FE</code>+digits names: <strong>Login</strong>, <strong>Attempts</strong>, <strong>Source IPs</strong>, <strong>Top source</strong>, <strong>Configured login</strong> (yes = defined in Flow Manager but mapped to no account), <strong>First</strong>, <strong>Last</strong>.</li>
+<li><strong>Scanners</strong> &mdash; the 25 most-tried other names: <strong>Username</strong>, <strong>Attempts</strong>, <strong>Source IPs</strong>, <strong>IPs</strong> (the addresses), <strong>First</strong>, <strong>Last</strong>.</li>
+<li><strong>By account</strong> / <strong>By source IP</strong> &mdash; successful SSH logins, with distinct <strong>Source IPs</strong> / <strong>Accounts</strong>.</li>
+<li><strong>Certificates</strong> &mdash; <strong>Auth attempts</strong> per serial; <strong>Accounts on certificate</strong> above one (amber) = a shared key.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Source: TM lines <code>[Ssh Default] Allowed user 'U' from address 'IP'</code> (Info), <code>[Ssh Default] Disallowed user "U" from address "IP" , corresponding account "A"</code> (Warning), <code>[Ssh Default] User 'U' is locked.</code> / <code>locked due to too many failed login attempts.</code> (Info) &mdash; one per screened attempt: log lines, not transfers; the date filter re-aggregates from per-day buckets.</li>
-<li>Every line carries its SSH session id: an Allowed later than the session&rsquo;s last successful authentication is a re-screen; an uncounted Error/Warning line is a session error of the login the session authenticated as.</li>
-<li><strong>Row colour</strong> = the login&rsquo;s latest screening outcome, full-period: <strong>green</strong> = newest funnel line a successful authentication; <strong>red</strong> = anything else (a refusal, a failure, an Allowed no authentication followed &mdash; a re-screen is not one); <strong>orange</strong> = configured, never in the funnel. In a green row problem cells keep their red (Disallowed, No account, Bad key, Auth failed) or amber (Key failures, Locked).</li>
-<li><strong>Door knockers</strong> &mdash; the &ldquo;not associated with any account&rdquo; lines. <strong>Near misses</strong>: FE-namespace names (<code>FE</code> + digits), red, from a handful of addresses; <em>Configured login = yes</em> is the alarming case &mdash; defined in Flow Manager, mapped to no account (a provisioning gap or a decommissioned name). <strong>Scanners</strong>: the 25 most-tried other names (root, admin, user, test&hellip;) over many addresses, never past the account lookup, so in no other logon column; IPs = distinct sources; the total sums shown rows. Both also count unconfigured names rejected as <code>Unable to find account with username: U</code>, so an unknown name never sits among the configured logins. Source IPs stay full-period.</li>
-<li><strong>Successful logons</strong> per account and source IP &mdash; SSHD &ldquo;successfully authenticated over SSH&rdquo; lines, @endpoint stripped; Logins additive, Source IPs and Accounts distinct (full range). The certificate table counts &ldquo;Authentication attempt with certificate&rdquo; lines; Accounts on certificate = the accounts that serial is authorized for; above one (amber) = a shared key.</li>
-<li><strong>Outgoing</strong> &mdash; <code>Authentication failure connecting to remote host H:P as user U: reason</code>, one row per host/user: <strong>Password</strong> (wrong/expired), <strong>Key</strong> (publickey refused or cancelled), <strong>Certificate</strong> (FTPS &ldquo;530 Need certificate authentication&rdquo; / &ldquo;534 Policy requires valid SSL Client certificate&rdquo;: the partner demands or rejects our TLS client certificate), <strong>Other</strong> (e.g. &ldquo;530 User cannot log in&rdquo;); last reason verbatim, first/last dates; 0 renders empty. A persistent row usually means an expired password, key or client certificate on our side.</li>
-</ul>
-<h2>Tips</h2>
-<ul>
-<li>Click an Incoming count for its 5 most recent lines (&ldquo;date time&nbsp;&nbsp;Level Component&nbsp;&nbsp;message&rdquo;, newest first); other rows expand to 10.</li>
-<li>Logins, hosts and users known from the transfer logs link to their detail pages; a login&rsquo;s Incoming connections table there judges the same addresses from the transfer-log side.</li>
+<li><strong>Auth failed</strong> = the anonymous &ldquo;Authentication failed using local.&rdquo; line, counted for the login whose Allowed precedes it within a second.</li>
+<li><strong>Re-screens</strong> = an Allowed on an already-authenticated session (a held connection re-keys hourly); not in Allowed.</li>
+<li>Incoming row colour = the latest funnel line: <strong>green</strong> an authentication, <strong>red</strong> anything else, <strong>orange</strong> never in the funnel.</li>
+<li><strong>Session errors</strong> = Error/Warning <code>[Ssh Default]</code> lines of no other column, booked to the session&rsquo;s login.</li>
+<li>Click an Incoming count for its 5 newest lines, another row for its 10. Distinct counts stay full period under a date filter.</li>
 </ul>
 </main>
 </body>

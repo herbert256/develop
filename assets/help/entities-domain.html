@@ -17,10 +17,13 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Domains</h1>
 <h2>What it shows</h2>
-<p>One row per business domain &mdash; the identities of the Domains row on the Logical, Partners, Domains &amp; Applications page. Columns, rules, views and drills are the same on all nine entity pages: see <a href="entities.html">Entities</a>.</p>
-<h2>How a File is attributed</h2>
 <ul>
-<li>The domain is the FIRST part of the three-part logical name (AB, ODV, ZG, APS, &hellip;); single-valued, so a File never doubles; a File under a single-token name (no domain segment) is not counted.</li>
+<li>One row per business domain, in the shared <a href="entities.html">Entities</a> layout.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>A domain is the first part of the logical name <code>domain_application_partner</code>; <code>input/logical_domains.txt</code> can replace it.</li>
+<li>A File counts for one domain at most, so the rows never double-count.</li>
 </ul>
 </main>
 </body>

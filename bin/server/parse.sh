@@ -51,15 +51,15 @@ set -euo pipefail
 # any working directory; input/ and data/ sit one level up, at server/.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"   # INPUT_DIR, CACHE_DIR, IP_DIR, CONFIG_DIR, PARSED (= $CACHE_DIR/_parse.tsv)
-source "$ROOT/bin/skiplist.sh"   # SKIPLIST_FILE + SKIPLIST_AWK (sl_load/sl_hit) — input/<env>/skip.txt
+source "$ROOT/bin/skiplist.sh"   # SKIPLIST_FILE + SKIPLIST_AWK (sl_load/sl_hit) — input/skip.txt
 source "$ROOT/bin/ranges.sh"     # rng_feed / rng_off: the byte-range split of the parallel rescan (2026-09-27)
-source "$ROOT/bin/renames.sh"    # RENAMES_FILE + RENAMES_AWK (rn_load/rn_canon) — input/<env>/renames/
+source "$ROOT/bin/renames.sh"    # RENAMES_FILE + RENAMES_AWK (rn_load/rn_canon) — input/renames/
 # PHASE TIMINGS (2026-09-27): "TIME Ns  server parse: <phase>" laps on stderr
 _sl0=$(date +%s)
 _slap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  server parse: %s\n' "$((_t1 - _sl0))" "$1" >&2; _sl0=$_t1; }
 OUT="$CACHE_DIR/_parse.tsv"
 LEGEND="$CACHE_DIR/_parse.txt"
-# SKIP LIST (input/<env>/skip.txt, per environment): a server-log record whose
+# SKIP LIST (input/skip.txt, per environment): a server-log record whose
 # MESSAGE (col 5) contains a skip token (case-insensitive substring) is dropped
 # from _parse.tsv (so no server report counts it) and set aside in _skipped.tsv
 # for the "Skipped" analyses report; the sidecar is rebuilt on every parse.
@@ -129,7 +129,7 @@ detect_njobs() {
     [ "$n" -ge 1 ] || n=1
     printf '%s\n' "$n"
 }
-NJOBS=${AXWAY_NJOBS:-$(detect_njobs)}   # AXWAY_NJOBS: bin/build.sh caps the parallel production chain
+NJOBS=${AXWAY_NJOBS:-$(detect_njobs)}   # AXWAY_NJOBS: an optional override of the pool size (nothing sets it; default = the core count)
 case $NJOBS in ''|*[!0-9]*) NJOBS=$(detect_njobs) ;; esac
 
 # sort(1) speed flags, feature-detected: -S (buffer size) and --parallel are
@@ -214,7 +214,7 @@ TOK_PROG=$(cat <<'AWK_EOF'
 # join. They stay OUT of the per-entity mention rings (the scanner skips
 # them), so the detail pages keep their descriptive lines.
 #
-# This is deliberately NOT input/<env>/skip.txt: a skip-list rule sets its records
+# This is deliberately NOT input/skip.txt: a skip-list rule sets its records
 # aside in the skipped file for the Skipped report, and archiving 8M lines of
 # boilerplate would cost the disk and time this filter exists to save. The skip
 # list stays what it is — traffic that is real but unwanted in the statistics.

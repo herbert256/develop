@@ -53,7 +53,7 @@
 #  15 duration        Duration (field 25) in milliseconds (integer), -1 if none
 #  16 remote_host     Remote Host (field 26), LOWERCASED (endpoints are
 #                     canonically lowercase, site-wide); an IPv4 value is
-#                     replaced by its endpoint name from input/<env>/ip/,
+#                     replaced by its endpoint name from input/ip/,
 #                     which the AUTOMATIC rule below fills: the configured host
 #                     of the account for an outgoing address; an incoming
 #                     name (or the IP itself, when there is no PTR) for an
@@ -96,9 +96,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"   # INPUT_DIR, CACHE_DIR, IP_DIR, CONFIG_DIR, PARSED (= $CACHE_DIR/_transfers.tsv), FILES
-source "$ROOT/bin/blacklist.sh"   # BLACKLIST_FILE + BLACKLIST_AWK (bl_load/bl_blank) — input/<env>/blacklist.txt
-source "$ROOT/bin/renames.sh"    # RENAMES_FILE + RENAMES_AWK (rn_load/rn_canon) — input/<env>/renames/
-source "$ROOT/bin/skiplist.sh"    # SKIPLIST_FILE + SKIPLIST_AWK (sl_load/sl_hit) — input/<env>/skip.txt
+source "$ROOT/bin/blacklist.sh"   # BLACKLIST_FILE + BLACKLIST_AWK (bl_load/bl_blank) — input/blacklist.txt
+source "$ROOT/bin/renames.sh"    # RENAMES_FILE + RENAMES_AWK (rn_load/rn_canon) — input/renames/
+source "$ROOT/bin/skiplist.sh"    # SKIPLIST_FILE + SKIPLIST_AWK (sl_load/sl_hit) — input/skip.txt
 source "$ROOT/bin/ranges.sh"      # grp_par: the key-aligned parallel slices of the derive passes (2026-09-28)
 _pj=$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 2 )
 case $_pj in ""|*[!0-9]*) _pj=2 ;; esac
@@ -109,7 +109,7 @@ REKEYS="$CACHE_DIR/_rekeys.tsv"        # re-keyed lone leg -> its original CoreI
 # this one inherits it
 _derive_only=${AXWAY_DERIVE_ONLY:-}; unset AXWAY_DERIVE_ONLY
 LEGEND="$CACHE_DIR/_transfers.txt"
-# SKIP LIST (input/<env>/skip.txt, per environment): a record whose ATTRIBUTED
+# SKIP LIST (input/skip.txt, per environment): a record whose ATTRIBUTED
 # account (col 4) or subscription/site (col 6) name contains a skip token
 # (case-insensitive substring) is dropped from _transfers.tsv (so no report,
 # _files.tsv counts it) and set aside in _skipped.tsv for the
@@ -362,7 +362,7 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
         # going orange, the logged half arriving as an unknown entity. Fold the
         # logged name to the CURRENT one here, at the same single point the
         # _SCP_ tail is stripped, so every report, cache and detail page sees
-        # one name per flow. The map is input/<env>/renames/subscriptions.tsv
+        # one name per flow. The map is input/renames/subscriptions.tsv
         # (bin/renames.sh, machine-maintained by the config step).
         cs = site
         if ((scp = index(cs, "_SSCP_")) > 0 || (scp = index(cs, "_SCP_")) > 0 || (scp = index(cs, "_CCP_")) > 0) cs = substr(cs, 1, scp - 1)
@@ -435,16 +435,13 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
 # group outputs are concatenated in any order (the sort below orders them);
 # a raw line repeated ACROSS groups — the tokenizer drops a repeat only within
 # its own group now — leaves two identical tokenized rows, which the sort
-# makes adjacent and the pass below drops (TOK_PAR=1): one row per identical
-# tokenized row.
+# makes adjacent and the pass below drops: one row per identical tokenized row.
 TOKJ=$(( $( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 2 ) / 2 ))
 [ "$TOKJ" -ge 1 ] 2>/dev/null || TOKJ=1
 [ ${#src_files[@]} -lt "$TOKJ" ] && TOKJ=${#src_files[@]}
-TOK_PAR=0
 if [ "$TOKJ" -le 1 ]; then
     tok_files "${src_files[@]}" | cat > "$tmp.raw"
 else
-    TOK_PAR=1
     # LPT: "group<TAB>file" per file, the largest first onto the lightest group
     for f in "${src_files[@]}"; do printf '%s\t%s\n' "$(wc -c < "$f" | tr -d ' ')" "$f"; done \
       | LC_ALL=C sort -t"$(printf '\t')" -k1,1nr \
@@ -481,7 +478,7 @@ fi
 #
 #   every unique IPv4 on an OUTGOING row — WE dial a configured endpoint, so the
 #   configuration already knows the right name:
-#     absent from input/<env>/ip/ip-hosts.tsv
+#     absent from input/ip/ip-hosts.tsv
 #                             -> record it under the host configured for the
 #                                account, or, on a row whose account is not known
 #                                yet (propagation runs later), for its SUBSCRIPTION
@@ -500,7 +497,7 @@ fi
 # address is theirs; it stays raw in col 16, which is exactly what the whitelist
 # allows and what the Incoming-connections tables show.
 #
-# The map is input/<env>/ip/ip-hosts.tsv — gitignored, but OUTSIDE the
+# The map is input/ip/ip-hosts.tsv — gitignored, but OUTSIDE the
 # disposable data/ dir, because a DNS answer cannot be regenerated from anything
 # in the repo. See bin/ip.sh.
 #
@@ -550,7 +547,7 @@ awk -F'\t' '
         # production account carries hosts AND logins, so by the account
         # rule every one of its rows — the partner-delivered ones included —
         # counted as Out, and the partner INCOMING address was recorded under
-        # the account configured endpoint in input/<env>/ip/, permanently.
+        # the account configured endpoint in input/ip/, permanently.
         sd9 = (s != "" && (s in sside)) ? sside[s] : (((a in ah) || !(a in al)) ? "out" : "in")
         if (sd9 == "out") {                                                # OUT: we dial the endpoint
             out[ip] = 1
@@ -560,7 +557,7 @@ awk -F'\t' '
             # names it precisely, while a multi-host account is \001-ambiguous
             # and, asked first, POISONED the address for every flow of that
             # account — the endpoint was then never recorded in
-            # input/<env>/ip/, and the logged raw IP stayed raw in col 15,
+            # input/ip/, and the logged raw IP stayed raw in col 15,
             # inventing an address-shaped "host" entity. The account still
             # votes for the rows the propagation has not yet given a site
             # (this pass runs BEFORE it). A row identified by neither casts no
@@ -659,15 +656,15 @@ awk -F'\t' -v OFS='\t' -v BLF="$BLACKLIST_FILE" "$BLACKLIST_AWK"'
 
 # Sort AFTER the mapping (the keys — coreid, direction — are untouched by it).
 LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 "$tmp.mapped" | cat > "$tmp.sorted"
-# a PARALLEL tokenize (TOK_PAR, above) leaves a raw line repeated across
-# groups as two identical rows — adjacent after the sort (its last-resort
-# key is the whole line); keep the first, like the tokenizer did
-if [ "$TOK_PAR" = 1 ]; then
-    xdups=$(awk -v out="$tmp.sorted2" 'BEGIN { printf "" > out; close(out); cmd = "cat > \"" out "\"" } NR > 1 && $0 == prev { d++; next } { prev = $0; print | cmd } END { close(cmd); print d + 0 }' "$tmp.sorted")
-    [ "$xdups" -gt 0 ] && echo "NOTE: dropped $xdups exact-duplicate record(s) repeated across tokenizer groups (kept the first)." >&2
-    mv "$tmp.sorted2" "$tmp.sorted"
-fi
-mv "$tmp.sorted" "$PARSED0"
+# identical tokenized rows are adjacent after the sort (its last-resort key is
+# the whole line); keep the first. ALWAYS (2026-09-29: only after a PARALLEL
+# tokenize, TOK_PAR — so whether two records identical in all 25 columns
+# collapsed depended on the file grouping and the core count; production
+# always tokenizes in parallel, so this costs it nothing)
+xdups=$(awk -v out="$tmp.sorted2" 'BEGIN { printf "" > out; close(out); cmd = "cat > \"" out "\"" } NR > 1 && $0 == prev { d++; next } { prev = $0; print | cmd } END { close(cmd); print d + 0 }' "$tmp.sorted")
+[ "$xdups" -gt 0 ] && echo "NOTE: dropped $xdups exact-duplicate tokenized record(s) (kept the first)." >&2
+mv "$tmp.sorted2" "$PARSED0"
+rm -f "$tmp.sorted"
 rm -f "$tmp.raw" "$tmp.mapped" "$hmap"
 
 fi   # do_tokenize
@@ -869,7 +866,7 @@ grp_par "$PARSED0" "$tmp.prop" "$_pj" awk -F'\t' -v OFS='\t' '
     function xone1(sk, dk, val,   kk) {
         if (val == "" || val == "UNKNOWN") return ""
         kk = sk SUBSEP dk SUBSEP toupper(val)
-        return (xn[kk] == 1) ? xone[kk] : ""
+        return ((kk in xn) && xn[kk] == 1) ? xone[kk] : ""   # `in` first: a bare xn[kk] CREATED the key, and the session join (it tests `kk in xn` for "has a configured list") then refused every account without one (2026-09-29)
     }
     # XREF single-value fallback: fill a group entity still missing after the
     # propagation + config fallbacks through the cross-reference caches. Each
@@ -1134,7 +1131,7 @@ _plap "derive: propagation + fallbacks"
 # (set aside in $SKIPOUT). A record is skipped when its attributed account
 # (col 4) or subscription/site (col 6) name contains a skip token (case-
 # insensitive substring). Zero tokens -> nothing skipped, empty sidecar.
-# The rules come from input/<env>/skip.txt via bin/skiplist.sh — the ONE reader, so
+# The rules come from input/skip.txt via bin/skiplist.sh — the ONE reader, so
 # the transfer parse, the server parse, flow-manager and the Skipped report all
 # agree what a rule means. LOGIN (col 5) is tested alongside account (4) and
 # site (6): a field-specific "login" rule can target it, and an "any" rule
@@ -1303,7 +1300,7 @@ original CoreId is in this cache and holds no row of that transfer id yet.
 NO-SUBSCRIPTION / HTTP SKIP: a CoreId with neither site nor account on every
 row after all the passes above — or with an http leg on ANY row (col 10)
 — is NOT in this cache (nor in _files.tsv): its raw input CSV lines are set
-aside verbatim in data/<env>/transfer/_skipped.csv. Recomputed each derive,
+aside verbatim in data/transfer/_skipped.csv. Recomputed each derive,
 so a later export adding a leg with a subscription brings a skipped CoreId
 back.
 
@@ -1334,7 +1331,7 @@ col  name           description
  14  jdn            Julian day number of the start date
  15  duration       Duration in milliseconds (integer; -1 if none)
  16  remote_host    Remote Host; an IPv4 is replaced by its name in
-                    input/<env>/ip/ip-hosts.tsv, filled automatically from the
+                    input/ip/ip-hosts.tsv, filled automatically from the
                     account's configured host for an outgoing address; an
                     incoming address is left raw (it is the partner's)
  17  av_bucket      ICAP scan outcome: Allowed / Blocked / Not performed / Error / Unknown / Other
@@ -1528,7 +1525,7 @@ COLLAPSE_AWK='
 # endpoint — else the account's partner org (kept only when
 # unambiguous: an account spanning several endpoint orgs stays blank when
 # the host decides nothing). Missing caches leave their column(s) empty, so
-# the cache always carries 22 columns. The collapse above emits the UC2
+# the cache always carries 24 columns. The collapse above emits the UC2
 # pickup wait as its 16th field; both branches here move it BEHIND the five
 # config columns so it lands as col 21 and cols 16-20 keep their positions.
 # Col 22 ("expired") is emitted EMPTY here — bin/expire-files.sh (the build
@@ -1556,8 +1553,9 @@ else
         FILENAME ~ /_accounts-domains\.tsv$/       { k=toupper($1); if(!(k in ad)) ad[k]=$2; else if(ad[k]!=$2) ad[k]=AMB; next }
         # the SUBSCRIPTION app/domain maps (2026-08-29 audit fix): a one-part
         # account derives no app/domain, but its subscription name can (the
-        # flow-manager fallback) — cols 18/19 join these when the account map
-        # has nothing, so coverage and the detail pages agree on those files.
+        # flow-manager fallback) — cols 18/19 join these FIRST and the account
+        # map only when the subscription yields nothing (the order below), so
+        # coverage and the detail pages agree on those files.
         # A subscription naming two apps/domains is ambiguous -> no fill.
         FILENAME ~ /_subscriptions-apps\.tsv$/     { k=toupper($1); if(!(k in sa)) sa[k]=$2; else if(sa[k]!=$2) sa[k]=AMB; next }
         FILENAME ~ /_subscriptions-domains\.tsv$/  { k=toupper($1); if(!(k in sdo)) sdo[k]=$2; else if(sdo[k]!=$2) sdo[k]=AMB; next }
@@ -1699,11 +1697,11 @@ col  name       rule
                 "out", or "" (relay subscription, or no/unmapped subscription).
                 Diverges from connection on pull flows (UC2 in/out, UC3 out/in).
  18  app        the file's APPLICATION — part 2 of its logical flow name
-                (domain_application_partner), joined via the account's
-                FlowIDs; when the account map yields none, the SUBSCRIPTION
-                map can (unambiguous only); "" when neither does
- 19  domain     the DOMAIN — part 1 of the logical flow name, with the same
-                subscription fallback; "" when neither map has one
+                (domain_application_partner), joined via the SUBSCRIPTION
+                (its FlowID) first; when that yields none, the account map
+                can (unambiguous only); "" when neither does
+ 19  domain     the DOMAIN — part 1 of the logical flow name, the same order
+                (subscription, then account); "" when neither map has one
  20  partner    the partner ORGANISATION (part 3 of the logical flow name,
                 merged — as named in data/flow-manager/base/_partners.tsv):
                 the file's subscription when it names ONE partner, else the

@@ -10,8 +10,7 @@
 #
 # The rename is PUBLISH-TIME ONLY: the parse caches, the .rpt files and every
 # join keep the real value; this sweep rewrites the RENDERED pages (and the
-# client-side data payloads — search-data.js, the file-search sidecars, the
-# latest/<slug>.js row payloads) so
+# client-side data payloads — search-data.js, the all-files day shards) so
 # the new value is SHOWN instead of the real one.
 #
 # Matching is BOUNDARY-AWARE on the entity-name alphabet [A-Za-z0-9_.-]
@@ -64,7 +63,7 @@ apply_rules() {
     [ -n "$rules" ] && [ -d "$dir" ] || return 0
     pats=$(mktemp "${TMPDIR:-/tmp}/axdr.XXXXXX")
     printf '%s\n' "$rules" | cut -f1 | LC_ALL=C sort -u > "$pats"
-    hits=$(find "$dir" "$@" -type f \( -name '*.html' -o -name '*-data.js' -o -name 'search-data.js' -o -path '*/latest/*.js' -o -path '*/search/all/*.js' \) -print0 \
+    hits=$(find "$dir" "$@" -type f \( -name '*.html' -o -name '*-data.js' -o -name 'search-data.js' -o -path '*/search/all/*.js' \) -print0 \
         | xargs -0 grep -lF -f "$pats" 2>/dev/null || true)
     rm -f "$pats"
     n=$(printf '%s\n' "$rules" | wc -l | tr -d ' ')

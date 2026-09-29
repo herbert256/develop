@@ -17,13 +17,6 @@ source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; defines the re
 
 ensure_assets   # topbar-data.js (the menus' data file)
 
-# Guard the expansion: under `set -u`, bash 3.2 errors on "${empty_array[@]}".
-if [ ${#server_order[@]} -eq 0 ]; then
-    rm -rf "$DOCS/server"   # no server reports -> drop the (now stale) server area
-    echo "No server reports; dropped docs/server/." >&2
-    exit 0
-fi
-
 mkdir -p "$DOCS/server"
 rm -f "$DOCS"/server/*.html   # clear stale report pages (the index is rewritten by bin/build/publish.sh)
 
@@ -42,7 +35,7 @@ count=0
 CUR_DATES=$SERVER_DATES
 for name in "${server_order[@]}"; do
     # the Subscriptions analyses group renders from bin/analyses/publish.sh —
-    # it owns (and clears) docs/<env>/analyses/ and runs AFTER this script
+    # it owns (and clears) docs/analyses/ and runs AFTER this script
     if is_subs_report "$name"; then continue; fi
     rpt="$DATA/server/reports/$name.rpt"
     [ -f "$rpt" ] || { echo "  (no data yet: $name)" >&2; continue; }

@@ -72,7 +72,9 @@ LC_ALL=C awk -F'\t' -v UCDF="$UCDF" -v SUBRES="$SUBRES" -v LEGS="$PARSED" -v FIL
         res = (su in SRES) ? SRES[su] : ""
         tint = (res == "green" || res == "orange" || res == "red") ? "\t@data:res=" res : ""
         bad = ($2 == "Failed" || $2 == "Expired")
-        oc = bad ? "@{class=failed}" $2 : ($2 == "Processed" ? "@{class=processed}" $2 : $2)
+        # the site words (2026-09-29): Processed = OK, Failed = Error; Waiting and
+        # Expired keep their names (the states the outcome policy counts as OK / Error)
+        oc = ($2 == "Failed") ? "@{class=failed}Error" : ($2 == "Expired") ? "@{class=failed}Expired" : ($2 == "Processed" ? "@{class=processed}OK" : $2)
         printf "%s\tROW\t%s\t%s %s\t%s\t%s\t%s\t%d\t%s\t@{class=mono}%s\t%s%s\n", $6, s, $4, $5, IP[c], IT[c], OT[c], NL[c], oc, c, $11, tint > FILEROWS
         k = s SUBSEP IP[c]
         FN[k]++; if (bad) FE[k]++; else FO[k]++

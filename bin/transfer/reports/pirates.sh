@@ -20,7 +20,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # TRANSFER lib, not the analyses one: this is a transfer-DATA report (it reads
-# the transfer caches and writes data/<env>/transfer/reports/). It lives HERE
+# the transfer caches and writes data/transfer/reports/). It lives HERE
 # because its page sits in the ANALYSES menu, in the Subscriptions group — the
 # same arrangement as cross-reference.sh. bin/transfer/reports.sh still runs it.
 source "$SCRIPT_DIR/../lib.sh"
@@ -60,7 +60,7 @@ pd=$(printf '%s\n' "$agg" | awk -F'\t' '
     | LC_ALL=C sort -t$'\t' -k1,1r)
 
 {
-    printf 'TITLE\tOne-Legged Transfers\n'
+    printf 'TITLE\tOne-legged\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tLogical transfers (CoreIds) with only ONE leg — an incomplete, one-sided crossing that never completed.\n'
     printf 'KEYWORDS\tpirates,single leg,one leg,one-sided,incomplete transfer,coreid,orphan,half transfer,per day,count\n'
     printf 'INTRO\t**Pirates** — logical transfers (CoreIds) that have only **one leg** (one technical row). A complete transfer is store-and-forward: an **Inbound** leg (partner → ST) and an **Outbound** leg (ST → partner). A single-leg CoreId is one-sided — the counterpart leg never happened — so the file never made the full crossing. **Details** counts them per subscription; **Top view** the count per day.\n'

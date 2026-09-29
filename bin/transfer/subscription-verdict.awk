@@ -10,7 +10,7 @@
 # splices in after the DESC line.
 #
 # Row layouts (table 1 of each report):
-#   UC1  2 status 3 name 4 Files 5 OK 6 Error 7 Last file 8 Route runs 9 Problems 10 Last log
+#   UC1  2 status 3 name 4 Files 5 OK 6 Error 7 Last file 8 Problems 9 Last log
 #   UC2  2 status 3 name 4 Expired 5 First 6 Last 7 Pickups 8 Last pickup
 #   UC3  2 status 3 name 4 Files 5 OK 6 Error 7 Last file 8 Polls 9 Empty 10 Problems 11 Last log
 #   UC4  2 status 3 name 4 Files 5 OK 6 Error 7 Last file 8 Logons 9 Arrivals 10 Problems 11 Last log
@@ -126,7 +126,7 @@ function uc4note(nm4,   a4, n4) {
     a4 = toupper(suac[toupper(nm4)])
     if (a4 == "" || acv[a4] + 0 == 0) return ""
     n4 = acv[a4] + 0
-    return sprintf("INTRO\t**Same connection, both directions:** besides delivering here, this partner also **picks up UC2 files** in the very SSH connection that delivers — **%d** connection%s (by transfer-log Session ID) both delivered and collected files, the pickups from [[subscriptions/%s]]. The UC2 pickup visits analysis has the visit breakdown.\n", n4, plural(n4,"","s"), acu2[a4])
+    return sprintf("INTRO\t**Same connection, both directions:** besides delivering here, this partner also **picks up UC2 files** in the very SSH connection that delivers — **%d** connection%s (by transfer-log Session ID) both delivered and collected files, the pickups from [[subscriptions/%s]]. The UC2 tab of UC status has the visit breakdown.\n", n4, plural(n4,"","s"), acu2[a4])
 }
 
 $1 != "ROW" { next }
@@ -134,12 +134,13 @@ $1 != "ROW" { next }
 
 # ---- UC1: we are the client and PUSH the file out to the partner ------------
 FILENAME ~ /uc1-status\.rpt$/ {
-    n = $4 + 0; ok = $5 + 0; er = $6 + 0; last = dt($7); runs = $8 + 0; prob = $9 + 0; lg = dt($10)
+    # (the Route runs column went 2026-09-29 — always 0: its log line is noise-filtered)
+    n = $4 + 0; ok = $5 + 0; er = $6 + 0; last = dt($7); prob = $8 + 0; lg = dt($9)
     if (st == "error" || st == "ok -> error") NEXTMOVE = nextmove(getll())
     if (st == "ok")
         emit(s, "", sprintf("**Working.** We push files out to this partner: **%d** File%s, the latest delivered on **%s** (%d OK, %d error). **UC1 status** calls this **ok**.", n, plural(n,"","s"), last, ok, er))
     else if (st == "error")
-        emit(s, "This flow has never delivered a file", sprintf("Every one of its **%d** File%s failed, the last on **%s**, and not one was ever delivered — so this is not something that broke, it is something that never worked. Advanced Routing started the route **%d** time%s and logged **%d** failure%s%s. **UC1 status** calls this **error**.", n, plural(n,"","s"), last, runs, plural(runs,"","s"), prob, plural(prob,"","s"), on(lg)))
+        emit(s, "This flow has never delivered a file", sprintf("Every one of its **%d** File%s failed, the last on **%s**, and not one was ever delivered — so this is not something that broke, it is something that never worked. The server log holds **%d** failure line%s for it%s. **UC1 status** calls this **error**.", n, plural(n,"","s"), last, prob, plural(prob,"","s"), on(lg)))
     else if (st == "ok -> error" && er == 0)
         # the after-last-transfer red flip: every File succeeded — the failure
         # evidence is the server log AFTER the last transfer (the red banner),
@@ -151,8 +152,7 @@ FILENAME ~ /uc1-status\.rpt$/ {
         # the server-log figures still say whether it ever TRIED (the former
         # server - error / no result statuses, gone with blue 2026-09-27)
         emit(s, "", "**Never used.** This flow is configured but has never been observed in the transfer log — an open question rather than a failure: either it is waiting on a partner, or it should not be there." \
-            (prob > 0 ? sprintf(" The server log does name it in **%d** failure line%s%s — the send could not be made, or the partner could not be reached.", prob, plural(prob,"","s"), on(lg)) \
-             : runs > 0 ? sprintf(" Advanced Routing did start the route **%d** time%s%s.", runs, plural(runs,"","s"), on(lg)) : "") \
+            (prob > 0 ? sprintf(" The server log does name it in **%d** failure line%s%s — the send could not be made, or the partner could not be reached.", prob, plural(prob,"","s"), on(lg)) : "") \
             " **UC1 status** calls this **not seen**.")
     next
 }
@@ -187,6 +187,13 @@ FILENAME ~ /uc3-status\.rpt$/ {
     # which names its polls)
     if (st == "ok")
         emit(s, "", sprintf("**Working.** We poll this partner and pull what is waiting: **%d** File%s, the latest on **%s** (%d OK, %d error), from **%d** poll%s. A high empty-poll count (**%d**) is normal — a schedule fires far more often than a file appears. **UC3 status** calls this **ok**.", n, plural(n,"","s"), last, ok, er, poll, plural(poll,"","s"), emp))
+    else if (st == "error" && n == 0)
+        # the cannot-connect rule (2026-09-10): red with NO File — the polls
+        # themselves fail (2026-09-29: the branch below printed "Every one of
+        # its 0 Files failed, the last on ****")
+        emit(s, "This flow cannot connect to its partner", "It has never pulled a file: its polls fail to connect" \
+            (prob > 0 ? sprintf(" — **%d** connection-failure line%s%s", prob, plural(prob,"","s"), on(lg)) : "") \
+            ". A poll that cannot reach the partner is a broken flow, not an idle one. **UC3 status** calls this **error**.")
     else if (st == "error")
         emit(s, "This flow has never pulled a file successfully", sprintf("Every one of its **%d** File%s failed, the last on **%s**, with no successful pull at all — not something that broke, something that never worked. **UC3 status** calls this **error**.", n, plural(n,"","s"), last))
     else if (st == "ok -> error" && er == 0)

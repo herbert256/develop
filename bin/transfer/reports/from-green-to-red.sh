@@ -28,7 +28,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # TRANSFER lib, not the analyses one: this is a transfer-DATA report (it reads
-# the transfer caches and writes data/<env>/transfer/reports/). It lives HERE
+# the transfer caches and writes data/transfer/reports/). It lives HERE
 # because its page sits in the ANALYSES menu, in the Subscriptions group — the
 # same arrangement as cross-reference.sh. bin/transfer/reports.sh still runs it.
 source "$SCRIPT_DIR/../lib.sh"

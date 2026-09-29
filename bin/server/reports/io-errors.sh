@@ -36,11 +36,11 @@
 # file"). A path not under a FlowManager folder is kept with an empty
 # account, so nothing is dropped.
 #
-# Reads the parse cache (data/<env>/server/cache/_parse.tsv: 1=date, 2=time,
+# Reads the parse cache (data/server/cache/_parse.tsv: 1=date, 2=time,
 # 3=level, 4=component, 5=message, 6=session), the transfer caches
 # (_files.tsv, _transfers.tsv) and the config rosters (base/_accounts.tsv,
 # base/_logins.tsv — the configured SPELLING, so the cells link).
-# Writes data/<env>/server/reports/io-errors.rpt.
+# Writes data/server/reports/io-errors.rpt.
 #
 # Usage:
 #   ./io-errors.sh   # reads input/*.csv (via the cache), writes data/io-errors.rpt
@@ -54,8 +54,8 @@ OUT="$REPORTS_DIR/io-errors.rpt"
 
 FILES="$TRANSFER_CACHE/_files.tsv"          # one row per CoreId: 1 coreid 2 outcome 3 account 4 date 5 time 6 sortkey 11 file 12 site 14 login
 TRANSFERS="$TRANSFER_CACHE/_transfers.tsv"  # the legs: 6 site, 24 session (the SESSION join)
-ERRDIR="$TRANSFER_REPORTS/errors"           # failed.sh's per-CoreId error pages (docs/<env>/files/)
-FILEDIR="$TRANSFER_REPORTS/files"           # … and its File pages (docs/<env>/files/)
+ERRDIR="$TRANSFER_REPORTS/errors"           # failed.sh's per-CoreId error pages (docs/files/)
+FILEDIR="$TRANSFER_REPORTS/files"           # … and its File pages (docs/files/)
 ACCB="$CONFIG_BASE/_accounts.tsv"           # configured spelling -> the cells link
 LOGB="$CONFIG_BASE/_logins.tsv"
 

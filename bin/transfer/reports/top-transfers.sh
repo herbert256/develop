@@ -55,7 +55,7 @@ awk -F'\t' '
 # Cap with `awk NR<=N` rather than `head` so sort is never SIGPIPE-killed under
 # pipefail; `|| true` because an env with no Files yields zero S| rows and a
 # zero-match grep exits 1 — set -e would kill the script on the empty case.
-largest=$(grep '^S|' "$tmp" | sort -t'|' -k2,2 -rn | awk -v n="$TOP_N" 'NR<=n' || true)
+largest=$(grep '^S|' "$tmp" | LC_ALL=C sort -t'|' -k2,2 -rn | awk -v n="$TOP_N" 'NR<=n' || true)
 
 # Cells are emitted raw (no HTML-escaping) — the renderer escapes. awk clean()
 # already removed the pipe delimiter from values.

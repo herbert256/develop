@@ -96,14 +96,10 @@ for _spec in "ACC:$ACC_DIR" "SITE:$SITE_DIR" "LOGIN:$LOGIN_DIR" "HOST:$HOST_DIR"
         : > "$_d"/_slugmap.tsv
     fi
 done
-# The subscription "Latest files" pages (2026-09-16, user request): the SITE
-# writer diverts its Latest-files table into one .rpt per subscription here,
-# and publish-details.sh renders them to docs/latest/. Cleared with the SITE
-# pages — a stale .rpt would outlive its subscription and keep a dead page
-# alive (the pages are cleared wholesale at publish, the .rpt set is not).
-LATEST_DIR="$REPORTS_DIR/latest"
-mkdir -p "$LATEST_DIR"
-if [ -z "$ONLY_TYPE" ] || [ "$ONLY_TYPE" = SITE ]; then rm -f "$LATEST_DIR"/*.rpt; fi
+# (The subscription "Latest files" pages — reports/latest/*.rpt ->
+# docs/latest/ — went 2026-09-29, user request: a subscription page lists its
+# Files in the browser from docs/search/all/, see details_writer.awk
+# files_table.)
 
 
 # ONE scratch dir for every intermediate of this run (2026-07 head merge):
@@ -114,7 +110,7 @@ trap 'rm -rf "$_pdir"' EXIT
 
 # Optional side inputs for the KPI line, fed to the aggregations as extra files
 # (each starts with a "#" sentinel so an empty input cannot shift awk file counting):
-#  - endpoint -> raw IP map (input/<env>/ip/ip-hosts.tsv, columns swapped)
+#  - endpoint -> raw IP map (input/ip/ip-hosts.tsv, columns swapped)
 IPMAP="$_pdir/ipmap"
 {
     printf '#\t#\n'
@@ -165,11 +161,10 @@ IPMAP="$_pdir/ipmap"
 #   and every row carries @data:seen, so the seenrows tables tint by
 #   data-presence (green logged / red config-only; the former client-side
 #   All/Seen/Not seen filter was removed 2026-07 — the tint alone remains).
-# SECTION 9 = the latest Files (newest first; 1000 on SITE — DIVERTED to its
-#   own page, docs/latest/<slug>.html, since 2026-09-16 (LATESTDIR below); 100
-#   on the other types, which keep it on the detail page — see details_lib.sh
-#   addbig), payload pipe-joined
-#   (date-time|file|coreid|size|dur|thr|direction|outcome). Sorts after the
+# SECTION 9 = the latest 100 Files (newest first) of every type but SITE —
+#   a subscription page builds its Files table in the browser (2026-09-29,
+#   details_writer.awk files_table) — see details_lib.sh addbig; payload
+#   pipe-joined (date-time|file|coreid|size|dur|thr|direction|outcome). Sorts after the
 #   entity dims so the table renders right above the Load by weekday table
 #   (renumbered from 2.5 in 2026-07);
 #   Direction = the FILE MOVEMENT (Inbound/Outbound/Relay — which way the FILE
@@ -400,7 +395,7 @@ if [ "$_prc" -ne 0 ]; then
     exit "$_prc"
 fi
 _tlap "prep producers (parallel: files aggregation, extras, directions, whitelist + side scans)"
-sort -t$'\t' -k1,1 -k2,2 -k3,3n -k4,4 -k5,5 "$_pdir"/agg0.* "$_pdir/xtra" "$_pdir/dirs" "$_pdir/wl" \
+LC_ALL=C sort -t$'\t' -k1,1 -k2,2 -k3,3n -k4,4 -k5,5 "$_pdir"/agg0.* "$_pdir/xtra" "$_pdir/dirs" "$_pdir/wl" \
     | insert_config_rows > "$_pdir/agg"
 _tlap "stream sort + config rows"
 
@@ -672,7 +667,7 @@ LC_ALL=C awk -F'\t' \
     -v MOV="$MOVMAP" -v SRV="$SERVER_CACHE" -v FWD="$IP_HOSTS_FILE" -v SDIR="$STREAMDIR" \
     -v TWF="$_pdir/twins" -v TWFS="$_pdir/twins-site" '
     function up(s) { return toupper(s) }
-    # endpoint -> its address(es), from input/<env>/ip/ip-hosts.tsv (keyed on its
+    # endpoint -> its address(es), from input/ip/ip-hosts.tsv (keyed on its
     # HOST column). Loaded once on first use; replaced a fwd/<name>.txt per endpoint.
     function fwd_ips(h,   l, a, k) {
         if (!FWDL) {
@@ -976,7 +971,7 @@ for _ty in ACC SITE LOGIN HOST LGC PTN APP DOM BL; do
     # TIME line reaches the build console with the rest)
     ( _w0=$(date +%s); _wrc=0
     LC_ALL=C awk -F'\t' -v TYPE="$_ty" -v ANN="$STREAMDIR/a.$_ty" -v OUTDIR="$_od" \
-        -v RANKOUT="$RANKDIR/$_ty.tsv" -v LATESTDIR="$LATEST_DIR" \
+        -v RANKOUT="$RANKDIR/$_ty.tsv" \
         -v SRV="$SERVER_CACHE" -v FWD="$IP_HOSTS_FILE" \
         -v UCF="$UCMETA" -v UCDF="$UCDER" -v UNCF="$_pdir/uncollected" -v OKF="$OKTF" \
         -v SSF="$SRVSUBSF" -v ERRD="$REPORTS_DIR/errors" -v LGF="$LOGONSF" -v LGHF="$SERVER_CACHE/_logons-hosts.tsv" \

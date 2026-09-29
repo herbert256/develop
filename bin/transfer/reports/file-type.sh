@@ -69,7 +69,7 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_bytes tot_human ext_count
 
 # `|| true`: an empty parse yields no EXT| rows at all, and a zero-match grep
 # exits 1 under set -euo pipefail; the row loop below skips blank lines.
-top_ext=$(printf '%s\n' "$agg" | grep '^EXT|' | sort -t'|' -k3,3nr | awk -v n="$TOP_N" 'NR<=n' || true)
+top_ext=$(printf '%s\n' "$agg" | grep '^EXT|' | LC_ALL=C sort -t'|' -k3,3nr | awk -v n="$TOP_N" 'NR<=n' || true)
 shown=$(printf '%s\n' "$top_ext" | grep -c '^EXT|' || true)
 
 {

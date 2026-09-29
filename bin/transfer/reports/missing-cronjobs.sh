@@ -25,8 +25,8 @@
 # own analyses page, and is a transfer report from 2026-07 so its page and its
 # script sit with the other subscription problems.
 #
-# Reads input/<env>/flow-manager/subscriptions.json (jq) + bin/uc-cases.sh.
-# Writes data/<env>/transfer/reports/missing-cronjobs.rpt.
+# Reads input/flow-manager/subscriptions.json (jq) + bin/uc-cases.sh.
+# Writes data/transfer/reports/missing-cronjobs.rpt.
 #
 # Usage:
 #   ./missing-cronjobs.sh

@@ -71,8 +71,11 @@ npages=$(LC_ALL=C awk -F'\t' \
     # the address -> endpoint map: ip -> host (bin/ip.sh)
     f == "rev" { if ($1 != "" && $2 != "") ptrmap[$1] = tolower($2); next }
 
-    # the sighted IPs (green/red), in _white.tsv order
-    f == "white" { if ($1 != "" && ($3 == "green" || $3 == "red")) { ips[++nip] = $1; res[$1] = $3 }; next }
+    # the sighted IPs, in _white.tsv order: green / red, and an ORANGE one
+    # that carried Files (its last File Expired — 2026-09-29: such an address
+    # had traffic and no page; the never-seen orange bulk still gets none,
+    # END skips an orange address without Files)
+    f == "white" { if ($1 != "" && ($3 == "green" || $3 == "red" || $3 == "orange")) { ips[++nip] = $1; res[$1] = $3 }; next }
 
     # the whitelisting accounts per IP (deduped here, name-sorted in END;
     # the "" concat forces string compares, matching LC_ALL=C sort -u)
@@ -101,6 +104,7 @@ npages=$(LC_ALL=C awk -F'\t' \
     END {
         for (x = 1; x <= nip; x++) {
             ip = ips[x]; r = res[ip]
+            if (r == "orange" && !((ip in n) && n[ip] > 0)) continue
             slug = ip; gsub(/\./, "-", slug)
             print ip "\t" slug > slugmap
             out = outdir "/" slug ".rpt"
@@ -110,8 +114,9 @@ npages=$(LC_ALL=C awk -F'\t' \
             ptr = (ip in ptrmap) ? ptrmap[ip] : ""
             if (ptr == ip) ptr = ""
 
-            if (r == "green")    rlabel = "OK — last transfer processed"
-            else                 rlabel = "Error — last transfer failed"
+            if (r == "green")       rlabel = "OK — last transfer processed"
+            else if (r == "orange") rlabel = "Warning — last File expired before pickup"
+            else                    rlabel = "Error — last transfer failed"
 
             nacc = (ip in na) ? na[ip] : 0
             nn = (ip in n) ? n[ip] : 0
@@ -141,7 +146,8 @@ npages=$(LC_ALL=C awk -F'\t' \
                 printf "KIND\ttext\tnum\tnumfailed\tnumprocessed\ttext\n" > out
                 for (i = 1; i <= nd[ip]; i++) { d = sd[i]
                     printf "ROW\t%s\t%d\t%s\t%s\t%s\n", d, df[ip, d], (((ip, d) in dfd) ? dfd[ip, d] : ""), (((ip, d) in dp) ? dp[ip, d] : ""), hb(dv[ip, d] + 0) > out }
-                printf "TOTAL\tTotal (%d days)\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t%s\n", nd[ip], nn, ko[ip]+0, ok[ip]+0, hb(vol[ip]) > out
+                # the Error / OK totals keep their column tint and show no 0 (2026-09-29)
+                printf "TOTAL\tTotal (%d days)\t@{class=num}%d\t@{class=num failed}%s\t@{class=num processed}%s\t%s\n", nd[ip], nn, (ko[ip] + 0 > 0 ? ko[ip] + 0 : ""), (ok[ip] + 0 > 0 ? ok[ip] + 0 : ""), hb(vol[ip]) > out
                 printf "TABLE\tLatest %d Files\n", nt[ip] > out
                 printf "HEAD\tDate\tTime\tAccount\tSubscription\tFile\tSize\tOutcome\n" > out
                 printf "KIND\ttext\ttext\tacct\tsite\tfile\ttext\ttext\n" > out

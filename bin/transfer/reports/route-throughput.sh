@@ -91,7 +91,7 @@ agg=$(awk -F'\t' -v mindur="$MIN_DUR" -v minsize="$MIN_SIZE" -v minhalf="$MIN_HA
 
 if [ "$(printf '%s\n' "$agg" | awk 'NR==1 { print $1 }')" = "EMPTY" ]; then
     {
-        printf 'TITLE\tRoute Throughput\n'
+        printf 'TITLE\tRoute throughput\n'
         printf 'DESC\tWire speed (MB/s) per subscription x protocol x direction, slowest routes first, with a per-protocol rollup and a first-half vs second-half trend.\n'
         printf 'INTRO\tNo legs above the measurement floors (duration > 500 ms and size > 1 MB) in this dataset.\n'
         printf 'TABLE\tThroughput per route\tnofilter\n'
@@ -117,7 +117,7 @@ proto_rows=$(printf '%s\n' "$agg" | grep $'^P\t' | LC_ALL=C sort -t"$(printf '\t
     | awk -F'\t' '{ printf "ROW\t%s\t%s\t%s\t%s\t%s\n", $3, $4, $5, $6, $7 }')
 
 {
-    printf 'TITLE\tRoute Throughput\n'
+    printf 'TITLE\tRoute throughput\n'
     printf 'DESC\tWire speed (MB/s) per subscription x protocol x direction, slowest routes first, with a per-protocol rollup and a first-half vs second-half trend.\n'
     printf 'INTRO\tHow fast the bytes actually move, per **route** (subscription x protocol x direction). Only legs that measure a real rate count: **duration > 500 ms** and **size > 1 MB** — **%s** such Transfers, moving **%s** in **%s** of wire time (**%.2f MB/s** overall). Slowest routes first: a PeSIT route at 0.2 MB/s and an SFTP route at 40 MB/s are both normal, but a route far below its protocol peers is worth a look. The Trend column compares the first half of the observed window with the second.\n' \
         "$t_n" "$t_vol" "$t_wire" "$t_rate"

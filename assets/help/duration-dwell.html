@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Duration distribution &amp; Store-and-forward — Cloud Reports</title>
+<title>Help: Distribution &amp; Store-and-forward — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,35 +15,29 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Duration distribution &amp; Store-and-forward</h1>
+<h1>Distribution &amp; Store-and-forward</h1>
 <h2>What it shows</h2>
-<p>Two clocks on the same Files, side by side: the <strong>Duration distribution</strong> (left) is the whole trip of a File; the <strong>Dwell-time distribution</strong> (right) is one piece of it &mdash; the wait inside SecureTransport between the inbound leg completing and the outbound leg starting. Below: the dwell per subscription and the gap per day.</p>
-<h2>Duration distribution</h2>
 <ul>
-<li>A histogram of the Files by wall-clock duration (first record start to last record end, gaps and retry idle included) in seven bands: up to 100 ms, 1 s, 10 s, 1 min, 5 min, 30 min and beyond.</li>
-<li><strong>OK transfers</strong> (default) counts delivered Files only; <strong>All transfers</strong> adds the failed ones, whose duration is how long they ran before giving up &mdash; mostly instant 0-byte attempts, piling up in the first band.</li>
-<li><strong>Files</strong> = the count in the band, <strong>Share</strong> = its part of the scope&rsquo;s Files; a From/To range re-aggregates both from the per-day buckets each row carries.</li>
+<li>Two clocks on the same Files, side by side: the whole trip (<strong>Duration distribution</strong>) and the wait inside SecureTransport between the inbound leg ending and the outbound leg starting (<strong>Dwell</strong>).</li>
+<li>The summary line gives the measurable Files and their median, p95 and max dwell.</li>
 </ul>
-<h2>Store-and-forward</h2>
+<h2>Columns</h2>
 <ul>
-<li>SecureTransport is a store-and-forward hub: a file arrives on an inbound leg, is held, then leaves on an outbound leg. No other report measures that wait (<a href="duration.html">Transfer Duration</a> measures the end-to-end span).</li>
-<li><strong>Dwell-time distribution</strong> &mdash; bands under 1 s, 1&ndash;5 s, 5&ndash;30 s, 30&ndash;60 s, 1&ndash;5 min, over 5 min; most files forward almost immediately, the tail is where latency lives. Re-aggregates over the selected dates.</li>
-<li><strong>Dwell by subscription</strong> &mdash; average and maximum dwell per subscription, slowest first; Avg and Max re-aggregate. A click opens its 10 most recent Files.</li>
-<li><strong>Gap per day</strong> &mdash; per calendar day the Min / Median (= P50) / Max and P25&ndash;P99 of the in&rarr;out gap, for delivered Files with exactly one Inbound and one Outbound record, both Processed (retries and failed legs excluded); banked under the inbound date, in whole ms / s / m / h.</li>
-<li>The per-day figures are not additive: a narrowed range keeps each day but blanks the totals.</li>
-<li>The intro states the measurable Files, their median, p95 and max dwell, and how many overlapping Files were excluded.</li>
+<li><strong>Duration distribution</strong> &mdash; Duration bucket / Files / Share, seven bands from &lt;= 100 ms to &gt; 30 min; an <strong>OK transfers</strong> / <strong>All transfers</strong> switch (All adds the failed Files, mostly instant attempts in the first band).</li>
+<li><strong>Dwell-time distribution</strong> &mdash; Dwell / Files / Share, bands from &lt; 1 s to over 5 min.</li>
+<li><strong>Dwell by subscription</strong> &mdash; Subscription / Files / Avg dwell / Max dwell, slowest first; a row drills to its 10 newest Files.</li>
+<li><strong>Gap per day</strong> &mdash; Date / Files / Min / Median / Max / P25 / P50 / P75 / P95 / P99 of the in&rarr;out gap, under the inbound date.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Dwell = the earliest <strong>outbound start</strong> minus the latest <strong>inbound completion</strong> (inbound start + duration), over the records sharing one CoreId.</li>
-<li>Measurable only with both an inbound completion and an outbound start; an outbound leg starting before the inbound finished (overlapping/streamed legs) gives a negative gap and is excluded, counted in the intro.</li>
-<li>Timestamps become seconds through a Julian-day-number helper; percentiles use the nearest-rank method.</li>
-<li>A CoreId takes the subscription of its first record carrying one; a CoreId without any subscription is dropped from the cache.</li>
-<li>A growing dwell &mdash; invisible in both leg durations &mdash; is an early warning of queue pressure, a slow or backed-up outbound target or a scheduling problem, before a failure or SLA breach; the per-subscription table names the flow, p95 and max size the tail.</li>
+<li>Duration = the File&rsquo;s wall-clock span, first record start to last record end.</li>
+<li>Dwell = the earliest outbound start minus the latest inbound completion (start + duration). A File forwarded before its inbound leg finished (overlapping legs) is excluded.</li>
+<li>Gap per day counts only delivered Files with exactly one Inbound and one Outbound record, both Processed; its figures are not additive, so a narrowed range blanks the total row.</li>
+<li>Percentiles use the nearest-rank method; Median = P50.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Per-day statistics and percentiles: <a href="duration.html">Transfer Duration</a>; the individual slowest transfers: <a href="duration-longest.html">Longest Files</a>.</li>
+<li>A growing dwell, invisible in both leg durations, is an early warning of queue pressure or a backed-up outbound target.</li>
 </ul>
 </main>
 </body>

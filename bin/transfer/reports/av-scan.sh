@@ -144,7 +144,7 @@ avon_disp=$(printf '%s\n' "$agg" | awk -F'|' '$1 == "AVON" { print $2 }')
 # per table, not one per row): grep picks the tag, sort orders it, awk shapes
 # the ROW lines.
 {
-    printf 'TITLE\tAV Scan (ICAP) Outcomes\n'
+    printf 'TITLE\tAV Scan\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tAnti-virus scan outcomes on the first Inbound leg of every File — the scan runs when a file enters the system.\n'
     printf 'KEYWORDS\ticap, virus, av, blocked, allowed, scan, first inbound\n'
     # META line (not rendered) feeds the root-index KPI strip in bin/build/publish.sh.
@@ -157,7 +157,7 @@ avon_disp=$(printf '%s\n' "$agg" | awk -F'|' '$1 == "AVON" { print $2 }')
     printf 'KIND\ttext\tnum\tnum\n'
     printf 'RECALC\t-\ts0\t%%0\n'
     # Outcome breakdown rows (largest first). Tint Allowed green, Blocked red.
-    printf '%s\n' "$agg" | grep '^OUT|' | sort -t'|' -k3,3nr | awk -F'|' '
+    printf '%s\n' "$agg" | grep '^OUT|' | LC_ALL=C sort -t'|' -k3,3nr | awk -F'|' '
         $2 != "" {
             cell = ($2 == "Allowed") ? "@{class=processed}" $2 : ($2 == "Blocked") ? "@{class=failed}" $2 : $2
             printf "ROW\t%s\t%s\t%s%%\t@data:buckets=%s\t@data:coreids=%s\n", cell, $3, $4, $5, $6
@@ -168,7 +168,7 @@ avon_disp=$(printf '%s\n' "$agg" | awk -F'|' '$1 == "AVON" { print $2 }')
     printf 'HEAD\tDate\tAllowed\tBlocked\tNot performed\tOther\tTotal\n'
     printf 'KIND\ttext\tnumprocessed\tnumfailed\tnum\tnum\tnum\n'
     # Per-day rows (chronological); every numeric cell carries its own drill list.
-    printf '%s\n' "$agg" | grep '^DAY|' | sort -t'|' -k2,2 | awk -F'|' '
+    printf '%s\n' "$agg" | grep '^DAY|' | LC_ALL=C sort -t'|' -k2,2 | awk -F'|' '
         $2 != "" { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t@data:drill-cell-1=%s\t@data:drill-cell-2=%s\t@data:drill-cell-3=%s\t@data:drill-cell-4=%s\t@data:drill-cell-5=%s\n", \
                           $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12 }' || true
     printf 'TOTAL\tTotal\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\n' \
@@ -183,7 +183,7 @@ avon_disp=$(printf '%s\n' "$agg" | awk -F'|' '$1 == "AVON" { print $2 }')
     # above, which sorts on its own count column); it was field 6 = Other,
     # which is 0 on every row, so the order fell through to the alphabetical
     # whole-line tie-break and read smallest-first.
-    printf '%s\n' "$agg" | grep '^PRO|' | sort -t'|' -k7,7nr | awk -F'|' '
+    printf '%s\n' "$agg" | grep '^PRO|' | LC_ALL=C sort -t'|' -k7,7nr | awk -F'|' '
         $2 != "" { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:drill-cell-1=%s\t@data:drill-cell-2=%s\t@data:drill-cell-3=%s\t@data:drill-cell-4=%s\t@data:drill-cell-5=%s\n", \
                           $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13 }' || true
     printf 'TOTAL\tTotal\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\n' \
@@ -194,7 +194,7 @@ avon_disp=$(printf '%s\n' "$agg" | awk -F'|' '$1 == "AVON" { print $2 }')
     printf 'TABLE\tBlocked transfers\twide\n'
     printf 'HEAD\tDate\tTime\tAccount\tLogin\tSubscription\tProtocol\tFile\n'
     printf 'KIND\ttext\ttext\tacct\tlogin\tsite\tmono\tfile\n'
-    blocked_rows=$(sort -t'|' -k1,1r "$TMP" | awk -v n=200 'NR<=n')
+    blocked_rows=$(LC_ALL=C sort -t'|' -k1,1r "$TMP" | awk -v n=200 'NR<=n')
     if [ -n "$blocked_rows" ]; then
         nblk=0
         while IFS='|' read -r _sk bdate btime bacct blogin bsite brest; do
@@ -217,7 +217,7 @@ avon_disp=$(printf '%s\n' "$agg" | awk -F'|' '$1 == "AVON" { print $2 }')
     printf 'HEAD\tReason\tFiles\tShare\n'
     printf 'KIND\ttext\tnum\tnum\n'
     printf 'RECALC\t-\ts0\t%%0\n'
-    printf '%s\n' "$agg" | grep '^NPR|' | sort -t'|' -k2,2n | awk -F'|' -v tot="$tot_notperf" -v avd="$avon_disp" '
+    printf '%s\n' "$agg" | grep '^NPR|' | LC_ALL=C sort -t'|' -k2,2n | awk -F'|' -v tot="$tot_notperf" -v avd="$avon_disp" '
         function nplabel(r) {
             if (r == 0) return "Before scanning was active (pre first Allowed verdict" (avd == "" ? "" : ", " avd) ")"
             if (r == 1) return "Failed or empty arrival (nothing to scan)"
@@ -237,7 +237,7 @@ avon_disp=$(printf '%s\n' "$agg" | awk -F'|' '$1 == "AVON" { print $2 }')
     printf 'RECALC\t-\t-\t-\ts0\n'
     if [ "${tot_nfi:-0}" -gt 0 ]; then
         # the check tab: real verdicts on NON-first-inbound legs (largest first)
-        printf '%s\n' "$agg" | grep '^NFI|' | sort -t'|' -k5,5nr | awk -F'|' '
+        printf '%s\n' "$agg" | grep '^NFI|' | LC_ALL=C sort -t'|' -k5,5nr | awk -F'|' '
             $2 != "" {
                 cell = ($4 == "Allowed") ? "@{class=processed}" $4 : ($4 == "Blocked") ? "@{class=failed}" $4 : $4
                 printf "ROW\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids=%s\n", $2, $3, cell, $5, $6, $7

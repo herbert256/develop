@@ -28,11 +28,11 @@
 # past the pool barrier).
 #
 # A report whose PAGE sits in the Analyses menu (Configuration group, page
-# docs/<env>/analyses/uc2-visits.html via SUBS_GROUP_REPORTS) but whose DATA
+# docs/analyses/uc2-visits.html via SUBS_GROUP_REPORTS) but whose DATA
 # is server-side — the uc2-status.sh arrangement.
 #
 # Usage:
-#   ./uc2-visits.sh   # -> data/<env>/server/reports/uc2-visits.rpt
+#   ./uc2-visits.sh   # -> data/server/reports/uc2-visits.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

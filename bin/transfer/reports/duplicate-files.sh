@@ -81,7 +81,7 @@ fi
 
 # Top-N groups by deliveries (then failed)
 shown=0
-group_rows=$(printf '%s\n' "$agg" | grep $'^G\t' | sort -t"$(printf '\t')" -k3,3nr -k4,4nr | awk -v n="$TOP_N" 'NR<=n' | while IFS=$'\t' read -r _ f del fail nacc fst lst bk cids; do
+group_rows=$(printf '%s\n' "$agg" | grep $'^G\t' | LC_ALL=C sort -t"$(printf '\t')" -k3,3nr -k4,4nr | awk -v n="$TOP_N" 'NR<=n' | while IFS=$'\t' read -r _ f del fail nacc fst lst bk cids; do
     [ -z "$f" ] && continue
     [ "$fst" = "-" ] && fst=""; [ "$lst" = "-" ] && lst=""; [ "$bk" = "-" ] && bk=""   # sentinel -> empty (keeps the TAB columns aligned when a filename recurs only on blank-date rows)
     printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids=%s\n' "$f" "$del" "$fail" "$nacc" "$fst" "$lst" "$bk" "$cids"

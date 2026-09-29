@@ -160,7 +160,7 @@ awk -F'\t' -v OFS='\t' -v OKOUT="$otmp" '
         settled = ($23 != "")
         if ($2 == "Failed" || settled) {
             t = lasttid[$1]
-            if (($1 in cand) && t != "" && (t in bkt) && !($1 in reason) && lastst[$1] ~ /^Failed/) {
+            if (($1 in cand) && t != "" && (t in bkt) && !($1 in reason) && lastst[$1] ~ /^Failed/ && $10 + 0 >= 2) {   # >= 2 legs: a lone leg is Failed for its LEG COUNT (parse forces its status Failed) — never settled (2026-09-29)
                 if ($2 != "Processed" || $23 != bkt[t]) chg++
                 $2 = "Processed"; $23 = bkt[t]; nset++
                 printf "%s\t%s\t%s\n", $1, t, bkt[t] > OKOUT

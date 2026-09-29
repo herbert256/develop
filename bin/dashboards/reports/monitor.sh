@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# monitor.sh — the MONITOR dashboard spec (docs/<env>/dashboards/monitor.html):
+# monitor.sh — the MONITOR dashboard spec (docs/dashboards/monitor.html):
 # the CFT end-to-end monitor's three latency views, moved OUT of the Overview
 # 2026-08 (the poll-floored loop view crowded the hero row there). One file
 # every 15 minutes traverses all four use cases with ourselves as partner
@@ -10,7 +10,7 @@
 #   Monitor staging      UC1 inbound   -> UC2 routing leg    (inside ST, no
 #                                                             poll wait)
 #
-#   -> data/<env>/dashboards/reports/monitor.rpt   (PAGE monitor)
+#   -> data/dashboards/reports/monitor.rpt   (PAGE monitor)
 #
 # THE RPT'S EXISTENCE IS THE "THIS ENV HAS A MONITOR" FLAG: written only when
 # the transfer cache carries monitor rows, REMOVED otherwise. The dashboards

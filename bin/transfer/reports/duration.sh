@@ -26,9 +26,9 @@
 #     p50/p75/p90/p95/p99 by title + position (bin/build/publish.sh).
 #   Duration per day — min / avg / median / max.
 # (The Top 50 longest Files and the duration
-# distribution moved to their own Performance pages 2026-09-03 —
-# duration-longest.sh, duration-distribution.sh — and the slowest
-# subscriptions by p95 on 2026-09-05: duration-slowest.sh.)
+# distribution moved to their own pages 2026-09-03 — duration-longest.sh,
+# duration-distribution.sh; the slowest subscriptions by p95 went to
+# duration-slowest.sh 2026-09-05, a page since retired.)
 #
 # The per-day stat columns are NOT additive across days, so they are marked
 # `noagg`: each day keeps its own value but a narrowed date range blanks their
@@ -44,7 +44,7 @@ source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
 
 # (TOP_N — the longest Files list — moved to duration-longest.sh 2026-09-03;
-# TOP_SUB — the slowest subscriptions — to duration-slowest.sh 2026-09-05)
+# TOP_SUB — the slowest subscriptions — left 2026-09-05, see the header)
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
@@ -52,14 +52,11 @@ shopt -u nullglob
 if [ ${#files[@]} -eq 0 ]; then
     echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
 fi
-# the Min/Avg/Max sibling pages are GONE (2026-09-13, user request): their
-# table sits beside the percentiles on the same page — sweep the old .rpts
-rm -f "$REPORTS_DIR/duration-minmax.rpt" "$REPORTS_DIR/duration-all-minmax.rpt"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
-# Every duration/size cell is spelled out by the awk that computes it —
-# humandur() and hd() in the main pass, humandur()/humanbytes() in the top-N pass —
-# and travels to bash as an extra field on the O, S and top-N lines. There are no
+# Every duration cell is spelled out by the awk that computes it —
+# humandur() and hd()/hdc() in the main pass — and travels to bash as an extra
+# field on the 1 and O lines. There are no
 # bash formatting helpers: they forked an awk per cell, ~350 execs per view.
 # humandur() is the site-wide spelling (report.js humanDur matches it exactly);
 # hd() is the per-day table's WHOLE-UNIT spelling, deliberately coarser.
@@ -71,9 +68,11 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 build_view() {   # ONE output per scope since 2026-09-13: the percentiles table and the min/avg/max table side by side
     local OKONLY=$1 OUT=$2 NAVLINE=$3 SCOPE_DESC=$4 SCOPE_INTRO=$5 SCOPE_NOTE=$6
 
-    # main pass: per-day + distribution stats. Tagged col 1:
-    # 1=per-day min/avg/max, 2=per-day percentiles, D=distribution,
-    # O=overall. (S=subscription left with duration-slowest.sh, 2026-09-05.) OKONLY drops non-Processed Files (the "OK transfers" view).
+    # main pass: per-day stats. Tagged col 1: 1=per-day (min/avg/max and
+    # the percentiles on one line), O=overall. (S=subscription left
+    # 2026-09-05; the D=distribution lines went with the histogram, owned
+    # by duration-distribution.sh.) OKONLY drops non-Processed Files (the
+    # "OK transfers" view).
     local agg; agg=$(awk -F'\t' -v okonly="$OKONLY" '
         function humandur(ms) {
             if (ms < 1000)    return sprintf("%d ms", ms)
@@ -129,15 +128,6 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
             else      { for (i = start; i <= end; i++) out = out (out == "" ? "" : "\037") dentry(PD[i]) }
             return out
         }
-        function bkt(ms) {
-            if (ms <=     100) return 0
-            if (ms <=    1000) return 1
-            if (ms <=   10000) return 2
-            if (ms <=   60000) return 3
-            if (ms <=  300000) return 4
-            if (ms <= 1800000) return 5
-            return 6
-        }
         # delivered Files only: Waiting (staged, pickup still open) is out too —
         # its span is the staging leg, not a delivery (2026-09-28 audit F08;
         # duration-longest.sh already filtered this way)
@@ -149,7 +139,6 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
             dc[d]++; dsum[d] += ms; if (dc[d] == 1 || ms < dmin[d]) dmin[d] = ms; if (ms > dmax[d]) dmax[d] = ms
             DV[d SUBSEP dc[d]] = ms
             DVc[d SUBSEP dc[d]] = $1; DVt[d SUBSEP dc[d]] = $4 " " $5
-            b = bkt(ms); bkc[b]++; bkd[b SUBSEP d]++
         }
         END {
             nd = 0; for (d in dc) days[++nd] = d
@@ -182,18 +171,13 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
                 humandur(gmin), humandur(pctl(50)), humandur(pctl(95)), humandur(pctl(99)), humandur(gmax), \
                 hdc(gmin), hdc(pctl(50)), hdc(gmax), hdc(pctl(10)), hdc(pctl(25)), hdc(pctl(75)), hdc(pctl(90)), hdc(pctl(95)), hdc(pctl(99)), \
                 hdc(int(gsum/GN + 0.5)), hdc(pctl(98))
-            split("<= 100 ms|100 ms - 1 s|1 s - 10 s|10 s - 1 min|1 - 5 min|5 - 30 min|> 30 min", BL, "|")
-            for (b = 0; b <= 6; b++) {
-                bs = ""; for (i = 1; i <= nd; i++) { d = days[i]; c = bkd[b SUBSEP d] + 0; if (c > 0) bs = bs (bs ? "," : "") d ":" c }
-                printf "D\t%s\t%d\t%.1f%%\t@data:buckets=%s\n", BL[b+1], bkc[b] + 0, (GN > 0 ? 100 * bkc[b] / GN : 0), bs
-            }
         }
     ' "$FILES")
 
     if [ -z "$agg" ]; then
         {
-            printf 'TITLE\tTransfer Duration\n'
-            printf 'DESC\tHow long transfers take — per-day min/avg/median/max and percentiles, (the longest Files, the duration distribution and the slowest subscriptions have their own pages). %s\n' "$SCOPE_DESC"
+            printf 'TITLE\tDuration\n'
+            printf 'DESC\tHow long transfers take — per-day percentiles and min / avg / median / max (the longest Files and the distribution have their own pages). %s\n' "$SCOPE_DESC"
             printf 'INTRO\tNo Files with a measured duration in this view.\n'
             printf '%s\n' "$NAVLINE"
             printf 'TABLE\tTransfer duration\n'
@@ -241,8 +225,8 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
     emit_view() {   # $1 the .rpt to write  $2 its NAV line (both per-day tables land on it, 2026-09-13)
         local OUT=$1 NAVLINE=$2
     {
-        printf 'TITLE\tTransfer Duration\n'
-        printf 'DESC\tHow long transfers take — per-day min/avg/median/max and percentiles, (the longest Files, the duration distribution and the slowest subscriptions have their own pages). %s\n' "$SCOPE_DESC"
+        printf 'TITLE\tDuration\n'
+        printf 'DESC\tHow long transfers take — per-day percentiles and min / avg / median / max (the longest Files and the distribution have their own pages). %s\n' "$SCOPE_DESC"
         printf 'INTRO\tDuration of the **%s** Files over **%s** day(s). Overall **min %s**, **median (p50) %s**, **p95 %s**, **p99 %s**, **max %s**. %s The two per-day tables sit side by side — the percentiles, then min / avg / median / max; the stats are shown in **whole seconds, minutes or hours**, and a narrowed date range keeps each day but blanks the non-additive totals.\n' \
             "$g_n" "$g_days" "$u_min" "$u_p50" "$u_p95" "$u_p99" "$u_max" "$SCOPE_INTRO"
         printf '%s\n' "$NAVLINE"

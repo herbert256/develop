@@ -12,8 +12,8 @@
 #
 # Every first-column VALUE (a protocol, or an attribute value like a cipher)
 # links to a per-value page listing the SUBSCRIPTIONS that used it: one .rpt per
-# (table, value) into data/<env>/transfer/reports/secparams/<slug>.rpt, rendered
-# to docs/<env>/transfer/secparams/<slug>.html by bin/transfer/publish.sh.
+# (table, value) into data/transfer/reports/secparams/<slug>.rpt, rendered
+# to docs/transfer/secparams/<slug>.html by bin/transfer/publish.sh.
 #
 # Usage:
 #   ./security-params.sh   # reads input/*.csv, writes data/security-params.rpt
@@ -124,7 +124,7 @@ IFS='|' read -r tot_legs tot_failed tot_processed <<< "$(printf '%s\n' "$agg" \
 # a deterministic sorted order so the collision-bumped slugs are stable. The
 # _slugmap.tsv (disc<TAB>value<TAB>slug) is read back when emitting the main
 # tables' first-column links. bin/transfer/publish.sh renders these to
-# docs/<env>/transfer/secparams/<slug>.html.
+# docs/transfer/secparams/<slug>.html.
 #
 # Three processes for ALL the pages, not thirteen per page: the planner awk reads
 # the sidecar ONCE and streams every page's rows behind a <page index>/<kind>
@@ -225,7 +225,7 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
         close(smap)
     }
 ' \
-  | sort -t$'\t' -k1,1n -k2,2n -k7,7nr \
+  | LC_ALL=C sort -t$'\t' -k1,1n -k2,2n -k7,7nr \
   | awk -F'\t' -v secdir="$secdir" -v gen="$(date '+%Y-%m-%d %H:%M:%S')" '
     # close the Subscription table and open the Partners one: the partners on this
     # page (a subscription with >1 partner counts under each; subscriptions with
@@ -280,11 +280,11 @@ emit_attr_rows() {   # $1 = attribute key
     # no Error / OK pair, no green/red cells, no drills); the bucket payload
     # keeps its metrics, so the token reads metric 2 (ok); rows sort by it
     printf '%s\n' "$agg" | awk -F'|' -v k="$key" '$1=="ATTR" && $2==k { print $3"\t"$4"\t"$5"\t"$6"\t"$7"\t"$8"\t"$9 }' \
-        | sort -t$'\t' -k4,4nr | awk -F'\t' -v smap="$smap" -v d="$key" -v lbl="$label" "$SECROW_AWK"
+        | LC_ALL=C sort -t$'\t' -k4,4nr | awk -F'\t' -v smap="$smap" -v d="$key" -v lbl="$label" "$SECROW_AWK"
 }
 
 {
-    printf 'TITLE\tTransfer Security Parameters\n'
+    printf 'TITLE\tSecurity Parameters\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tEvery attribute parsed from the SecurityParameters column — TLS version, cipher, cipher suite, MAC, key exchange, public key — in one table.\n'
     printf 'INTRO\tConnection security by SecurityParameters attribute (TLS version, Cipher, MAC, Key Exchange, Public Key, ...), one table. Click a value for the subscriptions that use it.\n'
     printf 'TABLE\t\tdrill=transfer\tnoagg=2\n'

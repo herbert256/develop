@@ -3,7 +3,7 @@
 # home.sh — the ONE figure the home page's status tables cannot derive
 # themselves: the SEEN count per entity group.
 #
-#   -> data/<env>/analyses/reports/home.rpt
+#   -> data/analyses/reports/home.rpt
 #
 # One line per member, TAB-separated:
 #
@@ -14,7 +14,7 @@
 # (logicals, partners, domains, applications, bl).
 #
 # WHY ONLY THIS. bin/build/publish.sh's _status_table computes every other figure
-# straight from data/<env>/flow-manager/base/<member>.tsv (Total = rows,
+# straight from data/flow-manager/base/<member>.tsv (Total = rows,
 # Error/Warning/Ok = red/orange/green). Seen is the
 # exception: it counts the configured names that actually appear in the logs,
 # which only the coverage data knows. This script REPLACES entities.sh and

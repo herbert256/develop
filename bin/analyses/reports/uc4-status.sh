@@ -54,7 +54,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # SERVER lib, not the analyses one: this is a server-DATA report (it reads the
-# server parse cache and writes data/<env>/server/reports/). It lives HERE
+# server parse cache and writes data/server/reports/). It lives HERE
 # because its page sits in the ANALYSES menu, in the Subscriptions group — the
 # same arrangement as cross-reference.sh. bin/server/reports.sh still runs it.
 source "$SCRIPT_DIR/../../server/lib.sh"
@@ -259,13 +259,15 @@ fi
 # status label, an em-dash for an absent date, the loglines attribute — where a
 # bash while-read used to fork a $(printf) per row into an O(n^2) append.
 rows=$(awk -F'\t' '
+    function z(v) { return (v + 0 == 0) ? "" : v }   # a count cell shows blank, never 0
     $3 == "" { next }          # no subscription (and the blank line an empty stream feeds in)
     {
+        # ok -> error is RED like its row and its STAT box (2026-09-29)
         st = ($2 == 0) ? "@{class=failed}error" : \
-             ($2 == 1) ? "@{class=warn}ok -> error" : \
+             ($2 == 1) ? "@{class=failed}ok -> error" : \
              ($2 == 2) ? "@{class=processed}ok" : "not seen"
-        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:loglines=%s\n", st, $3, $4, $5, $6, \
-            ($7 == "-" ? "—" : $7), $8, $9, $10, ($11 == "-" ? "—" : $11), $12
+        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:loglines=%s\n", st, $3, z($4), z($5), z($6), \
+            ($7 == "-" ? "—" : $7), z($8), z($9), z($10), ($11 == "-" ? "—" : $11), $12
     }
 ' <<< "$(printf '%s\n' "$agg" | grep $'^A\t' | sort -t$'\t' -k2,2n -k6,6nr -k4,4nr -k3,3)")
 [ -n "$rows" ] && rows+=$'\n'   # put back the newline the command substitution stripped (the loop ended every row with one)
@@ -275,6 +277,8 @@ rows=$(awk -F'\t' '
 # dashboards overview), so one is created when absent.
 [ -f "$SLOTS_OUT" ] || : > "$SLOTS_OUT"
 
+nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }   # a count cell shows blank, never 0
+
 {
     printf 'TITLE\tUC4 status\n'
     printf 'DESC\tEvery configured UC4 (the partner connects in and delivers a file to us) subscription in one of four statuses: healthy, failing, failing after a working history, or not seen in the transfer log — with its logons, arrivals and refusals from the server log.\n'
@@ -283,15 +287,15 @@ rows=$(awk -F'\t' '
     printf 'STAT\twhite\t%s\tUC4 subscriptions\n' "$n_all"
     printf 'STAT\tgreen\t%s\tok\n' "$n_ok"
     printf 'STAT\tred\t%s\terror\n' "$n_err"
-    printf 'STAT\torange\t%s\tok -> error\n' "$n_okerr"
+    printf 'STAT\tred\t%s\tok -> error\n' "$n_okerr"   # red like its rows (the result colour), 2026-09-29
     printf 'STAT\torange\t%s\tnot seen\n' "$n_notseen"
 
     printf 'TABLE\tUC4 subscriptions\twide\tnofilter\n'
     printf 'HEAD\tStatus\tSubscription\tFiles\tOK\tError\tLast file\tLogons\tArrivals\tProblems\tLast log\n'
     printf 'KIND\ttext\tmono\tnum\tnumprocessed\tnumfailed\ttext\tnum\tnum\tnumfailed\ttext\n'
     printf '%s\n' "$rows"   # %s\n: $rows already ends in one, so this is the blank line before TOTAL
-    printf 'TOTAL\tTotal (%s subscription(s))\t\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t\n' \
-        "$n_all" "$t_files" "$t_ok" "$t_er" "$t_lg" "$t_ar" "$t_prob"
+    printf 'TOTAL\tTotal (%s subscription(s))\t\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t\n' \
+        "$n_all" "$(nz0 "$t_files")" "$(nz0 "$t_ok")" "$(nz0 "$t_er")" "$(nz0 "$t_lg")" "$(nz0 "$t_ar")" "$(nz0 "$t_prob")"
     printf 'NOTE\tEvery configured **UC4** subscription, classified. The colour is the site-wide **result**: green/red mean real transfer data (its LAST File OK / Failed-or-Expired), and orange — **not seen** — means the transfer log never has. **error** vs **ok -> error** is a per-FILE question: right after any OK File the subscription WAS green, so a red subscription with even one OK File in the window is a regression; that is finer than **From green to red**, which buckets by whole days. The server counts are **account-keyed**, because a partner connects to an account and the subscription name barely reaches the log — the join is 1:1 for UC4. **Logons** counts the "successfully authenticated" server-log line — one per successful SSH logon (an "Allowed user" whitelist admission that then fails authentication does not count). **Arrivals** is a file actually handed over ("will be submitted for processing"), **Problems** a logon the account whitelist **refused**. A **not seen** row with Logons but no Arrivals is a partner that gets in and never delivers; one with only Problems is a partner turned away at the door. Click a row for its most recent server-log lines.\n'
 
     printf 'KEYWORDS\tuc4, inbound, partner delivers, upload, receive, status, green, red, orange, regression, never worked, never seen, unused, logon, whitelist, refused, disallowed, no files, subscription health\n'

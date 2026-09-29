@@ -17,17 +17,19 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Inbound and Outbound same Protocol</h1>
 <h2>What it shows</h2>
-<p>The Files whose <strong>first inbound</strong> leg used the same protocol as their <strong>last outbound</strong> leg &mdash; for example an SFTP upload that also left over SFTP instead of going on to the CFT.</p>
+<ul>
+<li>The Files whose <strong>first inbound</strong> leg used the same protocol as their <strong>last outbound</strong> leg &mdash; for example an SFTP upload that also left over SFTP instead of going on to the CFT. The summary line under the tables counts them.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Per subscription</strong> (first table) &mdash; Subscription, Protocol, <strong>Files</strong>, <strong>OK</strong>, <strong>Error</strong>, <strong>First</strong> and <strong>Last</strong> day. Full period: From/To does not narrow it.</li>
+<li><strong>Files</strong> &mdash; every File, newest first, 500 per page: Subscription, <strong>Date/time</strong> (the File&rsquo;s start; From/To reads it), Protocol, <strong>First inbound</strong> and <strong>Last outbound</strong> (their leg start times), Legs, <strong>Outcome</strong> (OK green, Error or Expired red, Waiting plain), CoreId, Filename.</li>
+</ul>
 <h2>Rules</h2>
 <ul>
-<li>Per File (one CoreId): the protocol of its inbound leg with the earliest start is compared with the protocol of its outbound leg with the latest start; the File is listed when they are equal.</li>
-<li>Protocols as the transfer log names them: <code>ssh</code> (SFTP), <code>ftp</code>, <code>pesit</code>, <code>routing</code>.</li>
-</ul>
-<h2>Tables</h2>
-<ul>
-<li><strong>Per subscription</strong> &mdash; per subscription and protocol: Files, OK, Error, the first and last day. Whole-window figures: From/To does not narrow this table.</li>
-<li><strong>Files</strong> &mdash; every File, newest first, 500 per page: the subscription, the File&rsquo;s start, the protocol, the start of its first inbound and last outbound leg, its leg count, outcome, CoreId and file name. From/To narrows it; the search box filters it.</li>
-<li>Rows tint by the subscription&rsquo;s result: <strong>light green</strong> last transfer OK, <strong>light orange</strong> configured but never seen, <strong>light red</strong> last transfer in Error.</li>
+<li>Per File: the protocol of the inbound leg with the earliest start is compared with that of the outbound leg with the latest start; listed when both exist and are equal.</li>
+<li>Protocols as logged: <code>ssh</code> (SFTP), <code>ftp</code>, <code>pesit</code>, <code>routing</code>.</li>
+<li>Rows tint by the subscription&rsquo;s result colour (see Generic help).</li>
 </ul>
 </main>
 </body>

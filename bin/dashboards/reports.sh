@@ -14,14 +14,12 @@
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/lib.sh"   # REPORTS_DIR (for the stale-rpt cleanup below)
+source "$SCRIPT_DIR/lib.sh"   # REPORTS_DIR (the orphaned-temp sweep below)
 rm -f "$REPORTS_DIR"/*.rpt.tmp   # orphaned atomic-write temps from a killed run
 
 "$SCRIPT_DIR/reports/overview.sh"
 # (monitor.sh is NOT run here: bin/build.sh runs it once, in the foreground
 # before this step — whether monitor.rpt exists sets every page's top bar)
-# ONE dashboard (2026-07): the per-topic specs folded into overview.sh —
-# their stale rpts are removed so the finder/sitemap loops stop seeing them
-rm -f "$REPORTS_DIR"/{transfer,server,failures,volume,connections,pesit,security}.rpt
+# (ONE dashboard since 2026-07: the per-topic specs folded into overview.sh)
 
 echo "All dashboards reports done." >&2

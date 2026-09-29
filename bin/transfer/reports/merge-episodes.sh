@@ -8,7 +8,7 @@
 # tabbed page; the Recovered flows page went.
 #
 # Usage:
-#   ./merge-episodes.sh    # -> data/<env>/transfer/reports/episodes.rpt
+#   ./merge-episodes.sh    # -> data/transfer/reports/episodes.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -16,4 +16,4 @@ source "$SCRIPT_DIR/../lib.sh"
 source "$SCRIPT_DIR/../../merge_rpt.sh"
 OUT="$REPORTS_DIR/episodes.rpt"
 comps=("$REPORTS_DIR/episodes-src.rpt" "$REPORTS_DIR/recovered.rpt")
-merge_rpt "$OUT" "Failure Episodes" "Every red run of each subscription with its time to recovery, and the subscriptions that came back to green after a red episode." "The failure **episodes** — every run of failed Files per subscription and the **time to recovery** — and the subscriptions that **recovered**: back to green after a red episode." "episode, outage, incident, open, recovery, time to recovery, recovered, back to green, mttr" "${comps[@]}"
+merge_rpt "$OUT" "Episodes" "Every red run of each subscription with its time to recovery, and the subscriptions that came back to green after a red episode." "The failure **episodes** — every run of failed Files per subscription and the **time to recovery** — and the subscriptions that **recovered**: back to green after a red episode." "episode, outage, incident, open, recovery, time to recovery, recovered, back to green, mttr" "${comps[@]}"

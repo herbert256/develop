@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # bin/transfer/publish-details.sh — render the PER-ENTITY DETAIL PAGES:
-#   docs/<env>/details/<sub>/<slug>.html   (one per account/subscription/login/
+#   docs/details/<sub>/<slug>.html   (one per account/subscription/login/
 #                                           host/partner/application/domain/
 #                                           incoming connection, plus a
 #                                           browsable index per subdir)
@@ -70,8 +70,8 @@ fi
 trap '[ -n "${VERDICT_DIR:-}" ] && rm -rf "$VERDICT_DIR"' EXIT
 
 # ---- per-entity detail pages ------------------------------------------------
-# Render every data/<env>/transfer/reports/details/<sub>/*.rpt to
-# docs/<env>/details/<sub>/*.html plus a browsable index of that subdir.
+# Render every data/transfer/reports/details/<sub>/*.rpt to
+# docs/details/<sub>/*.html plus a browsable index of that subdir.
 # Detail pages sit two levels below the env root, so their asset/home links
 # use ../../ (html_head adds the extra ../ to the docs root itself).
 # (THE LAST-ERROR SPLICE, 2026-08..2026-09-16: a red subscription's error page
@@ -87,7 +87,7 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
     mkdir -p "$outdir"
     rm -f "$outdir"/*.html
     local hslug="details-$sub"
-    # Detail pages sit in docs/<env>/details/<sub>/, so acct/site links resolve
+    # Detail pages sit in docs/details/<sub>/, so acct/site links resolve
     # from one level up ("../accounts/…", "../subscriptions/…").
     # (The per-subdir index.html listing page was REMOVED 2026-07 — nothing
     # linked it; $2 title only labels the call site now.)
@@ -216,58 +216,9 @@ for _p in "${dt_pids[@]}"; do wait "$_p"; done
 unset dt_pids _p
 RESMAP_FILES=""
 
-# ---- the subscription "Latest files" pages (2026-09-16, user request) -------
-# docs/latest/<slug>.html, one per subscription that carries Files: the table
-# the subscription detail pages used to hold (details_writer.awk diverts
-# section 9 into data/transfer/reports/latest/). UNLIKE a detail page these DO
-# get the search box and the From/To selectors — which is the point of the
-# move — so they render with the transfer date list, not the empty CUR_DATES
-# the detail pages use. Cleared wholesale: a subscription that lost its Files
-# (or its name) must not keep a page.
-#
-# THE ROWS SHIP AS DATA (2026-09-27, user request): each page's rendered rows
-# move into the sibling docs/latest/<slug>.js (split_table_rows), which the
-# page loads before report.js; report.js latestRows() puts them back into the
-# table (data-latest="<slug>") before any table setup runs. The payload
-# REGISTERS itself — (window.AXWAY_LATEST ||= []).push({s, n, h, r}) = slug,
-# subscription name, the HEAD labels (tab-separated; Pickup and Recovered come
-# and go per subscription) and the rows.
-render_latest_page() {   # $1 rpt  $2 slug
-    local f=$1 b=$2 pro
-    # report key per subscription: a remembered search or sort belongs to
-    # THAT flow's list, not to every other subscription's page
-    render_rpt "$f" "$DOCS/latest/$b.html" "../assets/style.css" "../index.html" "TRANSFER - Latest files" "" "latest" "latest-$b"
-    pro=$(awk -F'\t' -v s="$b" '
-        function js(x) { gsub(/\\/, "\\\\", x); gsub(/"/, "\\\"", x); return x }
-        $1 == "TITLE" && n == "" { n = $2; sub(/^Latest files: /, "", n) }
-        $1 == "HEAD" && h == "" { h = js($2); for (i = 3; i <= NF; i++) h = h "\\t" js($i) }
-        END { printf "(window.AXWAY_LATEST=window.AXWAY_LATEST||[]).push({s:\"%s\",n:\"%s\",h:\"%s\",r:`", s, js(n), h }' "$f")
-    split_table_rows "$DOCS/latest/$b.html" "$DOCS/latest/$b.js" "$pro" '`});' "data-latest=\"$b\""
-}
-shopt -s nullglob
-latp=("$DATA"/transfer/reports/latest/*.rpt)
-shopt -u nullglob
-mkdir -p "$DOCS/latest"
-rm -f "$DOCS"/latest/*.html "$DOCS"/latest/*.js
-if [ ${#latp[@]} -gt 0 ]; then
-    CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"
-    for f in "${latp[@]}"; do
-        b=${f##*/}; b=${b%.rpt}
-        # search.html is the search page's own name
-        if [ "$b" = search ]; then echo "WARNING: subscription slug 'search' collides with docs/latest/search.html — its Latest files page is skipped." >&2; continue; fi
-        pub_run render_latest_page "$f" "$b"
-    done
-    pub_wait
-    CUR_DATES=""; DLINK_BASE="../details/"
-    echo "Rendered docs/latest/ (${#latp[@]} subscription page(s) + their row payloads)." >&2
-fi
-
-# (docs/latest/search.html, the Latest files search of 2026-09-27, went
-# 2026-09-29: All files search finds every File, the latest ones included)
-rm -f "$DOCS/latest/search.html"
-
-# Redirect stubs were REMOVED 2026-07 (no backwards compatibility): the old
-# details/transfer-sites/ tree and the IP->hostname stubs are gone — old URLs 404.
-rm -rf "$DOCS/details/transfer-sites"
+# (The subscription "Latest files" pages, docs/latest/<slug>.html + their
+# row payloads, went 2026-09-29, user request: a subscription page lists its
+# Files itself — the Files table, built in the browser from docs/search/all/
+# by assets/sub-files.js; see details_writer.awk files_table.)
 
 echo "Rendered docs/details/ (per-entity pages)." >&2

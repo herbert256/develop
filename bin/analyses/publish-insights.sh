@@ -1,18 +1,16 @@
 #!/usr/bin/env bash
 #
-# bin/analyses/publish-insights.sh — render the seven INSIGHT analyses pages
-# (docs/<env>/analyses/*.html) for the CURRENT env. Called by
+# bin/analyses/publish-insights.sh — render the three INSIGHT analyses pages
+# (docs/analyses/*.html). Called by
 # bin/analyses/publish.sh (the Reports start page, bin/build/publish.sh, lists only
 # pages that exist). All pages are config-vs-reality joins over data already
 # on disk — the flow-manager caches, the transfer/server report .rpt files,
 # the parse caches and (certificates + cron, like uc3-polling.sh) the
 # raw FlowManager JSON exports via jq:
 #   whitelist-audit.html   whitelisted IPs vs the addresses actually connecting
-#   config-hygiene.html    config twins and orphaned objects
-#   double.html            names configured as BOTH an application and a
-#                          partner, and subscriptions tied to two partners
-#   expired.html           staged UC2 files deleted before pickup (Expired):
-#                          retention timing, per-account pickup behavior
+#   config-hygiene.html    config twins, orphaned objects, the server-log config
+#                          defects and the "one name, two roles" tables
+#   subscriptions-in-boxes.html  every subscription boxed by what is true of it
 # Every page degrades gracefully: a missing source skips that column/section
 # rather than failing the publish. No arguments; runs from any directory.
 #
@@ -57,14 +55,17 @@ else
     : > "$OBSADDR"
 fi
 
-# Server-side inbound connections per source address (inbound-connections.rpt)
+# Server-side INBOUND contact per client address: the inbound connection
+# lines (_inbound-addr.tsv, uncapped) plus the SSH logon lines of that
+# address (_logons-hosts.tsv: field 4 authentications + field 7 disallowed,
+# else field 6 allowed) — bin/server-inbound-addr.awk, shared with the
+# Cleanup backlog. (Until 2026-09-29 this read the Connections report's
+# top-50 "By source address" table, whose lines were mostly OUR outbound
+# connections — the targets read as partner sources.)
 SRVADDR="$TMPD/srvaddr.tsv"
-if [ -f "$SRPT/inbound-connections.rpt" ]; then
-    awk -F'\t' '$1=="TABLE"{t=$2} $1=="ROW" && t=="By source address" && $2 !~ /^@\{/ { print $2 "\t" $3 }' \
-        "$SRPT/inbound-connections.rpt" > "$SRVADDR"
-else
-    : > "$SRVADDR"
-fi
+_ia="$SRPT/_inbound-addr.tsv"; [ -f "$_ia" ] || _ia=/dev/null
+_lh="$DATA/server/cache/_logons-hosts.tsv"; [ -f "$_lh" ] || _lh=/dev/null
+awk -F'\t' -f "$SCRIPT_DIR/../server-inbound-addr.awk" "$_ia" "$_lh" | LC_ALL=C sort > "$SRVADDR"
 
 # ---- 4. Whitelist audit -----------------------------------------------------
 write_whitelist_audit_page() {
@@ -73,7 +74,6 @@ write_whitelist_audit_page() {
     {
         html_head "Whitelist audit" "../assets/style.css" "" "ANALYSES" "whitelist-audit"
         printf '<h1>Whitelist audit</h1>\n'
-        printf '<p class="subtitle">Every whitelisted partner IP against what actually connects: <strong>Used</strong> carried real Files, <strong>Connects only</strong> shows server connections or server-log mentions but no transfer, <strong>Never seen</strong> is prunable attack surface &mdash; the Cleanup backlog&rsquo;s unused-whitelist rule. The second table is the reverse: source addresses that carried traffic without a whitelist entry.</p>\n'
         # SERVER-SEEN = an inbound connection (SRV) OR a server-log mention
         # (MEN = unknown/white.tsv) — the Cleanup backlog's rule too
         # (2026-09-29: this page ignored the mentions, the backlog the
@@ -107,7 +107,7 @@ write_whitelist_audit_page() {
                 # ranges exploded into thousands of members) aggregates per
                 # allowing account below instead of drowning the page.
                 printf "<h2>Active whitelisted addresses</h2>\n<div class=\"tablewrap\"><table class=\"fit\">\n"
-                printf "<tr><th>IP</th><th>Allowing accounts</th><th class=\"num\">Files</th><th class=\"num\">Server connections</th><th>Last File</th><th>Verdict</th></tr>\n"
+                printf "<tr><th>IP</th><th>Allowing accounts</th><th class=\"num\">Files</th><th class=\"num\">Server contacts (in)</th><th>Last File</th><th>Verdict</th></tr>\n"
                 n = 0; for (ip in W) if (OF[ip] + 0 > 0 || SC[ip] + 0 > 0 || (ip in MN)) KEY[++n] = padkey(ip) "\t" ip
                 for (i = 1; i <= n; i++) { for (j = i + 1; j <= n; j++) if (KEY[j] < KEY[i]) { t2 = KEY[i]; KEY[i] = KEY[j]; KEY[j] = t2 } }
                 if (n == 0) printf "<tr><td colspan=\"6\">No whitelisted address shows any activity.</td></tr>\n"
@@ -142,7 +142,7 @@ write_whitelist_audit_page() {
                 printf "</table></div>\n"
 
                 printf "<h2>Sources without a whitelist entry</h2>\n<div class=\"tablewrap\"><table class=\"fit\">\n"
-                printf "<tr><th>Address</th><th class=\"num\">Files</th><th class=\"num\">Server connections</th><th>Last File</th></tr>\n"
+                printf "<tr><th>Address</th><th class=\"num\">Files</th><th class=\"num\">Server contacts (in)</th><th>Last File</th></tr>\n"
                 m = 0
                 for (a2 in OF) if (!(a2 in W)) U[a2] = 1
                 for (a2 in SC) if (!(a2 in W)) U[a2] = 1
@@ -155,7 +155,6 @@ write_whitelist_audit_page() {
                 printf "</table></div>\n"
             }
         ' /dev/null
-        printf '<p class="range">Whitelist from the partner AllowIP configuration (<span class="mono">base/_white.tsv</span>); observed Files from the transfer logs (inbound-connection source addresses), server connections from the server <strong>Inbound Connections</strong> report. Internal cluster addresses can appear among the unlisted sources — they connect over PeSIT without needing a whitelist entry. A named (non-IP) source is an already-resolved hostname.</p>\n'
         printf '</body>\n</html>\n'
     } > "$out"
 }
@@ -167,7 +166,6 @@ write_config_hygiene_page() {
     {
         html_head "Config hygiene" "../assets/style.css" "" "ANALYSES" "config-hygiene"
         printf '<h1>Config hygiene</h1>\n'
-        printf '<p class="subtitle">The cleanup backlog: likely-duplicate <strong>twins</strong> (names identical once case and the <span class="mono">-</span>/<span class="mono">_</span> separators are folded &mdash; configured as separate entities, usually one is legacy) and <strong>orphans</strong> (objects nothing references: accounts without a subscription, hosts and logins no subscription uses, whitelist entries no account allows). Not in Flow Manager covers the reverse direction &mdash; logged values missing from the configuration.</p>\n'
         awk -F'\t' -v B="$FBASE" -v X="$XREF" -v DET="$TRPT/details" '
             function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
             function fold(s) { s = toupper(s); gsub(/_/, "-", s); return s }
@@ -227,7 +225,6 @@ write_config_hygiene_page() {
                 printf "</table></div>\n"
             }
         ' /dev/null
-        printf '<p class="range">Twins fold case and the <span class="mono">-</span>/<span class="mono">_</span> separators (the known real phenomenon: <span class="mono">FRE-SAPCD-&hellip;</span> vs <span class="mono">FRE_SAPCD_&hellip;</span> configured as separate flows). Orphan checks use the cross-reference pair caches; rows are tinted by each entity&rsquo;s standard result color, so a green &ldquo;twin&rdquo; pair is two entities that BOTH work &mdash; deliberate, not legacy.</p>\n'
         # ---- the SERVER-LOG defect families (2026-08 study E3) --------------
         # Rendered from the config-defects.tsv sidecar bin/server/reports/
         # config-defects.sh computes (compute there, render here). Transfer
@@ -235,7 +232,6 @@ write_config_hygiene_page() {
         local _cdf="$DATA/server/reports/config-defects.tsv"
         if [ -s "$_cdf" ]; then
             printf '<h2>Server-log config defects</h2>\n'
-            printf '<p class="range">Three recurring single-cause families from the server log, each fixable with one configuration change: transfer profiles missing their <strong>Receive File As</strong> field (every incoming transfer of that profile errors), configured hosts <strong>DNS cannot resolve</strong>, and the recurring server-tuning warning.</p>\n'
             awk -F'\t' -v DET="$TRPT/details" '
                 function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); return s }
                 function loadslugs(f,   l, a) { while ((getline l < f) > 0) { split(l, a, "\t"); if (a[1] != "") HSL[toupper(a[1])] = a[2] } close(f) }
@@ -250,12 +246,10 @@ write_config_hygiene_page() {
                     for (i = 1; i <= np; i++) print pr[i]
                     if (np == 0) print "<tr><td colspan=\"4\">None in this window.</td></tr>"
                     printf "<tr class=\"total\"><td>Total (%d profile(s))</td><td class=\"num\">%d</td><td></td><td></td></tr>\n</table></div>\n", np+0, tp+0
-                    printf "<p class=\"range\">The profile is missing its <strong>Receive File As</strong> field, so every incoming transfer that uses it errors. Profiles are internal flow plumbing and have no page of their own.</p>\n"
                     printf "<h3>DNS-dead configured hosts</h3>\n<div class=\"tablewrap\"><table class=\"fit\">\n<tr><th>Host</th><th class=\"num\">Failed lookups</th><th>First</th><th>Last</th></tr>\n"
                     for (i = 1; i <= nd; i++) print dr[i]
                     if (nd == 0) print "<tr><td colspan=\"4\">None in this window.</td></tr>"
                     printf "<tr class=\"total\"><td>Total (%d host(s))</td><td class=\"num\">%d</td><td></td><td></td></tr>\n</table></div>\n", nd+0, td+0
-                    printf "<p class=\"range\">A configured endpoint name DNS cannot resolve. A Last date near the window end means it is STILL failing; a single-day range was a transient.</p>\n"
                     printf "<h3>Server tuning warnings</h3>\n<div class=\"tablewrap\"><table class=\"fit\">\n<tr><th>Setting</th><th class=\"num\">Warnings</th><th>First</th><th>Last</th></tr>\n"
                     for (i = 1; i <= nt; i++) print tr2[i]
                     if (nt == 0) print "<tr><td colspan=\"4\">None in this window.</td></tr>"
@@ -282,7 +276,7 @@ emit_double_sections() {
     if [ ! -f "$FBASE/_apps.tsv" ] || [ ! -f "$FBASE/_partners.tsv" ]; then return 0; fi
     # names configured as both (case-folded intersection of the two base lists)
     local dbl="$TMPD/double-names.txt"
-    comm -12 <(cut -f1 "$FBASE/_apps.tsv" | tr '[:lower:]' '[:upper:]' | LC_ALL=C sort -u) \
+    LC_ALL=C comm -12 <(cut -f1 "$FBASE/_apps.tsv" | tr '[:lower:]' '[:upper:]' | LC_ALL=C sort -u) \
              <(cut -f1 "$FBASE/_partners.tsv" | tr '[:lower:]' '[:upper:]' | LC_ALL=C sort -u) > "$dbl"
     # subscriptions mapped to MORE than one partner group (xref, pairs deduped)
     local msub="$TMPD/double-subs.tsv"
@@ -294,7 +288,6 @@ emit_double_sections() {
         : > "$msub"
     fi
     printf '<h2>Double &mdash; one name, two roles</h2>\n'
-    printf '<p class="range">The first table lists every name configured as BOTH an <strong>application</strong> and a <strong>partner</strong> &mdash; two separate entities with their own detail pages, counts and result colors. The second lists the subscriptions whose configuration connects them to <strong>two partner groups</strong>. Each row names the accounts that put the name in each role.</p>\n'
     {
         awk -F'\t' -v B="$FBASE" -v X="$XREF" -v DET="$TRPT/details" '
             function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
@@ -362,15 +355,14 @@ emit_double_sections() {
                 printf "</table></div>\n"
             }
         ' "$dbl" "$msub"
-        printf '<p class="range">Both roles are CORRECT products of the account naming convention, not collisions: a <strong>relay</strong> makes the middle token the internal system and the external party at once (the UC5 rule, and the 3-part <span class="mono">&hellip;_P2P</span> special; a UC8 relay reclassifies the partner token as an application), an account like <span class="mono">DOM_TOKEN_TOKEN</span> simply repeats the token, and the remaining cases are one organisation appearing as the middle segment of one account name and the trailing segment of another. A subscription with two partners comes from the same rules: a two-partner account name or a UC5 relay whose application token is also a partner.</p>\n'
     }
 }
 
 
 # ---- 9. Subscriptions in boxes ----------------------------------------------
 # One row per CONFIGURED subscription — the whole estate, not a problem list —
-# with one column per box saying what is true of it. EIGHTEEN boxes (the account
-# view adds a 19th, No subscriptions) from three kinds of source: a report's
+# with one column per box saying what is true of it. The boxes come from three
+# kinds of source: a report's
 # own .rpt, columns derived here from _files.tsv (One-legged, Waiting,
 # Expired), and the config/coverage caches, which have no report at all
 # (Not seen, Seen, OK, Error). _subs_box_rows below is the ONE authority
@@ -380,16 +372,11 @@ emit_double_sections() {
 # section, sitemap card), which it LEADS as the group's overview. A missing
 # source .rpt (production skips some server reports) contributes no rows,
 # leaving that column empty — and report.js then hides it.
-# Missing cron is the odd one out among the report-backed columns: the analyses
-# pages are hand-rendered rather than .rpt-driven, so bin/analyses/publish.sh's
-# Missing cronjobs page exports it as a TSV sidecar, written just before that
-# script runs this one.
-# _subs_box_rows -> "<colno>\t<subscription>" for the eighteen boxes, one line
-# per (box, subscription). SHARED by BOTH box pages: Subscriptions in boxes
-# renders it directly, Accounts in boxes maps each subscription onto its
-# configured accounts. Extracted so the two can never disagree about what a box
-# MEANS — the account page is defined as "a connected subscription is in this
-# box", so it has to start from exactly these rows and nothing recomputed.
+# Missing cron reads the pageless missing-cronjobs.rpt like any report-backed
+# column (the Polling page shows those rows as Schedule "no cron").
+# _subs_box_rows -> "<colno>\t<subscription>" for every box, one line per
+# (box, subscription). (The Accounts in boxes page that shared it went
+# 2026-09-29.)
 _subs_box_rows() {
     local spec f c nf
         # column 1 — One-legged, REFINED (2026-07): a one-legged CoreId is only
@@ -549,7 +536,7 @@ _subs_box_rows() {
                         if (s ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] /) {
                             d = substr(s, 1, 10); gsub(/-/, "", d); key = d substr(s, 12, 12) }
                         break }
-                    if (key == "" && $10 ~ /^[0-9]/) { d = $10; gsub(/-/, "", d); key = d "23:59:59.999" }
+                    if (key == "" && $11 ~ /^[0-9]/) { d = $11; gsub(/-/, "", d); key = d "23:59:59.999" }   # Last ($11; $10 is First — 2026-09-29 fix)
                     if (key == "") next
                     hu = tolower(h)
                     if (hu in SUBS) { m2 = split(substr(SUBS[hu], 2), S2, "\037")
@@ -601,7 +588,7 @@ _subs_box_rows() {
         :   # the tests above are the last commands; keep the exit status 0
 }
 
-# The "main reason" sidecar (2026-08): data/<env>/analyses/reports/
+# The "main reason" sidecar (2026-08): data/analyses/reports/
 # _subs-boxes.tsv, "subscription <TAB> box label" — ONE line per subscription,
 # naming the most specific box it sits in. The home page's Still-failing table
 # shows it as the Reason column, so a red flow says WHY in the same vocabulary
@@ -814,7 +801,6 @@ write_subscriptions_in_boxes_page() {
         # The intro is GENERAL — what the page is and how to read it. What each
         # individual signal means belongs to the per-box explanation below the
         # boxes, which follows the active one (setupStatFilter swaps .pfshow).
-        printf '<p class="subtitle">Every subscription configured in FlowManager, boxed by what is true of it. The page opens on the <strong>OK</strong> box; <strong>click a box</strong> to narrow the table to that box &mdash; the note under the boxes always explains the one you picked, and columns with nothing to show are hidden. A subscription can be in several boxes at once, and the one in several is the one to open first. Rows are sorted by name and tinted with the subscription&rsquo;s site-wide result color.</p>\n'
         # BOX COLOURS follow the site-wide result vocabulary (style.css .stat-*,
         # the same three tints as res-green/orange/red), so a box reads the
         # same way as a row tint anywhere else:
@@ -867,7 +853,7 @@ write_subscriptions_in_boxes_page() {
         printf '<p class="range pfdesc" data-pf="5"><a href="../transfer/waiting.html?axway_search="><strong>Waiting</strong></a> &mdash; the subscription&rsquo;s <strong>newest</strong> File is still STAGED for pickup: it arrived and sits in the folder, but the partner has not dialled in to collect it (UC2). Not an error &mdash; briefly waiting is the normal state of a pickup flow &mdash; but a newest file that has been waiting for days means the partner stopped collecting, and the retention sweep will delete it. <a href="../transfer/waiting.html?axway_search=">Waiting Files</a> has the full list.</p>\n'
         printf '<p class="range pfdesc" data-pf="6"><a href="../transfer/expired.html?axway_search="><strong>Expired</strong></a> &mdash; the subscription&rsquo;s <strong>newest</strong> staged File was DELETED by the nightly File Maintenance retention sweep (~11 days) before any pickup. It was never delivered and can no longer be collected &mdash; a silent failure: nothing errored, the file just aged out. Expired counts as an Error site-wide; <a href="../transfer/expired.html?axway_search=">the Expired report</a> has the retention timing and the per-account pickup behavior.</p>\n'
         printf '<p class="range pfdesc" data-pf="14"><a href="../server/failure-flows.html?axway_search="><strong>Connection failures</strong></a> &mdash; the server log records a failed CONNECTION to the partner for this subscription (timeout, refused, dropped, an SSH negotiation that never completed), and <strong>no OK File has followed it</strong>. That filter is the whole point: connections fail transiently all the time and a flow that failed and then delivered has recovered, so only the still-unresolved ones are boxed here &mdash; 36 of 48 are cleared this way. It usually adds the <em>reason</em> to a subscription already boxed as Only red or One-legged: not merely &ldquo;nothing arrives&rdquo; but &ldquo;we cannot get a connection to the partner at all&rdquo;, which points at the partner host, the port or the credentials rather than at the flow. <a href="../server/failure-flows.html?axway_search=">Errors / Per flow</a> has the full list with the failure messages (the Connection failure reason rows).</p>\n'
-        printf '<p class="range pfdesc" data-pf="15"><a href="../server/routing-errors.html?axway_search="><strong>Deploy</strong></a> &mdash; the server log records a <strong>configuration defect</strong> for this subscription: the Advanced Routing step error <span class="mono">ARSP0001</span>, where a routing step failed and <strong>its configuration told SecureTransport to abandon the rest of the route</strong> so nothing downstream ran for that file; or a PeSIT transfer profile <strong>missing its &ldquo;Receive File As&rdquo; field</strong>, which errors every incoming transfer of the flow. Like Connection failures, only the <strong>unresolved</strong> ones are boxed &mdash; an OK File after the last such message means something has got through since. The distinction from a plain failure is that the flow does not merely error, it <em>stops</em>: no onward delivery, no follow-up step, and the subscription can sit that way looking quiet rather than broken. The line names an account or a subscription, so an account is counted against every subscription configured for it. <a href="../server/routing-errors.html?axway_search=">Advanced Routing errors</a> lists the lines (Route stopped).</p>\n'
+        printf '<p class="range pfdesc" data-pf="15"><a href="../server/routing-errors.html?axway_search="><strong>Deploy</strong></a> &mdash; the server log records a <strong>configuration defect</strong> for this subscription: the Advanced Routing step error <span class="mono">ARSP0001</span>, where a routing step failed and <strong>its configuration told SecureTransport to abandon the rest of the route</strong> so nothing downstream ran for that file; or a PeSIT transfer profile <strong>missing its &ldquo;Receive File As&rdquo; field</strong>, which errors every incoming transfer of the flow. Like Connection failures, only the <strong>unresolved</strong> ones are boxed &mdash; an OK File after the last such message means something has got through since. The distinction from a plain failure is that the flow does not merely error, it <em>stops</em>: no onward delivery, no follow-up step, and the subscription can sit that way looking quiet rather than broken. The line names an account or a subscription, so an account is counted against every subscription configured for it. <a href="../server/routing-errors.html?axway_search=">Routing errors</a> lists the lines (Route stopped).</p>\n'
         printf '<p class="range pfdesc" data-pf="20"><a href="../server/logons-incoming.html?axway_search="><strong>Login errors (in)</strong></a> &mdash; a login connected to this subscription FAILED the incoming SSH screening &mdash; disallowed address, unknown key, repeated key failures or a lockout &mdash; and <strong>no OK File has followed</strong> (the error day counts to its end, so only a later day&rsquo;s delivery clears it). The partner is knocking and not getting in; <a href="../server/logons-incoming.html?axway_search=">Logons / Incoming</a> has the per-login funnel with the drill-down log lines.</p>\n'
         printf '<p class="range pfdesc" data-pf="21"><a href="../server/logons-outgoing.html?axway_search="><strong>Login errors (out)</strong></a> &mdash; WE failed to authenticate at the remote host behind this subscription (wrong password, refused key or certificate policy) and <strong>no OK File has followed</strong>. The flow cannot fetch or deliver until the credential is fixed; <a href="../server/logons-outgoing.html?axway_search=">Logons / Outgoing</a> has the per-host failures split into Password / Key / Other.</p>\n'
         printf '<p class="range pfdesc" data-pf="7"><a href="uc-status-uc3.html?axway_search="><strong>No Dir</strong></a> &mdash; we reached the partner, asked for a directory listing, and the partner answered <em>No such file</em>: the configured REMOTE directory is not there. The connection and the credentials are fine &mdash; it is the path that is wrong, or was removed on the partner side. The <a href="uc-status-uc3.html?axway_search=">UC status / UC3</a> tab lists them (Missing remote directories).</p>\n'
@@ -909,7 +895,7 @@ write_subscriptions_in_boxes_page() {
                 }
                 # a flagged cell carries the COLUMN NAME itself (not a symbol),
                 # linking into that report with the subscription as the search.
-                # The href is relative to docs/<env>/analyses/, so it needs the
+                # The href is relative to docs/analyses/, so it needs the
                 # AREA prefix — nine of these were bare and had been resolving to
                 # analyses/<name>.html, which does not exist. The header links
                 # above always carried the right prefix; only the cells were wrong.
@@ -972,7 +958,6 @@ write_subscriptions_in_boxes_page() {
                 "$n_all" "$n13" "$n17" "$n11" "$n18" "$n3" "$n5" "$n8" "$n9" "$n10" "$n1" "$n2" "$n4" "$n6" "$n14" "$n15" "$n20" "$n21" "$n7"
         fi
         printf '</table></div>\n'
-        printf '<p class="range">Sources: seven of the columns are read from the reports&rsquo; own data files, so this page always agrees with them. Three more are derived here from the transfer cache (<span class="mono">_files.tsv</span>): <strong>One-legged</strong> is the refined, still-unresolved subset of <a href="../transfer/pirates-details.html">pirates-details</a>, and <strong>Waiting</strong> / <strong>Expired</strong> test the state of the subscription&rsquo;s newest File &mdash; see the note under the box you pick. The last four have no report at all: <strong>OK</strong> and <strong>Error</strong> are the site-wide green and red results straight from the configuration cache, and <strong>Seen</strong> / <strong>Not seen</strong> are showseen&rsquo;s coverage flag both ways &mdash; the same sources the <a href="../transfer/entities/subscription-all.html">Entities views</a> are built from, so the figures cannot drift. A source that does not exist in this environment contributes no rows rather than failing the page, and its column is then hidden along with every other column that has nothing to show.</p>\n'
         printf '</body>\n</html>\n'
     } > "$out"
 }
@@ -985,6 +970,5 @@ write_subscriptions_in_boxes_page() {
 write_whitelist_audit_page
 write_config_hygiene_page
 write_subscriptions_in_boxes_page
-rm -f "$ADIR/accounts-in-boxes.html"
 
 echo "Wrote the insight analyses pages to $ADIR." >&2

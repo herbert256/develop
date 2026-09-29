@@ -86,7 +86,7 @@ collect() {   # $1 sub-dir  $2 type label
 }
 
 # "ip<TAB>endpoint" for every address the config maps to a host. One read of
-# input/<env>/ip/ip-hosts.tsv. With reverse DNS gone this is only the configured
+# input/ip/ip-hosts.tsv. With reverse DNS gone this is only the configured
 # endpoints' addresses, so the alias rows it feeds collapse from one per cached
 # address (~4,200) to one per real endpoint address.
 hostname_pairs() {

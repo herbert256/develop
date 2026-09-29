@@ -17,21 +17,25 @@
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Triage</h1>
 <h2>What it shows</h2>
-<p>One ranked worklist instead of six symptom pages: every subscription that needs eyes now. One row per subscription, its symptoms in one line and an Evidence pointer onward.</p>
+<ul>
+<li>One ranked worklist of every subscription that needs eyes now: <strong>red</strong>, carrying staged Files at <strong>expiry risk</strong>, or <strong>just went quiet</strong>. The boxes count each; links below the table lead to the deep-dive reports.</li>
+</ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Symptoms</strong> &mdash; <strong>red</strong> (last File failed, or server-log evidence after the last OK), <strong>expiry risk</strong> (staged Waiting Files 9+ days old; the retention sweep deletes at ~11) or <strong>just went quiet</strong> (last File 8&ndash;13 days before the window end).</li>
-<li>Priority red &gt; expiry risk &gt; just went quiet; any second condition is mentioned in the symptoms.</li>
-<li><strong>Red-since</strong> &mdash; the server-log evidence stamp where one exists, else the first failure of the current failing run.</li>
-<li><strong>Days in state</strong> &mdash; counted against the last day in the data, never the wall clock.</li>
-<li><strong>Volume in window</strong> &mdash; the flow&rsquo;s volume over the loaded window: historical throughput, not an undelivered backlog.</li>
-<li><strong>At expiry risk</strong> &mdash; the staged, uncollected bytes the sweep is about to delete (expiry-risk rows only).</li>
-<li><strong>Evidence</strong> &mdash; where to read on.</li>
+<li><strong>Status</strong> &mdash; <code>red</code> (the red result), <code>expiry-risk</code> (Waiting Files staged 9+ days; the retention sweep deletes at ~11) or <code>just-went-quiet</code> (last File 8&ndash;13 days before the window end).</li>
+<li><strong>Since</strong> &mdash; red: the server-log evidence stamp, else the first failure of the current failing run; expiry risk: the oldest staged File; quiet: the last File.</li>
+<li><strong>Days in state</strong> &mdash; days from Since to the last data day, never the wall clock.</li>
+<li><strong>Files</strong> / <strong>OK</strong> / <strong>Error</strong> &mdash; the flow&rsquo;s Files over the whole window, by outcome.</li>
+<li><strong>Volume in window</strong> &mdash; historical throughput, not an undelivered backlog; <strong>At expiry risk</strong> &mdash; the staged bytes the sweep is about to delete.</li>
+<li><strong>Score</strong> &mdash; the rank (Rules); the table opens highest first.</li>
+<li><strong>Symptoms</strong> &mdash; the state in words, plus any second condition; <strong>Evidence</strong> &mdash; the proof and the report to read on.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Rank score = <strong>lifetime Files / (days in state + 1)</strong>: state recency times historical weight. Yesterday&rsquo;s flip on a busy flow outranks a month-old red, which outranks a one-file wonder.</li>
-<li>A triage desk, not a diagnosis: <a href="failed.html">Failed Subscriptions</a>, <a href="went-quiet.html">Went quiet</a>, <a href="waiting.html">Waiting</a>, <a href="expired.html">Expired</a>, <a href="failed.html">Only red</a> and the <a href="subscriptions-in-boxes.html">Boxes</a> pages remain the deep-dives, linked at the bottom.</li>
+<li>Score = <strong>Files / (days in state + 1)</strong>: state recency times historical weight &mdash; yesterday&rsquo;s flip on a busy flow outranks a month-old red, which outranks a one-file flow.</li>
+<li>One row per subscription; priority red &gt; expiry risk &gt; just went quiet.</li>
+<li>A triage desk, not a diagnosis: <a href="failed.html">Failed Subscriptions</a>, <a href="went-quiet.html">Went quiet</a>, <a href="waiting.html">Waiting</a> and <a href="subscriptions-in-boxes.html">Subscriptions in boxes</a> are the deep-dives.</li>
+<li>Full period; a date range does not narrow it.</li>
 </ul>
 </main>
 </body>

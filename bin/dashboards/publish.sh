@@ -39,8 +39,8 @@ resolve_ch() {
 }
 
 # one CARD line -> card html; dispatches the chart type to its charts_lib
-# generator with the trailing-empty args dropped (an EMBEDDED empty arg —
-# svg_area's unused data2/color2 before a unit suffix — is passed through).
+# generator with the trailing-empty args dropped (an EMBEDDED empty arg
+# — is passed through; only slots and vbar remain since 2026-09-29).
 # $1 is the chart's page-unique id: exported with the card title as
 # CH_ID/CH_TITLE so the generator (a $() grandchild) can emit the accessible
 # root <title>/<desc> + aria-labelledby and the chart-data table.
@@ -54,13 +54,7 @@ render_card() {   # $1 chart id  $2 title  $3 sub  $4 href  $5 span  $6 chart  $
     while [ "$n" -gt 0 ] && [ -z "${args[n-1]}" ]; do unset "args[$((n-1))]"; n=$((n-1)); done
     local svg=""
     case $chart in
-        area)  svg=$(svg_area  ${args[@]+"${args[@]}"}) ;;
-        donut) svg=$(svg_donut ${args[@]+"${args[@]}"}) ;;
-        hbar)  svg=$(svg_hbar  ${args[@]+"${args[@]}"}) ;;
         vbar)  svg=$(svg_vbar  ${args[@]+"${args[@]}"}) ;;
-        stack) svg=$(svg_stack ${args[@]+"${args[@]}"}) ;;
-        heat)  svg=$(svg_heat  ${args[@]+"${args[@]}"}) ;;
-        gauge) svg=$(svg_gauge ${args[@]+"${args[@]}"}) ;;
         slots)
             local BASEIV=360   # the visible default resolution, in minutes
             # CLIENT-SIDE since 2026-07: the card is one placeholder carrying

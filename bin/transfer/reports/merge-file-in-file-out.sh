@@ -6,7 +6,7 @@
 # the second — tab=uc4uc2) on one tabbed page; the UC4 to UC2 page went.
 #
 # Usage:
-#   ./merge-file-in-file-out.sh    # -> data/<env>/transfer/reports/file-in-file-out.rpt
+#   ./merge-file-in-file-out.sh    # -> data/transfer/reports/file-in-file-out.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

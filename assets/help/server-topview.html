@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Help: Server Top View — Cloud Reports</title>
+<title>Help: Server top view — Cloud Reports</title>
 <script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -15,27 +15,30 @@
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
-<h1>Server Top View</h1>
+<h1>Server top view</h1>
 <h2>What it shows</h2>
-<p>The server area&rsquo;s landing page: one row per calendar day of the server log (<code>data/server/cache/_parse.tsv</code>, not the transfer log). Every figure is a plain count of log records, not Files.</p>
+<ul>
+<li>The whole <strong>server log</strong> per calendar day (not the transfer log): every figure counts log lines, not Files. Days without a line get a zero row.</li>
+<li>Below it, <strong>Levels per component</strong>: the level split per component over the selected range.</li>
+<li>The summary line under the tables: days, records, errors (with their share), warnings and the noisiest component.</li>
+</ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Records</strong> &mdash; the day&rsquo;s total, with a load bar.</li>
-<li><strong>Info</strong> / <strong>Warnings</strong> (amber) / <strong>Errors</strong> (red) / <strong>Error %</strong> &mdash; the level split; Error % = Errors &divide; Records.</li>
+<li><strong>Date</strong>; <strong>Records</strong> with its <strong>Load</strong> bar.</li>
+<li><strong>Info</strong> / <strong>Warnings</strong> (amber) / <strong>Errors</strong> (red) / <strong>Error %</strong> = Errors &divide; Records.</li>
 <li><strong>TM</strong> (transaction manager) / <strong>PESITD</strong> / <strong>SSHD</strong> &mdash; records per component.</li>
 <li><strong>First</strong> / <strong>Last</strong> &mdash; the day&rsquo;s first and last record time.</li>
-<li><strong>Levels per component</strong> (second table) &mdash; Info / Warnings / Errors / Records for TM, PESITD and SSHD, re-aggregated under the date filter; click a row for its 10 most recent Warning/Error lines.</li>
+<li><strong>Levels per component</strong> &mdash; <strong>Component</strong>, <strong>Info</strong>, <strong>Warnings</strong>, <strong>Errors</strong>, <strong>Records</strong>.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>One pass buckets every record by date, level (I/W/E) and component letter; calendar gaps get explicit zero rows.</li>
-<li>Records and the level and component columns are additive &mdash; a narrowed range re-totals them.</li>
-<li>Always opens at the full date range, whatever range another page remembered; the total row is pinned to the <strong>top</strong>.</li>
+<li>Levels other than Info / Warning / Error (none expected) count in Records only.</li>
+<li>Every column is additive and re-totals under the date filter; the page opens at the full period with the total row on top.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Click a day with at least one Warning or Error for its 10 most recent Warning/Error lines, newest first, inline; days with none are not clickable.</li>
-<li>To see what caused a spike, open <a href="server-errors-day.html">Errors</a> or Top Messages (tabs above) and narrow their From/To to that day &mdash; this page cannot hold a range.</li>
+<li>Click a day or a component for its 10 most recent Warning/Error lines; a day with none is not clickable.</li>
+<li>To explain a spike, open <a href="server-errors-day.html">Errors</a> (Log reasons, Top messages) and narrow it to that day.</li>
 </ul>
 </main>
 </body>

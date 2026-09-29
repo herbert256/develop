@@ -11,7 +11,7 @@
 # five rankings read side by side without running together.
 #
 # The positions are NOT recomputed here. bin/transfer/details_writer.awk writes
-# one line per entity into data/<env>/transfer/reports/ranking/<TYPE>.tsv while
+# one line per entity into data/transfer/reports/ranking/<TYPE>.tsv while
 # it renders that entity's own Ranking table, so this page and the detail pages
 # are the same numbers by construction (the retired 2026-07 report recomputed
 # them, and the two could drift). Sidecar columns:
@@ -33,7 +33,7 @@
 # PHASE 2: it reads details.sh's sidecars, so it must run after them.
 #
 # Usage:
-#   ./ranking.sh    # -> data/<env>/transfer/reports/ranking.rpt
+#   ./ranking.sh    # -> data/transfer/reports/ranking.rpt
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
