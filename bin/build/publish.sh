@@ -559,7 +559,10 @@ write_home_errors() {
     | awk -F'\t' '
         function esc(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
         { c = ($3 != "") ? "<a href=\"" esc($3) "\">" esc($2) "</a>" : esc($2)
-          printf "<tr%s><td>%s</td><td>%s</td><td>%s</td></tr>\n", ($5 ~ /^(green|orange|red)$/ ? " data-res=\"" $5 "\"" : ""), c, esc($1), esc($4) }'
+          # Date/time to the minute (2026-09-29, user request: "only hh:mm,
+          # no ss.mmm") — the rows still sort on the full stamp above
+          t = $1; if (t ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]/) t = substr(t, 1, 16)
+          printf "<tr%s><td>%s</td><td>%s</td><td>%s</td></tr>\n", ($5 ~ /^(green|orange|red)$/ ? " data-res=\"" $5 "\"" : ""), c, esc(t), esc($4) }'
     printf '</table></div>\n'
 }
 

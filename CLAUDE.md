@@ -1164,7 +1164,8 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   duration.sh's `hd()` spelling), its Cured / Error links carry `?axway_date=FROM..TO`. **BESIDE
   it the Errors table** (`write_home_errors`, one `.sxs homeday` row, same request: "Have a
   table Errors side by side to the Date table — the columns Subscription / Date/time / Reason
-  from /analyses/failed.html"): every row of `failed.rpt`'s table, newest first, tinted by its
+  from /analyses/failed.html"): every row of `failed.rpt`'s table, newest first (Date/time to the
+  minute — "only hh:mm, no ss.mmm"), tinted by its
   `@data:res`; the Subscription cell opens the page the row opens on Failed Subscriptions (else the
   detail page), the "Errors" banner the report (`data-href` — a link in a banner th would take
   the header's white). The Red/Green switch group, its `docs/switches/` pages, the Transfers,

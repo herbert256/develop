@@ -347,6 +347,9 @@ ne=$(awk -F'\t' '$1 == "TABLE" { t++ } t == 1 && $1 == "ROW" { n++ } END { print
 nr=$(awk '/<table class="index fit dayrows homeerr"/ { p = 1 } p && /<tr[ >]/ && /<td/ { n++ } p && /<\/table>/ { exit } END { print n + 0 }' docs/index.html 2>/dev/null)
 eh=$(awk '/<table class="index fit dayrows homeerr"/ { p = 1 } p && /<tr>/ && /<th/ { print; exit }' docs/index.html 2>/dev/null | grep -o '<th[^>]*>[^<]*</th>' | sed 's/<[^>]*>//g' | tr '\n' '|')
 check $([ "${ne:-0}" -gt 0 ] && [ "$nr" = "$ne" ] && [ "$eh" = "Subscription|Date/time|Reason|" ] && echo 0 || echo 1) "the home Errors table: $nr row(s) for ${ne:-?} Failed Subscriptions row(s), headers '$eh'"
+# ... its Date/time to the minute (2026-09-29, user request: "only hh:mm, no ss.mmm")
+n=$(awk '/<table class="index fit dayrows homeerr"/ { p = 1 } p && /<\/table>/ { exit } p && /<td/ && /[0-9]:[0-9][0-9]:[0-9][0-9]/ { n++ } END { print n + 0 }' docs/index.html 2>/dev/null)
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "the home Errors table: $n row(s) whose Date/time still carries seconds"
 check $(awk '/<div class="sxs homeday">/ { s = 1 } s && /<table class="index fit dayrows"/ { a = 1 } s && a && /homeerr/ { ok = 1; exit } END { exit !ok }' docs/index.html 2>/dev/null && echo 0 || echo 1) "the home Errors table does not sit beside the per-day table (one sxs row)"
 # no detail page lists Files from the stream any more (the Latest 100
 # table went 2026-09-29, user request)

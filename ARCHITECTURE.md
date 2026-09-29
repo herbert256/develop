@@ -601,7 +601,8 @@ days' own nearest-rank percentiles (`daily_loglines_tsv` TOTAL sentinel over `_f
 duration.sh's `hd()` spelling — a percentile cannot be summed, and duration.rpt's TOTAL covers
 every day); the Cured / Error totals link `?axway_date=FROM..TO`. Beside it, in one `.sxs
 homeday` row, the **Errors** table (`write_home_errors`): Subscription · Date/time · Reason of
-every `failed.rpt` row (the Failed Subscriptions page), newest first, `data-restint` +
+every `failed.rpt` row (the Failed Subscriptions page), newest first, Date/time to the minute
+(yyyy-mm-dd hh:mm), `data-restint` +
 `data-res` tints; the Subscription cell opens the row's own page (its `href`, else the detail
 page through the subscriptions slugmap); the banner opens the report via `data-href`. (The
 log-exports facts table, `write_log_facts`, went 2026-09-29 — the build report carries it.)
