@@ -75,7 +75,6 @@ HD='function hd(s) { if (s < 90) return sprintf("%d s", s)
 
 {
     printf 'TITLE\tUC4 to UC2\n'
-    printf 'KEYWORDS\tuc4 to uc2,uc4,uc2,collected back,picked up,pickup,delivered,same file name,same login,cft,staging,twin\n'
     # tab=uc4uc2 (2026-09-29): both tables ride ONE tab of File in - File out
     printf 'TABLE\tPer subscription pair\twide\tnofilter\ttab=uc4uc2\n'
     printf 'HEAD\tUC4 subscription\tUC2 subscription\tLogin\tFiles\tFastest\tMedian\tSlowest\tFirst\tLast\n'

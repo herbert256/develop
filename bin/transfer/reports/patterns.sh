@@ -14,10 +14,10 @@
 # leg's PROTOCOL as the second element of every line ("Protocol on":
 # "Outbound / ssh / Processed"). report.js shows one at a time behind a
 # button row (the TABLE switch= modifier). Both list the 5 most recent Files
-# of each pattern, each a LINK to that File's own page (docs/files/
-# <coreid>.html — the error-page layout for any outcome, written by
-# bin/transfer/reports/failed.sh from the sidecar this report leaves behind:
-# $REPORTS_DIR/_patterns-files.tsv, one CoreId per line).
+# of each pattern, a File a LINK to its own page (docs/files/<coreid>.html)
+# when it has one — since 2026-09-29 only the Files bin/transfer/filepages.sh
+# publishes (per subscription the newest OK File and the three newest Failed
+# Files, _filepages.tsv); the others are plain lines.
 #
 # Usage:
 #   ./patterns.sh    # reads input/*.csv (via the cache), writes data/patterns.rpt
@@ -28,7 +28,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/patterns.rpt"
-FILESIDE="$REPORTS_DIR/_patterns-files.tsv"   # the CoreIds the Last 5 cells link (failed.sh pages them)
+FPF="$CACHE_DIR/_filepages.tsv"; [ -f "$FPF" ] || FPF=/dev/null   # the published File pages (bin/transfer/filepages.sh)
 
 TOP_N=200   # patterns to list (there are only ~41; this is a safety cap)
 LAST_N=5    # the most recent Files listed per pattern
@@ -48,8 +48,9 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # renderer turns it into line breaks), and count how many Files share each.
 # Emits one line per (variant, pattern): variant ⇥ files ⇥ legs ⇥ transfers ⇥
 # buckets ⇥ last-5 cell ⇥ pattern.
-agg=$(LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k13,13 "$PARSED" | awk -F'\t' -v LASTN="$LAST_N" '
-    BEGIN { US = sprintf("%c", 31) }
+agg=$(LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k13,13 "$PARSED" | awk -F'\t' -v LASTN="$LAST_N" -v FPF="$FPF" '
+    BEGIN { US = sprintf("%c", 31)
+            while ((getline l < FPF) > 0) { split(l, a9, "\t"); if (a9[1] != "") FP[a9[1]] = 1 } close(FPF) }
     # Keep, per (variant, pattern), the LASTN most-recent Files (by transfer
     # start sortkey), each stored as "sortkey SUBSEP disp SUBSEP coreid" and
     # held sorted desc.
@@ -92,11 +93,10 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k13,13 "$PARSED" | awk -F'\t
         for (k in cnt) {
             split(k, a, SUBSEP); v = a[1]; p = a[2]
             rows = split(p, tmp, US)
-            # the last-N cell: one LINK line per File ("href|label", the clinks
-            # kind) to its page under docs/files/, most recent first
+            # the last-N cell: one line per File, most recent first — a LINK
+            # ("href|label", the clinks kind) when its page is published
             cc = ""; n = split(top[k], arr, US)
-            for (i = 1; i <= n; i++) { split(arr[i], f, SUBSEP); cc = cc (cc ? US : "") "../files/" f[3] ".html|" f[2] "  " f[3]
-                if (v == "A" && !(f[3] in linked)) { linked[f[3]] = 1; print "L\t" f[3] } }
+            for (i = 1; i <= n; i++) { split(arr[i], f, SUBSEP); cc = cc (cc ? US : "") ((f[3] in FP) ? "../files/" f[3] ".html|" : "") f[2] "  " f[3] }
             printf "%s\t%d\t%d\t%d\t%s\t%s\t%s\n", v, cnt[k], rows, cnt[k] * rows, b[k], cc, p
         }
     }
@@ -104,17 +104,9 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k13,13 "$PARSED" | awk -F'\t
 
 if [ -z "$agg" ]; then
     echo "No usable records found." >&2
-    rm -f "$FILESIDE"
     exit 0   # empty estate (config-only clone): placeholder page, not a failed build
 fi
 
-# the CoreIds the Last 5 cells link — every variant's lists together, one
-# CoreId per line; failed.sh writes their pages
-printf '%s\n' "$agg" | awk -F'\t' '$1 == "L" { print $2 }' | LC_ALL=C sort -u > "$FILESIDE.tmp"
-# the P variant lists can name Files the A lists do not (a finer split) — union them
-printf '%s\n' "$agg" | awk -F'\t' -v US="$(printf '\037')" '$1 == "P" { n = split($6, L, US); for (i = 1; i <= n; i++) { s = L[i]; sub(/\|.*$/, "", s); sub(/^\.\.\/files\//, "", s); sub(/\.html$/, "", s); print s } }' >> "$FILESIDE.tmp"
-LC_ALL=C sort -u -o "$FILESIDE.tmp" "$FILESIDE.tmp"
-mv "$FILESIDE.tmp" "$FILESIDE"
 
 # figures from the plain variant (the same Files, just grouped coarser)
 tot=$(printf '%s\n' "$agg" | awk -F'\t' '$1 == "A" { s += $2 } END { print s + 0 }')    # logical transfers
@@ -149,4 +141,4 @@ shown=$(printf '%s\n' "$agg" | awk -F'\t' -v n="$TOP_N" '$1 == "A" { c++ } END {
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
-echo "Data written to $OUT ($np pattern(s), $npp with the protocol, $tot transfer(s); $(wc -l < "$FILESIDE" | tr -d ' ') linked File(s) in $FILESIDE)." >&2
+echo "Data written to $OUT ($np pattern(s), $npp with the protocol, $tot transfer(s))." >&2

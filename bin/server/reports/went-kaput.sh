@@ -331,7 +331,6 @@ fi
 {
     printf 'TITLE\tTrouble after success\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tStill-GREEN subscriptions whose last transfer succeeded but which then logged a server-log ERROR — for the subscription or a connected login, account or remote host. Warnings do not count.\n'
-    printf 'KEYWORDS\tsubscription,error,warning,after last transfer,post-transfer,server log,failing,login,account,kaput,went kaput\n'
     printf 'INTRO\tSubscriptions whose **last transfer was OK** but which then logged an **Error** in the server log **after** that transfer — either the subscription itself or a connected login, account or remote host. A recent problem on a flow that last looked healthy. **Errors only** (2026-08): a Warning does not put a flow on this page — the warnings-only shape was the benign "Transfer site ID is not present in environment", which has its own report in this group.\n'
     if [ "$nrows" -eq 0 ]; then
         printf 'TABLE\tSubscriptions failing after last successful transfer\tnosort\tnofilter\n'

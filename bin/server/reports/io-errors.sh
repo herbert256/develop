@@ -54,8 +54,8 @@ OUT="$REPORTS_DIR/io-errors.rpt"
 
 FILES="$TRANSFER_CACHE/_files.tsv"          # one row per CoreId: 1 coreid 2 outcome 3 account 4 date 5 time 6 sortkey 11 file 12 site 14 login
 TRANSFERS="$TRANSFER_CACHE/_transfers.tsv"  # the legs: 6 site, 24 session (the SESSION join)
-ERRDIR="$TRANSFER_REPORTS/errors"           # failed.sh's per-CoreId error pages (docs/files/)
-FILEDIR="$TRANSFER_REPORTS/files"           # … and its File pages (docs/files/)
+FPF="$TRANSFER_CACHE/_filepages.tsv"        # the PUBLISHED File pages (bin/transfer/filepages.sh, 2026-09-29)
+[ -f "$FPF" ] || FPF=/dev/null
 ACCB="$CONFIG_BASE/_accounts.tsv"           # configured spelling -> the cells link
 LOGB="$CONFIG_BASE/_logins.tsv"
 
@@ -126,12 +126,12 @@ nline=$(wc -l < "$TMP" | tr -d ' ')
 #   DAY <date> ROW <the day row>
 #   TOT <n> <folders> <accounts> <files> <err> <ok> <nl> <days> <first> <last>
 agg=$(awk -F'\t' -v IOF="$TMP" -v FILES="$FILES" -v TRANSFERS="$TRANSFERS" \
-        -v ACCB="$ACCB" -v LOGB="$LOGB" -v ERRDIR="$ERRDIR" -v FILEDIR="$FILEDIR" "$LOGLINES_AWK"'
+        -v ACCB="$ACCB" -v LOGB="$LOGB" -v FPF="$FPF" "$LOGLINES_AWK"'
     # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
     function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
-    function exists(f,   l, r) { r = (getline l < f); if (r >= 0) close(f); return r >= 0 }
     function canon(map, v) { return (toupper(v) in map) ? map[toupper(v)] : v }
     BEGIN {
+        while ((getline l < FPF) > 0) { split(l, a, "\t"); if (a[1] != "") FP[a[1]] = 1 } close(FPF)
         while ((getline l < ACCB) > 0) { split(l, a, "\t"); if (a[1] != "") ACC[toupper(a[1])] = a[1] } close(ACCB)
         while ((getline l < LOGB) > 0) { split(l, a, "\t"); if (a[1] != "") LOG[toupper(a[1])] = a[1] } close(LOGB)
     }
@@ -196,10 +196,7 @@ agg=$(awk -F'\t' -v IOF="$TMP" -v FILES="$FILES" -v TRANSFERS="$TRANSFERS" \
             # ---- the line row
             fcell = (L_base[i] != "" ? L_base[i] : (L_path[i] != "" ? L_path[i] : "-"))
             fpre = ""
-            if (cid != "") {
-                if (exists(ERRDIR "/" cid ".rpt")) fpre = "@{href=../files/" cid ".html}"
-                else if (exists(FILEDIR "/" cid ".rpt")) fpre = "@{href=../files/" cid ".html}"
-            }
+            if (cid != "" && (cid in FP)) fpre = "@{href=../files/" cid ".html}"   # a published File page only
             fcell = (fpre != "") ? fpre fcell : lit(fcell)
             if (oc == "Failed" || oc == "Expired") scell = "@{class=failed}" oc
             else if (oc != "") scell = "@{class=processed}" oc
@@ -235,7 +232,6 @@ day_rows() { printf '%s\n' "$agg" | grep $'^DAY\t' | sort -t"$TAB" -k2,2 | cut -
 {
     printf 'TITLE\tIO errors\n'
     printf 'DESC\tThe platform failing to read (or write) a file on its own storage — "IO Error reading file /data/FlowManager/<account>@<login>/<file>" — per folder, per line and per day, each line joined to the File it concerns and its outcome.\n'
-    printf 'KEYWORDS\tio error,input/output error,reading file,writing file,flowmanager folder,disk,storage,nfs,stale handle,permission,one-legged,retry\n'
     if [ "${n_lines:-0}" -eq 0 ]; then
         printf 'INTRO\tThe server log carries **no IO error** in this window: no "IO Error reading file …" (or "Input/output error") line at all. The platform read every file it was asked to read from its own storage.\n'
     else

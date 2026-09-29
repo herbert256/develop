@@ -294,7 +294,6 @@ day_rows() {
 
 {
     printf 'TITLE\tNo remote dir\n'
-    printf 'KEYWORDS\tno such file,missing directory,remote directory,listing,scan directory,path,configuration fault\n'
 
     # tab=uc3 (2026-09-29): both tables ride the UC3 tab of UC status
     printf 'TABLE\tMissing remote directories\twide\ttab=uc3\n'

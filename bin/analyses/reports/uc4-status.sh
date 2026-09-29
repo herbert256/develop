@@ -304,7 +304,6 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }   # a count cell shows blank, n
     printf 'TOTAL\tTotal (%s subscription(s))\t\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t\n' \
         "$n_all" "$(nz0 "$t_files")" "$(nz0 "$t_ok")" "$(nz0 "$t_er")" "$(nz0 "$t_lg")" "$(nz0 "$t_ar")" "$(nz0 "$t_prob")"
 
-    printf 'KEYWORDS\tuc4, inbound, partner delivers, upload, receive, status, green, red, orange, regression, never worked, never seen, unused, logon, whitelist, refused, disallowed, no files, subscription health\n'
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

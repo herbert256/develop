@@ -4,8 +4,8 @@
 # File's legs (chronological), consecutive repeats collapsed to "proto+" so
 # every UC2 repeat-collect variant folds into ONE journey (pesit → routing+ →
 # ssh+). Patterns shows the Direction/Status shape; this shows the technical
-# ROUTE the file took. Second table: the protocol of each File's LAST leg,
-# split by the delivered state — a route ending on routing = stuck in staging.
+# ROUTE the file took. (The second table — the protocol of each File's LAST
+# leg — went 2026-09-29 with its File journey tab, user request.)
 #
 # Usage:
 #   ./protocol-journey.sh   # reads input/*.csv (via the caches), writes data/protocol-journey.rpt
@@ -48,14 +48,9 @@ agg=$( { cat "$FILES"; printf '###SPLIT###\n'; LC_ALL=C sort -t"$(printf '\t')" 
         d = FDT[cur]
         if (d != "") { cdr[ch SUBSEP d]++; cdf[ch SUBSEP d] += pf; cdp[ch SUBSEP d] += (!pf); if (!pf) cdb[ch SUBSEP d] += FSZ[cur] }
         addtop("J" SUBSEP ch SUBSEP (pf ? "F" : "P"), FSK[cur], FDT[cur] " " FTM[cur], cur)
-        # last-leg protocol x delivered state
-        st = FOUT[cur]; if (st != "Failed" && st != "Expired" && st != "Waiting") st = "Processed"
-        lr[lastp]++; ls[lastp SUBSEP st]++
-        if (d != "") { ldr[lastp SUBSEP d]++; lds[lastp SUBSEP st SUBSEP d]++ }
-        addtop("E" SUBSEP lastp SUBSEP (pf ? "F" : "P"), FSK[cur], FDT[cur] " " FTM[cur], cur)
         reset()
     }
-    function reset() { cur = ""; chain = ""; prevp = ""; run = 0; lastp = "" }
+    function reset() { cur = ""; chain = ""; prevp = ""; run = 0 }
     /^###SPLIT###$/ { mode = 1; next }
     mode == 0 { FOUT[$1] = $2; FDT[$1] = $4; FTM[$1] = $5; FSK[$1] = $6; FSZ[$1] = $8 ; next }
     {
@@ -67,7 +62,6 @@ agg=$( { cat "$FILES"; printf '###SPLIT###\n'; LC_ALL=C sort -t"$(printf '\t')" 
             chain = chain (chain == "" ? "" : " \342\206\222 ") p
             prevp = p; run = 1
         }
-        lastp = p
     }
     END {
         flush()
@@ -83,12 +77,6 @@ agg=$( { cat "$FILES"; printf '###SPLIT###\n'; LC_ALL=C sort -t"$(printf '\t')" 
             w = int((cp[ch]+0) * 100 / maxpr)
             printf "CHN|%s|%d|%d|%d|%s|%s|%d|%s|%s|%s\n", ch, cr[ch], cf[ch]+0, cp[ch]+0, human(cb[ch]+0), sh, w, bk[ch], buildlist(top["J" SUBSEP ch SUBSEP "F"]), buildlist(top["J" SUBSEP ch SUBSEP "P"])
         }
-        for (p in lr) {
-            ebk = ""
-            for (k in ldr) { split(k, a, SUBSEP); if (a[1] != p) continue
-                ebk = ebk (ebk ? "," : "") a[2] ":" ldr[k] ":" (lds[p SUBSEP "Failed" SUBSEP a[2]] + lds[p SUBSEP "Expired" SUBSEP a[2]] + 0) ":" (lds[p SUBSEP "Processed" SUBSEP a[2]] + lds[p SUBSEP "Waiting" SUBSEP a[2]] + 0) }
-            printf "END|%s|%d|%d|%d|%d|%d|%s|%s|%s\n", p, lr[p], ls[p SUBSEP "Processed"]+0, ls[p SUBSEP "Failed"]+0, ls[p SUBSEP "Waiting"]+0, ls[p SUBSEP "Expired"]+0, ebk, buildlist(top["E" SUBSEP p SUBSEP "F"]), buildlist(top["E" SUBSEP p SUBSEP "P"])
-        }
         printf "TOT|%d|%d|%d|%s\n", trec, tfl+0, tpr+0, human(tpb+0)
     }
 ')
@@ -102,7 +90,6 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_vol <<< "$(printf '%s\n' 
 
 {
     printf 'TITLE\tProtocol Journey\n'
-    printf 'KEYWORDS\tprotocol chain, route, journey, pesit, routing, ssh, ftp, last leg, stuck in staging\n'
 
     printf 'TABLE\tFiles by protocol journey\n'
     # FILES = the delivered (OK) count (2026-09-13, user request: the Patterns
@@ -118,22 +105,6 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_vol <<< "$(printf '%s\n' 
         printf 'ROW\t%s\t%s\t%s\t%s%%\t%s\t@data:buckets=%s\n' "$chain" "$pr" "$human" "$sh" "$w" "$bk"
     done <<< "$(printf '%s\n' "$agg" | grep '^CHN|' | sort -t'|' -k5,5nr)"
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}%s\t@{class=num}100.0%%\t\n' "$tot_processed" "$tot_vol"
-
-    # the last-leg table: Files (= the delivered, Processed ones — the one
-    # Files column of the File journey tables, 2026-09-13), Waiting, Expired —
-    # FULL-PERIOD figures (nofilter, 2026-09-29 audit: its RECALC was all "-"
-    # and its buckets carried the OK counts, so a narrowed range changed
-    # nothing while the page looked filtered; the badge now says so)
-    printf 'TABLE\tWhere the journey ends — protocol of the last leg\tnofilter\n'
-    printf 'HEAD\tLast leg\tFiles\tWaiting\tExpired\n'
-    printf 'KIND\tmono\tnum\tnumwarn\tnum\n'
-    tot_del=0
-    while IFS='|' read -r _ p rec del fa wt ex bk ccf ccp; do
-        [ -z "$p" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t%s\n' "$p" "$del" "$wt" "$ex"
-        tot_del=$((tot_del + del))
-    done <<< "$(printf '%s\n' "$agg" | grep '^END|' | sort -t'|' -k4,4nr)"
-    printf 'TOTAL\tTotal\t@{class=num}%s\t\t\n' "$tot_del"
 
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

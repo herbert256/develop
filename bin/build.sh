@@ -103,7 +103,6 @@ SEED_ASSETS="style.css report.js slotchart.js all-files-search.js sub-files.js"
 _miss=""
 for _a in $SEED_ASSETS; do [ -f "assets/$_a" ] || _miss="$_miss assets/$_a"; done
 [ -d assets/help ] || _miss="$_miss assets/help/"
-[ -f bin/darken-css.awk ] || _miss="$_miss bin/darken-css.awk"
 if [ -n "$_miss" ]; then
     printf 'bin/build.sh: missing%s — nothing was cleared, the current site stays.\n' "$_miss" >&2
     exit 1
@@ -398,7 +397,6 @@ write_report() {
 <meta http-equiv="Expires" content="0">
 <title>Build report — Axway ST reports</title>
 HTML
-        printf '%s\n' '<script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>'
         printf '<link rel="stylesheet" href="%sassets/style.css">\n' "$base"
         cat <<'HTML'
 <style>
@@ -796,7 +794,8 @@ echo "build.sh: seeding docs/ from assets/ ..." >&2
 mkdir -p docs/assets docs/help
 _seed=(); for _a in $SEED_ASSETS; do _seed+=("assets/$_a"); done   # the preflight's list
 cp "${_seed[@]}" docs/assets/
-awk -f bin/darken-css.awk assets/style.css >> docs/assets/style.css   # the dark theme, generated from the light rules (2026-09-05)
+# (the dark theme — generated from the light rules by bin/darken-css.awk and
+# appended here — went 2026-09-29 with its ◐ toggle, user request)
 cp -R assets/help/. docs/help/
 
 printf '\n=== building %s (report -> %s) ===\n' "${ENV_LABEL:-<unlabelled checkout — write input/environment.txt>}" "$REPORT" >&2
@@ -848,6 +847,10 @@ run_step "server log -> transfer: attribute Unknown flows by session"     bin/se
 run_step "result: discover the transfer-log subscriptions (+ re-check the hosts)" bin/build/result.sh discover
 run_step "server log -> transfer: mark expired staged files"              bin/expire-files.sh
 run_step "server log -> transfer: settle failed Files by ok bookend"      bin/bookend-ok.sh
+# THE PUBLISHED FILE PAGES (2026-09-29, user request: per subscription only
+# the newest OK File and the three newest Failed Files get a docs/files/
+# page) — the outcomes are final now; every page writer and linker reads it
+run_step "transfer: the published File pages (newest OK + 3 errors per subscription)" bin/transfer/filepages.sh
 bg2_step_wait   # the mention caches: result.sh reads them
 run_step "result: subscription outcomes -> base caches"                   bin/build/result.sh
 # result.sh (discover_logged) may APPEND transfer-log-discovered names to the
@@ -930,10 +933,6 @@ run_step "publish: analyses + coverage pages"                             bin/an
 # classifies, failing-reasons.sh reads failed-files.rpt. Their first runs happen
 # before that evidence exists, so they run AGAIN here, and the pages they
 # feed are re-rendered below.
-# THE DRILL-CELL FILES (2026-09-21, user request): the first File of every red /
-# orange drill cell links its File page, so failed.sh must page it — this
-# step lists those CoreIds from the reports now on disk
-run_step "report catch-up: drill-cell files"                           bin/build/drill-files.sh
 run_step "report catch-up: failed subscriptions"                          bin/transfer/reports/failed.sh
 run_step "report catch-up: failed files"                                  bin/transfer/reports/failed-files.sh   # 2026-09-14: the reasons the failed.sh catch-up just classified
 run_step "report catch-up: unknown transfers"                             bin/transfer/reports/unknown-transfers.sh   # 2026-09-29: the File-page links of the sets the failed.sh catch-up just rewrote

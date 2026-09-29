@@ -185,7 +185,6 @@ day_rows() {
 
 {
     printf 'TITLE\tNo remote files\n'
-    printf 'KEYWORDS\tempty poll,no files,nothing to fetch,idle schedule,server-log only,uc3,pull\n'
 
     # tab=uc3 (2026-09-29): both tables ride the UC3 tab of UC status
     printf 'TABLE\tUC3 subscriptions that never find a file\twide\ttab=uc3\n'

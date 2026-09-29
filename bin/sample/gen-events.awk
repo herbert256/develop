@@ -121,7 +121,7 @@ function s_authok(abs, sid, addr) {
     S(abs, "I", "TM", sid, "[Ssh Default] User with login name \"" LOGIN "\", associated with account \"" ACCT "@" LOGIN "\", successfully authenticated over SSH by local authentication agent. Remote address: " addr ". Connection security parameters: cipher suite: aes128-ctr; Key exchange: curve25519-sha256; HMAC: hmac-sha2-256; Public Key: ssh-rsa.")
     # the partner's INBOUND connection line (2026-09-29): a connection line
     # that NAMES a login is a partner connecting in (inbound-connections.sh,
-    # the Connections In columns + _inbound-addr.tsv); SecureTransport's own
+    # the Connections In columns); SecureTransport's own
     # connections out log login name "" (s_initconn). Every s_authok caller
     # is a partner session (UC2 collect, UC4 upload, the empty visits, the
     # bluelogon evidence). Same session and address as the authentication

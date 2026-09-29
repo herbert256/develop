@@ -68,7 +68,6 @@ nall=0
     printf 'TITLE\tRanking\n'
     printf 'DESC\tWhere each entity stands against the others of its own type — its position on Files, Volume, Errors, Duration and Throughput, with the value behind every position.\n'
     printf 'INTRO\tThe five rankings the detail pages carry, for every entity at once. Each metric is **two columns**: the **position** — **#1** is the most Files, the most bytes, the worst error rate, the fastest average duration and the highest throughput — and the **value** it stands on. An entity is ranked among the others of its OWN type only, and only when it has been seen with real transfers. Pick a type with the tabs above. Positions come from the detail pages themselves, so the two can never disagree. **From/To re-ranks the page**: narrow the range and every value AND every position is recomputed over those days alone, so a partner that only matters in the last week rises to where it belongs — at the full range the numbers are the detail pages again.\n'
-    printf 'KEYWORDS\tranking,rank,position,league,top,best,worst,files,volume,errors,duration,throughput,fastest,slowest\n'
 
     while IFS=: read -r ty head kind noun basef; do
         [ -n "$ty" ] || continue

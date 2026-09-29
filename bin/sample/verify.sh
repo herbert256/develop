@@ -558,7 +558,11 @@ done
 # All files search is the one file search
 check $([ -z "$(ls docs/search/file-search-* docs/assets/file-search.js docs/help/file-search.html 2>/dev/null)" ] && echo 0 || echo 1) "the File search pages (search/file-search-*, assets/file-search.js, help/file-search.html) are still published"
 check $([ "$(grep -c 'href="../search/search.html"' docs/tools/sitemap.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "tools/sitemap.html does not link ../search/search.html"
-check $([ "$(grep -c 'search/all-files.html' docs/tools/report-finder.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "tools/report-finder.html does not link search/all-files.html"
+# the Report finder, the command palette and the dark theme went 2026-09-29
+# (user request) — no page, no help page, no report.js code, no dark CSS
+check $([ -z "$(ls docs/tools/report-finder.html docs/help/report-finder.html 2>/dev/null)" ] && echo 0 || echo 1) "the Report finder (tools/report-finder.html or its help page) is still published"
+check $(grep -q 'setupPalette\|setupReportFinder\|setupTheme\|axway-theme' docs/assets/report.js 2>/dev/null && echo 1 || echo 0) "report.js still carries the palette / report finder / theme code"
+check $(grep -q 'data-theme="dark"\|axway-theme' docs/assets/style.css docs/help/index.html docs/index.html 2>/dev/null && echo 1 || echo 0) "the dark theme (CSS or head script) is still published"
 check $([ "$(grep -c 'href="../search/search.html"' docs/help/index.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "the baked top bar does not link ../search/search.html"
 check $([ "$(grep -c 'href="\.\./details/' docs/search/search-data.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "search/search-data.js rows do not link ../details/ (one level below the root)"
 
@@ -627,7 +631,7 @@ check $(grep -q 'data-restint' docs/transfer/duration-longest.html 2>/dev/null &
 # (help pages); report.js buildTopbar draws the same link. Since 2026-09-29
 # it sits in ONE cluster with Entities and Errors (Errors = the Errors
 # group's first page, Failed Subscriptions), the search icon after them.
-check $(grep -q '<span class="entgroup"><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="entlabel" href="../analyses/failed.html">Errors</a><a class="entlabel" href="../search/all-files.html">Files</a><a class="searchbtn" href="../search/search.html"' docs/help/index.html 2>/dev/null && echo 0 || echo 1) "the baked top bar lacks the Entities / Errors / Files cluster (Errors -> ../analyses/failed.html, Files -> ../search/all-files.html)"
+check $(grep -q '<span class="entgroup"><a class="entlabel" href="../transfer/topview.html">Overview</a><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="entlabel" href="../analyses/failed.html">Errors</a><a class="entlabel" href="../search/all-files.html">Files</a><a class="searchbtn" href="../search/search.html"' docs/help/index.html 2>/dev/null && echo 0 || echo 1) "the baked top bar lacks the Overview / Entities / Errors / Files cluster (Overview -> ../transfer/topview.html, Errors -> ../analyses/failed.html, Files -> ../search/all-files.html)"
 # Errors is a top-bar link, not a Reports pulldown line
 check $(grep -oE 'reports:"([^"\\]|\\.)*"' docs/assets/topbar-data.js 2>/dev/null | grep -q 'analyses/failed.html' && echo 1 || echo 0) "the Reports pulldown still lists the Errors group"
 check $(grep -q 'errors:"analyses/failed.html"' docs/assets/topbar-data.js 2>/dev/null && echo 0 || echo 1) "topbar-data.js lacks errors:\"analyses/failed.html\" (the runtime bar's Errors link)"
@@ -646,24 +650,23 @@ check $([ "${nsr:-0}" -gt 0 ] && [ "$nsr" = "$nfd" ] && echo 0 || echo 1) "searc
 nsd=$(ls docs/search/all/d-*.js 2>/dev/null | wc -l | tr -d ' ')
 nmd=$(grep -oE "(^|\`)[0-9]{4}-[0-9]{2}-[0-9]{2}	[0-9]+	" docs/search/all/index.js 2>/dev/null | wc -l | tr -d " ")
 check $([ "$nsd" = "$nmd" ] && [ "$nsd" -gt 0 ] && echo 0 || echo 1) "search/all/: $nsd day shard(s) but $nmd manifest day line(s)"
-check $([ "$(grep -c 'search/all-files.html' docs/tools/report-finder.html 2>/dev/null)" -ge 1 ] && grep -q 'href="../search/all-files.html"' docs/tools/sitemap.html 2>/dev/null && echo 0 || echo 1) "the report finder or the sitemap does not link search/all-files.html"
+check $(grep -q 'href="../search/all-files.html"' docs/tools/sitemap.html 2>/dev/null && echo 0 || echo 1) "the sitemap does not link search/all-files.html"
 
 # the tool pages live under docs/tools/ (2026-09-12, user request): the
 # sitemap, the report finder, whats-new AND the build report (back on the
 # site, written last by bin/build.sh) — nothing of them at the root, every
 # outward link carrying ../, the sibling tools ./, the sitemap Tools card
 # linking the build report, the runtime bar data pointing at tools/
-for p in sitemap.html report-finder.html whats-new.html build.html; do
+for p in sitemap.html whats-new.html build.html; do
     check $([ -f "docs/tools/$p" ] && echo 0 || echo 1) "docs/tools/$p is missing"
     check $([ ! -e "docs/$p" ] && echo 0 || echo 1) "docs/$p still sits at the docs root"
 done
 check $([ "$(grep -c 'href="\./build.html"' docs/tools/sitemap.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "tools/sitemap.html does not link ./build.html under Tools"
-check $([ "$(grep -c 'href="\./report-finder.html"\|href="\./whats-new.html"' docs/tools/sitemap.html 2>/dev/null)" = 2 ] && echo 0 || echo 1) "tools/sitemap.html does not link its sibling tools with ./"
+check $([ "$(grep -c 'href="\./whats-new.html"' docs/tools/sitemap.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "tools/sitemap.html does not link its sibling tools with ./"
 check $([ "$(grep -c 'href="\.\./reports/index.html"' docs/tools/sitemap.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "tools/sitemap.html does not link the Reports start page ../reports/index.html"
-check $([ "$(grep -c '<a href="\.\./transfer/' docs/tools/report-finder.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "tools/report-finder.html rows do not carry ../ hrefs"
 check $([ "$(grep -c 'href="\.\./assets/style.css"' docs/tools/build.html 2>/dev/null)" = 1 ] && [ "$(grep -c '@B@' docs/tools/build.html build/index.html 2>/dev/null | awk -F: '{ s += $2 } END { print s + 0 }')" = 0 ] && echo 0 || echo 1) "tools/build.html does not load ../assets/style.css, or a @B@ placeholder survived"
 check $([ "$(grep -c 'href="\.\./docs/assets/style.css"' build/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "build/index.html (the local copy) does not load ../docs/assets/style.css"
-check $([ "$(grep -c 'tools/report-finder.html\|tools/sitemap.html' docs/assets/report.js 2>/dev/null)" -ge 3 ] && echo 0 || echo 1) "report.js does not point the top bar and the palette at tools/"
+check $([ "$(grep -c 'tools/sitemap.html' docs/assets/report.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "report.js does not point the top bar at tools/sitemap.html"
 hdr=$(grep -o '<th[^>]*>[^<]*</th>' "docs/transfer/topview.html" 2>/dev/null | sed 's/<[^>]*>//g' | tr '\n' '|')
 check $([ "$hdr" = "|Files|Recovered|Resubmit|Transfers|State||Date|First|Last|Count|Ok|Error|Error %|Automatic|Manual|Ok|Error|Count|Ok|Error|Error %|Processed|Failed|Waiting|Expired|Volume|" ] && echo 0 || echo 1) "transfer/topview.html headers are '$hdr'"
 n=$(grep -c '<table' docs/transfer/topview.html 2>/dev/null || true)
@@ -775,8 +778,7 @@ for t in "Files by leg count" "Files by protocol journey"; do
     got=$(awk -F'\t' -v t="$t" '$1 == "TABLE" && $2 == t { p = 1 } p && $1 == "TOTAL" { v = $3; sub(/^@\{[^}]*\}/, "", v); print v + 0; exit }' data/transfer/reports/file-journey.rpt 2>/dev/null)
     check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "file-journey '$t' Files total is '${got:-absent}', the caches hold ${want:-?} OK Files"
 done
-got=$(awk -F'\t' '$1 == "TOTAL" && $2 == "@{colspan=2}Files" { v = $3; sub(/^@\{[^}]*\}/, "", v); print v + 0; exit }' data/transfer/reports/file-journey.rpt 2>/dev/null)
-check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "file-journey Arrived / Left Files total is '${got:-absent}', the caches hold ${want:-?} OK Files"
+# (the Arrived / Left tab and the Last leg table went 2026-09-29, user request)
 
 # the Protocol & Security group tables carry ONE Transfers column — the OK
 # legs — and no Error / OK pair (2026-09-13, user request): no green/red
@@ -1014,8 +1016,11 @@ n=$(grep -oE 'reports:"([^"\\]|\\.)*"' "$t" 2>/dev/null | grep -o '<a ' | wc -l 
 # (2026-09-29, user request: Server log errors folded into Failures — 13
 # groups — and Entities left off the menu, the top bar's own Entities link
 # opens it; Failures renamed Errors the same day and taken off the menu too,
-# a top-bar link of its own)
-check $([ "${n:-0}" = 12 ] && echo 0 || echo 1) "the Reports menu has ${n:-0} line(s), expected 12 (Start page + 11 groups; Entities and Errors not listed)"
+# a top-bar link of its own; later that day the Cleanup group went and
+# Overview became a top-bar link too)
+check $([ "${n:-0}" = 10 ] && echo 0 || echo 1) "the Reports menu has ${n:-0} line(s), expected 10 (Start page + 9 groups; Overview, Entities and Errors not listed)"
+check $(grep -oE 'reports:"([^"\\]|\\.)*"' "$t" 2>/dev/null | grep -q 'transfer/topview.html' && echo 1 || echo 0) "the Reports menu still lists the Overview group"
+check $(grep -q 'overview:"transfer/topview.html"' "$t" 2>/dev/null && echo 0 || echo 1) "topbar-data.js lacks overview:\"transfer/topview.html\" (the runtime bar's Overview link)"
 check $(grep -oE 'reports:"([^"\\]|\\.)*"' "$t" 2>/dev/null | grep -q 'transfer/entities/' && echo 1 || echo 0) "the Reports menu still lists the Entities group"
 check $(grep -q '>Server log errors<' docs/reports/index.html 2>/dev/null && echo 1 || echo 0) "reports/index.html still has a Server log errors group (folded into Failures)"
 check $([ -f docs/reports/index.html ] && [ ! -f docs/transfer/index.html ] && [ ! -f docs/server/index.html ] && [ ! -f docs/analyses/index.html ] && echo 0 || echo 1) "docs/reports/index.html missing, or a retired area start page (transfer / server / analyses index.html) still published"
@@ -1175,9 +1180,8 @@ m=$(grep -c '<th[^>]*>Out</th>' docs/server/connections-per-day.html 2>/dev/null
 check $([ "${n:-0}" -ge 1 ] && [ "${m:-0}" -ge 1 ] && echo 0 || echo 1) "server/connections-per-day.html header lacks the In / Out columns"
 # the sample plants INBOUND connection lines (2026-09-29: gen-events.awk
 # s_authok names the partner's login on its connection line) — without them
-# the In side of Connections and the whitelist audit's inbound contacts go
-# untested
-check $([ -s data/server/reports/_inbound-addr.tsv ] && echo 0 || echo 1) "the sample plants no inbound connection (data/server/reports/_inbound-addr.tsv is empty)"
+# the In side of Connections goes untested (the TOTAL In cell below)
+check $([ ! -e data/server/reports/_inbound-addr.tsv ] && [ ! -e data/server/cache/_subscriptions.tsv ] && echo 0 || echo 1) "a sidecar of the removed Cleanup reports (_inbound-addr.tsv, the flat server _subscriptions.tsv) is still written"
 n=$(awk '/<tr class="total"/ { n = split($0, C, "<td"); if (n >= 3) { c = C[3]; sub(/^[^>]*>/, "", c); sub(/<.*/, "", c); print c } exit }' docs/server/connections-per-day.html 2>/dev/null)
 check $([ "${n:-0}" -gt 0 ] 2>/dev/null && echo 0 || echo 1) "server/connections-per-day.html: the TOTAL row's In cell is empty ('${n:-}')"
 # an overlapping-rows TOTAL ships its own distinct per-day buckets
@@ -1229,6 +1233,39 @@ check $([ -f docs/server/went-kaput.html ] && echo 1 || echo 0) "docs/server/wen
 check $(grep -rlq 'went-kaput.html' docs --include='*.html' --include='*.js' 2>/dev/null && echo 1 || echo 0) "a page still links went-kaput.html"
 # the home per-day table keeps its Total row (10 days and more)
 check $(grep -q '<tr class="total"><td>Total</td>' docs/index.html 2>/dev/null && echo 0 || echo 1) "the home per-day table lost its Total row"
+
+# the second 2026-09-29 removal batch (user request): Sources and targets,
+# Data diff, Triage, File journey Last leg / In and out, Episodes › Episodes,
+# Subscriptions in boxes and the whole Cleanup group (Cleanup backlog, Config
+# hygiene, Whitelist audit, Account sharing, Twins) — no page, no help page,
+# no .rpt, no link
+n=$(ls docs/transfer/sources-and-targets*.html docs/analyses/data-diff*.html docs/analyses/triage*.html docs/transfer/file-journey-last-leg.html docs/transfer/file-journey-in-and-out.html docs/transfer/episodes-episodes.html docs/analyses/subscriptions-in-boxes*.html docs/*/cleanup-backlog*.html docs/*/config-hygiene*.html docs/*/whitelist-audit*.html docs/*/account-sharing*.html docs/*/twins*.html 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "$n removed report page(s) (sources-and-targets, data-diff, triage, last leg, in and out, episodes, boxes, Cleanup) still published"
+n=$(ls docs/help/sources-and-targets.html docs/help/data-diff.html docs/help/triage.html docs/help/subscriptions-in-boxes.html docs/help/cleanup-backlog.html docs/help/config-hygiene.html docs/help/whitelist-audit.html docs/help/account-sharing.html docs/help/twins.html docs/help/episodes.html 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "$n help page(s) of removed reports still published"
+n=$(ls data/*/reports/sources-and-targets.rpt data/*/reports/data-diff.rpt data/*/reports/triage.rpt data/*/reports/cleanup-backlog.rpt data/*/reports/account-sharing.rpt data/*/reports/twins.rpt data/*/reports/config-defects.rpt data/*/reports/arrived-left.rpt data/*/reports/episodes-src.rpt 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "$n removed .rpt file(s) still written"
+check $(grep -rlqE 'href="[^"#]*(sources-and-targets|data-diff|triage|subscriptions-in-boxes|cleanup-backlog|config-hygiene|whitelist-audit|account-sharing|twins|file-journey-last-leg|file-journey-in-and-out|episodes-episodes)[^"]*\.html' docs --include='*.html' 2>/dev/null && echo 1 || echo 0) "a page still links a removed report"
+check $(grep -q '>Cleanup<' docs/reports/index.html 2>/dev/null && echo 1 || echo 0) "reports/index.html still lists the Cleanup group"
+# analyses/accounts.html lost its Breaking naming rules table; Failed
+# Subscriptions' All view ends with the CoreId / SessionId column
+check $(grep -q 'Breaking naming rules' docs/analyses/accounts.html 2>/dev/null && echo 1 || echo 0) "analyses/accounts.html still carries the Breaking naming rules table"
+h=$(awk -F'\t' '$1 == "HEAD" { print $NF; exit }' data/transfer/reports/failed-sub-all.rpt 2>/dev/null)
+check $([ "$h" = "CoreId / SessionId" ] && echo 0 || echo 1) "failed-sub-all.rpt's table ends with '${h:-?}', expected the CoreId / SessionId column last"
+# the sitemap: ONE flow of cards (no Reports / Dashboards / Tools sections),
+# the former "Data pages & tools" card now "Tools"
+check $(grep -q 'Data pages &amp; tools\|class="smarea"\|sm-reports' docs/tools/sitemap.html 2>/dev/null && echo 1 || echo 0) "tools/sitemap.html still has the sections or the Data pages & tools card"
+check $(grep -q '<h3>Tools</h3>' docs/tools/sitemap.html 2>/dev/null && echo 0 || echo 1) "tools/sitemap.html lacks the Tools card"
+# docs/files/ holds ONLY the published File set (bin/transfer/filepages.sh:
+# per subscription the newest OK File + the three newest Failed ones): every
+# CoreId of _filepages.tsv has its page, no other CoreId-named page exists
+FP=data/transfer/cache/_filepages.tsv
+nw=$(cut -f1 "$FP" 2>/dev/null | LC_ALL=C sort -u | wc -l | tr -d ' ')
+nh=$(ls docs/files/ 2>/dev/null | grep -cE '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.html$' || true)
+nm=$(cut -f1 "$FP" 2>/dev/null | LC_ALL=C sort -u | while read -r c; do [ -f "docs/files/$c.html" ] || echo "$c"; done | wc -l | tr -d ' ')
+check $([ "${nw:-0}" -gt 0 ] && [ "$nw" = "$nh" ] && [ "${nm:-1}" = 0 ] && echo 0 || echo 1) "docs/files/: $nh CoreId page(s), the published set holds ${nw:-0} ($nm without a page)"
+n=$(awk -F'\t' '$2 == "O" { o[$3]++ } $2 == "E" { e[$3]++ } END { for (k in o) if (o[k] > 1) b++; for (k in e) if (e[k] > 3) b++; print b + 0 }' "$FP" 2>/dev/null)
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "_filepages.tsv: $n subscription(s) with more than one OK or three Error File pages"
 
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2

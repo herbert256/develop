@@ -173,7 +173,7 @@ CUR_DATES=""
 
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
-transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out same-protocol activity cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage sources-and-targets skipped not-in-flow-manager ranking files failed episodes failed-files unknown-transfers waiting expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell duration-all account-sharing twins)
+transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out same-protocol activity cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage skipped not-in-flow-manager ranking files failed episodes failed-files unknown-transfers waiting expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell duration-all)
 server_order=(topview errors failure-flows io-errors routing-errors uc-status polling logons connections ssh-security missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab); site-failures one since 2026-09-28 (its rows = the Per flow connection-failure rows); routing-errors = the 2026-09-28 merge of could-not-send, publish-failed and post-client-action
 
 # ---- the analyses-housed area reports ---------------------------------------
@@ -189,7 +189,7 @@ server_order=(topview errors failure-flows io-errors routing-errors uc-status po
 # OWNERSHIP: bin/analyses/publish.sh renders them, NOT the area publishes —
 # it clears docs/analyses/*.html and runs AFTER both, so a page written
 # there by the transfer/server loop would be deleted again.
-SUBS_GROUP_REPORTS=" transfer:failed analyses:failing-reasons server:uc-status server:polling transfer:account-sharing transfer:twins analyses:triage analyses:data-diff analyses:partner-scorecard analyses:blast-radius analyses:app-partners analyses:cleanup-backlog  analyses:partners-in "
+SUBS_GROUP_REPORTS=" transfer:failed analyses:failing-reasons server:uc-status server:polling analyses:partner-scorecard analyses:blast-radius analyses:app-partners analyses:partners-in "
 
 is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
     case $SUBS_GROUP_REPORTS in *:"$1 "*) return 0 ;; esac
@@ -214,7 +214,7 @@ is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
 # Trouble after success box and the day pages). Not listed: ranking (a report
 # with its own page), the retired double; pesit writes no .rpt since
 # 2026-09-29 (its sidecar only).
-PAGELESS_REPORTS=" day weekly hourly weekday retry attempts resubmissions patterns legs-count protocol-journey arrived-left errors-day error-timing error-reasons top-messages unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins inbound-connections connection-diagnostics logon auth-activity event-queue site-failures ssh-crypto ssh-sessions uc1-status uc2-status uc3-status uc4-status went-quiet-src stale-accounts size-dist file-type duplicate-files duration-distribution dwell-time remote-poll uc3-polling missing-cronjobs top-transfers size-profile uc4-to-uc2 file-in-file-out-src episodes-src recovered recovered-files uc2-visits pickups no-remote-dir no-remote-files deploy-errors from-green-to-red only-red punctuality-src went-kaput "
+PAGELESS_REPORTS=" day weekly hourly weekday retry attempts resubmissions patterns legs-count protocol-journey errors-day error-timing error-reasons top-messages unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins inbound-connections connection-diagnostics logon auth-activity event-queue site-failures ssh-crypto ssh-sessions uc1-status uc2-status uc3-status uc4-status went-quiet-src stale-accounts size-dist file-type duplicate-files duration-distribution dwell-time remote-poll uc3-polling missing-cronjobs top-transfers size-profile uc4-to-uc2 file-in-file-out-src recovered recovered-files uc2-visits pickups no-remote-dir no-remote-files deploy-errors from-green-to-red only-red punctuality-src went-kaput "
 is_pageless_report() {
     case $PAGELESS_REPORTS in *" $1 "*) return 0 ;; esac
     return 1
@@ -255,8 +255,8 @@ report_tabs() {
         # component order — the tab count MUST equal the merged rpt's TABLE count
         activity)      echo "Per week|Per hour|Hour × weekday|Per weekday" ;;   # 2026-09-29: Per day went (= the Top view, Volume included)
         retries)       echo "Failing flows|Legs before success|Gave up|Retry spacing|Failing side|Resubmitted per day|Per subscription|Resubmission outcomes|Recovered files" ;;   # 2026-09-29: + recovered-files (its three tables on one tab)
-        episodes)      echo "Episodes|Recovered flows" ;;   # 2026-09-29: episodes-src (three tables on one tab) + recovered   # 2026-08: + the server-log outcome table (resubmissions component table 3)
-        file-journey)  echo "Patterns|Leg count|Most legs|Protocol journey|Last leg|In and out" ;;
+        episodes)      echo "Recovered flows" ;;   # 2026-09-29: recovered only (the Episodes tab — episodes-src — went the same day, user request)
+        file-journey)  echo "Patterns|Leg count|Most legs|Protocol journey" ;;   # (Last leg + In and out went 2026-09-29, user request)
         file-in-file-out) echo "Handovers|UC4 to UC2" ;;   # 2026-09-29: + uc4-to-uc2 (each component's two tables on one tab)
         errors)        echo "Log reasons|Heatmap|Top messages" ;;   # 2026-09-29: "Log reasons" — server-log LINES by reason, not the Files in error the analyses Error reasons page counts   # 2026-09-29: Per component (the levels per component) rides the server Top view   # 2026-09-28: Per day went (= the Top view), By hour / By weekday folded into the Heatmap, Reasons carries the per-week table (tab=reasons)
         missing-entities) echo "Subscriptions|Accounts|Hosts|Whitelist|Logins" ;;   # the five unknown-* tables (retired and brought back 2026-09-29, user request)
@@ -322,10 +322,9 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         failed-files) echo "Failed files" ;; unknown-transfers) echo "Unknown transfers" ;; same-protocol) echo "Inbound and Outbound same Protocol" ;; security-outreach) echo "Security outreach" ;;
         connection-efficiency) echo "Connection efficiency" ;;
         failure-flows) echo "Per flow" ;; io-errors) echo "IO errors" ;; routing-errors) echo "Routing errors" ;;
-        triage) echo "Triage" ;; data-diff) echo "Since yesterday" ;;
         partner-scorecard) echo "Partner scorecard" ;; blast-radius) echo "Blast radius" ;;
         app-partners) echo "Application dependencies" ;;
-        cleanup-backlog) echo "Cleanup backlog" ;; partners-in) echo "Partners - Incoming" ;;
+        partners-in) echo "Partners - Incoming" ;;
         errors) echo "Errors" ;; connections) echo "Connections" ;; logons) echo "Logons" ;;
         ssh-security) echo "SSH security" ;; missing-entities) echo "Missing entities" ;;
         uc-status) echo "UC status" ;; polling) echo "Polling" ;;
@@ -339,16 +338,15 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         cross-host) echo "Hosts" ;; cross-logical) echo "Logical" ;;
         cross-partner) echo "Partners" ;; cross-application) echo "Applications" ;; cross-domain) echo "Domains" ;;
         cross-bl) echo "BL" ;;
-        entity-coverage) echo "Entity coverage" ;; sources-and-targets) echo "Sources and Targets" ;; skipped) echo "Skipped" ;;
+        entity-coverage) echo "Entity coverage" ;; skipped) echo "Skipped" ;;
         files) echo "Sizes & types" ;;   # the MERGED report (size-dist + file-type + duplicate-files): its own group tab was an EMPTY span until 2026-09-13 (user report)
-        failed) echo "Failed Subscriptions" ;; failing-reasons) echo "Error reasons" ;; episodes) echo "Episodes" ;; expired) echo "Expired" ;; waiting) echo "Waiting" ;; pirates) echo "One-legged" ;; went-quiet) echo "Went quiet" ;; failure-heatmap) echo "Failure heatmap" ;; not-in-flow-manager) echo "Not in Flow Manager" ;;
+        failed) echo "Failed Subscriptions" ;; failing-reasons) echo "Error reasons" ;; episodes) echo "Recovered flows" ;; expired) echo "Expired" ;; waiting) echo "Waiting" ;; pirates) echo "One-legged" ;; went-quiet) echo "Went quiet" ;; failure-heatmap) echo "Failure heatmap" ;; not-in-flow-manager) echo "Not in Flow Manager" ;;
         file-in-file-out) echo "File in - File out" ;;
         protocol) echo "Protocol, Direction & Mode" ;;
         ranking) echo "Ranking" ;;
         duration|duration-all) echo "Duration" ;; duration-longest) echo "Longest Files" ;;
         duration-dwell) echo "Distribution & Store-and-forward" ;;
         security-params) echo "Security Parameters" ;; av-scan) echo "AV Scan" ;;
-        account-sharing) echo "Account sharing" ;; twins) echo "Twins" ;;
     esac
 }
 # First rendered page of a report (its first table page, or its single page).
@@ -462,6 +460,9 @@ unset _sm _smsub
 # to an absolute path at source time, like the cd above, so render_rpt works
 # from any later working directory.
 RENDER_AWK="$PWD/bin/render_rpt.awk"
+# the PUBLISHED File pages (bin/transfer/filepages.sh, 2026-09-29): render_rpt
+# marks the drill lists whose first File has one (data-fp)
+FILEPAGES_F="$PWD/data/transfer/cache/_filepages.tsv"; [ -f "$FILEPAGES_F" ] || FILEPAGES_F=""
 
 # value of directive $1 in file $2. ONE awk with an early exit, not grep|cut: it
 # is called a few hundred times per publish (the finder, What is new, the area
@@ -526,10 +527,7 @@ html_head() {   # $1 title  $2 css_href  [$3 date-list]  [$4 unused (was the rig
     # Search keeps the typed search when switching All / Seen / Not Seen. Pages
     # without it (details) fall back to pageKeyBase()'s basename derivation.
     [ -n "${7:-}" ] && printf '<meta name="report-key" content="%s">\n' "$7"
-    # the theme BEFORE the stylesheet: report.js is deferred, so without this
-    # a dark-theme reader would see every page flash light first (2026-09-05).
-    # Light is the default; only a stored "dark" choice switches (user request).
-    printf '%s\n' '<script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>'
+    # (the dark-theme head script went 2026-09-29 with the theme, user request)
     printf '<link rel="stylesheet" href="%sassets/style.css%s">\n<script src="%sassets/topbar-data.js%s" defer></script>\n<script src="%sassets/report.js%s" defer></script>\n' "$base" "${ASSET_VER:+?v=$ASSET_VER}" "$base" "${TB_VER:+?v=$TB_VER}" "$base" "${ASSET_VER:+?v=$ASSET_VER}"
     local _xs
     for _xs in ${9:-}; do printf '<script src="%sassets/%s%s" defer></script>\n' "$base" "$_xs" "${ASSET_VER:+?v=$ASSET_VER}"; done
@@ -590,7 +588,10 @@ render_topbar() {
     # side, then the entity-search icon (it stood between Entities and Files
     # before). Files = the ALL FILES search (2026-09-28). KEEP IN STEP with
     # report.js buildTopbar.
-    printf '<span class="entgroup"><a class="entlabel" href="%stransfer/entities/subscription-all.html">Entities</a>' "$base"
+    printf '<span class="entgroup">'
+    # OVERVIEW first (2026-09-29, user request: "just before Entities")
+    [ -n "${OVERVIEW_HREF:-}" ] && printf '<a class="entlabel" href="%s%s">Overview</a>' "$base" "$OVERVIEW_HREF"
+    printf '<a class="entlabel" href="%stransfer/entities/subscription-all.html">Entities</a>' "$base"
     [ -n "${ERRORS_HREF:-}" ] && printf '<a class="entlabel" href="%s%s">Errors</a>' "$base" "$ERRORS_HREF"
     printf '<a class="entlabel" href="%ssearch/all-files.html">Files</a><a class="searchbtn" href="%ssearch/search.html" title="Search" aria-label="Search">&#128269;</a></span>' "$base" "$base"
     printf '<nav class="nav">'
@@ -603,9 +604,9 @@ render_topbar() {
     # the Monitor link when the site HAS a monitor (TB_MON) — buildTopbar's
     # M.monitor twin (2026-09-28 fix: the baked bar never showed it)
     if [ "${TB_MON:-0}" = 1 ]; then printf '<a class="dashlink" href="%sdashboards/monitor.html">Monitor</a>' "$base"; fi
-    # Top-bar right: the REPORT FINDER + SITE MAP magnifiers, then the help icon.
+    # Top-bar right: the SITE MAP icon, then the help icon (the Report finder
+    # icon went 2026-09-29 with the finder, user request).
     printf '<span class="tr-group">'
-    printf '<a class="searchbtn" href="%stools/report-finder.html" title="Report finder" aria-label="Report finder">&#128270;</a>' "$base"
     printf '<a class="searchbtn" href="%stools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a>' "$base"
     [ -n "$helpslug" ] && printf '<a class="helpbtn" href="%shelp/%s.html" title="Help" aria-label="Help">?</a>' "$base" "$helpslug"
     printf '</span></div>'
@@ -691,7 +692,7 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 (unused)  $5 (unused)  [
             -v slugmaps="$SLUGMAP_FILES" -v resmaps="${RESMAP_FILES:-}" \
             -v subtint="${RPT_SUBTINT:-}" \
             -v grpicons="${GRPICON_MAP:-}" -v dropbuckets="$dropbuckets" \
-            -v noprose="${RPT_NOPROSE:-0}" \
+            -v noprose="${RPT_NOPROSE:-0}" -v fpages="$FILEPAGES_F" \
             -f "$RENDER_AWK" "$rpt"
         printf '</body>\n</html>\n'
     } > "$out"
@@ -970,6 +971,7 @@ help_slug_for() {   # $1 area (transfer|server)  $2 report basename
         ssh-security)        echo "server-ssh-crypto" ;;
         uc-status)           echo "server-uc1-status" ;;
         files)               echo "size-dist" ;;
+        episodes)            echo "recovered" ;;   # 2026-09-29: its Episodes tab went — the report IS Recovered flows
         duration-dwell)      echo "duration-dwell" ;;   # 2026-09-05 merge: its own help page (assets/help/duration-dwell.html, the two components' help merged)
         *) if [ "$area" = server ]; then echo "server-$n"; else echo "$n"; fi ;;
     esac
@@ -1677,7 +1679,7 @@ render_report() {   # $1 area  $2 name  $3 rpt
     # report-dates meta (html_head emits it from CUR_DATES) while rendering,
     # in the single-page and per-table branches alike.
     local saved_dates=${CUR_DATES:-}
-    case $name in cross-*|entity-search|entity-coverage|sources-and-targets|skipped) CUR_DATES="" ;; esac
+    case $name in cross-*|entity-search|entity-coverage|skipped) CUR_DATES="" ;; esac
     # The Entities reports have their own four-page renderer (see above).
     case $name in
         account|login|subscription|remote-host|logical|partner|application|domain|bl)
@@ -2047,9 +2049,9 @@ render_month_stats() {   # $1 area
 # Errors") — out of the pulldown, a top-bar link of its own (render_topbar).
 _report_groups() {
     printf '%s\n' \
-        "Overview|transfer/topview=Transfer top view|server/topview=Server top view|analyses/data-diff=Since yesterday|analyses/triage=Triage|analyses/subscriptions-in-boxes=Subscriptions in boxes" \
+        "Overview|transfer/topview=Transfer top view|server/topview=Server top view" \
         "Entities|transfer/entities/subscription=Subscriptions|transfer/entities/logical=Logical|transfer/entities/partner=Partners|transfer/entities/account=Accounts|transfer/entities/login=Logins|transfer/entities/remote-host=Hosts|transfer/entities/domain=Domains|transfer/entities/application=Applications|transfer/entities/bl=BL" \
-        "Errors|analyses/failed=Failed Subscriptions|analyses/failing-reasons=Error reasons|transfer/failed-files=Failed files|transfer/unknown-transfers=Unknown transfers|transfer/pirates=One-legged|transfer/episodes=Episodes|transfer/retries=Retries & resubmissions|transfer/failure-heatmap=Failure heatmap|server/errors=Errors|server/failure-flows=Per flow|server/io-errors=IO errors|server/routing-errors=Routing errors" \
+        "Errors|analyses/failed=Failed Subscriptions|analyses/failing-reasons=Error reasons|transfer/failed-files=Failed files|transfer/unknown-transfers=Unknown transfers|transfer/pirates=One-legged|transfer/episodes=Recovered flows|transfer/retries=Retries & resubmissions|transfer/failure-heatmap=Failure heatmap|server/errors=Errors|server/failure-flows=Per flow|server/io-errors=IO errors|server/routing-errors=Routing errors" \
         "Use cases & delivery|analyses/use-cases=Use cases|analyses/uc-status=UC status|analyses/polling=Polling|transfer/waiting=Waiting|transfer/expired=Expired|transfer/went-quiet=Went quiet" \
         "Activity & volume|transfer/activity=Activity|transfer/ranking=Ranking|transfer/files=Sizes & types|transfer/month-stats/this=Month stats" \
         "Performance|transfer/duration=Duration|transfer/duration-longest=Longest Files|transfer/duration-dwell=Distribution & Store-and-forward|transfer/anomalies=Anomalies" \
@@ -2057,9 +2059,8 @@ _report_groups() {
         "Protocols & security|transfer/protocol=Protocol, Direction & Mode|transfer/security-params=Security Parameters|transfer/security-outreach=Security outreach|transfer/av-scan=AV Scan|transfer/connection-efficiency=Connection efficiency|server/ssh-security=SSH security" \
         "Logons & connections|server/logons=Logons|server/connections=Connections" \
         "Partners|analyses/partners-in=Partners - Incoming|analyses/partner-scorecard=Partner scorecard|analyses/blast-radius=Blast radius|analyses/app-partners=Application dependencies" \
-        "Configuration|analyses/subscriptions=Configured subscriptions|analyses/accounts=Configured accounts|analyses/logical-detection=Logical detection|transfer/sources-and-targets=Sources and Targets|analyses/xref/cross=Cross References" \
-        "Coverage|transfer/entity-coverage=Entity coverage|analyses/first-seen=First seen|transfer/not-in-flow-manager=Not in Flow Manager|transfer/skipped=Skipped|server/missing-entities=Missing entities" \
-        "Cleanup|analyses/cleanup-backlog=Cleanup backlog|analyses/config-hygiene=Config hygiene|analyses/whitelist-audit=Whitelist audit|analyses/account-sharing=Account sharing|analyses/twins=Twins"
+        "Configuration|analyses/subscriptions=Configured subscriptions|analyses/accounts=Configured accounts|analyses/logical-detection=Logical detection|analyses/xref/cross=Cross References" \
+        "Coverage|transfer/entity-coverage=Entity coverage|analyses/first-seen=First seen|transfer/not-in-flow-manager=Not in Flow Manager|transfer/skipped=Skipped|server/missing-entities=Missing entities"
 }
 # THE SUB-ROWS (2026-09-29, user request: "On the group Failures move the 4
 # server logs to 4 buttons as [a second] selection, have "Server log" as first
@@ -2109,13 +2110,16 @@ rg_rel() {
 # NOT Errors either (2026-09-29, user request: "Remove Failures from the
 # Reports Pulldown, have it as an own link in the Top Menu bar"): its link is
 # ERRORS_HREF, the group's first member's landing page.
+# NOT Overview either (2026-09-29, user request: "Move Overview from the
+# Reports pulldown to the top menu bar, just before Entities"): OVERVIEW_HREF.
 REPORTS_MENU='<a class="ddtop" href="@reports/index.html">Start page</a>'
-ERRORS_HREF=""
+ERRORS_HREF=""; OVERVIEW_HREF=""
 while IFS= read -r _rgl; do
     [ -n "$_rgl" ] || continue
     [ "${_rgl%%|*}" = Entities ] && continue
-    if [ "${_rgl%%|*}" = Errors ]; then
-        _rgf=${_rgl#*|}; _rgf=${_rgf%%|*}; rg_landing "${_rgf%%=*}"; ERRORS_HREF=$RG_LANDING
+    if [ "${_rgl%%|*}" = Errors ] || [ "${_rgl%%|*}" = Overview ]; then
+        _rgf=${_rgl#*|}; _rgf=${_rgf%%|*}; rg_landing "${_rgf%%=*}"
+        if [ "${_rgl%%|*}" = Errors ]; then ERRORS_HREF=$RG_LANDING; else OVERVIEW_HREF=$RG_LANDING; fi
         continue
     fi
     _rgf=${_rgl#*|}; _rgf=${_rgf%%|*}; _rgf=${_rgf%%=*}
@@ -2366,7 +2370,7 @@ if [ -f "$DATA/transfer/reports/day.rpt" ]; then
     TB_PERIOD=$(awk -F'\t' '$1 == "META" && ($2 == "first" || $2 == "last") && $3 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { v[$2] = substr($3, 1, 10) }
         END { if (("first" in v) && ("last" in v)) print v["first"] " / " v["last"] }' "$DATA/transfer/reports/day.rpt")
 fi
-TB_VER=$(printf '%s' "$REPORTS_MENU$ERRORS_HREF$TB_MON$TB_CID${ENV_LABEL:-}${ENV_KEY:-}$ENV_SITES_JS$TB_PERIOD" | cksum | cut -d' ' -f1)
+TB_VER=$(printf '%s' "$REPORTS_MENU$ERRORS_HREF$OVERVIEW_HREF$TB_MON$TB_CID${ENV_LABEL:-}${ENV_KEY:-}$ENV_SITES_JS$TB_PERIOD" | cksum | cut -d' ' -f1)
 
 # Copy the shared assets into docs/ and write .nojekyll. Idempotent, so each
 # publish script can call it and still produce a valid site when run on its own.
@@ -2416,7 +2420,7 @@ ensure_assets() {
     # slashes and spaces, nothing to escape)
     # + errors: the top bar's Errors link (ERRORS_HREF, docs-root-relative —
     # a plain page path, nothing to escape)
-    local _tb; printf -v _tb 'window.AXWAY_TB={reports:"%s",errors:"%s",monitor:%s,coreid:"%s",env:"%s",envkey:"%s",period:"%s"};%s' "$r" "${ERRORS_HREF:-}" "${TB_MON:-0}" "$c" "$e" "$k" "${TB_PERIOD:-}" "$ENVSWITCH_JS"
+    local _tb; printf -v _tb 'window.AXWAY_TB={reports:"%s",errors:"%s",overview:"%s",monitor:%s,coreid:"%s",env:"%s",envkey:"%s",period:"%s"};%s' "$r" "${ERRORS_HREF:-}" "${OVERVIEW_HREF:-}" "${TB_MON:-0}" "$c" "$e" "$k" "${TB_PERIOD:-}" "$ENVSWITCH_JS"
     _asset_put docs/assets/topbar-data.js "$_tb"
     [ -f docs/.nojekyll ] || : > docs/.nojekyll
 }

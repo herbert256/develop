@@ -43,14 +43,11 @@ source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/unknown-transfers.rpt"
 
-# the CoreIds that have a File page (the failed-files.sh rule)
+# the CoreIds that have a PUBLISHED File page (bin/transfer/filepages.sh)
 pages=$(mktemp "${TMPDIR:-/tmp}/utpages.XXXXXX")
 trap 'rm -f "$pages"' EXIT
 : > "$pages"
-for _pd in "$REPORTS_DIR/errors" "$REPORTS_DIR/files"; do
-    [ -d "$_pd" ] || continue
-    find "$_pd" -maxdepth 1 -type f -name '*.rpt' 2>/dev/null | sed 's#.*/##; s#\.rpt$##' >> "$pages" || true
-done
+[ -f "$CACHE_DIR/_filepages.tsv" ] && cut -f1 "$CACHE_DIR/_filepages.tsv" > "$pages"
 FSRC="$FILES"; [ -f "$FSRC" ] || FSRC=/dev/null
 
 # "F <sortkey> <ROW…>" per File, "A <account> <ROW…>" per account, "~N <n>"
@@ -92,7 +89,6 @@ T=$(printf '\t')
 {
     printf 'TITLE\tUnknown transfers\n'
     printf 'DESC\tEvery File no subscription could be found for (subscription Unknown), newest first: account, login, remote host, side, legs, state, volume, CoreId and file name, plus a per-account summary. A routing gap to investigate; subscription tables leave these Files out.\n'
-    printf 'KEYWORDS\tunknown, unknown transfers, unknown subscription, no subscription, unattributed, routing gap, ucx, account without subscription, orphan transfers\n'
     printf 'TABLE\tFiles\twide\tsort=1:-1\tpager=500\trestint\n'
     printf 'HEAD\tDate/time\tAccount\tLogin\tRemote host\tSide\tLegs\tState\tVolume\tCoreId\tFilename\n'
     printf 'KIND\ttext\tacct\tlogin\thost\ttext\tnum\ttext\tnum\ttext\ttext\n'

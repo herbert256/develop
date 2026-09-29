@@ -19,9 +19,10 @@ Source CSV field indices (transfer log): `1`=Status, `2`=Account, `3`=Login, `6`
 one tabbed report; the components stay on disk as unpublished intermediates and every other
 consumer keeps reading them. Transfer: `activity` (weekly+hourly+weekday — `day` left
 2026-09-29, the Top view carries the per-day table with a Volume group), `retries`
-(retry+attempts+resubmissions+recovered-files), `file-journey` (patterns+legs-count+protocol-journey+arrived-left),
+(retry+attempts+resubmissions+recovered-files), `file-journey` (patterns+legs-count+protocol-journey — arrived-left, the In and out tab, and
+protocol-journey's Last leg table went 2026-09-29, user request),
 `file-in-file-out` (file-in-file-out-src+uc4-to-uc2), `files` (size-dist+file-type+duplicate-files+top-transfers+size-profile),
-`episodes` (episodes-src+recovered),
+`episodes` (recovered alone — "Recovered flows"; the Episodes tab, episodes-src, went 2026-09-29),
 `went-quiet` (went-quiet-src+stale-accounts), `duration-dwell` (the `trends` and `punctuality`
 merges went 2026-09-29 with their pages — user request; punctuality-src stays, pageless, for
 the Polling file-arrival slot). Server: `errors`
@@ -52,7 +53,7 @@ Connections lost Whitelist usage (= Incoming Allowed + Re-screens per policy) an
 (`is_pageless_report`; whats-new skips them); merged basenames reuse one component's help slug.
 
 **The former BOXES-ONLY reports** (2026-07..09-29, `BOXES_ONLY_REPORTS`, reached only from the
-Boxes pages): pirates · waiting · expired · went-quiet (transfer) and went-kaput (server) are
+Boxes pages — gone themselves since 2026-09-29): pirates · waiting · expired · went-quiet (transfer) and went-kaput (server) are
 ordinary members of their report groups since the one Reports pulldown (Failures — Errors since
 2026-09-29 — and Use cases & delivery; went-kaput lost its page 2026-09-29, user request, a
 pageless producer now); from-green-to-red, only-red, missing-cronjobs, deploy-errors and
@@ -175,7 +176,7 @@ its .rpt, and every link to it points at `server/failure-flows.html` now.)
 transferred" — and its step `bin/build/seen-in-server-log.sh` are gone, with every consumer. A
 server-log mention alone never makes an entity seen or coloured; the server-log SIGHTING LISTS
 (`data/unknown/*.tsv`, the unknown-entities map-reduce) are read colour-free (Entity Search /
-Cross reference: an unconfigured sighting is red; data-diff; the cleanup backlog). `data/blue/`
+Cross reference: an unconfigured sighting is red). `data/blue/`
 is `data/colour/`; `result.sh` drops the old directory.
 
 **`bin/build/result.sh`** fills the base result column: a **subscription** goes green/red by
@@ -266,16 +267,17 @@ Since 2026-09-29 (user request) ONE Reports pulldown; its groups — authoritati
 `bin/publish_lib.sh` `_report_groups`, members in first-row order (`dir/stem`; T = transfer/,
 S = server/, A = analyses/):
 
-- **Overview** — Transfer top view (T topview) · Server top view (S topview) · Since yesterday (A
-  data-diff) · Triage (A) · Subscriptions in boxes (A)
+- **Overview** — Transfer top view (T topview) · Server top view (S topview). NOT on the Reports
+  menu (2026-09-29, user request — the top bar's Overview link, just before Entities, opens it);
+  Since yesterday (A data-diff), Triage (A) and Subscriptions in boxes (A) went the same day
 - **Entities** — Subscriptions · Logical · Partners · Accounts · Logins · Hosts · Domains ·
   Applications · BL (transfer/entities; native members | views row). NOT on the Reports menu
   (2026-09-29, user request — the top bar's Entities link opens it); the group stays for the
-  start page, the finder and the h1 tags.
+  start page and the h1 tags.
 - **Errors** (Failures until 2026-09-29, user request — out of the pulldown, its own top-bar
   link between Entities and Files) — Failed Subscriptions (A failed) · Error reasons (A
   failing-reasons) · Failed files (T) · Unknown transfers (T unknown-transfers, 2026-09-29) ·
-  One-legged (T pirates) · Episodes (T) · Retries & resubmissions (T retries) · Failure heatmap
+  One-legged (T pirates) · Recovered flows (T episodes) · Retries & resubmissions (T retries) · Failure heatmap
   (T) · **Server log** — ONE first-row entry (`_report_subrows`) whose pages carry a second row:
   Errors (S errors: Log reasons / Heatmap / Top messages) · Per flow (S failure-flows) · IO
   errors (S) · Routing errors (S) — the "Server log errors" group until 2026-09-29 (user
@@ -294,12 +296,12 @@ S = server/, A = analyses/):
 - **Logons & connections** — Logons (S) · Connections (S)
 - **Partners** — Partners - Incoming (A partners-in) · Partner scorecard (A) · Blast radius (A) ·
   Application dependencies (A app-partners)
-- **Configuration** — Subscriptions (A) · Accounts (A) · Logical detection (A) · Sources and
-  Targets (T) · Cross References (analyses/xref, its pair selector under the group row)
+- **Configuration** — Configured subscriptions (A subscriptions) · Configured accounts (A
+  accounts) · Logical detection (A) · Cross References (analyses/xref, its pair selector under the group row)
 - **Coverage** — Entity coverage (T) · First seen (A) · Not in Flow Manager (T) · Skipped (T) ·
   Missing entities (S)
-- **Cleanup** — Cleanup backlog (A) · Config hygiene (A) · Whitelist audit (A) · Account sharing
-  (A) · Twins (A)
+- (**Cleanup** — Cleanup backlog · Config hygiene · Whitelist audit · Account sharing · Twins —
+  went 2026-09-29, user request, with Sources and targets; never restore.)
 
 Entity Search (search/search.html) sits behind the top bar's search icon, the Files search behind
 its Files link, the Dashboard and Monitor behind their own links — none of them in a group.
@@ -321,8 +323,8 @@ the SUBSCRIPTION spine (`_accounts-bl` … `_bl-white`, via xcompose). Attributi
 `bl_union(col 12)` — a File counts for every BL tag of its subscription; direction/result roll
 up from the subscriptions like every derived member. Everywhere the group renders (Entities,
 details section 2.85, coverage, cross references, ranking, search, the home table —
-retitled "Logical, Partners, Domains, Applications & BL") BL is added LAST; first-seen and
-data-diff deliberately exclude it (their set is the six classic+Logical types).
+retitled "Logical, Partners, Domains, Applications & BL") BL is added LAST; first-seen
+deliberately excludes it (its set is the six classic+Logical types).
 
 **THE BASE IS THE LOGICAL ENTITY** (2026-08-30, user request — this replaced the account-NAME
 derivation wholesale). The Logical derivation (FlowID families condensed to three-part group
@@ -564,23 +566,19 @@ consumers need `orlist`'s `-` sentinel for empty fields). The server reports use
 bounded insert by "date time", NOT arrival order: the exports are newest-first within a file; in
 pipe-delimited aggs the loglines field goes LAST so embedded `|` survives).
 
-**The first File of a red / orange drill cell links its File page** (2026-09-21, user request):
-when the drill opens under a CELL that is red or orange at that moment (class `failed`, `errc`,
-`warn`, `dur-m`, `dur-h` — an Error / Retry / Resubmit / Waiting / Expired count, an amber or red
-duration), `bindDrill` renders the FIRST entry's CoreId as a link to `files/<coreid>.html`
-(the `data-b` docs-root prefix + the path; `addCoreIdLinks` then adds its File Tracking `↗` after
-it, as for any id that already is a link). Rows and green / plain cells stay text. The page must
-exist: **`bin/build/drill-files.sh`** (a build step right before the failed.sh catch-up) scans the
-transfer `.rpt` tree and lists the first CoreId of every list whose cell is — or can turn — red or
-orange into `data/transfer/reports/_drill-files.tsv`: `coreids-failed` / `-retry` /
-`-resubmit` always; a `drillcols=` key or a `drill-cell-<col>` when the row's cell at that column is
-red / orange by its KIND (`failed`, `numfailed`, `numerr`, `numwarn`) or its own `@{class=…}`, and
-EVERY cell of a Duration percentile column (RECALC `P…`, retinted per date range) — a superset of
-what the browser links. `failed.sh` unions the list with its Patterns / Longest / latest-OK lists
-(tag `D`, no back link; a listed CoreId without a page forces its rebuild) and writes a neutral File
-page for each CoreId that has no error page already. `linkcheck.sh` models the links (a strict edge
-for the Error / Retry / Resubmit lists, an edge-when-present for the per-column ones) and fails on a
-listed File without a page. Never the OK lists, the whole-row lists or the server log-line drills.
+**A drill entry links its File page when the File HAS one** (2026-09-29, user request "docs/files/
+— store only the last OK and the last 3 errors of a subscription"; replaces the 2026-09-21 "first File
+of a red / orange cell" rule and its `bin/build/drill-files.sh` / `_drill-files.tsv` list):
+`bin/transfer/filepages.sh` writes the published set `data/transfer/cache/_filepages.tsv` (CoreId ⇥
+O|E ⇥ subscription — per subscription the newest Processed File by END and the three newest Failed
+Files by sortkey). render_rpt.awk (`fp_has`, `fp_first` — the first 36-character UUID of each
+value) collects the row's CoreIds from its `coreids` / `coreids-*` / `drill-cell-*` attributes and
+stamps the ones in the set on the row as `data-fp="id id …"` (never on a total row). report.js
+`bindDrill` links an entry's CoreId (`data-b` + `files/<coreid>.html`; `addCoreIdLinks` adds the
+File Tracking `↗`) only when it is listed in its row's `data-fp`, whatever the cell's colour.
+`linkcheck.sh` (2b) models every data-fp CoreId as a strict edge. failed.sh pages every set member
+(an E File the leg selection did not page gets a File page); bin/transfer/publish.sh renders only
+the set (`fp_keep`).
 
 ## The home page
 
@@ -978,9 +976,6 @@ newest first); the all-files shards flag those CoreIds and link them.
   by RESULT. Also lists every whitelisted IP (type "Whitelist", linking the allowing account).
   **Adding a column means shifting report.js** — the Type cell is read by INDEX (`cells[2]`) in
   several places.
-- **Report finder** — `docs/tools/report-finder.html` (`write_report_finder`; under `docs/tools/` with the sitemap, whats-new and the build report since 2026-09-12 — their hrefs carry `../`, the palette strips it): the report catalog
-  searched client-side; TITLE matches rank above intro-only matches; rows carry KEYWORDS
-  (`rpt_keywords`: `KEYWORDS` + every TABLE heading and HEAD column name) via `data-k`.
 - **Failed Subscriptions** — `bin/transfer/reports/failed.sh`, the first member of the Failures
   group (`SUBS_GROUP_REPORTS` `transfer:failed` — data in
   `data/transfer/reports/`, pages in `docs/analyses/`; the group's second member is
@@ -1025,15 +1020,10 @@ newest first); the all-files shards flag those CoreIds and link them.
   **OK transfers ⊆ Current ⊆ Once**. Accounts is the default entity. Two row colours only (green
   covered / red not); a side with 0 configured subscriptions is trivially covered. The STAT boxes
   sit AFTER each TABLE line (`segment_rpt` files them per tab). No date filter.
-- **The INSIGHT pages** (`bin/analyses/publish-insights.sh`, each with a same-slug help page):
-  `whitelist-audit` (whitelisted IPs vs observed sources; `_white.tsv` is the EXPANDED list; its
-  "Server contacts (in)" — and the Cleanup backlog's never-seen rule — come from
-  `bin/server-inbound-addr.awk`: the INBOUND connection lines (`_inbound-addr.tsv`) plus the SSH
-  logon lines of `_logons-hosts.tsv`, 2026-09-29 — they read the Connections report's top-50 address
-  table before, whose lines were mostly OUR outbound connections) and
-  `config-hygiene` (case/separator twins + orphaned config objects; includes the "one name, two
-  roles" double sections, `emit_double_sections`; orphans first, twins last). It also writes the
-  Boxes page. Every page degrades gracefully when a source is missing.
+- (The INSIGHT pages `whitelist-audit` and `config-hygiene` of `publish-insights.sh` went
+  2026-09-29 with the Cleanup group, user request, and with them `bin/server-inbound-addr.awk`
+  and the Connections `_inbound-addr.tsv` sidecar; publish-insights.sh only writes the boxes
+  sidecar now — see the last section.)
 - **UC3 polling tables** (`bin/analyses/reports/uc3-polling.sh` → `uc3-polling.rpt`, merged behind
   `uc3-status.rpt` with `tab=uc3` so they stack on `uc-status-uc3.html`, 2026-09-05 — the one
   report about us polling partners; the Remote polls page and the hand-written Cronjobs page are
@@ -1087,34 +1077,18 @@ per-day histograms QUANTIZED TO THE humandur DISPLAY GRID, so the shown figure e
 one), retints via `data-thr` (`le:A:B`/`ge:A:B`), and restores the baked value and class at the
 full range.
 
-## The Boxes page
+## The boxes sidecar (the Boxes PAGE is gone)
 
-One hand-written analyses page (plus Triage) over ONE producer — `_subs_box_rows`
-(publish-insights) emits the `<box>⇥<subscription>` memberships (the Accounts in boxes twin went
-2026-09-29; an account's view is the Subscriptions page searched on it).
-
-**Subscriptions in boxes**: every configured subscription boxed by what is true of it — eighteen
-boxes over one row each (the first box counts the whole estate; box ids 12 "Server log only" and
-19 "Failing polls" went with the blue result, 2026-09-27, and stay unused). Sources: (a) a
-report's own `.rpt` (from-green-to-red, went-kaput, only-red, no-remote-dir/-files,
-missing-cronjobs, deploy-errors, went-quiet, site-failures — all but went-kaput and went-quiet
-pageless since 2026-09-28/29; each box note links the page that shows those rows now: Failed
-Subscriptions, UC status UC3, Polling "no cron", Routing errors, Per flow); (b) derived from `_files.tsv` (One-legged, Waiting,
-Expired); (c) no report at all, read from the same sources as the Entities views: not seen
-(`coverage/subscriptions.tsv` col 3 = 0), seen (col 3 ≠ 0, so **Seen + Not seen = Total**, the
-invariant to re-assert), ok (green), error (red). Login errors in/out come from logon.rpt via the `_logins-subscriptions` /
-`_hosts-subscriptions` xrefs. **connection** (site-failures) applies the one-legged UNRESOLVED
-rule — cleared only by an OK File LATER than the failure instant taken from the row's
-`@data:loglines` payload (entry 1 = newest; fallback: end of the Last-seen day). A flagged cell
-names its report in red and links it with `?axway_search=<name>`; box links live in the notes
-above the table, never in the column headers.
-
-Shared mechanics: boxes filter via `data-pf` — each ROW carries its box list, each flag column's
-`<th>` its own token; that `th[data-pf]` IS the flag→column map `setupStatFilter` needs to hide
-columns and re-count the total (it writes the total row itself — the generic `recomputeTotals`
-would try to sum box-name cells). A filtered view drops the active box's column and every column
-with no hit among visible rows (the same rule runs on load); hiding is one generated
-`:nth-child()` rule; `colOf` is 1-based, `cells[]` 0-based. `.pftable` renders at 90% with the
-name column fixed `width:31rem` (see the style.css comment); the boxes get `.pfboxes .stat`
-(`box-sizing:border-box; width:10.5rem`). **Count the `%s` in the ROW printf when adding a
-column** — awk silently drops a surplus argument, costing one column its cell on every row.
+**Subscriptions in boxes** — the page, with Triage beside it — went 2026-09-29 (user request;
+the Accounts in boxes twin went the same morning). What stays is its producer:
+`bin/analyses/publish-insights.sh` (no argument, sidecar-only) runs `_subs_box_rows` — the
+`<box>⇥<subscription>` memberships over the same sources the page used (a report's own `.rpt`:
+from-green-to-red, went-kaput, only-red, no-remote-dir/-files, missing-cronjobs, deploy-errors,
+went-quiet, site-failures; derived from `_files.tsv`: One-legged, Waiting, Expired; the coverage
+seen flag and the result colours) — and `_write_box_reason_sidecar` turns them into
+`data/analyses/reports/_subs-boxes.tsv`, the most specific box per red subscription: the
+Entities Subscriptions Error view's Reason (after the flow's own error page and its connected
+rings, see CLAUDE.md "The home page"). The **connection** box (site-failures) keeps the
+one-legged UNRESOLVED rule — cleared only by an OK File LATER than the failure instant. Any
+account join is `xref/_subscriptions-accounts.tsv` and ONLY that. report.js's `setupStatFilter`
+/ `data-pf` machinery stays for the other STAT-filter tables.

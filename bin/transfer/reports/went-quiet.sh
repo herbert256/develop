@@ -92,7 +92,6 @@ rows=$(printf '%s\n' "$agg" | grep $'^ROW\t' \
     else
         printf '%s\n' "$rows"
     fi
-    printf 'KEYWORDS\tquiet, silent, stopped, dormant, idle, inactive, no traffic, last seen, days ago, decommissioned, went quiet\n'
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

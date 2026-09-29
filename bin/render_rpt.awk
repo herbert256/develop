@@ -140,6 +140,19 @@ function ok_href(s) {
     return s ~ /^[A-Za-z0-9._?#]/ && s !~ /^[A-Za-z][A-Za-z0-9+.\-]*:/
 }
 function ok_dname(s)   { return s ~ /^[A-Za-z0-9_-]+$/ }
+# THE PUBLISHED FILE PAGES (2026-09-29, user request: per subscription only the
+# newest OK and the three newest Failed Files have a docs/files/ page —
+# bin/transfer/filepages.sh, the -v fpages list): a drill list whose FIRST File
+# has a page names it on its row (data-fp), and report.js links that entry
+# only then. Loaded lazily — once per page, on its first drill list.
+function fp_has(cid,   l, a) {
+    if (!_fpl) { _fpl = 1; if (fpages != "") { while ((getline l < fpages) > 0) { split(l, a, "\t"); if (a[1] != "") FPS[a[1]] = 1 } close(fpages) } }
+    return (cid in FPS)
+}
+function fp_first(v,   c) {   # the first CoreId of a drill payload ("" when none)
+    if (!match(v, /[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+/) || RLENGTH != 36) return ""
+    return substr(v, RSTART, RLENGTH)
+}
 
 # The partner-GROUP icon: a small anchor after a grouped partner's name, linking
 # to the page that explains why those partner tokens were merged into one group.
@@ -730,7 +743,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         is_total = (dir == "TOTAL")
         # @data:NAME=VALUE cells become data-NAME attrs on the <tr>; the rest
         # are the real cells, matched against KINDS by position
-        attrs = ""; nreal = 0; split("", REAL); rowdrill = 0; fattr = ""; pattr = ""
+        attrs = ""; nreal = 0; split("", REAL); rowdrill = 0; fattr = ""; pattr = ""; rowfp = ""
         for (i = 1; i <= NCELL; i++) {
             c = CELL[i]
             if (substr(c, 1, 6) == "@data:") {
@@ -771,6 +784,11 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
                 # references — 2026-09-29 audit: ~7,700 unread attributes)
                 if (nm == "seen" && index(tattr, "data-seenrows=") == 0) continue
                 ad = " data-" nm "=\"" esc(vv) "\""
+                # a File drill list whose first File has a published page
+                if (nm == "coreids" || index(nm, "coreids-") == 1 || index(nm, "drill-cell-") == 1) {
+                    fc = fp_first(vv)
+                    if (fc != "" && index(" " rowfp " ", " " fc " ") == 0 && fp_has(fc)) rowfp = rowfp (rowfp == "" ? "" : " ") fc
+                }
                 # coreids-failed / -processed bind only when the row has ONE
                 # such cell (report.js setupExpandable) — held apart until the
                 # cells are rendered
@@ -828,6 +846,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         # a row whose only Error cell is a blank 0 ships nothing (2026-09-29)
         attrs = splice(attrs, "\001F", (nfc == 1 && !is_total) ? fattr : "")
         attrs = splice(attrs, "\001P", (npc == 1 && !is_total) ? pattr : "")
+        if (rowfp != "" && !is_total) attrs = attrs " data-fp=\"" rowfp "\""
         printf "<tr%s%s>%s</tr>\n", (is_total ? " class=\"total\"" : ""), attrs, rowcells
     }
     # NOTE/LINK/SUMMARY are FULL-WIDTH blocks: also close an open sxs flex

@@ -36,7 +36,7 @@
 # 6=sortkey, 7=jdn, 8=size, 11=file, 12=dest_site, 20=partner, 21=wait_ms,
 # 22=expired) + xref/_subscriptions-partners.tsv (the UNION attribution).
 # Writes data/waiting.rpt + the subscription File pages data/waiting/<slug>.rpt
-# and their File-page list _waiting-files.tsv (2026-09-21, see SUBDIR below).
+# (2026-09-21, see SUBDIR below).
 #
 # Usage:
 #   ./waiting.sh    # reads input/*.csv (via the cache), writes data/waiting.rpt
@@ -65,11 +65,11 @@ SPX="$CONFIG_XREF/_subscriptions-partners.tsv"   # subscription -> partner (UNIO
 # twin): the Waiting Files cell of the first table opens
 # transfer/waiting/<slug>.html — the Files of that subscription still staged
 # (Start · Waiting for · File name · CoreId, longest waiting first), one .rpt
-# per subscription in $SUBDIR, rendered by bin/transfer/publish.sh. The CoreId
-# of the first 5 rows links the File page, so those CoreIds go to $FILESIDE,
-# which failed.sh pages (list tag W).
+# per subscription in $SUBDIR, rendered by bin/transfer/publish.sh. (The
+# CoreId of the first 5 rows linked a File page until 2026-09-29: only the
+# newest OK and the three newest Failed Files of a subscription have one
+# since — bin/transfer/filepages.sh — never a Waiting File.)
 SUBDIR="$REPORTS_DIR/waiting"
-FILESIDE="$REPORTS_DIR/_waiting-files.tsv"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Stream _files.tsv grouped by subscription, chronological inside each group.
@@ -191,10 +191,9 @@ printf '%s\n' "$agg" | awk -F'|' '$1 == "W" && $3 != "" { print $3 }' | LC_ALL=C
       while (slug in used) { n++; slug = base "-" n }
       used[slug] = 1
       printf "%s\t%s\n", $0, slug }' > "$SLUGS"
-: > "$FILESIDE.raw.$$"
 printf '%s\n' "$agg" | awk -F'|' '$1 == "F"' | LC_ALL=C sort -t'|' -k4,4 -k2,2n -k10,10 | awk -F'|' \
     -v slugs="$SLUGS" -v dir="$SUBDIR.new" \
-    -v side="$FILESIDE.raw.$$" -v lastdt="$last_dt" -v TOPN=5 '
+    -v lastdt="$last_dt" '
     BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
     function clean(s) { gsub(/[\t\r]/, " ", s); return s }
     # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
@@ -205,11 +204,11 @@ printf '%s\n' "$agg" | awk -F'|' '$1 == "F"' | LC_ALL=C sort -t'|' -k4,4 -k2,2n 
         close(out)
     }
     ($4 "") != cur {
-        finish(); cur = $4; out = ""; nrow = 0
+        finish(); cur = $4; out = ""
         if (!($4 in SL)) next
         out = dir "/" SL[$4] ".rpt"
         printf "TITLE\tWaiting files: %s\n", $4 > out
-        printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] the partner has not collected yet — still collectable until the nightly File Maintenance retention sweep (~11 days) deletes them. **Waiting for** counts from the staging moment to the last record of the data (%s). Longest waiting first; the CoreId of the first %d opens the File page.\n", $4, lastdt, TOPN > out
+        printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] the partner has not collected yet — still collectable until the nightly File Maintenance retention sweep (~11 days) deletes them. **Waiting for** counts from the staging moment to the last record of the data (%s). Longest waiting first.\n", $4, lastdt > out
         # every row ORANGE (2026-09-29, user request): a Waiting File\047s
         # colour, _files.tsv col 25
         printf "TABLE\tWaiting files\twide\tnofilter\tsort=1:-1\tpager=25\trestint\n" > out
@@ -219,15 +218,11 @@ printf '%s\n' "$agg" | awk -F'|' '$1 == "F"' | LC_ALL=C sort -t'|' -k4,4 -k2,2n 
     out != "" {
         # file name may contain "|": re-join everything from field 11 on
         fn = $11; for (j = 12; j <= NF; j++) fn = fn "|" $j
-        nrow++
-        if (nrow <= TOPN) { lk = "@{href=../../files/" $10 ".html}"; print $10 > side } else lk = ""
-        printf "ROW\t%s\t@{sortval=%d}%s\t%s\t%s%s\t@data:res=orange\n", $3, $9, $8, lit(clean(fn)), lk, $10 > out
+        printf "ROW\t%s\t@{sortval=%d}%s\t%s\t%s\t@data:res=orange\n", $3, $9, $8, lit(clean(fn)), $10 > out
     }
     END { finish() }'
 rm -rf "$SUBDIR"; mv "$SUBDIR.new" "$SUBDIR"
 SLUGS="$SUBDIR/_slugmap.tsv"
-LC_ALL=C sort -u "$FILESIDE.raw.$$" > "$FILESIDE.tmp"; rm -f "$FILESIDE.raw.$$"
-mv "$FILESIDE.tmp" "$FILESIDE"
 
 # ---------------------------------------------------------------------------
 # Second pass: the staged-inventory curve, the expiry-risk list, the per-
@@ -386,7 +381,6 @@ oldest_cell="-"
 {
     printf 'TITLE\tWaiting\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tUC2 files staged for pickup: which subscriptions have Files the partner has not collected yet, how long they have been waiting, and how fast partners usually collect.\n'
-    printf 'KEYWORDS\tuc2, pickup, collect, waiting, staged, routing, not collected, partner wait, expired, deleted, retention, file maintenance, never delivered, backlog, inventory, expire soon, at risk, call the partner, percentile, median, p95, near miss, weekly trend, pickup speed\n'
     printf 'INTRO\tA UC2 file is COLLECTED by the partner: it arrives from CFT in three quick legs (PeSIT in, routing out, routing in), then sits STAGED until the partner dials in over SSH and picks it up. A file still staged at the end of the data window has outcome **Waiting** — not an error, just not collected yet. A staged file the nightly File Maintenance retention sweep (~11 days) DELETED before any pickup is **Expired** — never delivered. Right now **%s** File(s) across **%s** subscription(s) are waiting (oldest staged **%s**), **%s** File(s) across **%s** subscription(s) have expired, and **%s** staged File(s) were collected. The pickup wait is EXCLUDED from every UC2 Duration figure on this site. Below the three state tables: the day-by-day **staged backlog** curve (peak **%s** file(s) on %s), the **Will expire next** call list, and the per-partner and per-week **pickup-wait** statistics. Click a row for the 10 most recent Files.\n' \
         "$n_wait" "$n_wsites" "$oldest_cell" "$n_exp" "$n_xsites" "$n_coll" "$bk_peak" "${bk_peakdate:--}"
 

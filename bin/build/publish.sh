@@ -9,7 +9,7 @@
 #   docs/reports/index.html    the Reports start page (every group, 2026-09-29 —
 #                              it replaced the transfer/, server/ and analyses/
 #                              catalogs)
-#   docs/tools/                the Report finder, What is new, the site map
+#   docs/tools/                What is new, the site map
 #   docs/404.html              the not-found page
 # then the group rows + tags on every member page (apply_report_groups).
 #
@@ -95,9 +95,6 @@ rg_desc() {
         logical-detection) RG_DESC="How every configured FlowID detected to its Logical flow group — the rule trail the derivation applied, per FlowID."; return ;;
         accounts) RG_DESC="The accounts (partners) and their communication profiles — naming vs configured type and authentication, insecure and unrestricted endpoints, conflicting host / whitelist setup, and the account and login integrity checks."; return ;;
         first-seen) RG_DESC="On what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs — the configured names never seen on top; every count links its item list."; return ;;
-        config-hygiene) RG_DESC="Likely-duplicate twins (case / separator folds) and orphaned objects nothing references."; return ;;
-        whitelist-audit) RG_DESC="Whitelisted partner IPs against the addresses actually connecting: used, connect-only, never seen (prunable), and the sources without any whitelist entry."; return ;;
-        subscriptions-in-boxes) RG_DESC="Every subscription boxed by what is true of it — its status or any of the problem signals — one column per box, each cell linking into its report or entity view."; return ;;
         cross) RG_DESC="Every pair of the nine entities cross-tabulated — which values appear together on at least one transfer, the configured-but-never-seen pairs flagged."; return ;;
         this)                   [ "$dir" = transfer/month-stats ] && { RG_DESC="The nine entities counted over the Files that started this month or the previous one: total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired."; return; } ;;
     esac
@@ -670,220 +667,14 @@ write_home_block() {
     fi
 }
 
-# ---- The Report finder (docs/tools/report-finder.html) -----------------------
-# One searchable catalog row per report page: TITLE + the one-line DESC (the
-# INTRO words stay searchable) lifted from every published .rpt (transfer, server, dashboards) plus the hand-rendered
-# analyses pages. The client-side search (report.js setupReportFinder, input
-# #rfq) ranks TITLE matches ABOVE intro-only matches, both in catalog order.
-# Linked from the top-bar magnifier next to the help icon. A docs/tools/ page like
-# search/search.html (css depth 1; under docs/tools/ since 2026-09-12).
-# ---- the finder row builder --------------------------------------------------
-# ONE awk pass replaces ~19 forks PER REPORT (field1 twice = grep|cut, two
-# rpt_keywords, finder_area, and finder_row's four printf|sed/tr pipelines —
-# the two helpers went 2026-09-29, unused since this awk replaced them). At
-# 142 reports that was ~2,700 processes and 1.9 s — over a quarter of this
-# script's runtime — for work that is pure string munging.
-#
-# Input: one manifest line per row, TAB-separated.
-#   R <TAB> href <TAB> area <TAB> rpt-path          read title/intro/keywords from the .rpt
-#   S <TAB> href <TAB> area <TAB> title <TAB> intro <TAB> kw <TAB> kwvis   literal row
-# Output: the finished <tr>, in manifest order.
-FINDER_AWK='
-BEGIN { FS = "\t"; for (_i = 1; _i < 256; _i++) BYTE[sprintf("%c", _i)] = _i }
-function esc(s) { gsub(/&/, "\&amp;", s); gsub(/</, "\&lt;", s); gsub(/>/, "\&gt;", s); gsub(/"/, "\&quot;", s); return s }
-# --- UTF-8 helpers -----------------------------------------------------------
-# awk is BYTE oriented; the bash this replaces was not, and the difference is
-# visible in the output. ${#s} counted CHARACTERS, so the 200-cap fell later than
-# a byte count would (an em dash is 3 bytes), and `tr [:upper:] [:lower:]` in a
-# UTF-8 locale folded non-ASCII letters. Both are reproduced here.
-function u_trunc(s, n,   i, c, k, L) {   # first n CHARACTERS of s
-    k = 0; L = length(s)
-    for (i = 1; i <= L; i++) { c = BYTE[substr(s, i, 1)]
-        if (c < 128 || c >= 192) { if (k == n) return substr(s, 1, i - 1); k++ } }
-    return s
-}
-# tolower over ASCII plus the cased ranges that reach this data: Latin-1
-# supplement (agrave..thorn, skipping the multiplication sign) and Greek. Only
-# Greek capital delta actually occurs today ("delta Files" in the weekly report),
-# but a partner name in Latin-1 would fold the same way tr did.
-function u_lower(s,   i, L, c, d, o) {
-    s = tolower(s); o = ""; L = length(s)
-    for (i = 1; i <= L; i++) { c = BYTE[substr(s, i, 1)]
-        if (c == 195 && i < L) { d = BYTE[substr(s, i + 1, 1)]
-            if (d >= 128 && d <= 158 && d != 151) { o = o sprintf("%c%c", 195, d + 32); i++; continue } }
-        else if (c == 206 && i < L) { d = BYTE[substr(s, i + 1, 1)]
-            if (d >= 145 && d <= 159) { o = o sprintf("%c%c", 206, d + 32); i++; continue }      # Alpha..Omicron
-            if (d >= 160 && d <= 169) { o = o sprintf("%c%c", 207, d - 32); i++; continue } }    # Pi..Omega (lead byte shifts)
-        o = o substr(s, i, 1) }
-    return o
-}
-function val(line,   i) { i = index(line, "\t"); return (i ? substr(line, i + 1) : "") }
-# TWO independent dedup sets, because this replaced TWO separate rpt_keywords
-# runs. Sharing one set silently drops a term from the VISIBLE list when it first
-# appeared on a HEAD/KPI line (search-only) earlier in the file — which is
-# exactly what the byte-diff caught on the Expired report.
-function add(s,   k) { sub(/^ +/, "", s); sub(/ +$/, "", s)
-    if (s == "" || s == "-") return
-    k = tolower(s)
-    if (!(k in kseen)) { kseen[k] = 1; kw = kw (kw == "" ? "" : ", ") s }
-    if (visnow && !(k in vseen)) { vseen[k] = 1; kvis = kvis (kvis == "" ? "" : ", ") s } }
-# scan one .rpt for TITLE/INTRO and the keyword sets (rpt_keywords, both sets in
-# a single pass — it used to be two separate awk invocations per report)
-function scan(f,   l, n, a2, j) {
-    title = ""; intro = ""; desc = ""; kw = ""; kvis = ""; split("", kseen); split("", vseen)
-    while ((getline l < f) > 0) {
-        if (title == "" && index(l, "TITLE\t") == 1) { title = val(l); sub(/ — Axway ST reports$/, "", title); continue }   # the dashboards TITLE carries the site suffix (2026-09-29)
-        if (desc == "" && index(l, "DESC\t") == 1) { desc = val(l); continue }
-        if (intro == "" && index(l, "INTRO\t") == 1) { intro = val(l); continue }
-        if (index(l, "KEYWORDS\t") == 1) { visnow = 1
-            n = split(val(l), a2, "\t")
-            for (j = 1; j <= n; j++) { m = split(a2[j], a3, /, */); for (q = 1; q <= m; q++) add(a3[q]) }
-            continue }
-        if (index(l, "TABLE\t") == 1 || index(l, "CARD\t") == 1) { visnow = 1; split(val(l), a2, "\t"); add(a2[1]); continue }
-        if (index(l, "HEAD\t") == 1) { visnow = 0; n = split(val(l), a2, "\t"); for (j = 1; j <= n; j++) add(a2[j]); continue }
-        if (index(l, "KPI\t") == 1) { visnow = 0; n = split(val(l), a2, "\t"); add(a2[2]); continue }
-    }
-    close(f)
-}
-function row(href, area, title, intro, kw, kvis,   text, disp, tl, il, kl, kd) {
-    if (title == "") return
-    # ESCAPED, not tag-stripped (2026-09-28 fix): no source text carries HTML,
-    # but several name placeholders — input/…, <account>, <file> — and
-    # the strip deleted them from the description and the search
-    text = intro
-    disp = strongify(esc(text))                                   # **bold** -> <strong>
-    tl = esc(u_lower(title))
-    il = text; gsub(/\*\*/, "", il); gsub(/&[a-zA-Z]*;/, " ", il); il = esc(u_lower(il))
-    kl = (kw == "") ? "" : esc(u_lower(kw))
-    kd = ""
-    if (kvis != "") {
-        if (u_trunc(kvis, 201) != kvis) kvis = u_trunc(kvis, 200) "\342\200\246"
-        kd = " <span class=\"rfkw\">" esc(kvis) "</span>"
-    }
-    printf "<tr data-t=\"%s\" data-i=\"%s\" data-k=\"%s\"><td><a href=\"%s\">%s</a></td><td>%s</td><td class=\"desc\">%s%s</td></tr>\n", \
-        tl, il, kl, "../" esc(href), esc(title), esc(area), disp, kd   # the finder lives in docs/tools/ (2026-09-12): one level below the root
-}
-# **bold** -> <strong>bold</strong>, left to right (sed -E s/\*\*([^*]+)\*\*/…/g)
-function strongify(s,   out, i, j) {
-    out = ""
-    while ((i = index(s, "**")) > 0) {
-        j = index(substr(s, i + 2), "**")
-        if (j == 0) break
-        if (j == 1) { out = out substr(s, 1, i + 3); s = substr(s, i + 4); continue }   # "****": no [^*]+ match
-        out = out substr(s, 1, i - 1) "<strong>" substr(s, i + 2, j - 1) "</strong>"
-        s = substr(s, i + j + 3)
-    }
-    return out s
-}
-# the finder SHOWS the report'"'"'s DESC — its short introduction (2026-09-13,
-# user request: the INTRO no longer renders on the page and is long) — and
-# still SEARCHES the INTRO words, folded into the hidden keyword text
-$1 == "R" { scan($4); iw = intro; gsub(/\*\*/, "", iw); gsub(/<[^>]*>/, "", iw)
-            row($2, $3, title, (desc != "" ? desc : intro), (kw == "" ? iw : kw " " iw), kvis); next }
-$1 == "S" { row($2, $3, $4, $5, $6, $7) }
-'
-
-write_report_finder() {
-    local out="$DOCS/tools/report-finder.html" name rpt t4 i4 fp a4 rows   # under docs/tools/ since 2026-09-12 (user request) — the row hrefs carry ../
-    mkdir -p "$DOCS/tools"   # before the redirected block below opens $out
-    # Emit every finder row first, then derive the per-area counts from what was
-    # actually emitted (so the intro line can never drift from the table).
-    # Build a MANIFEST (pure bash string work, no forks per row) and turn it into
-    # rows with ONE awk. finder_row/rpt_keywords/field1 are gone from this path.
-    local mf; mf=$(mktemp "${TMPDIR:-/tmp}/rfind.XXXXXX")
-    {
-        for name in "${transfer_order[@]}"; do
-            case $name in duration-all) continue ;; esac   # Duration's sibling views — reached via their buttons, not separate finder entries
-            rpt="$DATA/transfer/reports/$name.rpt"; [ -f "$rpt" ] || continue
-            # the Entities pages describe themselves through the grouped
-            # entities/<name>.rpt (bin/transfer/reports/entities.sh, 2026-09-13);
-            # the classic <name>.rpt is a data producer with no page of its own
-            case $name in account|login|subscription|remote-host|logical|partner|application|domain|bl)
-                [ -f "$DATA/transfer/reports/entities/$name.rpt" ] && rpt="$DATA/transfer/reports/entities/$name.rpt" ;; esac
-            fp=$(first_page "$name")
-            case $name in
-                (entity-search) fp="search/search.html" ;;
-                (cross-*)       fp="analyses/xref/$fp" ;;
-                (*)             if is_subs_report "$name"; then fp="analyses/$fp"; else fp="transfer/$fp"; fi ;;
-            esac
-            # the Group column (2026-09-29: was the Transfer / Server / Analyses
-            # area) = the report group of the Reports menu, rg_group_for
-            rg_group_for "$fp"; a4=${RG_GROUP:-Search}
-            printf 'R\t%s\t%s\t%s\n' "$fp" "$a4" "$rpt"
-        done
-        for name in "${server_order[@]}"; do
-            rpt="$DATA/server/reports/$name.rpt"; [ -f "$rpt" ] || continue
-            if is_subs_report "$name"; then fp="analyses/$(first_page "$name")"
-            else fp="server/$(first_page "$name")"; fi
-            rg_group_for "$fp"; a4=${RG_GROUP:-Other}
-            printf 'R\t%s\t%s\t%s\n' "$fp" "$a4" "$rpt"
-        done
-        for rpt in "$DATA"/dashboards/reports/*.rpt; do
-            [ -f "$rpt" ] || continue
-            name=${rpt##*/}; name=${name%.rpt}
-            fp="dashboards/$name.html"; [ "$name" = overview ] && fp="dashboards/index.html"
-            printf 'R\t%s\t%s\t%s\n' "$fp" "Dashboard" "$rpt"
-        done
-        # the hand-rendered analyses pages carry no .rpt — a static list (KEEP IN
-        # SYNC with the Analyses menu/sitemap). ONLY pages with no .rpt belong
-        # here: a report that HAS one is already emitted by the loops above, so
-        # listing it again yields a duplicate finder row — and once such a report
-        # moves out of the Subscriptions group its analyses/ page stops existing,
-        # making the duplicate a dead link too (expired + missing-cronjobs did
-        # exactly that when they became real Transfer reports).
-        while IFS='|' read -r sh st si sk sv; do
-            [ -n "$sh" ] || continue
-            rg_group_for "$sh"; a4=${RG_GROUP:-Files}
-            # the description = the report's own one-line DESC (or the fixed
-            # text of a hand-written page) — rg_desc, the start page's source
-            # (2026-09-29: this list kept its own copies, which had drifted);
-            # the text field below is filled only for the pages rg_desc knows
-            # nothing about (the All files search, Month stats)
-            rg_desc "${sh%.html}"; [ -n "$RG_DESC" ] && si=$RG_DESC
-            printf 'S\t%s\t%s\t%s\t%s\t%s\t%s\n' "$sh" "$a4" "$st" "$si" "$sk" "$sv"
-        done <<'STATIC'
-analyses/use-cases.html|Use cases||use case, uc1, uc2, uc3, uc4, definition, trigger, template, direction|
-analyses/subscriptions.html|Configured subscriptions||mapping, flowid, tags, BL, endpoint, from, to, folders, cron, schedule, counts, files, errors, active, inactive, undeployed, disabled, skipped, skip, swift, cft, color, colour, direction, error reason|mapping, BL tag
-analyses/logical-detection.html|Logical detection||logical, flowid, derivation, rules, detection|logical, derivation
-analyses/accounts.html|Configured accounts|||
-analyses/first-seen.html|First seen|||
-analyses/whitelist-audit.html|Whitelist audit||whitelist, AllowIP, IP, prune, attack surface, unused|whitelist, AllowIP, prune
-analyses/config-hygiene.html|Config hygiene||twins, duplicates, orphans, cleanup, legacy|twins, orphans, cleanup
-analyses/subscriptions-in-boxes.html|Subscriptions in boxes||boxes, problems, broken, flagged, trouble, one-legged, kaput, only red, regression, ok, not seen, server only|boxes, problems, flagged, ok
-analyses/triage.html|Triage||triage, action list, worklist, red, expiry, quiet, attention, priority, ranked|triage, action list, priority
-analyses/failing-reasons.html|Error reasons||error, reason, cause, failed, failing, errors, files, count, vocabulary|error reasons, cause, red
-analyses/data-diff.html|Since yesterday||diff, yesterday, new, changed, flips, recovered, first seen|diff, yesterday, changed
-analyses/partner-scorecard.html|Partner scorecard||partner, scorecard, health, score, gini, concentration, trend|partner, scorecard, health
-analyses/blast-radius.html|Blast radius||blast radius, endpoint, host, redundancy, single point of failure, spof|blast radius, endpoint, spof
-analyses/app-partners.html|Application dependencies||application, dependencies, partner, matrix, lineage, exposure|application, dependencies, lineage
-analyses/cleanup-backlog.html|Cleanup backlog||cleanup, backlog, decommission, orphans, unused, prune|cleanup, decommission, prune
-analyses/partners-in.html|Partners - Incoming||partners, incoming, fe, login, funnel, allowed, disallowed, authenticated, auth failed, bad key, locked, pickups, gateway, migration|
-search/all-files.html|All files search|Find a File among ALL the Files of the transfer logs by file name or CoreId and subscription, as you type, newest first; the index loads only the days that can hold a match, and the From/To selection narrows the days further.|all files, file, files, search, find, file name, filename, coreid, subscription, history, archive, lookup|all files search, file search, find file, history
-transfer/month-stats/this-subscription.html|Month stats|The nine entities counted over the Files that started this month or the previous one: total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired.|month, monthly, this month, previous month, calendar, statistics|
-STATIC
-    } > "$mf"
-    rows=$(LC_ALL=C awk "$FINDER_AWK" "$mf")
-    rm -f "$mf"
-
-    # the row count (`|| true`: grep -c exits 1 on zero matches, and an empty
-    # finder must not kill the publish)
-    local rf_n; rf_n=$(grep -c '^<tr' <<<"$rows" || true)
-    {
-        html_head "Report finder" "../assets/style.css" "" "" "report-finder"
-        printf '<h1>Report finder</h1>\n'
-        printf '<p class="range">%d reports, each with its <strong>group</strong> of the Reports menu. Find a report by its <strong>title</strong> or <strong>description</strong> &mdash; title matches list first.</p>\n' "$rf_n"
-        printf '<div class="controls"><label>Search</label><span class="search-wrap"><input type="search" id="rfq" class="search" autocomplete="off" autofocus placeholder="Find a report by title, description or keyword" aria-label="Find a report"></span><span class="searchhint">Wildcards: ? = 1 character, * = 0..n characters. Logical operators: or / and / and not</span></div>\n'
-        printf '<div class="tablewrap"><table class="index" data-rfinder="1" data-nosearch="1" data-nosort="1">\n<tr><th>Report</th><th>Group</th><th>Description</th></tr>\n'
-        printf '%s\n' "$rows"
-        printf '</table></div>\n'
-        printf '</body>\n</html>\n'
-    } > "$out"
-}
+# (The Report finder — docs/tools/report-finder.html, its FINDER_AWK row
+# builder and report.js setupReportFinder + the Ctrl+K palette that read it —
+# went 2026-09-29, user request; the KEYWORDS .rpt lines only it read went too.)
 
 # ---- The Site map (docs/tools/sitemap.html) ----------------------------------
-# The whole environment on one page: the Reports section — one CARD per group
-# of _report_groups (the Reports pulldown, 2026-09-29), its members
-# tree-listed beneath — then the Dashboards and the Data pages & tools.
+# The whole environment on one page: one CARD per group of _report_groups
+# (the Reports pulldown, 2026-09-29), its members tree-listed beneath, then
+# the Dashboards card and the Tools card — all alike, one flow (2026-09-29).
 # A docs/tools/ page (css depth 1, 2026-09-12) linked from the top-bar map icon.
 sm_href() {   # $1 area  $2 basename -> env-root-relative page
     local fp; fp=$(first_page "$2")
@@ -898,19 +689,19 @@ sm_href() {   # $1 area  $2 basename -> env-root-relative page
     esac
 }
 write_sitemap() {
-    local out="$DOCS/tools/sitemap.html" rpt name t4 n1 n2 sub base cnt lbl   # under docs/tools/ since 2026-09-12 (user request) — every link carries ../, the sibling tools ./
+    local out="$DOCS/tools/sitemap.html"   # under docs/tools/ since 2026-09-12 (user request) — every link carries ../, the sibling tools ./
     mkdir -p "$DOCS/tools"   # before the redirected block below opens $out
     {
         html_head "Site Map" "../assets/style.css" "" "" "sitemap"
         printf '<h1>Site Map</h1>\n'
-        printf '<p class="range">Everything in this environment on one page: each Reports card is a report <strong>group</strong> of the Reports menu &mdash; the group name on top, its reports beneath, in the menu order.</p>\n'
-        printf '<div class="smgrid">\n'
-        # THE REPORTS (2026-09-29, user request — one Reports pulldown): one
-        # card per group of publish_lib _report_groups, its members beneath,
-        # the menu order; the section spans the page width and flows its cards
-        # into columns (.sm-reports .smcols, CSS multi-column). It replaced the
-        # Transfer reports / Server reports / Analyses sections.
-        printf '<section class="smarea sm-reports"><h2>Reports</h2>\n<div class="smcols">\n'
+        printf '<p class="range">Everything in this environment on one page: one card per report <strong>group</strong> of the Reports menu &mdash; the group name on top, its reports beneath, in the menu order &mdash; then the dashboards and the tools.</p>\n'
+        # ONE FLOW OF CARDS (2026-09-29, user request: "No different sections
+        # for Reports, Dashboards, Tools, all parts are the same"): the Start
+        # page, one card per group of publish_lib _report_groups, the
+        # Dashboards card and the Tools card, all alike, in one multi-column
+        # flow (.smcols). The "Data pages & tools" section became the one
+        # Tools card (its Per-day and Entity detail cards went).
+        printf '<div class="smcols">\n'
         printf '<div class="smcard"><h3><a href="../reports/index.html">Start page</a></h3></div>\n'
         local gline gent
         local -a garr
@@ -925,43 +716,12 @@ write_sitemap() {
             done
             printf '</ul></div>\n'
         done < <(_report_groups)
-        printf '</div>\n'
-        printf '</section>\n<section class="smarea sm-dash"><h2>Dashboards</h2>\n'
-        # ONE dashboard (2026-07): the per-topic pages folded into the overview
-        printf '<div class="smcard"><h3><a href="../dashboards/index.html">Dashboard</a></h3></div>\n'
-        # the Monitor dashboard exists only in an env with monitor data (the
-        # rpt is the flag); this sitemap line is also what keeps the page
-        # REACHABLE for linkcheck — the top-bar Monitor link is runtime-only
-        [ -f "$DATA/dashboards/reports/monitor.rpt" ] && \
-            printf '<div class="smcard"><h3><a href="../dashboards/monitor.html">Monitor</a></h3></div>\n'
-        printf '</section>\n<section class="smarea sm-tools"><h2>Data pages &amp; tools</h2>\n'
-        # per-day pages: the COMBINED day dashboard, one per calendar day
-        # (date-named; the per-area transfer-/server- day pages were removed
-        # 2026-07) — reached from the Top view Date cells and the Date cells of
-        # the home Per day table.
-        # `|| true`: zero day pages (config-only estate) makes ls fail, and
-        # pipefail would kill the publish over a legitimate 0
-        n1=$({ ls "$DOCS"/day/[0-9]*.html 2>/dev/null || true; } | wc -l | tr -d ' ')
-        printf '<div class="smcard"><h3>Per-day pages <span class="smcount">%s</span></h3><ul>\n' "$n1"
-        printf '<li><a href="../index.html">Day dashboards (%s) — one per calendar day, via the Date cells of the home Per day table</a></li>\n' "$n1"
-        printf '</ul></div>\n'
-        # the per-entity detail pages: one page per configured-or-logged entity,
-        # reached through the Entities list views each line opens (2026-09-29:
-        # the card was titled as if its lines opened detail pages)
-        printf '<div class="smcard"><h3>Entity detail pages (via the Entities lists)</h3><ul>\n'
-        for sub in accounts:account subscriptions:subscription logins:login hosts:remote-host logicals:logical \
-                   partners:partner applications:application domains:domain bl:bl; do
-            base=${sub#*:}; sub=${sub%%:*}
-            # an entity type can have ZERO names (production 2026-08: no
-            # DNS-named hosts at all) — a missing slugmap is a valid state,
-            # and `wc < missing` would kill the publish under set -e
-            cnt=0
-            [ -f "$DATA/transfer/reports/details/$sub/_slugmap.tsv" ] && \
-                cnt=$(wc -l < "$DATA/transfer/reports/details/$sub/_slugmap.tsv" | tr -d ' ')
-            lbl=$(member_label "$base")
-            esc "$lbl"
-            printf '<li><a href="../transfer/entities/%s-all.html">%s (%s)</a></li>\n' "$base" "$ESC" "${cnt:-0}"
-        done
+        # ONE dashboard (2026-07) + the Monitor dashboard where the env has
+        # monitor data (the rpt is the flag) — this line is also what keeps
+        # monitor.html REACHABLE for linkcheck (its top-bar link is runtime-only)
+        printf '<div class="smcard"><h3>Dashboards</h3><ul>\n'
+        printf '<li><a href="../dashboards/index.html">Dashboard</a></li>\n'
+        [ -f "$DATA/dashboards/reports/monitor.rpt" ] && printf '<li><a href="../dashboards/monitor.html">Monitor</a></li>\n'
         printf '</ul></div>\n'
         printf '<div class="smcard"><h3>Tools</h3><ul>\n'
         printf '<li><a href="../index.html">Home</a> — the shared landing page</li>\n'
@@ -969,7 +729,6 @@ write_sitemap() {
         printf '<li><a href="../search/all-files.html">All files search</a> — find a File among all the Files of the transfer logs</li>\n'
         # the sibling tools (docs/tools/, 2026-09-12): ./ links — the ../ rule
         # above is for everything outside this directory
-        printf '<li><a href="./report-finder.html">Report finder</a> — find a report by title or description</li>\n'
         printf '<li><a href="./whats-new.html">What is new</a> — new and changed reports</li>\n'
         printf '<li><a href="../help/index.html">Help</a> — how to read the report catalogs (per-report help sits behind each page'\''s <b>?</b> button)</li>\n'
         # THE BUILD REPORT (2026-09-12, user request): back on the site as
@@ -978,7 +737,7 @@ write_sitemap() {
         # page (it left docs/ 2026-08-29 and was local-only until now)
         printf '<li><a href="./build.html">Build report</a> — the run that built this site: steps and timings, the inbox, the log files</li>\n'
         printf '</ul></div>\n'
-        printf '</section>\n</div>\n</body>\n</html>\n'
+        printf '</div>\n</body>\n</html>\n'
     } > "$out"
 }
 
@@ -1014,16 +773,7 @@ wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intr
         cross-reference) printf 'Cross References\tAnalyses\tanalyses/xref/cross-account-subscriptions.html\tEvery pair of the nine entities cross-tabulated both ways — which appear together on a transfer, which are configured but never seen.\n'; return 0 ;;
         # the analyses PUBLISH writers render several pages each — one row per
         # page that exists (the insight pages have no .rpt to read a title from)
-        publish-insights)
-            local pg key rest ttl dsc
-            # (the "expired" insight page went: Expired is a transfer report)
-            for pg in                      "whitelist-audit:Whitelist audit:Whitelisted partner IPs against the addresses that actually connect in — used, connect-only or prunable." \
-                      "config-hygiene:Config hygiene:Likely-duplicate twins, server-log configuration defects and orphaned objects nothing references." \
-                      "subscriptions-in-boxes:Subscriptions in boxes:Every subscription boxed by what is true of it — its status or any of the problem signals."; do
-                key=${pg%%:*}; rest=${pg#*:}; ttl=${rest%%:*}; dsc=${rest#*:}
-                [ -f "$DOCS/analyses/$key.html" ] && printf '%s\tAnalyses\tanalyses/%s.html\t%s\n' "$ttl" "$key" "$dsc"
-            done
-            return 0 ;;
+        publish-insights) return 0 ;;   # a sidecar writer since its three insight pages went (2026-09-29)
     esac
     case $1 in bin/server/*|server/bin/*) area=server ;; esac   # (the pre-2026-07 path too — see write_whats_new)
     # the Subscriptions group scripts all live in bin/analyses/reports/, so the
@@ -1040,8 +790,8 @@ wn_meta() {   # $1 script path  $2 basename -> "title<TAB>area<TAB>href<TAB>intr
         case $2 in
             weekly|hourly|weekday)                                  wn_parent=activity ;;   # (day: a pageless data producer since Activity dropped it — the default skip below)
             retry|attempts|resubmissions|recovered-files)           wn_parent=retries ;;
-            episodes-src|recovered)                                 wn_parent=episodes ;;   # 2026-09-29
-            patterns|legs-count|protocol-journey|arrived-left)      wn_parent=file-journey ;;
+            recovered)                                              wn_parent=episodes ;;   # 2026-09-29
+            patterns|legs-count|protocol-journey)                   wn_parent=file-journey ;;
             uc4-to-uc2|file-in-file-out-src)                        wn_parent=file-in-file-out ;;   # 2026-09-29
             errors-day)                                             wn_parent=topview ;;   # 2026-09-29: rides the server Top view
             deploy-errors)                                          wn_parent=routing-errors ;;
@@ -1169,8 +919,8 @@ write_whats_new() {
         # emits several meta lines, so a CHANGE to it names no single report —
         # unless the commit SUBJECT does. Keep the page whose slug or title the
         # subject mentions; drop the commit when that is not exactly one page
-        # (a subscriptions-in-boxes commit would otherwise stamp its message
-        # onto all three).
+        # (a commit touching one shared writer would otherwise stamp its
+        # message onto every page it feeds).
         if [ "$kind" = C ]; then
             meta=$(printf '%s\n' "$meta" | awk -F'\t' -v s="$subj" '
                 function fold(x) { x = tolower(x); gsub(/[^a-z0-9]/, "", x); return x }
@@ -1353,8 +1103,6 @@ _bpl0=$(date +%s)
 _bplap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  index pages: %s\n' "$((_t1 - _bpl0))" "$1" >&2; _bpl0=$_t1; }
 write_reports_index
 _bplap "reports start page"
-write_report_finder
-_bplap "write_report_finder"
 write_whats_new
 _bplap "write_whats_new"
 write_sitemap

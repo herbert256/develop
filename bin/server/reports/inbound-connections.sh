@@ -12,8 +12,6 @@
 #   Connections per day   the In / Out and SSH / PESIT / FTP daily trend.
 #   By account            connections per account (protocol mix, distinct addresses).
 #   By address            the remote peers, top 50 by connections.
-# Plus the sidecar _inbound-addr.tsv (every address with an INBOUND line,
-# uncapped) for the Whitelist audit and the Cleanup backlog.
 # (A "Whitelist policy usage" view went 2026-09-28 and the "by protocol"
 # table 2026-09-29 — the per-day table carries its per-protocol split.)
 #
@@ -27,7 +25,8 @@
 # outbound connections name.
 #
 # Reads the parse cache (data/server/cache/_parse.tsv). Writes
-# data/server/reports/inbound-connections.rpt + _inbound-addr.tsv.
+# data/server/reports/inbound-connections.rpt (the _inbound-addr.tsv sidecar
+# went 2026-09-29 with its readers, the Whitelist audit and the Cleanup backlog).
 #
 # Usage:
 #   ./inbound-connections.sh
@@ -151,13 +150,6 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
 
 IFS=$'\t' read -r _ t_conn n_proto n_acct n_addr n_days t_in t_out t_ssh t_pesit t_ftp t_other <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 
-# THE INBOUND-ADDRESS SIDECAR (2026-09-29): every address with at least one
-# INBOUND connection line, addr ⇥ count, uncapped — the Whitelist audit and
-# the Cleanup backlog read it (with the SSH logon evidence of
-# _logons-hosts.tsv) instead of the page's top-50 By address table
-INADDR="$REPORTS_DIR/_inbound-addr.tsv"
-printf '%s\n' "$agg" | awk -F'\t' '$1 == "S" && $4 + 0 > 0 { print $2 "\t" $4 }' | LC_ALL=C sort > "$INADDR.tmp" && mv "$INADDR.tmp" "$INADDR"
-
 TITLE_TXT='Connection volume'
 if [ "${t_conn:-0}" -eq 0 ]; then
     # No connection messages in this log window — write an EMPTY-STATE page
@@ -165,7 +157,6 @@ if [ "${t_conn:-0}" -eq 0 ]; then
     echo "No connection messages found — writing an empty report." >&2
     {
         printf 'TITLE\t%s\n' "$TITLE_TXT"
-        printf 'KEYWORDS\tsource IP, target address, partner address, protocol, connection volume, inbound, outbound\n'
         # one stub per table of the full report, so the merged Connections
         # tabs keep their places
         for _t in 'Connections per day' 'By account' 'By address'; do
@@ -215,7 +206,6 @@ addr_rows() {
 
 {
     printf 'TITLE\t%s\n' "$TITLE_TXT"
-    printf 'KEYWORDS\tsource IP, target address, partner address, protocol, connection volume, inbound, outbound\n'
 
     printf 'TABLE\tConnections per day\twide\n'
     printf 'HEAD\tDate\tIn\tOut\tSSH\tPESIT\tFTP\tOther\tTotal\n'

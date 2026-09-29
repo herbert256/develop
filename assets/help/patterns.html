@@ -7,7 +7,6 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: File journey — Axway ST reports</title>
-<script>try{if(localStorage.getItem("axway-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
@@ -18,7 +17,7 @@
 <h1>File journey</h1>
 <h2>What it shows</h2>
 <ul>
-<li>How each File (all legs sharing one CoreId) moves through the platform: its status pattern, leg count, protocol chain and how it arrives versus leaves.</li>
+<li>How each File (all legs sharing one CoreId) moves through the platform: its status pattern, leg count and protocol chain.</li>
 </ul>
 <h2>Tabs</h2>
 <ul>
@@ -26,8 +25,6 @@
 <li><strong>Leg count</strong> &mdash; <strong>Legs</strong> (1&ndash;10, 11 - 100, &gt; 100), <strong>Files</strong>, <strong>Volume</strong> (the bytes of those OK Files), <strong>% of Files</strong>, <strong>Distribution</strong>. A bucket with no OK File is not listed &mdash; the 1-leg Files (never OK) are on <a href="pirates.html">One-legged</a>.</li>
 <li><strong>Most legs</strong> &mdash; the 25 Files with the most legs: Legs, Date &amp; time, Subscription, Account, File, CoreId. Rows in the <a href="general.html#colours">File colour</a>.</li>
 <li><strong>Protocol journey</strong> &mdash; the ordered protocol chain (<code>ssh &rarr; pesit</code>): Files, Volume (their bytes), % of Files, Distribution.</li>
-<li><strong>Last leg</strong> &mdash; the protocol of each File&rsquo;s final leg: <strong>Files</strong> (the delivered ones), <strong>Waiting</strong>, <strong>Expired</strong>; full-period figures (a date range does not narrow this table).</li>
-<li><strong>In and out</strong> &mdash; <strong>Arrived</strong> (protocol of the earliest Inbound leg), <strong>Left</strong> (of the latest Outbound leg), <strong>Files</strong>; <strong>(none)</strong> = no such leg.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
@@ -35,8 +32,7 @@
 <li>Leg count and Protocol journey drop a row without an OK File; their Total row shows the Volume too.</li>
 <li>Statuses appear as logged; Patterns lists at most the 200 most frequent.</li>
 <li>A clean store-and-forward is 2 legs, retries add legs, a UC2 pickup is 4+ (one leg per partner collect).</li>
-<li><strong>?</strong> = a leg with no protocol logged. A last leg on <strong>routing</strong> never left staging; a healthy delivery ends on ssh/ftp (partner side) or pesit (CFT side).</li>
-<li>Waiting / Expired keep full-period values under a narrowed range.</li>
+<li><strong>?</strong> = a leg with no protocol logged.</li>
 </ul>
 </main>
 </body>

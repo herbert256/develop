@@ -96,7 +96,6 @@ fi
     printf '%s\n' "$rows"
     printf 'TOTAL\tTotal (%s subscription(s))\t@{class=num}%s\t@{class=num processed}%s\t@{class=num processed}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t\n' \
         "$n_rows" "$t_p" "$t_c" "$t_b" "$t_d" "$t_s" "$t_f"
-    printf 'KEYWORDS\tuc2,pickup,visit,logon,collect,deliver,exchange,two-way,uc4 twin,sftp,session,same connection\n'
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

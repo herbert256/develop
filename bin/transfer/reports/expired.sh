@@ -50,7 +50,6 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 # the per-subscription File pages' .rpt set (see below)
 SUBDIR="$REPORTS_DIR/expired"
-FILESIDE="$REPORTS_DIR/_expired-files.tsv"   # the CoreIds those pages link → File pages (failed.sh)
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 TMPD=$(mktemp -d "${TMPDIR:-/tmp}/axexp.XXXXXX")
@@ -126,13 +125,13 @@ cp "$TMPD/x_slugs" "$SUBDIR.new/_slugmap.tsv"
 # declared default sort (sort=1:-1, the Expired column descending). The rows are
 # BAKED in that order on the DISPLAYED value, ties by Start descending then
 # CoreId: report.js sorts stably (ties keep DOM order), so the first rows of the
-# page are exactly the first rows here. THE FIRST 5 of that order link their
-# File page — files/<coreid>.html — from the CoreId cell; their CoreIds go to
-# the sidecar $FILESIDE, which failed.sh pages (list tag X) like the Transfer
-# patterns / Longest Files lists.
+# page are exactly the first rows here. (The first 5 linked a File page until
+# 2026-09-29: only the newest OK and the three newest Failed Files of a
+# subscription have one since — bin/transfer/filepages.sh — never an Expired
+# File.)
 LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k3,3r -k2,2r -k5,5 "$TMPD/x_files" | awk -F'\t' \
     -v slugs="$TMPD/x_slugs" -v dir="$SUBDIR.new" \
-    -v side="$TMPD/x_side" -v TOPN=5 '
+    '
     BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
     # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
     function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
@@ -142,11 +141,11 @@ LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k3,3r -k2,2r -k5,5 "$TMPD/x_files" | awk
         close(out)
     }
     ($1 "") != cur {
-        finish(); cur = $1; out = ""; nrow = 0
+        finish(); cur = $1; out = ""
         if (!($1 in SL)) next
         out = dir "/" SL[$1] ".rpt"
         printf "TITLE\tExpired files: %s\n", $1 > out
-        printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] that the nightly File Maintenance retention sweep deleted before the partner collected them — never delivered. Last expired first; the CoreId of the first %d opens the File page.\n", $1, TOPN > out
+        printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] that the nightly File Maintenance retention sweep deleted before the partner collected them — never delivered. Last expired first.\n", $1 > out
         # every row RED (2026-09-29, user request): an Expired File\047s colour,
         # _files.tsv col 25
         printf "TABLE\tExpired files\twide\tnofilter\tsort=1:-1\tpager=25\trestint\n" > out
@@ -154,15 +153,10 @@ LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k3,3r -k2,2r -k5,5 "$TMPD/x_files" | awk
         printf "KIND\ttext\ttext\tmono\tmono\n" > out
     }
     out != "" {
-        nrow++
-        if (nrow <= TOPN) { lk = "@{href=../../files/" $5 ".html}"; print $5 > side } else lk = ""
-        printf "ROW\t%s\t%s\t%s\t%s%s\t@data:res=red\n", $2, $3, lit($4), lk, $5 > out
+        printf "ROW\t%s\t%s\t%s\t%s\t@data:res=red\n", $2, $3, lit($4), $5 > out
     }
     END { finish() }'
 rm -rf "$SUBDIR"; mv "$SUBDIR.new" "$SUBDIR"
-[ -f "$TMPD/x_side" ] || : > "$TMPD/x_side"
-LC_ALL=C sort -u "$TMPD/x_side" > "$FILESIDE.tmp"
-mv "$FILESIDE.tmp" "$FILESIDE"
 
 hsz() { awk -v b="$1" 'BEGIN{ if (b>=1073741824) printf "%.1f GB", b/1073741824
     else if (b>=1048576) printf "%.1f MB", b/1048576
@@ -265,7 +259,6 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
         printf 'TOTAL\tTotal (0 weekdays)\t\t\t\n'
     fi
 
-    printf 'KEYWORDS\texpired, retention, file maintenance, sweep, deleted, never delivered, uncollected, pickup, staged, uc2, waiting\n'
     printf 'SUMMARY\tExpired: %s Files (%s%% of resolved staged)  |  Volume: %s  |  Average staged to deleted: %s d  |  Still waiting: %s\n' \
         "$nexp" "$share" "$hb" "$avgage" "$nwait"
     printf 'FOOT\n'

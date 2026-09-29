@@ -19,8 +19,7 @@
 #                             host (raw IPs of resolved hostnames included)
 #
 # plus the five data/unknown/ sidecars (the server-log sighting lists; white.tsv
-# takes only TM-mentioned IPs) — read by Entity Search, Cross reference, the
-# data-diff report and the cleanup-backlog / no-remote-files safety checks.
+# takes only TM-mentioned IPs) — read by Entity Search and Cross reference.
 # (The four SSH-LOGON files logon-*.tsv went with the BLUE status, 2026-09-27.)
 #
 # MAP-REDUCE (the bin/server/parse.sh pattern): the extraction work is CPU,

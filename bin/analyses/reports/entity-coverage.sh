@@ -310,7 +310,6 @@ for _cp in "${_cpids[@]}"; do wait "$_cp" || _crc=$?; done
 {
 printf 'TITLE\tEntity coverage\n'
 printf 'DESC\tPer account, logical flow, partner, domain, application or BL: covered (green) or not (red) — each side proven by real transferred Files, successful SSH logons (In) or successful UC3 remote polls (Out); the Current, Once and OK-transfers verdicts side by side, the regressions marked.\n'
-printf 'KEYWORDS\tcoverage,covered,working,proof,logon,poll,regressed,regression,once,current,account,logical,partner,domain,application,bl\n'
 for spec in "${SPECS[@]}"; do
     _key=${spec%%:*}
     [ -f "$TMPD/$_key.part" ] && cat "$TMPD/$_key.part"

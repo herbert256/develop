@@ -172,7 +172,6 @@ flow_rows() {
     printf 'DESC\tServer-log ERROR messages classified by reason and attributed to the subscription each message names.\n'
     printf 'INTRO\t**%s** of the **%s** server-log ERROR records (**%s%%**) name a flow: **%s** subscription(s), **%s** subscription-and-reason pair(s), classified with the same reason buckets as the **Transfer Error Reasons** report. The transfer logs record only OK/Error with no reason; this page says what breaks for **which flow**.\n' \
         "$tot_attr" "$tot_err" "$attr_share" "$n_flows" "$n_pairs"
-    printf 'KEYWORDS\tfailure,reasons,flow,subscription,error,classified,pesit,connection,network,refused,connection failures,site failures\n'
 
     printf 'TABLE\tSubscription × reason\twide\tnofilter\tpager=50\n'
     printf 'HEAD\tSubscription\tReason\tErrors\tShare\tFirst seen\tLast seen\n'

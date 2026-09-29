@@ -161,7 +161,7 @@ CONNHOLD="$COLDIR/_connhold.tsv"
 # SINCE (2026-09-29 audit) = when it WENT red — the oldest evidence line after
 # the cut (the last transfer's end) that is still in force, or for a
 # cannot-connect flow the oldest failure of its qualifying streak. Every "red
-# since" / "new red flip" reader (triage, data-diff, failed.sh, the UC status
+# since" / "new red flip" reader (failed.sh, the UC status
 # per-hour walkers) dates by SINCE; the evidence stamp alone made a flow
 # failing for two months read as a new flip on its newest failure.
 REDFLIP="$COLDIR/_redflip.tsv"

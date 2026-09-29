@@ -141,7 +141,6 @@ dshare=$(awk -v r="$tR" -v n="$dFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }
 
 {
     printf 'TITLE\tRecovered files\n'
-    printf 'KEYWORDS\trecovered, retry, healed, self-healing, failed leg, retries, resilience, per subscription, per protocol, per day\n'
     # every box carries its per-day payload so the values follow the From/To
     # range (report.js recalcStats; the full range restores the baked figures)
     printf 'STAT\torange\t%s\tRecovered Files\t@data:tok=sum\t@data:sb=%s\n' "$tR" "$sbr"

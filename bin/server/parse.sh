@@ -10,13 +10,9 @@
 #                     _parse.tsv — bin/build.sh reads it for the build report
 #                     instead of re-counting the multi-GB cache)
 #   data/_parse.txt   the column legend (names + descriptions + code tables)
-#   data/_subscriptions.tsv  "<date time> <TAB> <name>" for every configured
-#                            subscription (data/flow-manager/base/_subscriptions.tsv)
-#                            mentioned in a RUNTIME record — the one FLAT mention
-#                            list (cleanup-backlog.sh reads it); the accounts /
-#                            logins / hosts flats went (no reader: logins/hosts
-#                            2026-07, accounts 2026-09-29) — the per-name DIRS
-#                            below cover all four types
+#   (NO flat mention lists: logins/hosts went 2026-07, accounts and — with
+#   its one reader, the Cleanup backlog — subscriptions 2026-09-29; the
+#   per-name DIRS below cover all four types)
 #   data/{accounts,subscriptions,logins,hosts}/<name>.tsv
 #                            per configured name, its 25 most-recent runtime
 #                            log rows (newest first), each a full _parse.tsv
@@ -514,12 +510,6 @@ AWK_EOF
 # "type TAB name TAB record" lines for the ring merge below.
 ENT_PROG=$(cat <<'AWK_EOF'
 BEGIN { rn_load(RNF)
-        # the SUBSCRIPTION mention lines (the one flat list with a reader —
-        # the account / login / host lines went 2026-09-29) go through cat
-        # (2026-09-28, speed round 25): awk writes a regular file in 4 KB
-        # chunks, ten parts at once ~300 MB on production; closed (and
-        # waited for) at the top of END
-        outc["S"] = "cat >> \"" subout "\""
         # THE PREFIX GATE (2026-09-27): a token can resolve to a subscription only
         # when its first 3 characters open a configured name (exact case) or an
         # old name of the rename map (upper-cased) — the tail strip, the SERVER
@@ -556,7 +546,6 @@ function hit(ty, w,   k) {
     k = ty SUBSEP w
     if (seen[k] == NR) return
     seen[k] = NR
-    if (ty == "S") print t "\t" w | outc[ty]
     ring[k, cnt[k] % 25] = $0
     cnt[k]++
     # the Error/Warn ring keeps its 10 newest Errors AND its 10 newest
@@ -575,7 +564,6 @@ FILENAME ~ /_hosts\.tsv$/         { if ($1 != "") hstU[toupper($1)] = $1; next }
 # of the mention rings, which would otherwise fill up with them
 index($5, "{\"message\":") == 1 { next }
 {
-    t = $1 (($2 != "") ? " " $2 : "")
     k = split($5, tok, /[^A-Za-z0-9._-]+/)   # dots kept: hostnames/IPs stay one token
     # (2026-09-27: the regex trims/tests run only on a token that holds a dot,
     # the SERVER/CLIENT match only on one holding the marker, and the rename
@@ -642,7 +630,6 @@ function name_hit(w2,   pf, p, cand, c2) {
 # Emit this chunk's rings, newest first (the chunk is a contiguous slice of
 # the ascending-by-date+time cache, so the ring holds ITS newest 10).
 END {
-    for (ty9 in outc) close(outc[ty9])   # the mention-line pipes (BEGIN)
     for (k in cnt) {
         split(k, a, SUBSEP)
         m = (cnt[k] < 25) ? cnt[k] : 25
@@ -694,7 +681,6 @@ AWK_EOF
 
 ent_one() {   # $1 = cache line chunk, $2 = 4-digit part index
     awk -F'\t' \
-        -v subout="$ENT_CHUNK_DIR/S.$2" \
         -v ringout="$ENT_CHUNK_DIR/rings.$2" \
         -v ewout="$ENT_CHUNK_DIR/ewrings.$2" \
         -v RNF="$RENAMES_FILE" \
@@ -702,7 +688,6 @@ ent_one() {   # $1 = cache line chunk, $2 = 4-digit part index
 }
 ent_range() {   # $1 = the cache, $2/$3 = the byte range [lo, hi) of line starts, $4 = 4-digit part index
     rng_feed "$1" "$2" | awk -F'\t' \
-        -v subout="$ENT_CHUNK_DIR/S.$4" \
         -v ringout="$ENT_CHUNK_DIR/rings.$4" \
         -v ewout="$ENT_CHUNK_DIR/ewrings.$4" \
         -v RNF="$RENAMES_FILE" -v RANGEF=/dev/stdin -v RLO="$2" -v RHI="$3" -v ROFF="$(rng_off "$2")" \
@@ -738,12 +723,13 @@ ent_range() {   # $1 = the cache, $2/$3 = the byte range [lo, hi) of line starts
 # a visible trail of its last problems (the detail pages merge the two, and the
 # banner comparing the last error/warn against the last transfer reads this one).
 # ---------------------------------------------------------------------------
-# ONE flat mention TSV: subscriptions (cleanup-backlog.sh) — the logins/hosts
-# flats had NO reader and were dropped 2026-07, the accounts one 2026-09-29
-# (its details.sh mention-count KPI was long gone); the per-name DIRS (the
-# last-25 / err-warn rings) remain for all four types.
+# NO flat mention TSV: the logins/hosts flats had NO reader and were dropped
+# 2026-07, the accounts one 2026-09-29 (its details.sh mention-count KPI was
+# long gone), the subscriptions one later that day (its one reader, the
+# Cleanup backlog, went — ~300 MB of mention lines on production); the
+# per-name DIRS (the last-25 / err-warn rings) remain for all four types.
 ACCOUNTS_DIR="$CACHE_DIR/accounts"
-SUBS_TSV="$CACHE_DIR/_subscriptions.tsv";     SUBS_DIR="$CACHE_DIR/subscriptions"
+SUBS_DIR="$CACHE_DIR/subscriptions"
 ENDED_TSV="$CACHE_DIR/_sessions-ended.tsv"    # the sessions that logged a transfer end (one session id per line; the status column went 2026-09-29 — no reader) — their E/W lines stay out of the err/warn rings (2026-09-12)
 LOGINS_DIR="$CACHE_DIR/logins"
 HOSTS_DIR="$CACHE_DIR/hosts"
@@ -864,7 +850,6 @@ build_entity_tsvs() {
     _slap "mentions: transfer-ended sessions"
     ENT_CFG_SRCS+=("$ENDED_TSV")
     echo "  transfer-ended sessions: $(wc -l < "$ENDED_TSV" | tr -d ' ') (their Error/Warning lines stay out of the err/warn rings)." >&2
-    : > "$SUBS_TSV"
     # Rebuild the per-name detail dirs from scratch so a name that dropped out of
     # the config (or the logs) leaves no stale <name>.tsv behind.
     rm -rf "$ACCOUNTS_DIR" "$SUBS_DIR" "$LOGINS_DIR" "$HOSTS_DIR"
@@ -907,15 +892,6 @@ build_entity_tsvs() {
         fi
     fi
     _slap "mentions: scan ($nparts parts)"
-    for spec in "S:$SUBS_TSV"; do
-        ty=${spec%%:*}; dest=${spec#*:}
-        i=1
-        while [ "$i" -le "$nparts" ]; do
-            part="$ENT_CHUNK_DIR/$ty.$(printf '%04d' "$i")"
-            if [ -f "$part" ]; then cat "$part" >> "$dest"; fi
-            i=$((i + 1))
-        done
-    done
     # The all-level rings (cap 25 -> <name>.tsv) and, alongside them, the
     # Error/Warn rings (cap 10 -> <name>_err_warn.tsv). Both are collected
     # newest-chunk-first and merged by the SAME RING_PROG (cap + suffix vary).
@@ -949,20 +925,12 @@ build_entity_tsvs() {
     _slap "mentions: lists + rings"
     rm -rf "$ENT_CHUNK_DIR"
     echo "Wrote the per-entity server caches:" >&2
-    local i tsvs dirsx
-    tsvs=("" "$SUBS_TSV" "" "")
+    local i dirsx
     dirsx=("$ACCOUNTS_DIR" "$SUBS_DIR" "$LOGINS_DIR" "$HOSTS_DIR")
     for i in 0 1 2 3; do
-        if [ -n "${tsvs[$i]}" ]; then
-            printf '  %s: %s row(s), %s per-name detail file(s) (+ %s err/warn)\n' "$(basename "${tsvs[$i]}")" \
-                "$(wc -l < "${tsvs[$i]}" | tr -d ' ')" \
-                "$(find "${dirsx[$i]}" -name '*.tsv' ! -name '*_err_warn.tsv' | wc -l | tr -d ' ')" \
-                "$(find "${dirsx[$i]}" -name '*_err_warn.tsv' | wc -l | tr -d ' ')" >&2
-        else
-            printf '  %s/: %s per-name detail file(s) (+ %s err/warn)\n' "$(basename "${dirsx[$i]}")" \
-                "$(find "${dirsx[$i]}" -name '*.tsv' ! -name '*_err_warn.tsv' | wc -l | tr -d ' ')" \
-                "$(find "${dirsx[$i]}" -name '*_err_warn.tsv' | wc -l | tr -d ' ')" >&2
-        fi
+        printf '  %s/: %s per-name detail file(s) (+ %s err/warn)\n' "$(basename "${dirsx[$i]}")" \
+            "$(find "${dirsx[$i]}" -name '*.tsv' ! -name '*_err_warn.tsv' | wc -l | tr -d ' ')" \
+            "$(find "${dirsx[$i]}" -name '*_err_warn.tsv' | wc -l | tr -d ' ')" >&2
     done
     rm -f "$CACHE_DIR/.rescan-mentions"   # the appended-names marker is served
     mv "$MENTION_NAMES.new" "$MENTION_NAMES"
@@ -1273,7 +1241,7 @@ LEGEND_EOF
 
 echo "Wrote $OUT ($n_out record(s)) and $LEGEND." >&2
 
-build_entity_tsvs         # derive _subscriptions.tsv + the per-name rings from the fresh cache
+build_entity_tsvs         # derive the per-name rings from the fresh cache
 _slap "per-entity mention caches"
 # the merge parts served as the entity-scan chunks
 rm -rf "$CHUNK_DIR"

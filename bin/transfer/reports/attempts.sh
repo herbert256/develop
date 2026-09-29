@@ -128,7 +128,6 @@ tot_legs=0
 
 {
     printf 'TITLE\tAttempts to Success\n'
-    printf 'KEYWORDS\tretry, attempts, backoff, failed legs, gave up, hammering, retry spacing\n'
 
     printf 'TABLE\tDelivered Files — failed legs before success\tdrill=File\n'
     printf 'HEAD\tAttempts\tFiles\t%% of delivered\n'

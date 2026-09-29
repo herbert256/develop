@@ -337,8 +337,8 @@ _ptimed direction_rows direction_rows   > "$_pdir/dirs" & _ppids+=($!)
 # to its non-APPLICATION participant's name (the account — the same rule
 # the parse fallback uses); both from the same export object. The
 # detail-page From/To rows then show the real path, and every downstream
-# consumer of those rows (sources-and-targets, the Search page's
-# Source/Target rows) inherits the resolution.
+# consumer of those rows (the Search page's Source/Target rows, the
+# Subscriptions page's From / To) inherits the resolution.
 {
     if command -v jq >/dev/null 2>&1 && [ -f "$S_JSON" ]; then
         jq -r '

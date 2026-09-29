@@ -62,7 +62,6 @@ pd=$(printf '%s\n' "$agg" | awk -F'\t' '
 {
     printf 'TITLE\tOne-legged\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tLogical transfers (CoreIds) with only ONE leg — an incomplete, one-sided crossing that never completed.\n'
-    printf 'KEYWORDS\tpirates,single leg,one leg,one-sided,incomplete transfer,coreid,orphan,half transfer,per day,count\n'
     printf 'INTRO\t**Pirates** — logical transfers (CoreIds) that have only **one leg** (one technical row). A complete transfer is store-and-forward: an **Inbound** leg (partner → ST) and an **Outbound** leg (ST → partner). A single-leg CoreId is one-sided — the counterpart leg never happened — so the file never made the full crossing. **Details** counts them per subscription; **Top view** the count per day.\n'
 
     # ---- tab 1: Details — per-subscription rollup of the single-leg transfers ----

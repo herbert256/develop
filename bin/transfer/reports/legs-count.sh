@@ -94,7 +94,6 @@ top_n=0
 
 {
     printf 'TITLE\tLegs Count\n'
-    printf 'KEYWORDS\tlegs, rows per file, leg count, retries, repeat collect, single leg, one-legged\n'
 
     printf 'TABLE\tFiles by leg count\n'
     # FILES = the delivered (OK) count (2026-09-13, user request: the Patterns

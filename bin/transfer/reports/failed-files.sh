@@ -38,22 +38,18 @@ source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/failed-files.rpt"
 REAS="$REPORTS_DIR/_failed-reasons.tsv"
-ERRDIR="$REPORTS_DIR/errors"
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
 shopt -u nullglob
 SUBRES="$CONFIG_BASE/_subscriptions.tsv"   # name <TAB> ... <TAB> result colour (col 3)
 
-# the CoreIds that have a page: errors/<CoreId>.rpt AND files/<CoreId>.rpt —
-# both render to docs/files/<CoreId>.html (the files/ set was missed, so ~40%
-# of the Files with a page got no link — 2026-09-28 fix)
+# the CoreIds that have a PUBLISHED page (2026-09-29): bin/transfer/filepages.sh's
+# list — per subscription the newest OK File and the three newest Failed ones
+# (failed.sh writes more evidence pages under errors/, which are not published)
 pages=$(mktemp "${TMPDIR:-/tmp}/ffpages.XXXXXX")
 : > "$pages"
-for _pd in "$ERRDIR" "$REPORTS_DIR/files"; do
-    [ -d "$_pd" ] || continue
-    find "$_pd" -maxdepth 1 -type f -name '*.rpt' 2>/dev/null | sed 's#.*/##; s#\.rpt$##' >> "$pages" || true
-done
+[ -f "$CACHE_DIR/_filepages.tsv" ] && cut -f1 "$CACHE_DIR/_filepages.tsv" > "$pages"
 [ -f "$REAS" ] || REAS=/dev/null
 [ -f "$SUBRES" ] || SUBRES=/dev/null
 
@@ -86,7 +82,6 @@ nff=$(printf '%s\n' "$agg" | awk -F'\t' '$1 == "~N" { print $2 }')
 {
     printf 'TITLE\tFailed files\n'
     printf 'DESC\tEvery File that ended in error (Failed or Expired), newest first: its subscription, start date/time, error reason, CoreId and file name. The Files the home page Error cells count; a cell opens this page narrowed to its day.\n'
-    printf 'KEYWORDS\tfailed, failed files, error, errors, error reason, reason, expired, coreid, file name, filename, per day, home error\n'
     printf 'TABLE\t\twide\tsort=1:-1\tpager=500\trestint\n'
     printf 'HEAD\tSubscription\tDate/time\tError reason\tCoreId\tFilename\n'
     printf 'KIND\tsite\ttext\ttext\ttext\ttext\n'

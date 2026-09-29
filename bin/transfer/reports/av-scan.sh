@@ -146,7 +146,6 @@ avon_disp=$(printf '%s\n' "$agg" | awk -F'|' '$1 == "AVON" { print $2 }')
 {
     printf 'TITLE\tAV Scan\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tAnti-virus scan outcomes on the first Inbound leg of every File — the scan runs when a file enters the system.\n'
-    printf 'KEYWORDS\ticap, virus, av, blocked, allowed, scan, first inbound\n'
     printf 'INTRO\tScan outcomes on the **first Inbound leg** of every File — the AV scan runs when a file ENTERS the system, so that leg carries the File'\''s verdict (one per File). **%s** allowed  |  **%s** blocked  |  **%s** not performed. The **Not first inbound** tab is the check: scan verdicts found on any other leg.\n' \
         "$tot_allowed" "$tot_blocked" "$tot_notperf"
 

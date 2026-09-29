@@ -89,13 +89,12 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
 .topbar .searchbtn:hover { background:rgba(255,255,255,0.35); text-decoration:none; }
 
 /* ---- Site map (docs/tools/sitemap.html, bin/build/publish.sh write_sitemap) ----
-   One column per AREA, one card per report GROUP: the group name on top, the
-   member reports tree-listed under it with monospace connectors. Each area
-   carries its own accent color on the card left border. */
-.smgrid { display:flex; flex-wrap:wrap; gap:0 1.4rem; align-items:flex-start; }
-.smarea { flex:1 1 17rem; min-width:16rem; max-width:26rem; }
-.smarea > h2 { margin:0.4rem 0 0.8rem; padding-bottom:0.3rem; border-bottom:2px solid #20344a; }
-.smcard { background:#fff; border:1px solid #dde3ea; border-left:4px solid #20344a; border-radius:6px;
+   One card per report GROUP (then Dashboards and Tools): the name on top, the
+   members tree-listed under it with monospace connectors. */
+/* ONE flow of alike cards (2026-09-29, user request: no separate Reports /
+   Dashboards / Tools sections) — the page flows them into columns */
+.smcols { column-width:17rem; column-gap:1.4rem; }
+.smcard { background:#fff; border:1px solid #dde3ea; border-left:4px solid #3c6e9f; border-radius:6px; break-inside:avoid;
           padding:0.55rem 0.9rem 0.6rem; margin:0 0 0.8rem; box-shadow:0 1px 2px rgba(0,0,0,0.05); }
 .smcard h3 { margin:0; font-size:0.95rem; color:#20344a; }
 .smcard h3 a { color:inherit; }
@@ -105,13 +104,6 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
 .smcard li::before { content:"\251C\2500"; position:absolute; left:0.1rem; color:#b6bfc9;
                      font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.78rem; }
 .smcard li:last-child::before { content:"\2514\2500"; }
-.sm-dash     .smcard { border-left-color:#2f8f6b; }
-.sm-tools    .smcard { border-left-color:#8a94a1; }
-/* the Reports section (2026-09-29: one Reports pulldown) spans the page and
-   flows its group cards into columns */
-.sm-reports { flex:1 1 100%; max-width:none; }
-.sm-reports .smcols { column-width:17rem; column-gap:1.4rem; }
-.sm-reports .smcard { border-left-color:#3c6e9f; break-inside:avoid; }
 .topbar .helpbtn { display:inline-flex; align-items:center; justify-content:center; flex:none;
                    width:1.7rem; height:1.7rem; border-radius:50%; background:rgba(255,255,255,0.18);
                    color:#fff; font-weight:bold; font-size:1.05rem; line-height:1; }

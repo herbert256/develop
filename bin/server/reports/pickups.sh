@@ -149,7 +149,6 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
     printf '%s\n' "$rows"
     printf 'TOTAL\tTotal (%s subscription(s))\t\t\t\t@{class=num}%s\t@{class=num}%s\t@{class=num processed}%s\t@{class=num}%s\t%s\t@{class=num failed}%s\t\n' \
         "$n_rows" "$(nz "$t_pk")" "$(nz "$t_wf")" "$t_f" "$(nz "$t_wt")" "$t_old" "$t_xp"
-    printf 'KEYWORDS\tuc2,pickup,pickups,collect,sftp,logon,waiting,oldest,age,expired,pattern,cadence,gateway,old gateway\n'
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

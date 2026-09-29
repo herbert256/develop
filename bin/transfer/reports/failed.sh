@@ -129,33 +129,18 @@ OUT="$REPORTS_DIR/failed.rpt"
 VARIANTS="sub-all"
 ERRDIR="$REPORTS_DIR/errors"
 # The FILE pages (2026-09-03, user request): the same drill-page layout for
-# ANY outcome, one per CoreId the Transfer patterns page's "Last 5 files"
-# cells link — patterns.sh leaves the CoreId list in $FILESIDE (it runs in
-# the same report pool, so the build's failed.sh catch-up is the run that sees
-# the final list). Pages land in data/transfer/reports/
-# files/, beside errors/ and never inside it — the reason-evidence pass globs
-# errors/ and must not read an OK File's page. Only the DATA is split: both sets
-# publish into the ONE docs/files/ (2026-09-21, user request — the
-# docs/errors/ directory is gone; bin/transfer/publish.sh).
+# ANY outcome. Pages land in data/transfer/reports/files/, beside errors/ and
+# never inside it — the reason-evidence pass globs errors/ and must not read
+# an OK File's page. Only the DATA is split: both sets publish into the ONE
+# docs/files/ (2026-09-21, user request — the docs/errors/ directory is gone;
+# bin/transfer/publish.sh). Since 2026-09-29 (user request: per subscription
+# only the newest OK File and the three newest Failed Files are published —
+# bin/transfer/filepages.sh, _filepages.tsv) the files/ set is the kind-O
+# CoreIds of that list alone: the patterns / Longest Files / drill-cell /
+# Expired / Waiting side lists that forced pages here went, their writers
+# link a File only when the published set holds it.
 FILEDIR="$REPORTS_DIR/files"
-FILESIDE="$REPORTS_DIR/_patterns-files.tsv"
-# ... and the Longest Files page's list (duration-longest.sh, 2026-09-03: every
-# listed File links its File page from its CoreId cell — the one-hour
-# threshold went 2026-09-06) — the two sidecars are unioned below; either may
-# be absent
-FILESIDE2="$REPORTS_DIR/_longest-files.tsv"
-# ... and the FIRST File of every red / orange drill cell (2026-09-21, user
-# request: report.js links that entry to the File page, so the page must
-# exist) — bin/build/drill-files.sh collects them from the transfer .rpt tree
-# right before the build catch-up run of this script; tag D, no back link
-FILESIDE3="$REPORTS_DIR/_drill-files.tsv"
-# ... and the first 5 Files of every Expired subscription page (expired.sh,
-# 2026-09-21, user request: their CoreId cells link the File page) — tag X,
-# back link = the Expired report
-FILESIDE4="$REPORTS_DIR/_expired-files.tsv"
-# ... and the same for the Waiting subscription pages (waiting.sh) — tag W,
-# back link = the Waiting report
-FILESIDE5="$REPORTS_DIR/_waiting-files.tsv"
+FPF="$CACHE_DIR/_filepages.tsv"; [ -f "$FPF" ] || FPF=/dev/null
 # The server parse cache (the "What the server log said" sections); an env
 # without server logs still works.
 SRVLOG="$SERVER_CACHE/_parse.tsv"
@@ -234,28 +219,19 @@ rm -rf "$FILEDIR"; mkdir -p "$FILEDIR"
 # "Last 5 files" link resolves to it and no CoreId is paged twice by the
 # pass below.
 : > "$TMP/filepages"; : > "$TMP/fileset"; : > "$TMP/overlap"
-# THE LATEST-OK GUARANTEE (2026-09-16, user request): every subscription's
-# newest DELIVERED File gets a files/ page too, so the "Latest OK" row of its
-# detail page's Features table always has a page to open. Newest by the File's
-# END (col 24 — the same "last OK transfer" rule the after-last-transfer cut
-# uses), falling back to its start when the parse recorded no end. PROCESSED
-# only: a Waiting or Expired file is staged, not transferred. (The newest
-# FAILED File needs no such list — it carries the S mark below, and S implies
-# L, so the leg selection already pages it; details_writer.awk's "Latest
-# Error" row rests on that guarantee.)
-LC_ALL=C awk -F'\t' '$12 != "" && $2 == "Processed" {
-        e = ($24 != "" ? $24 : $4 " " $5)
-        if (!($12 in K) || e > K[$12]) { K[$12] = e; C[$12] = $1 } }
-    END { for (s in K) print C[s] }' "$FILES" | LC_ALL=C sort > "$TMP/lastokfiles"
-# the union of the six File-page source lists above, each CoreId tagged with its source(s) — P =
-# Transfer patterns, L = Longest Files, PL = both, D = the first File of a red /
-# orange drill cell, O = a subscription's latest OK File, X / W = the first 5
-# Files of an Expired / Waiting subscription page — the back link(s) of its page (the 8th
-# column of the list rows below; D and O add none, the facts table links the
-# subscription the File belongs to)
-{ [ -f "$FILESIDE" ] && sed 's/$/	P/' "$FILESIDE"; [ -f "$FILESIDE2" ] && sed 's/$/	L/' "$FILESIDE2"; [ -f "$FILESIDE3" ] && sed 's/$/	D/' "$FILESIDE3"; [ -s "$TMP/lastokfiles" ] && sed 's/$/	O/' "$TMP/lastokfiles"; [ -f "$FILESIDE4" ] && sed 's/$/	X/' "$FILESIDE4"; [ -f "$FILESIDE5" ] && sed 's/$/	W/' "$FILESIDE5"; true; } \
-    | LC_ALL=C awk -F'\t' '$1 != "" { s[$1] = s[$1] $2 } END { for (c in s) print c "\t" s[c] }' \
-    | LC_ALL=C sort > "$TMP/fileside"
+# THE PUBLISHED SET GETS ITS PAGES (2026-09-29): every CoreId of
+# _filepages.tsv (bin/transfer/filepages.sh — per subscription the newest
+# DELIVERED File, kind O, and the three newest FAILED Files, kind E) has a
+# page under docs/files/. An E File the evidence selection below already
+# pages (the leg selection, the window guarantee — errors/, the reasons read
+# them) keeps that drill page (the overlap step drops it here); every other
+# one gets a File page under files/ — NOT errors/, so the evidence-glob
+# passes (the flow and pair verdicts) see exactly what they saw before; the
+# reason pass classifies such a File from its own page, like every File page
+# (the 2026-09-28 rule). The O pages give the "Latest OK" row of
+# a detail page's Features table its target; no back link (the facts table
+# links the subscription the File belongs to).
+awk -F'\t' '$2 == "O" || $2 == "E" { print $1 "\t" $2 }' "$FPF" | LC_ALL=C sort > "$TMP/fileside"
 if [ -s "$TMP/fileside" ]; then
     LC_ALL=C awk -F'\t' -v OFS='\t' -v topf="$TMP/all" -v extraf="$TMP/extra" -v sidef="$TMP/fileside" \
         -v setf="$TMP/fileset" -v ovf="$TMP/overlap" '
@@ -835,13 +811,9 @@ if [ -s "$TMP/meta" ]; then
             if (prevc != "") { close_section(prevf); close(prevf) }
             for (i = 1; i <= nm; i++) {
                 f = pdir(MC[i]) "/" MC[i] ".rpt"
-                if (MC[i] in FSET) {            # one back link per list that named it
-                    if (FSRC[MC[i]] ~ /P/) printf "LINK\t../transfer/file-journey-patterns.html\tBack to File journey\n" >> f
-                    if (FSRC[MC[i]] ~ /L/) printf "LINK\t../transfer/duration-longest.html\tBack to Longest Files\n" >> f
-                    if (FSRC[MC[i]] ~ /X/) printf "LINK\t../transfer/expired.html\tBack to Expired\n" >> f
-                    if (FSRC[MC[i]] ~ /W/) printf "LINK\t../transfer/waiting.html\tBack to Waiting\n" >> f
-                }
-                else printf "LINK\t../analyses/failed.html\tBack to Failed Subscriptions\n" >> f
+                # a File page (the latest-OK set, O) has no back link — the
+                # facts table links its subscription; a drill page links back
+                if (!(MC[i] in FSET)) printf "LINK\t../analyses/failed.html\tBack to Failed Subscriptions\n" >> f
                 printf "FOOT\n" >> f
                 close(f)
             }
@@ -1217,7 +1189,7 @@ _flap "server-failing pages + the reasons"
 # appended server rows land at the end; the page default sort — Date/time,
 # descending — interleaves them on load).
 LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" \
-    -v REAS="$TMP/reasons" -v PAGEDF="$TMP/paged" -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" \
+    -v REAS="$TMP/reasons" -v FPF="$FPF" -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" \
     -v SRVS="$TMP/srvsubs" -v SESSF="$TMP/srvsess2" -v RF="$RFLIP" -v LOKF="$TMP/lastok" -v MJF="$TMP/maxjd" \
     -v FGR="$REPORTS_DIR/from-green-to-red.rpt" -v ORED="$REPORTS_DIR/only-red.rpt" '
     function rescol(nm,   r) { r = (toupper(nm) in SRES) ? SRES[toupper(nm)] : ""
@@ -1268,8 +1240,11 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" \
         while ((getline l < REAS) > 0) { p = index(l, "\t")
             if (p > 0) RE[substr(l, 1, p - 1)] = substr(l, p + 1) }
         close(REAS)
-        while ((getline l < PAGEDF) > 0) if (l != "") PG[l] = 1
-        close(PAGEDF)
+        # PUBLISHED pages only (2026-09-29): a row links its File page when
+        # _filepages.tsv lists it (kind E — the three newest Failed Files of
+        # its subscription); the evidence pages PAGEDF lists stay unpublished
+        while ((getline l < FPF) > 0) { split(l, a9, "\t"); if (a9[2] == "E") PG[a9[1]] = 1 }
+        close(FPF)
         # the server-failing set (name ⇥ slug ⇥ stamp ⇥ reason ⇥ kind),
         # written by the page step above together with the errors/<slug>
         # drill pages. EVERY entry gets a server row on both lists (2026-08;
@@ -1301,9 +1276,6 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" \
             F[k] = f
             printf "TITLE\tFailed Subscriptions\n" > f
             printf "DESC\t%s\n", DSC[k] > f
-            # KEYWORDS on the finder page only (failed.rpt); the All view is
-            # reached through the selector row, the finder never scans it
-            if (k == "sub-failing") printf "KEYWORDS\tfailed,failure,error,coreid,legs,subscription,still,failing,recent,last\n" > f
             # Newest first is the page DEFAULT (Date/time, desc), not `nosort` —
             # the rows arrive by recency but must still be sortable by any
             # column. `restint` + the per-row @data:res: the row carries its
@@ -1311,16 +1283,17 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" \
             # since — on the still-failing list effectively all red, the greens
             # being filtered. NOSEARCH and the rows BAKED (2026-08, replacing
             # the search-on-demand payloads): one row per subscription.
-            # Subscription · Date/time · Reason · CoreId / SessionId (2026-09-21,
-            # user request: the id of the last error last — a failed File row its
-            # CoreId, a server-log row the SESSION of its reddening error line,
-            # never a transfer id; the Environment letter column in front went
+            # Subscription · Date/time · Reason · Last green day · Days red ·
+            # Failures in a row · CoreId / SessionId (the id LAST since
+            # 2026-09-29, user request — a failed File row its CoreId, a
+            # server-log row the SESSION of its reddening error line, never a
+            # transfer id; the Environment letter column in front went
             # 2026-09-29, user request) — the positional reader of
             # failed-sub-all.rpt (the Entities Reason, publish_lib.sh) reads
             # Subscription = field 2, Date/time = 3, Reason = 4
             printf "TABLE\t\twide\tsort=1:-1\trowlink\trestint\tnosearch\n" > f
-            printf "HEAD\tSubscription\tDate/time\tReason\tCoreId / SessionId\tLast green day\tDays red\tFailures in a row\n" > f
-            printf "KIND\tsite\ttext\ttext\tmono\ttext\tnum\tnum\n" > f
+            printf "HEAD\tSubscription\tDate/time\tReason\tLast green day\tDays red\tFailures in a row\tCoreId / SessionId\n" > f
+            printf "KIND\tsite\ttext\ttext\ttext\tnum\tnum\tmono\n" > f
         }
     }
     {   # $TMP/all: sortkey, coreid, site, legs, date, time, outcome, marks
@@ -1341,14 +1314,15 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" \
         # CoreId / SessionId — a server-log row carries its session there) since
         # 2026-09-21 (report.js links it to File Tracking); the failed-sub-all
         # consumer (the entities Reason) still extracts the
-        # page from @data:href. S implies L, so every listed row is PAGED; the
-        # unpaged branch (the Subscription cell'"'"'s ordinary detail link,
-        # nothing else) is a guard.
+        # page from @data:href. PAGED = PUBLISHED (2026-09-29): the row links
+        # only when _filepages.tsv lists the File — an Expired newest failure
+        # has no page, so its row takes the unpaged branch (the Subscription
+        # cell'"'"'s ordinary detail link, nothing else).
         if (cid in PG)
-            row = sprintf("ROW\t@{href=../files/%s.html,nolink=1}%s\t%s %s\t%s\t%s%s\t@data:href=../files/%s.html%s", \
-                          cid, site, d, t, r, cid, redcols(site), cid, tint)
+            row = sprintf("ROW\t@{href=../files/%s.html,nolink=1}%s\t%s %s\t%s%s\t%s\t@data:href=../files/%s.html%s", \
+                          cid, site, d, t, r, redcols(site), cid, cid, tint)
         else
-            row = sprintf("ROW\t%s\t%s %s\t%s\t%s%s%s", site, d, t, r, cid, redcols(site), tint)
+            row = sprintf("ROW\t%s\t%s %s\t%s%s\t%s%s", site, d, t, r, redcols(site), cid, tint)
         for (i = 1; i <= NP; i++) {
             k = PK[i]
             if (k == "sub-failing" && col == "green") continue   # hide the recovered
@@ -1368,8 +1342,8 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" \
             # CoreId / SessionId: a server-log error shows the SESSION of its
             # reddening line (blank when the scan resolved none), never a CoreId
             sk = toupper(SVN[j])
-            srow = sprintf("ROW\t@{href=../files/%s.html,nolink=1}%s\t%s\t%s\t%s%s\t@data:href=../files/%s.html\t@data:srv=1\t@data:res=red", \
-                           SVS[j], SVN[j], SVT[j], SVR[j], ((sk in SVSES) ? SVSES[sk] : ""), srvcols(SVN[j]), SVS[j])
+            srow = sprintf("ROW\t@{href=../files/%s.html,nolink=1}%s\t%s\t%s%s\t%s\t@data:href=../files/%s.html\t@data:srv=1\t@data:res=red", \
+                           SVS[j], SVN[j], SVT[j], SVR[j], srvcols(SVN[j]), ((sk in SVSES) ? SVSES[sk] : ""), SVS[j])
             for (i = 1; i <= NP; i++) { print srow > F[PK[i]]; CNT[PK[i]]++ }
         }
         for (i = 1; i <= NP; i++) {

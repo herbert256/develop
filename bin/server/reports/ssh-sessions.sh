@@ -79,7 +79,6 @@ if [ "${t_tot:-0}" -eq 0 ]; then
     echo "No session-lifecycle messages found — writing an empty report." >&2
     {
         printf 'TITLE\tSSH Session Problems\n'
-    printf 'KEYWORDS\tstream abort, client stopped transfer, inactive session, channel not active, registry, network error\n'
         printf 'TABLE\tSession-lifecycle problems\twide\n'
         printf 'HEAD\tSignal\tOccurrences\tComponent\tFirst\tLast\n'
         printf 'KIND\ttext\tnumwarn\ttext\ttext\ttext\n'
@@ -100,7 +99,6 @@ rows() {
 
 {
     printf 'TITLE\tSSH Session Problems\n'
-    printf 'KEYWORDS\tstream abort, client stopped transfer, inactive session, channel not active, registry, network error\n'
 
     printf 'TABLE\tSession-lifecycle problems\twide\n'
     printf 'HEAD\tSignal\tOccurrences\tComponent\tFirst\tLast\n'

@@ -51,8 +51,6 @@ source "$SCRIPT_DIR/../ranges.sh"        # grp_par: PASS 2 per day-aligned slice
 ensure_assets
 
 FCACHE="$DATA/transfer/cache/_files.tsv"
-ERRD="$DATA/transfer/reports/errors"
-FPGD="$DATA/transfer/reports/files"
 SLUGMAP="$DATA/transfer/reports/details/subscriptions/_slugmap.tsv"
 OUTD="$DOCS/search/all"
 PAGE="$DOCS/search/all-files.html"
@@ -63,11 +61,9 @@ mkdir -p "$OUTD"
 TMPD=$(mktemp -d "${TMPDIR:-/tmp}/axallf.XXXXXX")
 trap 'rm -rf "$TMPD"' EXIT
 
-# the CoreIds that have a File page (every roster .rpt renders to docs/files/)
-{
-    [ -d "$ERRD" ] && find "$ERRD" -name '*.rpt' -type f 2>/dev/null
-    [ -d "$FPGD" ] && find "$FPGD" -name '*.rpt' -type f 2>/dev/null
-} | awk '{ sub(/.*\//, ""); sub(/\.rpt$/, ""); print }' > "$TMPD/pages"
+# the CoreIds that have a PUBLISHED File page (bin/transfer/filepages.sh,
+# 2026-09-29: per subscription the newest OK + the three newest Failed Files)
+{ [ -f "$DATA/transfer/cache/_filepages.tsv" ] && cut -f1 "$DATA/transfer/cache/_filepages.tsv"; true; } > "$TMPD/pages"
 [ -f "$SLUGMAP" ] || SLUGMAP=/dev/null
 
 if [ -s "$FCACHE" ]; then

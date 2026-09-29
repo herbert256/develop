@@ -64,22 +64,13 @@ wait_all() {
 # wave 1 — independent of the PDA TSVs and of home.rpt
 run_bg "$SCRIPT_DIR/reports/cross-reference.sh"
 run_bg "$SCRIPT_DIR/reports/entity-coverage.sh"
-run_bg "$SCRIPT_DIR/reports/sources-and-targets.sh"   # subscription From/To paths (Search-style), 3 tables
 run_bg "$SCRIPT_DIR/reports/skipped.sh"               # reads the parse-time skip sidecars only
 run_bg "$SCRIPT_DIR/reports/failing-reasons.sh"       # Error reasons (reads failed-files.rpt — the transfer reports ran first)
-run_bg "$SCRIPT_DIR/reports/account-sharing.sh"       # config-only (xref accounts->subscriptions)
-run_bg "$SCRIPT_DIR/reports/twins.sh"                 # formats the twin pair maps details.sh persists
 # the 2026-08 study reports — transfer caches + base/xref/colour reads only,
 # independent of the PDA TSVs and of home.rpt, so wave 1 is safe.
-# data-diff is NOT here: its First-seen table reads the first-seen LEDGER
-# (data/first-seen/*.rpt), a wave-2 output — in wave 1 it read the
-# PREVIOUS build's ledger, and on a from-scratch build found none at all
-# (caught by the 2026-08-15 fresh-build test).
-run_bg "$SCRIPT_DIR/reports/triage.sh"
 run_bg "$SCRIPT_DIR/reports/partner-scorecard.sh"
 run_bg "$SCRIPT_DIR/reports/blast-radius.sh"
 run_bg "$SCRIPT_DIR/reports/app-partners.sh"
-run_bg "$SCRIPT_DIR/reports/cleanup-backlog.sh"
 run_bg "$SCRIPT_DIR/reports/fe-overview.sh"          # Partners - Incoming: config + files cache + logon summary + input/logons_old.txt + the UC2 pickup sidecar (server pool output — bin/build.sh runs the server reports first)
 
 # wave 2 — the ensure_pda_tsvs chain, strictly in order (first-seen moved here
@@ -90,7 +81,6 @@ run_bg "$SCRIPT_DIR/reports/fe-overview.sh"          # Partners - Incoming: conf
 # nor partners-in), so it no longer waits for the slowest wave-1 report
 ( timed "$SCRIPT_DIR/reports/coverage.sh"   # the 5 Logical / PDA / BL Configured cell .rpts — the home page Total links
   timed "$SCRIPT_DIR/reports/first-seen.sh"
-  timed "$SCRIPT_DIR/reports/data-diff.sh"   # AFTER first-seen.sh: its First-seen table reads the ledger first-seen.sh writes
   timed "$SCRIPT_DIR/reports/home.sh"
   timed "$SCRIPT_DIR/reports/entity-search.sh" ) & PIDS+=("$!")
 wait_all

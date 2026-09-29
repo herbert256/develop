@@ -99,7 +99,6 @@ nf=$(wc -l < "$TMP/files" | tr -d ' ')
 {
     printf 'TITLE\tInbound and Outbound same Protocol\n'
     printf 'DESC\tFiles whose first inbound leg used the same protocol as their last outbound leg (for example an SFTP upload that also left over SFTP instead of going on to the CFT): per subscription and File by File.\n'
-    printf 'KEYWORDS\tsame protocol,inbound,outbound,first inbound,last outbound,protocol,ssh,sftp,ftp,pesit,collected back,pattern,legs\n'
     printf 'TABLE\tPer subscription\twide\tnofilter\trestint\n'
     printf 'HEAD\tSubscription\tProtocol\tFiles\tOK\tError\tFirst\tLast\n'
     printf 'KIND\tsite\ttext\tnum\tnumprocessed\tnumfailed\ttext\ttext\n'

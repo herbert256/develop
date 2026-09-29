@@ -107,7 +107,6 @@ n_rows=0; sum_out=0; sum_ff=0; sum_ok=0
 
 {
     printf 'TITLE\tRecovered flows\n'
-    printf 'KEYWORDS\trecovered, fixed, back to green, working again, resolved, healed, restored, outage over, fix worked, good news\n'
     printf 'TABLE\tSubscriptions back to green after a red episode\twide\tnofilter\n'
     printf 'HEAD\tSubscription\tRed from\tRed until\tOutage days\tError Files in episode\tOK Files since\tRecovered on\n'
     printf 'KIND\tsite\ttext\ttext\tnum\tnumfailed\tnumprocessed\ttext\n'

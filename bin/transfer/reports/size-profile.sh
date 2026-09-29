@@ -157,7 +157,6 @@ IFS=$'\t' read -r s_n s_f s_s s_share <<< "$s_tot"
         printf 'TOTAL\tTotal (0 subscriptions)\t\t\t\t\t\n'
     fi
 
-    printf 'KEYWORDS\tsize, stub, empty, zero byte, semaphore, flag file, regime, drift, grew, shrank, median size, small files, placeholder\n'
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 echo "Data written to $OUT ($t_prof profiled, $d_n regime changes, $s_n stub shippers)." >&2

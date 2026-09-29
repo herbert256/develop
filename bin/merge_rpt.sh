@@ -1,6 +1,8 @@
 # merge_rpt.sh — sourced by the MERGED report scripts (2026-07 catalog cleanup).
 #
 # merge_rpt OUT TITLE DESC INTRO KEYWORDS COMP.rpt...
+#   (KEYWORDS is IGNORED since 2026-09-29: its one reader, the Report finder,
+#   went — callers pass "")
 #
 # Builds one merged .rpt from component .rpt files: the header directives come
 # from the arguments, each component contributes its TABLE blocks unchanged and
@@ -21,7 +23,7 @@
 # leave the nav row linking 404s. KEEP IN SYNC with the component reports.
 _merge_pad() {
     case $(basename "$1" .rpt) in
-        hourly|legs-count|protocol-journey) echo 2 ;;   # (error-reasons stays 1: its 2026-09-28 second table, Reasons over time, rides its tab — tab=reasons)
+        hourly|legs-count) echo 2 ;;   # (protocol-journey 2->1: its last-leg table went 2026-09-29)   # (error-reasons stays 1: its 2026-09-28 second table, Reasons over time, rides its tab — tab=reasons)
         resubmissions|auth-activity) echo 3 ;;   # resubmissions 2->3 (2026-08: + server-log outcomes); dwell-time merges in merge-duration-dwell.sh, not here
         size-profile) echo 2 ;;   # a Sizes component (the Trends components trend / duration-trend went with their page, 2026-09-29)
         # errors-day 2->1 and error-timing 3->1 (2026-09-28: the per-day table = the Top view; hour + weekday folded into the heatmap)
@@ -39,21 +41,9 @@ merge_rpt() {
     local have=0 c i n
     for c in "$@"; do [ -f "$c" ] && have=1; done
     if [ "$have" = 0 ]; then rm -f "$out"; echo "merge_rpt: no components for $out — skipped." >&2; return 0; fi
-    # the KEYWORDS: the argument's, then every present component's, each word
-    # once (case-insensitive). 2026-09-28 fix: the component lines were
-    # dropped and most callers pass none, so the Report finder no longer found
-    # a merged report by its components' words ("empty file", "zero byte")
-    local present=()
-    for c in "$@"; do [ -f "$c" ] && present+=("$c"); done
-    kw=$(printf 'KEYWORDS\t%s\n' "$kw" | cat - "${present[@]}" | awk -F'\t' '$1 == "KEYWORDS" {
-            n = split($2, A, ",")
-            for (i = 1; i <= n; i++) { k = A[i]; gsub(/^[ ]+|[ ]+$/, "", k); lk = tolower(k)
-                if (k != "" && !(lk in S)) { S[lk] = 1; o = o (o == "" ? "" : ", ") k } } }
-        END { print o }')
     {
         printf 'TITLE\t%s\n' "$title"
         printf 'DESC\t%s\n' "$desc"
-        [ -n "$kw" ] && printf 'KEYWORDS\t%s\n' "$kw"
         printf 'INTRO\t%s\n' "$intro"
         for c in "$@"; do
             if [ -f "$c" ]; then

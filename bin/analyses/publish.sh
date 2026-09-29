@@ -770,7 +770,7 @@ write_logical_detection_page() {
 # row), the endpoint (the login the partner connects in with, or the remote
 # host we dial out to), the From / To folders exactly as the subscription
 # detail page's Features rows show them (lifted from the detail .rpt files
-# like sources-and-targets.sh does; the pickup-side file mask as the green
+# — the pickup-side file mask as the green
 # suffix), the Cron expression and Schedule exactly as the Polling page shows
 # them (subscriptions.json via jq + bin/cron2human.awk, the same pipeline as
 # polling.sh; blank without a cron), and the ALL-TIME File counts — Total files · In · Out · Errors ·
@@ -866,7 +866,7 @@ write_subscriptions_page() {
     fi
     args+=("$actrf")
     # the subscription detail .rpt files: their Features From / To rows (the
-    # first of each per file) — the same source sources-and-targets.sh reads
+    # first of each per file)
     shopt -s nullglob
     local drpts=("$DET/subscriptions"/*.rpt)
     shopt -u nullglob
@@ -1113,24 +1113,9 @@ write_accounts_page() {
       "\(.name)\t\($s)\t\(.clientAuthentication//"null")"' "$P" | LC_ALL=C sort)
     nmm=$(printf '%s' "$mm_rows" | grep -c $'\t' || true)
 
-    # ---- naming rule: an INCOMING account separates its name parts with "-",
-    # an OUTGOING one with "_". The primary separator is decided exactly as
-    # bin/flow-manager.sh's pda_split does — "_" wins UNLESS splitting on "-"
-    # yields MORE parts, which is the documented AIM-FIN_TREASURY-… case (an
-    # internal "-" inside a part must not be read as the separator). Accounts
-    # with neither separator (a bare code like P00922) cannot be judged and are
-    # counted apart rather than reported as breaking the rule.
-    local nm_rows nm_bad nm_ok nm_none
-    nm_rows=$(awk -F'\t' '$1!="#" && $1!="" && ($2=="in" || $2=="out") {
-            nu = split($1, u, "_"); nd = split($1, d, "-")
-            prim = (nu > 1 && nu >= nd) ? "_" : ((nd > 1) ? "-" : "")
-            want = ($2 == "in") ? "-" : "_"
-            if (prim == "") { none++; next }
-            if (prim != want) { bad++; printf "%s\t%s\t%s\t%s\t%s\n", $1, $2, prim, want, $3 }
-            else ok++
-        } END { printf "#\t%d\t%d\t%d\n", ok+0, bad+0, none+0 }' "$DATA/flow-manager/base/_accounts.tsv")
-    IFS=$'\t' read -r _ nm_ok nm_bad nm_none <<< "$(printf '%s\n' "$nm_rows" | grep '^#')"
-    nm_rows=$(printf '%s\n' "$nm_rows" | grep -v '^#' || true)
+    # (the naming-rule check — the Breaking naming rules table: an incoming
+    # account separating its parts with "_" or an outgoing one with "-" — went
+    # 2026-09-29, user request)
 
     # ---- PDA completeness: an account is meant to be connected to a LOGICAL
     # flow, whose three-part name D_A_P is where the domain / application /
@@ -1312,19 +1297,6 @@ write_accounts_page() {
         else
             printf '<p class="range">No inconsistencies &mdash; every profile&rsquo;s auth suffix matches its configured authentication.</p>\n'
         fi
-        printf '<h2>Breaking naming rules (%s)</h2>\n' "$(dotify "${nm_bad:-0}")"
-        if [ "${nm_bad:-0}" -gt 0 ]; then
-            printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Direction</th><th>Separator used</th><th>Expected</th></tr>\n'
-            printf '%s\n' "$nm_rows" | tr '\t' '\036' | while IFS=$'\036' read -r nm dir prim want res; do
-                [ -n "$nm" ] || continue
-                esc "$nm"; nme=$ESC
-                printf '<tr data-res="%s"><td><code>%s</code></td><td>%s</td><td><code>%s</code></td><td><code>%s</code></td></tr>\n' \
-                    "${res:-orange}" "$nme" "$( [ "$dir" = in ] && printf 'incoming' || printf 'outgoing' )" "$prim" "$want"   # lowercase Direction, site-wide rule
-            done
-            printf '</table></div>\n'
-        else
-            printf '<p class="range">No breaks &mdash; all %s directional accounts follow the rule.</p>\n' "$(dotify "${nm_ok:-0}")"
-        fi
         printf '<h2>Not clear domain-application-partner (%s)</h2>\n' "$(dotify "${pda_bad:-0}")"
         if [ "${pda_bad:-0}" -gt 0 ]; then
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Domain</th><th>Application</th><th>Partner</th><th>Missing</th><th>Why</th></tr>\n'
@@ -1485,15 +1457,15 @@ _ap0=$(date +%s)
 _aplap() { local _t1; _t1=$(date +%s); printf "TIME %5ds  analyses publish: %s\n" "$((_t1 - _ap0))" "$1" >&2; _ap0=$_t1; }
 # ---- THE CATCH-UP MODE ------------------------------------------------------
 # `bin/analyses/publish.sh catchup` (2026-09-29) is bin/build.sh's "publish
-# catch-up: analyses" step. It runs after the report catch-ups (drill-files.sh,
-# failed.sh, failed-files.sh, failing-reasons.sh) and re-renders ONLY the
+# catch-up: analyses" step. It runs after the report catch-ups (failed.sh,
+# failed-files.sh, failing-reasons.sh) and re-renders ONLY the
 # analyses outputs that read what those rewrote after the first (full) run of
 # this script. Until 2026-09-29 the step re-ran the whole script.
 # THE DEPENDENCY TRACE (keep it in step with the readers). What changed since
 # the first run: failed.sh's outputs (failed.rpt, failed-sub-all.rpt,
 # _failed-reasons.tsv, _errpage-evidence.tsv, _srvsubs.tsv, _srvsubs-map.tsv,
-# the errors/ + files/ .rpt sets), failed-files.rpt, failing-reasons.rpt and
-# _drill-files.tsv. Their readers here:
+# the errors/ + files/ .rpt sets), failed-files.rpt and failing-reasons.rpt.
+# Their readers here:
 #   subscriptions.html            failed-files.rpt (the Error reason column —
 #                                 write_subscriptions_page)
 #   _subs-boxes.tsv (data)        _errpage-evidence.tsv — publish-insights.sh
@@ -1511,7 +1483,7 @@ _aplap() { local _t1; _t1=$(date +%s); printf "TIME %5ds  analyses publish: %s\n
 if [ "$AP_MODE" = catchup ]; then
     write_subscriptions_page
     _aplap "catch-up: Configured subscriptions"
-    "$SCRIPT_DIR/publish-insights.sh" sidecar   # _subs-boxes.tsv only, no page
+    "$SCRIPT_DIR/publish-insights.sh"   # the box-reason sidecar _subs-boxes.tsv (no page)
     _aplap "catch-up: the box-reason sidecar"
     # the two members through the ONE group renderer: its member list
     # narrowed for the call (render_report reads it only for its own name)
@@ -1541,8 +1513,8 @@ else
     write_accounts_page
     write_first_seen_page
     _aplap "use cases, first seen, configuration pages"
-    "$SCRIPT_DIR/publish-insights.sh"    # the insight pages (whitelist-audit, config-hygiene, expired, the boxes)
-    _aplap "insights (the boxes, audits)"
+    "$SCRIPT_DIR/publish-insights.sh"    # the box-reason sidecar _subs-boxes.tsv (its three insight pages went 2026-09-29)
+    _aplap "the box-reason sidecar"
     # The SUBS_GROUP_REPORTS pages (four Configuration-group reports whose DATA is
     # transfer/server but whose PAGES belong here). Rendered from THIS script (not
     # the area publishes, which run earlier — the rm -f above would wipe their

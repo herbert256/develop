@@ -69,7 +69,6 @@ pool_run "$SCRIPT_DIR/reports/failure-flows.sh"
 pool_run "$SCRIPT_DIR/reports/io-errors.sh"          # "IO Error reading file /data/FlowManager/…" — the srv-errors group's third member (2026-09-06)
 pool_run "$SCRIPT_DIR/reports/routing-errors.sh"     # "Advanced Routing errors" — the AR0074 / ARPA0001 / ARRC0009 lines in one table (2026-09-28: was could-not-send, publish-failed, post-client-action)
 pool_run "$SCRIPT_DIR/reports/event-queue.sh"        # "[Pesit Default] Unable to submit event AgentEvent" -> the dashboards' 30-min sidecar (2026-09-14); an unpublished intermediate since 2026-09-27
-pool_run "$SCRIPT_DIR/reports/config-defects.sh"     # the config-hygiene page's server-log tables (a TSV sidecar, not a page)
 pool_run "$SCRIPT_DIR/reports/site-failures.sh"
 pool_run "$SCRIPT_DIR/reports/connection-diagnostics.sh"
 pool_run "$SCRIPT_DIR/reports/auth-activity.sh"

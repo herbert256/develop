@@ -161,7 +161,6 @@ n_d3=0; d3_legs=0; d3_still=0
 {
     printf 'TITLE\tSecurity outreach\n'
     printf 'DESC\tThe partner call list for deprecated connection-security parameters: who still connects with ssh-rsa (SHA-1) keys or TLSv1.2, who already upgraded, and who runs a mixed fleet.\n'
-    printf 'KEYWORDS\tssh-rsa, sha-1, sha1, tlsv1.2, tls 1.2, deprecated, legacy, weak, outreach, call list, upgrade, cutover, mixed fleet, rsa-sha2, migration, host key, public key\n'
     printf 'INTRO\tTwo SecurityParameters values in this data are DEPRECATED: **Public Key ssh-rsa** (an RSA key still signing with SHA-1 — modern OpenSSH disables it by default) and **Protocol TLSv1.2** (the legacy TLS version). This is the OUTREACH view of the Security parameters report: which partner still connects with a deprecated value, who already cut over to a modern one, and who runs a mixed fleet. "Still using" means seen in the **last 7 days** of the window (dataset end: %s).\n' "$last_date"
 
     printf 'TABLE\tDeprecation outreach list\twide\tnofilter\n'

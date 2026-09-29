@@ -65,12 +65,27 @@ render_files_run() {   # $@ = the .rpt files of one run
         render_rpt "$f" "$DOCS/files/$b.html" "../assets/style.css" "../index.html" "TRANSFER" "" "failed" || return $?
     done
 }
+# ONLY THE PUBLISHED SET (2026-09-29, user request: per subscription the
+# newest OK File and the three newest Failed Files): a CoreId-named .rpt
+# renders only when bin/transfer/filepages.sh listed it in _filepages.tsv —
+# failed.sh still writes an evidence page for every File it classifies (the
+# reasons read them) — and every subscription-NAMED page (the server-log
+# error page of a server-failing flow) renders as before.
+fp_keep() {   # stdin: .rpt paths -> the published ones
+    local fpf="$DATA/transfer/cache/_filepages.tsv"; [ -f "$fpf" ] || fpf=/dev/null
+    awk -v FP="$fpf" 'BEGIN { while ((getline l < FP) > 0) { split(l, a, "\t"); if (a[1] != "") K[a[1]] = 1 } close(FP) }
+        { b = $0; sub(/.*\//, "", b); sub(/\.rpt$/, "", b)
+          cid = (length(b) == 36 && b ~ /^[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+$/)
+          if (!cid || (b in K)) print }'
+}
 render_file_pages() {
-    local filp errp pages set9 _per _i
-    shopt -s nullglob
-    filp=("$DATA"/transfer/reports/files/*.rpt)
-    errp=("$DATA"/transfer/reports/errors/*.rpt)
-    shopt -u nullglob
+    local filp errp pages set9 _per _i _l
+    filp=(); errp=()
+    # (find + a C sort, not a glob into ls: production holds thousands of
+    # pages — the argument list — and the glob order under build.sh's
+    # LC_COLLATE=C is exactly this)
+    while IFS= read -r _l; do [ -n "$_l" ] && filp+=("$_l"); done < <({ [ -d "$DATA/transfer/reports/files" ] && find "$DATA/transfer/reports/files" -maxdepth 1 -type f -name '*.rpt'; true; } | LC_ALL=C sort | fp_keep)
+    while IFS= read -r _l; do [ -n "$_l" ] && errp+=("$_l"); done < <({ [ -d "$DATA/transfer/reports/errors" ] && find "$DATA/transfer/reports/errors" -maxdepth 1 -type f -name '*.rpt'; true; } | LC_ALL=C sort | fp_keep)
     # clear even when THIS run has no .rpt set (an env can lose the whole
     # family — production 2026-08 — and stale pages would survive forever); the
     # retired docs/errors/ goes too (a manual publish over a pre-merge tree)
@@ -92,16 +107,15 @@ render_file_pages() {
 
 # ---- THE CATCH-UP MODE ------------------------------------------------------
 # `bin/transfer/publish.sh catchup` (2026-09-29) is bin/build.sh's "publish:
-# transfer catch-up" step. It runs after the report catch-ups (drill-files.sh,
-# failed.sh, failed-files.sh, failing-reasons.sh) and the analyses publish
-# catch-up, and re-renders ONLY the transfer pages that read what those steps
+# transfer catch-up" step. It runs after the report catch-ups (failed.sh,
+# failed-files.sh, failing-reasons.sh) and the analyses publish catch-up, and re-renders ONLY the transfer pages that read what those steps
 # rewrote after the first (full) run of this script. Until 2026-09-29 the
 # step re-ran the whole script, every transfer page included.
 # THE DEPENDENCY TRACE (keep it in step with the readers). What changed since
 # the first run: failed.sh's outputs (failed.rpt, failed-sub-all.rpt,
 # _failed-reasons.tsv, _errpage-evidence.tsv, _srvsubs.tsv, _srvsubs-map.tsv
 # and the errors/ + files/ .rpt sets, rewritten whole), failed-files.rpt,
-# failing-reasons.rpt, drill-files.sh's _drill-files.tsv, and
+# failing-reasons.rpt, and
 # analyses/reports/_subs-boxes.tsv (publish-insights.sh, in the analyses
 # publishes, which run AFTER the first run of this script). Their transfer
 # pages:
@@ -248,7 +262,7 @@ fi
 # catch-up renders the directory from them, so a first-pass render was
 # overwritten page for page — docs/files/ now renders ONCE per build. Checked:
 # no step between the two reads docs/files/ (the detail, partner-group,
-# server and analyses publishes, drill-files / failed / failed-files /
+# server and analyses publishes, failed / failed-files /
 # failing-reasons and the dashboards + day reports read the data/ trees, the
 # rosters included — never the pages; linkcheck and the all-files search run
 # after the catch-up, and the search reads the data/ rosters anyway).

@@ -709,11 +709,11 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
                 printf "PROBLEM\tserver\t../analyses/uc-status-uc3.html" q "\tNo remote files\t**%d** poll(s) by **%d** UC3 subscription(s) that have NEVER found a file — the listing works, the remote directory is always empty\n", NRFP[d], NRFS[d] >> out
             # subscriptions whose last transfer was OK but that logged an
             # error/warning in the server log afterwards, latest issue this day
-            # (went-kaput.rpt; its page went 2026-09-29, so the link opens the
-            # Trouble after success box of Subscriptions in boxes — no date
-            # filter there, so no q)
+            # (went-kaput.rpt; its page and the Subscriptions in boxes page went
+            # 2026-09-29, so the link opens the server-log errors of the day by
+            # reason — where that error is)
             if (SLFC[d] + 0 > 0)
-                printf "PROBLEM\tserver\t../analyses/subscriptions-in-boxes.html?axway_pf=3\tTrouble after success\t**%d** subscription(s) whose last transfer was OK but that logged a server-log error/warning afterwards, most recently today\n", SLFC[d] >> out
+                printf "PROBLEM\tserver\t../server/errors-log-reasons.html" q "\tTrouble after success\t**%d** subscription(s) whose last transfer was OK but that logged a server-log error/warning afterwards, most recently today\n", SLFC[d] >> out
             # A day with NO transfer data got no hero from the transfer pass:
             # give it the records-per-hour chart, plus the anomaly-scan entry
             # the transfer pass adds on the days the scan flagged (such a day

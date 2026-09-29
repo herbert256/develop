@@ -175,7 +175,6 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }
         printf 'TOTAL\tTotal (0 accounts)\t\t\t\n'
     fi
 
-    printf 'KEYWORDS\tsession, connection, reconnect, storm, per minute, single file, efficiency, chatty, batch, marathons, retry, sftp login, overhead\n'
     printf 'SUMMARY\tSessions: %s  |  Files/connection: %s  |  Single-File: %s%%  |  All-Error sessions: %s\n' \
         "$p_sess" "$p_ratio" "$p_sf" "$p_af"
     printf 'FOOT\n'

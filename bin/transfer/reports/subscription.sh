@@ -13,8 +13,8 @@
 # render from entities.sh's grouped entities/subscription.rpt (2026-09-13);
 # this .rpt is the authoritative subscription ROSTER — read (its
 # FIRST/Summary table, or just the ROW names) by showseen.sh (names + the two
-# stamps), entity-search.sh and sources-and-targets.sh (Files / Error / OK,
-# ROW fields 3-5) and the server reports (the names). (The "Detail per
+# stamps), entity-search.sh (Files / Error / OK, ROW fields 3-5) and the
+# server reports (the names). (The "Detail per
 # Subscription / Date" table went 2026-09-29: no reader.)
 #
 # UI note: the Transfer Site entity is displayed as "Subscription".

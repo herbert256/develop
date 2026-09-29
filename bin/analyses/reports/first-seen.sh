@@ -224,8 +224,7 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
     }
     function fkey(v, key) { return key }
     # ONE .rpt per DATED cell and the no-date cell — the ones that get a cell
-    # page (analyses/publish.sh _fs_cell) and the dated ones data-diff.sh
-    # reads. The Total / Seen / Not seen cells open the Entities views since
+    # page (analyses/publish.sh _fs_cell). The Total / Seen / Not seen cells open the Entities views since
     # 2026-09-29, so their .rpts (flushtotal / flushseen and the notseen
     # cell) had no reader and went the same day; tn / cnt still feed the
     # page spec.

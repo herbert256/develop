@@ -89,7 +89,6 @@ IFS='|' read -r _ srv_err srv_ok srv_peakd srv_peakn srv_okfirst <<< "$(printf '
 
 {
     printf 'TITLE\tResubmissions\n'
-    printf 'KEYWORDS\tresubmit, resubmitted, manual, intervention, operator, rerun\n'
 
     if [ -n "$emptym" ]; then
         printf 'TABLE\tResubmitted legs per day\tnofilter\tnosort\n'

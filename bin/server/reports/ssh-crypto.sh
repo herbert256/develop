@@ -467,7 +467,6 @@ pt_rows() {
 
 {
     printf 'TITLE\tSSH & TLS Crypto\n'
-    printf 'KEYWORDS\tprotocol hygiene, ASCII fallback, FTPS, CONFIG_PASSWD, certificate chain, disconnect, algorithm negotiation, PeSIT TLS, encryption milestone\n'
 
     printf 'TABLE\tNegotiations by protocol\n'
     printf 'HEAD\tProtocol\tNegotiations\tShare\n'

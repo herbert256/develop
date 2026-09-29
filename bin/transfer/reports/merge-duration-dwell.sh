@@ -58,7 +58,6 @@ awk -F'\t' -v OFS='\t' '
     END {
         print "TITLE", "Distribution & Store-and-forward"   # = its Reports menu label (2026-09-29)
         print "DESC", "Two clocks on the same Files, side by side: how long the whole trip takes (the wall-clock duration histogram) and how long a file waits inside SecureTransport between its inbound and outbound leg (the store-and-forward dwell), with the dwell per subscription and per day below."
-        print "KEYWORDS", "duration,distribution,histogram,bands,buckets,dwell,store-and-forward,queue,latency,gap,wall-clock"
         print "INTRO", "Two clocks on the same Files. **Duration distribution** (left) is the whole trip: " lcfirst(intro[1])
         # the pair: the duration switch tables, then the dwell histogram
         for (i = 1; i <= ntab[1]; i++) print sxs(tab[1, i])

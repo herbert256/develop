@@ -10,7 +10,7 @@ source "$SCRIPT_DIR/../lib.sh"
 source "$SCRIPT_DIR/../../merge_rpt.sh"
 OUT="$REPORTS_DIR/file-journey.rpt"
 comps=()
-for c in patterns legs-count protocol-journey arrived-left; do
+for c in patterns legs-count protocol-journey; do   # (arrived-left — the In and out tab — went 2026-09-29, user request)
     comps+=("$REPORTS_DIR/$c.rpt")
 done
-merge_rpt "$OUT" "File journey" "The shape of each File through the platform: row/status patterns, leg counts, the ordered protocol chain, and how files arrive vs how they leave." "How a File moves through the platform, in one report: the **row/status patterns** (the transfers sharing a CoreId), the **leg counts** (the shape of store-and-forward, retries and UC2 pickups), the ordered **protocol journey** of each File, and **how files arrive vs how they leave** (first Inbound and last Outbound protocol with the delivered outcome)." "" "${comps[@]}"
+merge_rpt "$OUT" "File journey" "The shape of each File through the platform: row/status patterns, leg counts and the ordered protocol chain." "How a File moves through the platform, in one report: the **row/status patterns** (the transfers sharing a CoreId), the **leg counts** (the shape of store-and-forward, retries and UC2 pickups) and the ordered **protocol journey** of each File." "" "${comps[@]}"

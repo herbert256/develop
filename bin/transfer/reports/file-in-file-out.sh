@@ -168,7 +168,6 @@ IFS=' ' read -r nroutes ncross <<< "$(printf '%s\n' "$route_rows" | awk -F'\t' '
 
 {
     printf 'TITLE\tFile in - File out\n'
-    printf 'KEYWORDS\thandover, relay, partner to partner, opswise, two subscriptions, file in file out, copy, uc5, uc8, same filename, direction, in out, out in\n'
 
     # nofilter: the route figures (files, median gap, size split, first/last)
     # are whole-window aggregates with no per-day buckets behind them, so a

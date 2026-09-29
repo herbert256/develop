@@ -100,7 +100,6 @@ n_emp=0
 
 {
     printf 'TITLE\tTransfer Size Distribution\n'
-    printf 'KEYWORDS\tempty file, zero byte, 0 B, empty export\n'
     printf 'TABLE\tFiles by size bucket\n'
     printf 'HEAD\tSize range\tFiles\tError\tOK\tVolume\t%% of Files\tDistribution\n'
     printf 'KIND\ttext\tnum\tnumfailed\tnumprocessed\tnum\tnum\tbar\n'
