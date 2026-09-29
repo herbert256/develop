@@ -233,22 +233,27 @@ rescan rewrote, 2026-09-28), `went-kaput.sh` early (its ONLY run: its evidence s
 `bin/transfer/reports/details.sh` in
 background slot 2 beside transfer phase 1 and the server reports (with `AXWAY_WAIT_FAILED=1`: it
 waits — capped at 30 min — for the phase-1 pool's marker `.phase1-pool-done` in the transfer
-reports dir before reading what phase 1 writes, 2026-09-28), then transfer phase 2, analyses,
-the dashboards MONITOR (`monitor.sh`, foreground: whether `monitor.rpt` exists sets every
-page's top bar), then dashboards ∥ day in background slot 2 BESIDE the publishes below, waited
-for right before the dashboards publish → *publish*: detail
-pages ∥ transfer, then partner-groups, server, analyses, then THE CATCH-UPS — re-runs folding the
-cross-phase evidence into THIS build: failed.sh (the
-boxes reasons now on disk), failed-files.sh, failing-reasons.sh, the detail-pages RE-RENDER
-(`publish-details.sh` only, in the BACKGROUND beside the analyses publish catch-up — the detail
-.rpt files need no second run: their one catch-up input, the REDUCED `_srvsubs-map.tsv`,
-name⇥slug⇥stamp, is final after failed.sh's first run), the transfer publish catch-up
+reports dir before reading what phase 1 writes, 2026-09-28), then — right after the server
+reports since 2026-09-29 — the dashboards MONITOR (`monitor.sh`, foreground: whether
+`monitor.rpt` exists sets every page's top bar) and dashboards ∥ day in background slot 2 (their
+inputs are all final there), then transfer phase 2 and analyses, the dashboards + day reports
+waited for right before the dashboards publish → *publish*: detail
+pages ∥ transfer (the detail pages' ONLY render — the catch-up re-render went 2026-09-29: it
+came out identical), then partner-groups, server, analyses, then THE CATCH-UPS — re-runs folding the
+cross-phase evidence into THIS build: failed.sh in its CATCH-UP MODE (`failed.sh catchup`,
+2026-09-29: only the server-failing rows' reasons — the boxes sidecar — their pages, the two
+lists — their red-run columns read phase-1 peers — and the `_srvsubs` sidecars; the drill /
+File pages, both server-log passes and the evidence stay the full run's, the intermediates in
+`data/transfer/reports/.failed-state/`; proven identical to a full run), failed-files.sh,
+failing-reasons.sh, then the two publish catch-ups SIDE BY SIDE — the transfer publish catch-up
 (`bin/transfer/publish.sh catchup` — 2026-09-29: only the Subscriptions Entities views, Failed
 files and docs/files/ — docs/files/'s ONLY render in a build: the first transfer publish runs
 `bin/transfer/publish.sh firstpass`, every transfer page but docs/files/; a hand-run publish with
-no argument still renders everything; the analyses one is `bin/analyses/publish.sh catchup` — Configured
-subscriptions, Failed Subscriptions, Error reasons + `publish-insights.sh sidecar` for
-`_subs-boxes.tsv`; the trace of what reads the catch-up inputs is in each script, THE CATCH-UP MODE),
+no argument still renders everything; the analyses one is `bin/analyses/publish.sh catchup-pages` —
+Configured subscriptions, Failed Subscriptions, Error reasons; its `catchup` mode also re-runs
+`publish-insights.sh` for `_subs-boxes.tsv`, which the build no longer needs: nothing that sidecar
+reads changes after the analyses publish; the trace of what reads the catch-up inputs is in each
+script, THE CATCH-UP MODE),
 the all-files search (`bin/analyses/publish-all-files.sh` — its rows link the files/ pages the
 catch-ups settle), dashboards, day → `bin/build/publish.sh` (index pages + the home, reads every area) →
 `bin/build/display-rename.sh` → (runtime only) `bin/build/st-reports-archive.sh`.
@@ -368,6 +373,27 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
   CPU samples overstate the free capacity on the 6 E-cores) — session-sites 8 → 12-14 s,
   the mention scan 20 → 25 s, the build +6..+11 s. The outbox push is network time (5 s,
   once 14 s) — judge a run by its stages, not only its wall.
+- **2026-09-29 round 2 (prd 186 → ~165 s; seven timed prd runs):** every stage line carries
+  `[cpu Ns]` (`times` of the step's own subshell — `step_cpu`; a background step's from its
+  subshell), and a pooled page render of 2 s or more prints `TIME Ns render <area>/<report>`
+  (pub_run, `$SECONDS` — no fork per page). The wins: failed.sh's catch-up mode (6 → 0 s); the
+  publish catch-ups side by side, the redundant sidecar step and the redundant detail-pages
+  re-render dropped; dashboards + day started right after the server reports; overview.sh's
+  slot pass in the background beside its seen pass (22 → 15 s) with every series split by ONE
+  `read` loop (`series_vars` — the 42 `printf "$ser" | awk` pipes per block went) and the
+  seen-curve walk over the entities SIGHTED per slot only; both tokenizers' `sv()` probe with
+  `index()` before the regex gsub (~5 % of the server tokenize). THE EINTR FIX: bash 3.2's
+  `printf` of a big string into a `$(…)` pipe dies with "write error: Interrupted system call"
+  when a SIGCHLD lands on the blocked write — `render_card` / `resolve_ch` (dashboards + day)
+  hand their HTML back in variables (`RC_OUT` / `RCH`); keep big strings out of `$(…)` pipes.
+  The run's shape: the parse window ~41 s (the build waits ~16 s for the server parse), the
+  server-log -> transfer steps ~23 s, phase 1 ~25 s, the server reports ~31 s — all four
+  CPU-saturated — then a ~25 s publish tail and the archive (7z 5 s, push 9-16 s, network).
+  **Measured, no gain — do not retry:** a copy-free `is_noise` and dropping its SMTP scan
+  (the tokenizer is at mawk's floor); `index()` guards and a line-numbered `mseen` in
+  unknown-entities (its cost is the per-mention `addline` bookkeeping); overview's durations
+  in an ARRAY instead of the growing string (slower); 7z with 32 MB LZMA2 blocks (the 7z
+  5 → 4 s, the archive 17 → 19 MB, the push lost more).
 - **Test at production SCALE, not only on the sample**: the develop estate is small per entity and
   light on SSH lines, so a per-entity sort or a per-logon cost can look free there (the detail
   percentiles cut 28-44 % on 8x the sample legs and nothing on the sample). Replicate
