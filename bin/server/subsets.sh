@@ -43,16 +43,22 @@ uc3	Applying the search pattern	listing files from partner 	Connection failure w
 ssh-sessions	Channel is not active	No registered SSH session with ID	No SSH connection with ID	Network stream read/write error	Ignoring message for not active session
 connection-diagnostics	Connection failure while 	could not be established	Wrong server fingerprint: got	~performs test connection
 remote-poll	Applying the search pattern	listing files from partner 	Remote files pattern of transfer site	Connection failure while 	failure connecting to remote host 
-io-errors	~io error	~input/output error
 deploy-errors	Applying the search pattern	is used for incoming transfer	stop further route execution
 routing-errors	Could not send file	while publishing the file	post client action	stop further route execution'
-# + THE NON-INFO SUBSET "noninfo" (2026-09-29, speed round 3): every line whose
-# level (field 3) is not I — ~2 % of the production cache (199k of 11.3M) —
-# for the reports that act on Warning / Error lines only: top-messages
-# ($3 == "I" -> next), error-timing (W / E), error-reasons and failure-flows
-# (E). A LEVEL rule, not a marker (a marker cannot hold the TAB around the
-# level field): a line is in unless it reads "date TAB time TAB I TAB".
-SPEC_EXTRA=noninfo
+# + TWO RULE SUBSETS (2026-09-29, speed round 3), outside the marker gate —
+# every alternative in the gate regex is paid on every character of every
+# line, and case-insensitive markers the most (they cost +40 % of this pass):
+#   noninfo    every line whose level (field 3) is not I — ~2 % of the
+#              production cache (199k of 11.3M) — for the reports that act on
+#              Warning / Error lines only: top-messages ($3 == "I" -> next),
+#              error-timing (W / E), error-reasons and failure-flows (E); a
+#              LEVEL test (a marker cannot hold the TAB around the field)
+#   io-errors  io-errors.sh's own regex, behind a plain index() of "rror"
+#              (every line it can match holds one) — the case-insensitive
+#              "io error" / "input/output error" as gate markers doubled the
+#              gate's cost
+SPEC_EXTRA='noninfo
+io-errors'
 
 SUBDIR="$CACHE_DIR/subsets"
 rm -rf "$SUBDIR"; mkdir -p "$SUBDIR"
@@ -94,11 +100,17 @@ part() {   # $1 = part index: its range of line starts is [lo, hi)
                 if (!(i in OC)) OC[i] = "cat > \"" OUTP C[i] ".p" PART "\""
                 print | OC[i]; break }
         }
-        # the non-Info subset (see SPEC_EXTRA): its own rule, every line
-        $0 !~ /^[^\t]*\t[^\t]*\tI\t/ {
-            if (NIC == "") NIC = "cat > \"" OUTP "noninfo.p" PART "\""
-            print | NIC }
-        END { for (i in OC) close(OC[i]); if (NIC != "") close(NIC) }' /dev/stdin
+        # the RULE subsets (see SPEC_EXTRA), on every line
+        {   # noninfo: field 3 is not "I" (the date and time fields hold no
+            # TAB; a time wider than the 40-byte window falls back to split)
+            p9 = index($0, "\t"); q9 = index(substr($0, p9 + 1, 40), "\t")
+            if (q9) lv9 = substr($0, p9 + q9 + 1, 2); else { split($0, F9, "\t"); lv9 = F9[3] "\t" }
+            if (lv9 != "I\t") { if (NIC == "") NIC = "cat > \"" OUTP "noninfo.p" PART "\""; print | NIC }
+            # io-errors: its regex (io-errors.sh, on the message) over the line
+            if (index($0, "rror") && $0 ~ /[Ii][Oo] [Ee]rror|[Ii]nput\/[Oo]utput [Ee]rror/) {
+                if (IOC == "") IOC = "cat > \"" OUTP "io-errors.p" PART "\""; print | IOC }
+        }
+        END { for (i in OC) close(OC[i]); if (NIC != "") close(NIC); if (IOC != "") close(IOC) }' /dev/stdin
 }
 pids=()
 for ((pi = 1; pi <= NJ; pi++)); do part "$pi" & pids+=("$!"); done

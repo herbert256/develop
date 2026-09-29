@@ -46,9 +46,14 @@ pool_wait() {  # reap every pooled job; abort the run if any report failed
 
 # THE SERVER-CACHE SUBSETS (2026-09-27, build-speed round 2): one parallel
 # pass copies each consumer's RARE message families out of the 3 GB cache
-# (bin/server/subsets.sh); six reports below read their subset
-# (srv_subset) instead of the whole cache. Before the pool: they need it.
-timed "$SCRIPT_DIR/subsets.sh"
+# (bin/server/subsets.sh); the consumers below read their subset
+# (srv_subset) instead of the whole cache. SIDE BY SIDE with the pool since
+# 2026-09-29 (speed round 3): it ran BEFORE the pool, and the slowest reports
+# — logon, ssh-crypto, uc2/uc4-status, none of which reads a subset — waited
+# its ~5 s; now every job that reads the whole cache is queued first, and the
+# subset consumers only once the set is complete (srv_subset would fall back
+# to the whole cache, correct but slow, without subsets/.done).
+timed "$SCRIPT_DIR/subsets.sh" & SUBSETS_PID=$!
 
 # LONGEST FIRST (2026-09-27): the four slowest reports of the pool start
 # first (logon 22 s, ssh-crypto 19 s, uc2-status 18 s, uc4-status 16 s on
@@ -63,33 +68,39 @@ pool_run "$SCRIPT_DIR/../analyses/reports/uc4-status.sh"
 # LAST job and, six workers wide, the one that ran on alone at the end of
 # the stage (11 s on production); an early start folds it into the busy part
 pool_run "$SCRIPT_DIR/reports/unknown-entities.sh"   # ONE map-reduce pass -> all five unknown-* rpts (2026-07)
+pool_run "$SCRIPT_DIR/reports/auth-activity.sh"
 pool_run "$SCRIPT_DIR/reports/topview.sh"
 # (went-kaput.sh is NOT in this pool: bin/build.sh runs it once, early — right
 # after result.sh — because failed.sh and details.sh read its evidence sidecar)
 pool_run "$SCRIPT_DIR/reports/errors-day.sh"
-pool_run "$SCRIPT_DIR/reports/error-timing.sh"
-pool_run "$SCRIPT_DIR/reports/error-reasons.sh"
-pool_run "$SCRIPT_DIR/reports/failure-flows.sh"
-pool_run "$SCRIPT_DIR/reports/io-errors.sh"          # "IO Error reading file /data/FlowManager/…" — the srv-errors group's third member (2026-09-06)
-pool_run "$SCRIPT_DIR/reports/routing-errors.sh"     # "Advanced Routing errors" — the AR0074 / ARPA0001 / ARRC0009 lines in one table (2026-09-28: was could-not-send, publish-failed, post-client-action)
+pool_run "$SCRIPT_DIR/reports/inbound-connections.sh"
 pool_run "$SCRIPT_DIR/reports/event-queue.sh"        # "[Pesit Default] Unable to submit event AgentEvent" -> the dashboards' 30-min sidecar (2026-09-14); an unpublished intermediate since 2026-09-27
 pool_run "$SCRIPT_DIR/reports/site-failures.sh"
-pool_run "$SCRIPT_DIR/reports/connection-diagnostics.sh"
-pool_run "$SCRIPT_DIR/reports/auth-activity.sh"
 pool_run "$SCRIPT_DIR/reports/pesit.sh"              # -> pesit-slots.tsv only (the dashboards' / day pages' PeSIT view; no page since 2026-09-27, no .rpt since 2026-09-29)
-pool_run "$SCRIPT_DIR/../analyses/reports/uc1-status.sh"
-pool_run "$SCRIPT_DIR/reports/deploy-errors.sh"
-pool_run "$SCRIPT_DIR/reports/remote-poll.sh"
+pool_run "$SCRIPT_DIR/reports/no-remote-dir.sh"
+pool_run "$SCRIPT_DIR/reports/no-remote-files.sh"
 # (transfer-site-missing.sh — the "Transfer site missing" report — was removed
 # 2026-09-27, user request. Likewise the 2026-09-28 fewer-server-reports round:
 # ssh-key-auth — its tables were the Incoming Bad key / Locked columns and a
 # subset of Outgoing — and the three AR-line lists that routing-errors.sh folds
 # into one table. Every build is fresh, so no stale .rpt needs dropping.)
+# ---- the SUBSET consumers: after the subset set is complete ----------------
+if ! wait "$SUBSETS_PID"; then
+    echo "ERROR: bin/server/subsets.sh failed — aborting." >&2
+    pool_wait || true
+    exit 1
+fi
+pool_run "$SCRIPT_DIR/reports/error-timing.sh"
+pool_run "$SCRIPT_DIR/reports/error-reasons.sh"
+pool_run "$SCRIPT_DIR/reports/failure-flows.sh"
+pool_run "$SCRIPT_DIR/reports/io-errors.sh"          # "IO Error reading file /data/FlowManager/…" — the srv-errors group's third member (2026-09-06)
+pool_run "$SCRIPT_DIR/reports/routing-errors.sh"     # "Advanced Routing errors" — the AR0074 / ARPA0001 / ARRC0009 lines in one table (2026-09-28: was could-not-send, publish-failed, post-client-action)
+pool_run "$SCRIPT_DIR/reports/connection-diagnostics.sh"
+pool_run "$SCRIPT_DIR/../analyses/reports/uc1-status.sh"
+pool_run "$SCRIPT_DIR/reports/deploy-errors.sh"
+pool_run "$SCRIPT_DIR/reports/remote-poll.sh"
 pool_run "$SCRIPT_DIR/../analyses/reports/uc3-status.sh"
-pool_run "$SCRIPT_DIR/reports/no-remote-dir.sh"
-pool_run "$SCRIPT_DIR/reports/no-remote-files.sh"
 pool_run "$SCRIPT_DIR/reports/ssh-sessions.sh"
-pool_run "$SCRIPT_DIR/reports/inbound-connections.sh"
 pool_run "$SCRIPT_DIR/reports/top-messages.sh"
 pool_wait
 # The MERGED reports (2026-07 catalog cleanup) concatenate the pool's .rpt
