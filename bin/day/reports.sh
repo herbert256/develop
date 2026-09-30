@@ -64,8 +64,7 @@ SP="$DATA/server/cache/_parse.tsv"         # 1 date 2 time 3 level 4 component 5
 NRD="$DATA/server/reports/no-remote-dir.rpt"   # table 2 ("Missing remote directories per day"): date, errors, subscriptions (per-day PROBLEM link)
 NRF="$DATA/server/reports/no-remote-files.rpt" # table 2 ("Never find a file — polls per day"): date, polls, subscriptions (per-day PROBLEM link)
 ANOM="$DATA/transfer/reports/anomalies.rpt"    # ROW: 2 = Date, in BOTH tables (per-day PROBLEM link, offered only on flagged days)
-GTR="$DATA/transfer/reports/from-green-to-red.rpt"   # ROW: 4 = "Went red on" date+time (per-day PROBLEM link)
-ORED="$DATA/transfer/reports/only-red.rpt"           # ROW: 4 = "First failure" date+time (per-day PROBLEM link)
+RRUN="$DATA/transfer/reports/_red-run.tsv"   # red-run.sh: 1 subscription, 2 kind G|N, 4 "since" date+time — G the flip moment, N the first failure (per-day PROBLEM links)
 # the detail-page slugmaps (details.sh — final before this runs: bin/build.sh
 # waits for details.sh before the dashboards + day reports): the Top-5 names
 # link their detail page (2026-09-30 audit D-02 / L-03)
@@ -84,18 +83,18 @@ rm -rf "$RPTNEW" "$RPTDIR.old"
 mkdir -p "$RPTNEW"
 
 # The two full-period SUBSCRIPTION verdicts of the "Subscriptions with
-# problems" set, bucketed on the day the state CHANGED — the flip moment
-# (from-green-to-red) and the first failure of a never-green flow (only-red)
-# — so each lands on the day page of the day it happened. Both reports are `nofilter` (full-period
-# semantics), so their PROBLEM links carry no ?axway_date=. Empty when the
-# report is absent (env split) or holds only its "(none)" placeholder row.
-daycount() {   # $1 rpt  $2 ROW field holding "ccyy-mm-dd hh:mm:ss" -> "date:count …"
-    [ -f "$1" ] || return 0
-    awk -F'\t' -v f="$2" '$1=="ROW"{ d=substr($f,1,10); if (d ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) c[d]++ }
-                          END{ for (k in c) printf "%s:%s ", k, c[k] }' "$1"
+# problems" set, bucketed on the day the state CHANGED — the flip moment of a
+# flow that went red from green (red-run kind G) and the first failure of a
+# never-green flow (kind N) — so each lands on the day page of the day it
+# happened. Full-period semantics, so their PROBLEM links carry no
+# ?axway_date=. Empty when the sidecar is absent or has no such line.
+daycount() {   # $1 kind G|N -> "date:count …" of red-run field 4
+    [ -f "$RRUN" ] || return 0
+    awk -F'\t' -v k="$1" '$2==k{ d=substr($4,1,10); if (d ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) c[d]++ }
+                          END{ for (x in c) printf "%s:%s ", x, c[x] }' "$RRUN"
 }
-gtrc=$(daycount "$GTR" 4)
-oredc=$(daycount "$ORED" 4)
+gtrc=$(daycount G)
+oredc=$(daycount N)
 # The Anomaly-scan entry is offered ONLY on the days the scan actually flagged
 # (2026-08 — it used to sit on every day page as the always-there entry). Both
 # anomalies tables are counted, the daily and the hourly, since either one is a

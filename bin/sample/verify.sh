@@ -1269,6 +1269,10 @@ check $(grep -q '<tr class="total"><td>Total</td>' docs/index.html 2>/dev/null &
 # no .rpt, no link
 n=$(ls docs/transfer/sources-and-targets*.html docs/analyses/data-diff*.html docs/analyses/triage*.html docs/transfer/file-journey-last-leg.html docs/transfer/file-journey-in-and-out.html docs/transfer/episodes-episodes.html docs/analyses/subscriptions-in-boxes*.html docs/*/cleanup-backlog*.html docs/*/config-hygiene*.html docs/*/whitelist-audit*.html docs/*/account-sharing*.html docs/*/twins*.html 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "$n removed report page(s) (sources-and-targets, data-diff, triage, last leg, in and out, episodes, boxes, Cleanup) still published"
+# the red-run producers became ONE sidecar writer (2026-09-30): no
+# from-green-to-red / only-red .rpt or script may come back, the sidecar exists
+n=$(ls data/transfer/reports/from-green-to-red.rpt data/transfer/reports/only-red.rpt bin/transfer/reports/from-green-to-red.sh bin/transfer/reports/only-red.sh 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-0}" = 0 ] && [ -s data/transfer/reports/_red-run.tsv ] && echo 0 || echo 1) "the red-run sidecar _red-run.tsv is missing/empty, or $n from-green-to-red / only-red file(s) still exist"
 n=$(ls docs/help/sources-and-targets.html docs/help/data-diff.html docs/help/triage.html docs/help/subscriptions-in-boxes.html docs/help/cleanup-backlog.html docs/help/config-hygiene.html docs/help/whitelist-audit.html docs/help/account-sharing.html docs/help/twins.html docs/help/episodes.html 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "$n help page(s) of removed reports still published"
 n=$(ls data/*/reports/sources-and-targets.rpt data/*/reports/data-diff.rpt data/*/reports/triage.rpt data/*/reports/cleanup-backlog.rpt data/*/reports/account-sharing.rpt data/*/reports/twins.rpt data/*/reports/config-defects.rpt data/*/reports/arrived-left.rpt data/*/reports/episodes-src.rpt 2>/dev/null | wc -l | tr -d ' ')

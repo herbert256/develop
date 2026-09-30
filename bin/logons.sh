@@ -15,10 +15,11 @@
 # median gap over the distinct logon minutes, bursts collapsed into visits
 # when the median visit span is short — so the Logons and Pickup
 # information tables speak one vocabulary. Fields 6-12 are the [Ssh
-# Default] screening-funnel counts, logon.sh's matching REPLICATED exactly
-# (qtok and all) — the report's Incoming columns and the detail pages' rows
-# must show the same numbers, so a change to either matcher belongs in
-# both.
+# Default] screening-funnel counts, classified by bin/ssh-family.awk — the
+# ONE classifier logon.sh uses too (2026-09-30; a replica "belonging in both"
+# before), so the report's Incoming columns and the detail pages' rows show
+# the same numbers. The rest of the two scripts (the re-screen / session-error
+# rules, the anonymous-failure attribution) still mirrors logon.sh.
 #
 # Field 13 (2026-08) is the ANONYMOUS-failure attribution: the platform
 # logs "[Ssh Default] Authentication failed using local." with NO username
@@ -94,6 +95,8 @@ _LOGONS_SH="${BASH_SOURCE[0]}"
 # no report or page ever counts them
 source "$(dirname "$_LOGONS_SH")/blacklist.sh"
 
+# the [Ssh Default] family classifier — ONE copy with logon.sh (2026-09-30)
+_LG_SSHFAM="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/ssh-family.awk"
 ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_logons-hosts.tsv
     local _lg_cache="$1" _lg_out="$1/_logons.tsv" _lg_hout="$1/_logons-hosts.tsv" _lg_parse="$1/_parse.tsv" _lg_tmp _lg_htmp
     # built already in this build (the data/ wipe leaves none from an earlier
@@ -104,17 +107,9 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
     _lg_htmp="$_lg_hout.tmp.$$"
     : > "$_lg_tmp"; : > "$_lg_htmp"
     if [ -s "$_lg_parse" ]; then
-        awk -F'\t' -v BLF="$BLACKLIST_FILE" -v HOUT="$_lg_htmp" "$BLACKLIST_AWK"'
+        # qtok() + ssh_family(): bin/ssh-family.awk, shared with logon.sh
+        awk -F'\t' -v BLF="$BLACKLIST_FILE" -v HOUT="$_lg_htmp" "$BLACKLIST_AWK$(cat "$_LG_SSHFAM")"'
             BEGIN { bl_load(BLF) }
-            # the quoted token right after the matched prefix (logon.sh
-            # verbatim): the quote character varies per family
-            function qtok(rest,   q, p) {
-                q = substr(rest, 1, 1)
-                if (q != "\x27" && q != "\"") return ""
-                p = index(substr(rest, 2), q)
-                if (p <= 0) return ""
-                return substr(rest, 2, p - 1)
-            }
             # one screening line, booked in the per-ADDRESS host file
             function host_screen(s9, ha9, ts9h) {
                 hfc[s9 SUBSEP ha9]++
@@ -265,25 +260,15 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                 next
             }
             # the [Ssh Default] logon-screening funnel — logon.sh'\''s seven
-            # families replicated with the same guards and token extraction
-            # (the door-knocker and Outgoing families it consumes with
-            # `next` first match none of these regexes, so a flat replica
-            # counts identically). Counts only; the report keeps the drills.
+            # families through the shared ssh_family() (the door-knocker and
+            # Outgoing families it consumes with `next` first match none of
+            # them, so the flat test counts identically). Counts only; the
+            # report keeps the drills.
             index($5, "[Ssh Default]") > 0 {
-                m9 = $5; side = ""; u2 = ""
-                if (match(m9, /\[Ssh Default\] Allowed user /))         { side = "A"; u2 = qtok(substr(m9, RSTART + RLENGTH)) }
-                else if (m9 ~ /successfully authenticated over SSH/ && match(m9, /login name /)) {
-                    side = "T"; u2 = qtok(substr(m9, RSTART + RLENGTH)) }
-                else if (match(m9, /\[Ssh Default\] Disallowed user /)) { side = "D"; u2 = qtok(substr(m9, RSTART + RLENGTH)) }
-                else if (match(m9, /Unable to find account with username: [^ ]+/)) {
-                    side = "N"; u2 = substr(m9, RSTART + 38, RLENGTH - 38); sub(/[.,;]$/, "", u2) }
-                else if (match(m9, /no certificate is found for user /)) {
-                    side = "B"; u2 = qtok(substr(m9, RSTART + RLENGTH)); sub(/^.*@/, "", u2) }
-                else if (match(m9, /\[Ssh Default\] User [A-Za-z0-9_.-]+ failed to login successfully/)) {
-                    side = "K"; u2 = substr(m9, RSTART + 19); sub(/ failed to login.*$/, "", u2) }
-                else if (match(m9, /\[Ssh Default\] User /) && m9 ~ /is locked|locked due to too many failed login/) {   # = logon.sh (2026-09-29: the lockout line itself was missing here)
-                    side = "L"; u2 = qtok(substr(m9, RSTART + RLENGTH))
-                    if (u2 == "" && match(m9, /Username: /)) u2 = qtok(substr(m9, RSTART + RLENGTH)) }
+                m9 = $5
+                # the family + the username it names: bin/ssh-family.awk,
+                # the ONE classifier logon.sh uses too (2026-09-30)
+                side = ssh_family(m9); u2 = SSH_U
                 if (side == "" || u2 == "") {
                     # SESSION ERRORS (2026-09-06): an Error/Warning [Ssh
                     # Default] line of no counted family, on a session —

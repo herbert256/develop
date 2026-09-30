@@ -6,7 +6,7 @@
 # programs with $(cat …) and MUST keep classifying identically, which is why
 # the function lives here and not in either of them:
 #
-#   bin/analyses/publish-insights.sh  the _subs-boxes.tsv reason sidecar
+#   bin/build/reason-boxes.sh  the _subs-boxes.tsv reason sidecar
 #                                     (the Boxes reasons; the Entities
 #                                     Reason column falls back to it)
 #   bin/transfer/reports/failed.sh  the Reason column of the Failed

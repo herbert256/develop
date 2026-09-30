@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
 #
-# bin/analyses/publish-insights.sh — the BOX-REASON SIDECAR
+# bin/build/reason-boxes.sh — the BOX-REASON SIDECAR
 # (data/analyses/reports/_subs-boxes.tsv: subscription <TAB> the reason of the
 # most specific box it sits in), read by the Entities Subscriptions Error
-# view's Reason column (publish_lib.sh) and failed.sh's server rows. Called by
-# bin/analyses/publish.sh (its full run; the build's catch-up does not re-run
-# it — failed.sh's catch-up mode leaves _errpage-evidence.tsv as it was).
-# Its three insight PAGES went 2026-09-29 (user request): Whitelist audit and
-# Config hygiene with the Cleanup group, Subscriptions in boxes with the
-# Overview trim — the box memberships (_subs_box_rows) stay, as the sidecar's
-# source. Runs from any directory; no arguments.
+# view's Reason column (publish_lib.sh) and failed.sh's server rows — the
+# LAST fallback of their Reason chain (after the flow's own error page and the
+# kaput evidence). A build-only step: bin/build.sh runs it once, right before
+# the analyses publish, when every input is final (failed.sh's
+# _errpage-evidence.tsv, the server reports, the red-run and kaput sidecars);
+# the catch-ups after it (failed.sh catchup, the transfer publish catchup)
+# read it. It was bin/analyses/publish-insights.sh, called from inside the
+# analyses publish, until 2026-09-30 (user decision): its three insight
+# PAGES went 2026-09-29 (Whitelist audit and Config hygiene with the Cleanup
+# group, Subscriptions in boxes with the Overview trim) — the box memberships
+# (_subs_box_rows) stay, as the sidecar's source. Runs from any directory; no
+# arguments.
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -79,13 +84,15 @@ _subs_box_rows() {
                         else if (lout[s] == "Expired") print "6\t" s }
                 }' "$FILESC"
         fi
+        # columns 2 / 4 — From green to red / Only red: the red-run sidecar
+        # (red-run.sh, 2026-09-30 — two .rpt files before), kind G / N
+        [ -f "$TRPT/_red-run.tsv" ] && \
+            awk -F'\t' '$1 != "" && $2 == "G" { print "2\t" $1 } $1 != "" && $2 == "N" { print "4\t" $1 }' "$TRPT/_red-run.tsv"
         # colno : rpt : ROW field holding the subscription name (no-remote-dir
         # leads with its Last date). (Boxes 3 Trouble after success and 10 Went
         # quiet went 2026-09-29 with the page: no Reason rank, so they only
         # named flows no reader looks up.)
         for spec in \
-            "2:$TRPT/from-green-to-red.rpt:2" \
-            "4:$TRPT/only-red.rpt:2" \
             "7:$SRPT/no-remote-dir.rpt:3" \
             "8:$SRPT/no-remote-files.rpt:3" \
             "9:$TRPT/missing-cronjobs.rpt:2"; do

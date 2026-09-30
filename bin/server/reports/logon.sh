@@ -119,17 +119,10 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # entries; empty middle fields use the "-" sentinel (the bash loop reads the
 # TAB-separated line with `read`, and a TAB is IFS whitespace — empty fields
 # would collapse and shift the columns, the CLAUDE.md gotcha).
-agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"'
+# qtok() and the family classifier ssh_family() come from bin/ssh-family.awk,
+# the ONE copy bin/logons.sh (the logon summary) shares (2026-09-30)
+agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$(cat "$ROOT/bin/ssh-family.awk")"'
     BEGIN { bl_load(BLF) }
-    # the quoted token right after the matched prefix: the quote character
-    # itself varies (Allowed logs single quotes, Disallowed double)
-    function qtok(rest,   q, p) {
-        q = substr(rest, 1, 1)
-        if (q != "\x27" && q != "\"") return ""
-        p = index(substr(rest, 2), q)
-        if (p <= 0) return ""
-        return substr(rest, 2, p - 1)
-    }
     # sortjoin(s): a SUBSEP-joined set as a ", "-separated SORTED list —
     # sorted so the output never depends on awk hash order (the scanner IPs
     # column, 2026-08-31, user request)
@@ -223,29 +216,13 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK"
         # INCOMING: the [Ssh Default] logon-screening funnel
         if (index(m, "[Ssh Default]") == 0) next
         if ($1 ~ /^[0-9][0-9][0-9][0-9]-/ && (fss == "" || $1 < fss)) fss = $1   # first ssh-line date (the Allowed-coverage check)
-        u = ""
-        if (match(m, /\[Ssh Default\] Allowed user /))         { side = "A"; u = qtok(substr(m, RSTART + RLENGTH)); if ($1 ~ /^[0-9][0-9][0-9][0-9]-/ && (fad == "" || $1 < fad)) fad = $1 }
-        else if (m ~ /successfully authenticated over SSH/ && match(m, /login name /)) {
-            side = "T"; u = qtok(substr(m, RSTART + RLENGTH)) }
-        else if (match(m, /\[Ssh Default\] Disallowed user /)) { side = "D"; u = qtok(substr(m, RSTART + RLENGTH)) }
-        else if (match(m, /Unable to find account with username: [^ ]+/)) {
-            # unquoted username token; strip a trailing sentence separator
-            side = "N"; u = substr(m, RSTART + 38, RLENGTH - 38); sub(/[.,;]$/, "", u) }
-        else if (match(m, /no certificate is found for user /)) {
-            # "… for user \x27ACCOUNT@FE0000nn\x27 …" — key the row on the LOGIN part
-            side = "B"; u = qtok(substr(m, RSTART + RLENGTH)); sub(/^.*@/, "", u) }
-        else if (match(m, /\[Ssh Default\] User [A-Za-z0-9_.-]+ failed to login successfully/)) {
-            # unquoted user token: "User FE0000nn failed to login successfully N times …"
-            side = "K"; u = substr(m, RSTART + 19); sub(/ failed to login.*$/, "", u) }
-        else if (match(m, /\[Ssh Default\] User /) && m ~ /is locked|locked due to too many failed login/) {
-            # the lockout ITSELF counts too: "User \x27U\x27 locked due to too
-            # many failed login attempts." (Info) — only the Lockouts table of
-            # the retired ssh-key-auth report counted it until 2026-09-28
-            side = "L"; u = qtok(substr(m, RSTART + RLENGTH))
-            # the second locked family carries the name later in the line:
-            # "[Ssh Default] User login is locked. Username: \"U\""
-            if (u == "" && match(m, /Username: /)) u = qtok(substr(m, RSTART + RLENGTH)) }
-        else {
+        # the family (A Allowed · T Authenticated · D Disallowed · N No
+        # account · B Bad key · K Key failures · L Locked) and the username
+        # it names — bin/ssh-family.awk, the ONE classifier (the lockout line
+        # itself counts too since 2026-09-28)
+        side = ssh_family(m); u = SSH_U
+        if (side == "A" && $1 ~ /^[0-9][0-9][0-9][0-9]-/ && (fad == "" || $1 < fad)) fad = $1
+        if (side == "") {
             # SESSION ERRORS (2026-09-06, user request): an Error/Warning
             # [Ssh Default] line of no counted family, on a session — kept
             # for END, which attributes it to the login of the session once the
@@ -477,7 +454,7 @@ rows() {
         # cells, their drill payloads and the RECALC tokens below all follow it.
         # Session errors sits after Auth failed (2026-09-06); Re-screens is the
         # LAST column (2026-09-08, user request — it sat right after Allowed
-        # for two days, which also shifted the cells publish-insights.sh reads
+        # for two days, which also shifted the cells reason-boxes.sh reads
         # by POSITION for its "login in" box: $4/$7/$8/$9 = Disallowed / Bad
         # key / Key failures / Locked are back in place). drill-cell-<i> binds
         # cells positionally — 1 Allowed, 2 Disallowed, 3 Authenticated, 4 No

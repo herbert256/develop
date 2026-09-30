@@ -9,7 +9,7 @@
 #
 # Writes ONE sidecar, data/server/reports/site-failures.tsv —
 #   subscription <TAB> newest failure stamp ("YYYY-MM-DD HH:MM:SS.mmm")
-# — read by the box-reason producer (bin/analyses/publish-insights.sh, the
+# — read by the box-reason producer (bin/build/reason-boxes.sh, the
 # "connection" box). NO .rpt since 2026-09-29: the page went 2026-09-28 and
 # its report (two tables, per-day buckets, the log-line drills) had no other
 # reader — about 90 % of it was never read.

@@ -251,9 +251,9 @@ failing-reasons.sh, then the two publish catch-ups SIDE BY SIDE — the transfer
 files and docs/files/ — docs/files/'s ONLY render in a build: the first transfer publish runs
 `bin/transfer/publish.sh firstpass`, every transfer page but docs/files/; a hand-run publish with
 no argument still renders everything; the analyses one is `bin/analyses/publish.sh catchup` —
-Configured subscriptions, Failed Subscriptions, Error reasons; it does not re-run
-`publish-insights.sh` for `_subs-boxes.tsv`: nothing that sidecar reads changes after the analyses
-publish (the separate `catchup-pages` name went 2026-09-29 — one catch-up mode); the trace of what reads the catch-up inputs is in each
+Configured subscriptions, Failed Subscriptions, Error reasons; `_subs-boxes.tsv` is written
+once, by the build step `bin/build/reason-boxes.sh` right before the analyses publish (nothing it
+reads changes after that point) (the separate `catchup-pages` name went 2026-09-29 — one catch-up mode); the trace of what reads the catch-up inputs is in each
 script, THE CATCH-UP MODE),
 the all-files search (`bin/analyses/publish-all-files.sh` — its rows link the files/ pages the
 catch-ups settle), dashboards, day → `bin/build/publish.sh` (index pages + the home, reads every area) →
@@ -1128,7 +1128,7 @@ Connection failures, Wrong server fingerprint, Login errors (out) — the creden
 flow on it uses is broken); a flow-level line on a shared owner reaches the colour only through
 `_build_ringattr`, which names the flow. `bin/build/kaput-evidence.sh` applies the same rule to
 `_kaput-evidence.tsv` (read by failed.sh, the Entities Error view's Reason and
-`publish-insights.sh`). 1:1 owners are unchanged.
+`bin/build/reason-boxes.sh`). 1:1 owners are unchanged.
 
 The SAME evidence also **keeps a UC3 green** (2026-08): the after-last-transfer red flip is
 skipped when a successful poll is NEWER than the E-level stamp that would have flipped it — a
@@ -1150,7 +1150,8 @@ File by its end too. Never lower than the old start-based cut, so it only ever s
 **The SSH logon funnel is SESSION-aware** (2026-09-06, user request — the FE000508 finding):
 `_parse.tsv` column 6 is the SSH session id, and `bin/server/reports/logon.sh` + its twin
 `bin/logons.sh` (the detail pages' Logons table and the Incoming table's four logon-summary columns —
-"a change to either matcher belongs in both") tie every `[Ssh Default]` line to its connection.
+the family classifier is ONE file since 2026-09-30, `bin/ssh-family.awk`; the session rules
+still "belong in both") tie every `[Ssh Default]` line to its connection.
 A **re-screen** is an "Allowed user" line LATER than the last successful authentication of its
 session (an Allowed that an authentication follows is a real screening, whatever the session
 logged before — the sample's shared-session flows log several pairs on one id): a partner that keeps a connection open for days re-keys it about hourly and the
@@ -1166,7 +1167,7 @@ authentication), so every Allowed line is booked in END. The sample estate plant
 connection for the first login (`bin/sample/gen-events.awk` env_ambient, fixed session id, no
 rint()). Drill-cell numbering on Incoming: 1 Allowed, 2 Disallowed, 3 Authenticated, 4 No account,
 5 Bad key, 6 Key failures, 7 Locked, 9 Session errors, 14 Re-screens — Re-screens is the LAST column
-(2026-09-08, user request); `publish-insights.sh` reads the Incoming cells by POSITION for its "login
+(2026-09-08, user request); `bin/build/reason-boxes.sh` reads the Incoming cells by POSITION for its "login
 in" box (`$4/$7/$8/$9` = Disallowed / Bad key / Key failures / Locked), so a new column goes at the END.
 
 ## Rendering
@@ -1239,7 +1240,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   Subscriptions Error view, the log facts on the build report. THE REASON CHAIN they used lives on
   in the Entities Subscriptions Error view's Reason column (publish_lib): the Reason is
   `analyses/reports/_subs-boxes.tsv` (the most specific Subscriptions-in-boxes box, written by
-  `publish-insights.sh`). **The SERVER LOG ON THE FLOW'S OWN ERROR PAGE COMES FIRST** (2026-08):
+  `bin/build/reason-boxes.sh`). **The SERVER LOG ON THE FLOW'S OWN ERROR PAGE COMES FIRST** (2026-08):
   the page a red row opens is the evidence a reader checks, so the Reason must be what that page
   says — `_errpage-evidence.tsv` (written by `failed.sh`: the first 8 Error/Warning
   lines, with their level, of the flow's NEWEST drill page — the page the red row opens —
@@ -1319,8 +1320,10 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   → `polling.rpt`, a `SUBS_GROUP_REPORTS` server member, 2026-09-05) — both Use cases & delivery
   members, pages in analyses/.
 - **The Boxes PAGE is GONE** (subscriptions-in-boxes, 2026-09-29, user request; its accounts
-  twin went the same morning): `publish-insights.sh` (no argument, sidecar-only) still runs the
-  shared `_subs_box_rows` producer for `_subs-boxes.tsv` (the Entities Error view's Reason); any
+  twin went the same morning): `bin/build/reason-boxes.sh` — `bin/analyses/publish-insights.sh`,
+  called from inside the analyses publish, until 2026-09-30 — still runs the shared
+  `_subs_box_rows` producer for `_subs-boxes.tsv` (the Reason chain's LAST fallback, after the
+  flow's error page and the kaput evidence; a build step right before the analyses publish); any
   account join is `xref/_subscriptions-accounts.tsv` and ONLY that — **never match
   subscriptions to accounts by name**.
 
@@ -1608,7 +1611,7 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
 ## Rules from the third 2026-09-29 audit ("a very very very deep analyse & audit … check if every .rpt file and every field … is really used")
 
 - **Dead output is gone** — every .rpt line, column and sidecar no consumer reads (INTROs, DESCs of
-  non-members, drill payloads of pageless producers, the unread boxes of `publish-insights.sh` —
+  non-members, drill payloads of pageless producers, the unread boxes of `publish-insights.sh` (now `bin/build/reason-boxes.sh`) —
   specs 2, 4, 7, 8, 9 remain, box 14 reads `data/server/reports/site-failures.tsv`, subscription ⇥
   newest failure stamp), with the dead helpers (`PAGELESS_REPORTS`, `sm_href`, `srv_lines_for`,
   …), the renderer branches (`SUBTITLE`, 3-cell ALERT, `pfnoun=`, `anchor=`, STAT `data-pf`) and
@@ -1649,10 +1652,12 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
 Six read-only auditors (rpt/field usage, transfer, server + analyses, detail/day/home, layout,
 front end) then four fix workers with disjoint files. The rules it left:
 
-- **Pageless producers write only what their readers take** (again): `from-green-to-red.rpt` =
-  Subscription · Last green day · Went red on · Days red · Consecutive failures; `only-red.rpt` =
-  Subscription · Files · First failure · Days failing (failed.sh reads 2/3/5, day pages 4);
-  `went-kaput.rpt` is GONE (the same day, user decision — see below). A reader that takes a
+- **Pageless producers write only what their readers take** (again). Later the same day (user
+  decision, the refactoring round) they became plain SIDECARS: `from-green-to-red.sh` +
+  `only-red.sh` → ONE `bin/transfer/reports/red-run.sh` writing `_red-run.tsv` (subscription ·
+  kind G went red from green / N never delivered · last green day | never · since · days red ·
+  run — failed.sh, the day pages and reason-boxes read it); `went-kaput.rpt` is GONE (see
+  below); `publish-insights.sh` → `bin/build/reason-boxes.sh`. A reader that takes a
   field by NUMBER names the column in a comment — a column change silently drops a link.
 - **Every row tints by the ENTITY's result colour** (Partner scorecard, Blast radius, Application
   dependencies included — their metric colours its own CELL: Score, Sole endpoint for, Pairs at
@@ -1701,7 +1706,7 @@ front end) then four fix workers with disjoint files. The rules it left:
   decision, "would we gain much when removing went-kaput.sh?") so is the script as a REPORT:
   `bin/server/reports/went-kaput.sh` became **`bin/build/kaput-evidence.sh`**, a build-only
   step that writes ONLY `data/server/reports/_kaput-evidence.tsv` (the Reason evidence failed.sh,
-  the Entities Error view and publish-insights.sh read); `went-kaput.rpt` and the day pages'
+  the Entities Error view and reason-boxes.sh read); `went-kaput.rpt` and the day pages'
   "Trouble after success" line are gone (the .rpt had 0 rows on both runtimes). The colour never
   read it (result.sh `_build_kaputflip` is its own join). Never restore the .rpt or the line.
 - **transfer/expired.html**: the last two tables (sweep nights, staging weekday) side by side.
@@ -1716,7 +1721,7 @@ front end) then four fix workers with disjoint files. The rules it left:
   File no attribution pass could place (parse.sh; session-sites.sh rescans those sessions).
   EVERY subscription-keyed table skips it (an explicit `== "Unknown"` test in the writer:
   subscription / entities / month-stats / cross-reference / details (+ details_lib stream) /
-  failed / episodes / punctuality / only-red / from-green-to-red / recovered
+  failed / episodes / punctuality / red-run / recovered
   / retry / security-params / same-protocol / size-dist / size-profile /
   went-quiet / waiting / expired / file-in-file-out / entity-search /
   not-in-flow-manager / blast-radius / the boxes sidecar / the day and overview
@@ -1874,7 +1879,8 @@ bin/render_rpt.awk      the one-pass page-body renderer
 bin/merge_rpt.sh        component .rpt -> merged tabbed report
 bin/check-syntax.sh     bash -n over every bin/**/*.sh (the build's and the sync's first gate)
 bin/timing.sh           `timed` -> the TIME lines
-bin/logons.sh           ensure_logons -> the logon summary (_logons.tsv + _logons-hosts.tsv; logon.sh's twin matcher)
+bin/logons.sh           ensure_logons -> the logon summary (_logons.tsv + _logons-hosts.tsv; logon.sh's twin)
+bin/ssh-family.awk      the [Ssh Default] logon-family classifier, ONE copy for logon.sh + logons.sh (2026-09-30)
 bin/flip-reason.awk     server-log line -> Reason      bin/subname.awk   which configured subscription a line names
 bin/cron-observed.awk   schedule vs observed firing    bin/subscription-active.jq  the Active codes
 bin/flow-manager.sh     config exports -> data/flow-manager/{base,xref}

@@ -90,9 +90,9 @@
 #
 # The REASON column (2026-08, replacing Ended): the fault the file's
 # own drill page shows, classified by bin/flip-reason.awk — the SAME function
-# behind the Boxes reasons (publish-insights.sh) and the Entities Reason
+# behind the Boxes reasons (reason-boxes.sh) and the Entities Reason
 # column (publish_lib.sh), whose first-priority source is exactly these pages
-# (_errpage-evidence.tsv + pagereason() in publish-insights.sh). Per file: the page's first 8 Error/Warning lines,
+# (_errpage-evidence.tsv + pagereason() in reason-boxes.sh). Per file: the page's first 8 Error/Warning lines,
 # ERROR lines first in page order, first classification wins — the opening
 # error of a failure is the cause, everything after it consequence. A file
 # WITHOUT a page (most older Files — the pass reasons EVERY File in error,
@@ -123,8 +123,8 @@ _flap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  failed: %s\n' "$((_t1 -
 #                   of THIS build — the Subscriptions-in-boxes sidecar
 #                   (_subs-boxes.tsv, the Reason of a server-failing row
 #                   without a kaput reason; written after phase 1) and the
-#                   from-green-to-red / only-red .rpt files (the lists'
-#                   red-run columns; written by phase-1 PEERS of the full
+#                   red-run sidecar _red-run.tsv (the lists'
+#                   red-run columns; written by a phase-1 PEER of the full
 #                   run). So: the server-failing set again (its REASON column;
 #                   the rest must come out identical, else a full run), their
 #                   pages (the reason is in the TITLE), the two lists and the
@@ -536,7 +536,7 @@ fi   # (full mode)
 # flow's last File is usually an OK one), the Started fallback
 # ... and, for the server rows' red-run columns, the newest OK File's day per
 # subscription (outcome policy: not Failed / Expired) and the data window's
-# last day (max col 7, the from-green-to-red Days red end)
+# last day (max col 7, the red-run Days red end)
 LC_ALL=C awk -F'\t' -v OFS='\t' -v OKF="$TMP/lastok" -v MJF="$TMP/maxjd" '$12 != "" { k = $12
         if ($6 > mx[k]) { mx[k] = $6; d[k] = $4 " " $5 }
         if ($2 != "Failed" && $2 != "Expired" && $6 > ox[k]) { ox[k] = $6; od[k] = $4 } }
@@ -1019,7 +1019,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v CAP="$SRVCAP" \
 if [ "$FAILED_MODE" = full ]; then   # ---- the evidence sidecar + the File reasons (the catch-up keeps the full run's)
 # The ERROR-PAGE EVIDENCE sidecar (2026-08): per subscription, the newest
 # Error/Warning line any of its drill pages shows. The Boxes reason
-# (publish-insights.sh pagereason) names the fault behind a red flow from the
+# (reason-boxes.sh pagereason) names the fault behind a red flow from the
 # server log, and its other source —
 # the kaput-evidence sidecar — only covers flows whose LAST TRANSFER WAS OK. A flow
 # whose last transfer FAILED and which sits in no specific box therefore had no
@@ -1112,7 +1112,7 @@ mv "$EVID.tmp" "$EVID"
 #      an older sibling's page must not outvote the pair's newest evidence,
 #      the same staleness rule that narrowed the flow borrow.
 #   4. the FLOW's sidecar candidates — the newest page of that subscription BY
-#      SERVER-LINE STAMP, which is publish-insights.sh pagereason()'s exact
+#      SERVER-LINE STAMP, which is reason-boxes.sh pagereason()'s exact
 #      first-priority source for the Boxes reasons. A MULTI-leg file
 #      whose sessions logged no error at all still gets the flow's verdict.
 #   5. the LAST LEG's raw Status ("Failed Subtransmission") — from the page
@@ -1262,7 +1262,7 @@ _flap "server-failing pages + the reasons"
 LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" \
     -v REAS="$TMP/reasons" -v FPF="$FPF" -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" \
     -v SRVS="$TMP/srvsubs" -v SESSF="$TMP/srvsess2" -v RF="$RFLIP" -v LOKF="$TMP/lastok" -v MJF="$TMP/maxjd" \
-    -v FGR="$REPORTS_DIR/from-green-to-red.rpt" -v ORED="$REPORTS_DIR/only-red.rpt" '
+    -v RRUN="$REPORTS_DIR/_red-run.tsv" '
     function rescol(nm,   r) { r = (toupper(nm) in SRES) ? SRES[toupper(nm)] : ""
         return (r == "green" || r == "orange" || r == "red") ? r : "" }
     function cl(s) { sub(/^@\{[^}]*\}/, "", s); return s }
@@ -1295,16 +1295,14 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" \
         close(LOKF)
         if ((getline l < MJF) > 0) MAXJ = l + 0
         close(MJF)
-        # from-green-to-red.rpt ROW: 2 site, 3 last green day, 5 days red,
-        # 6 consecutive failures; only-red.rpt ROW: 2 site, 3 Files, 5 days
-        # failing — both written by the report pool, present on the catch-up
+        # _red-run.tsv (red-run.sh, 2026-09-30 — the from-green-to-red /
+        # only-red .rpt files before): 1 subscription, 2 kind G|N, 3 last green
+        # day ("never" for N), 5 days red, 6 run (G: consecutive failures,
+        # N: its Files) — written by the report pool, present on the catch-up
         # run (the first run leaves the columns blank, the catch-up fills them)
-        while ((getline l < FGR) > 0) { n = split(l, a, "\t")
-            if (a[1] == "ROW" && n >= 6 && substr(a[2], 1, 2) != "@{") { k = toupper(cl(a[2])); RLG[k] = cl(a[3]); RDR[k] = cl(a[5]); RCF[k] = cl(a[6]) } }
-        close(FGR)
-        while ((getline l < ORED) > 0) { n = split(l, a, "\t")
-            if (a[1] == "ROW" && n >= 5 && substr(a[2], 1, 2) != "@{") { k = toupper(cl(a[2])); RLG[k] = "never"; RDR[k] = cl(a[5]); RCF[k] = cl(a[3]) } }
-        close(ORED)
+        while ((getline l < RRUN) > 0) { n = split(l, a, "\t")
+            if (n >= 6 && a[1] != "") { k = toupper(a[1]); RLG[k] = a[3]; RDR[k] = a[5]; RCF[k] = a[6] } }
+        close(RRUN)
         while ((getline l < SUBRES) > 0) { n = split(l, a, "\t")
             if (n >= 3 && a[1] != "") SRES[toupper(a[1])] = a[3] }
         close(SUBRES)

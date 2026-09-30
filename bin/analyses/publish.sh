@@ -6,7 +6,7 @@
 #   docs/analyses/use-cases.html, subscriptions.html, logical-detection.html,
 #   accounts.html                           the Configuration pages
 #   docs/analyses/*.html                    the analyses .rpt pages (via
-#                                           publish-insights.sh and the
+#                                           reason-boxes.sh and the
 #                                           subscription group renders)
 #   docs/first-seen/<member>-<key>.html     one page per First seen cell
 #   docs/coverage/<member>-<key>.html       the 5 PDA Configured cell pages
@@ -1514,9 +1514,9 @@ _aplap() { local _t1; _t1=$(date +%s); printf "TIME %5ds  analyses publish: %s\n
 # Their readers here:
 #   subscriptions.html            failed-files.rpt (the Error reason column —
 #                                 write_subscriptions_page)
-#   (_subs-boxes.tsv, the publish-insights.sh sidecar, reads
+#   (_subs-boxes.tsv, bin/build/reason-boxes.sh's sidecar, reads
 #   _errpage-evidence.tsv — written by failed.sh's FULL run only, so the
-#   sidecar of this script's first run is final: no re-run here, 2026-09-29)
+#   sidecar the build wrote before this script is final: no re-run here)
 #   failed.html                   failed.rpt       } render_subs_group_pages,
 #   failing-reasons.html          failing-reasons.rpt } those two members only
 #   failed-sub-all.html           failed-sub-all.rpt (+ the selector row on it
@@ -1555,12 +1555,13 @@ else
     write_accounts_page
     write_first_seen_page
     _aplap "use cases, first seen, configuration pages"
-    "$SCRIPT_DIR/publish-insights.sh"    # the box-reason sidecar _subs-boxes.tsv (its three insight pages went 2026-09-29)
-    _aplap "the box-reason sidecar"
+    # (the box-reason sidecar _subs-boxes.tsv is bin/build/reason-boxes.sh, a
+    # build step right before this publish since 2026-09-30 — it was called
+    # from here as publish-insights.sh)
     # The SUBS_GROUP_REPORTS pages (four Configuration-group reports whose DATA is
     # transfer/server but whose PAGES belong here). Rendered from THIS script (not
     # the area publishes, which run earlier — the rm -f above would wipe their
-    # output) and AFTER publish-insights.sh, which renders into the same tree.
+    # output).
     render_subs_group_pages
     _aplap "subscription group pages"
 fi
@@ -1612,7 +1613,7 @@ done
 _aplap "the rest"
 
 if [ "$AP_MODE" = catchup ]; then
-    echo "Wrote the analyses catch-up (subscriptions, failed, failed-sub-*, failing-reasons + the box-reason sidecar)." >&2
+    echo "Wrote the analyses catch-up (subscriptions, failed, failed-sub-*, failing-reasons)." >&2
 else
     echo "Wrote docs/analyses (the analysis pages), docs/first-seen and docs/coverage." >&2
 fi

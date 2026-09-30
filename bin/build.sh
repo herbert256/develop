@@ -978,7 +978,7 @@ bg2_step_wait  # details.sh
 # STARTED RIGHT AFTER THE SERVER REPORTS (2026-09-29, build speed — until
 # then after phase 2 + the analyses reports, ~6 s later, and the build then
 # waited up to 8 s for it): their inputs are the transfer caches, phase-1
-# reports (topview, anomalies, from-green-to-red, only-red), the server
+# reports (topview, anomalies, the red-run sidecar), the server
 # reports and their slot sidecars (topview, no-remote-dir/-files,
 # pesit / event-queue / uc<n>-slots), colour/ and the config — all final here.
 # Checked: phase 2 writes showseen / ranking, the analyses step data/analyses/,
@@ -1005,10 +1005,14 @@ run_step "publish: transfer report pages"                                 bin/tr
 bg_step_wait
 run_step "publish: partner group pages"                                   bin/analyses/publish-partner-groups.sh
 run_step "publish: server report pages"                                   bin/server/publish.sh
+# the box-reason sidecar (the Reason chain's last fallback) — every input is
+# final here; the catch-ups below read it (bin/analyses/publish-insights.sh,
+# called from inside the analyses publish, until 2026-09-30)
+run_step "reason boxes (the Reason fallback sidecar)"                     bin/build/reason-boxes.sh
 run_step "publish: analyses + coverage pages"                             bin/analyses/publish.sh
 # THE EVIDENCE CATCH-UP (2026-08): reports that read evidence steps AFTER
 # them produce — failed.sh the kaput/boxes classifications (the server
-# reports and publish-insights above), failed-files.sh the reasons failed.sh
+# reports and reason-boxes above), failed-files.sh the reasons failed.sh
 # classifies, failing-reasons.sh reads failed-files.rpt. Their first runs happen
 # before that evidence exists, so they run AGAIN here, and the pages they
 # feed are re-rendered below.
@@ -1045,8 +1049,8 @@ bg2_step_start "publish: all files search + dashboards + day pages"         bash
 # subscriptions (failed-files.rpt), Failed Subscriptions + its All view and
 # Error reasons (its box-reason sidecar is not recomputed — see below).
 # THE BOXES-REASON CATCH-UP (2026-08): the Entities Error view's Reason
-# column reads analyses/reports/_subs-boxes.tsv, which the analyses
-# publishes above (publish-insights.sh) write AFTER the transfer publish
+# column reads analyses/reports/_subs-boxes.tsv, which reason-boxes.sh
+# (above) writes AFTER the transfer publish
 # already ran — on a fresh data/ the box-tier reasons would render blank
 # until the NEXT build — and failed-sub-all.rpt + _srvsubs.tsv, which the
 # failed.sh catch-up rewrote. The transfer catch-up mode re-renders the

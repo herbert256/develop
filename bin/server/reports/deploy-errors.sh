@@ -243,7 +243,7 @@ nlist=$(wc -l < "$TMP/rows" | tr -d ' ')
 
 {
     printf 'TITLE\tDeploy errors\n'
-    # PAGELESS (2026-09-29): its one reader, publish-insights.sh (box 15 and
+    # PAGELESS (2026-09-29): its one reader, reason-boxes.sh (box 15 and
     # the box-reason sidecar's Deploy cause), reads the ROW name, Type, Cause
     # and Last message — the Messages count, the TOTAL and the page-only
     # modifiers went with the second audit that day (the HEAD stays as the

@@ -34,8 +34,9 @@ group, 2026-09-27; `transfers` 2026-09-29. `missing-entities` — the five unkno
 morning of 2026-09-29 and came back the same day, user request, in the Coverage group; its
 value column carries the ENTITY kind, so each drill row shows a ↗ detail-page icon beside a name
 that has a detail page.) Pageless producers read by
-another page: from-green-to-red + only-red (Failed Subscriptions' Last green day / Days red /
-Failures in a row columns and the boxes sidecar), missing-cronjobs (the boxes sidecar; Polling
+another page: the red-run sidecar (`red-run.sh` → `_red-run.tsv`, 2026-09-30 — the
+from-green-to-red + only-red .rpt files before; Failed Subscriptions' Last green day / Days red /
+Failures in a row columns, the day pages and the boxes sidecar), missing-cronjobs (the boxes sidecar; Polling
 shows Schedule "no cron"), deploy-errors (the boxes sidecar's Deploy cause; Routing errors lists
 the lines), fe-overview (Partners - Incoming). month-stats.sh also writes `_alltime.tsv` (the Subscriptions page).
 `report_tabs` names one tab per component table (tables sharing a `tab=KEY` modifier are ONE tab);
@@ -992,7 +993,7 @@ exactly that set.
   (`failed-sub-all.html`, green-again subscriptions kept) — the "All files" views went (Failed
   files lists every File). Columns Subscription · Date/time · Reason · Last green day · Days red ·
   Failures in a row · CoreId / SessionId (last since 2026-09-29) — the three day columns from the pageless
-  from-green-to-red / only-red producers (the Only red / From green to red pages and Episodes'
+  red-run sidecar (from-green-to-red / only-red until 2026-09-30; the Only red / From green to red pages and Episodes'
   Open incidents table went the same day). The selector row is rendered by a dedicated block in
   `bin/analyses/publish.sh` (same group row, help slug and persistence key) —
   `p.tabs.undertabs`, injected before the first tablewrap; report.js hoists its From/To anchor
@@ -1025,8 +1026,8 @@ exactly that set.
   sit AFTER each TABLE line (`segment_rpt` files them per tab). No date filter.
 - (The INSIGHT pages `whitelist-audit` and `config-hygiene` of `publish-insights.sh` went
   2026-09-29 with the Cleanup group, user request, and with them `bin/server-inbound-addr.awk`
-  and the Connections `_inbound-addr.tsv` sidecar; publish-insights.sh only writes the boxes
-  sidecar now — see the last section.)
+  and the Connections `_inbound-addr.tsv` sidecar; the script only writes the boxes sidecar now,
+  as `bin/build/reason-boxes.sh` since 2026-09-30 — see the last section.)
 - **UC3 polling tables** (`bin/analyses/reports/uc3-polling.sh` → `uc3-polling.rpt`, merged behind
   `uc3-status.rpt` with `tab=uc3` so they stack on `uc-status-uc3.html`, 2026-09-05 — the one
   report about us polling partners; the Remote polls page and the hand-written Cronjobs page are
@@ -1084,9 +1085,10 @@ full range.
 
 **Subscriptions in boxes** — the page, with Triage beside it — went 2026-09-29 (user request;
 the Accounts in boxes twin went the same morning). What stays is its producer:
-`bin/analyses/publish-insights.sh` (no argument, sidecar-only) runs `_subs_box_rows` — the
-`<box>⇥<subscription>` memberships the sidecar reads (since the 2026-09-29 audit only those: a
-report's own `.rpt` — from-green-to-red, only-red, no-remote-dir/-files, missing-cronjobs,
+`bin/build/reason-boxes.sh` (`bin/analyses/publish-insights.sh` until 2026-09-30; a build step
+right before the analyses publish) runs `_subs_box_rows` — the
+`<box>⇥<subscription>` memberships the sidecar reads (since the 2026-09-29 audit only those: the
+red-run sidecar (boxes 2 / 4), a report's own `.rpt` — no-remote-dir/-files, missing-cronjobs,
 logon.rpt (the login boxes), deploy-errors — the `site-failures.tsv` sidecar (box 14, the
 connection box); derived from `_files.tsv`: One-legged, Waiting, Expired; and the result colours
 (box 18); the boxes no reason ever came from went; `_kaput-evidence.tsv` and

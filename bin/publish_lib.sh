@@ -36,7 +36,7 @@ source bin/envlabel.sh  # ENV_LABEL — the checkout's environment label (input/
 DOCS="docs"
 DATA="data"
 # The FlowManager config exports every raw-JSON reader (the
-# accounts insight page, publish-insights.sh, uc3-polling.sh) should read: the
+# accounts insight page, reason-boxes.sh, uc3-polling.sh) should read: the
 # SKIP-filtered copies bin/flow-manager.sh writes (input/skip.txt) when they
 # exist, else the raw exports. (Repo-root-relative — publish_lib.sh cd's to ROOT.)
 FM_CONFIG_DIR="input/flow-manager"
@@ -210,8 +210,7 @@ is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
 # their report groups since the one Reports pulldown, 2026-09-29.)
 
 # (The PAGELESS reports — merged-report components and the data producers
-# whose rows ride another page or none (day, from-green-to-red,
-# only-red, deploy-errors, missing-cronjobs, punctuality-src, fe-overview, the
+# whose rows ride another page or none (day, deploy-errors, missing-cronjobs, punctuality-src, fe-overview, the
 # classic entity records …) — are simply the .rpt files no order list names.
 # Their registry PAGELESS_REPORTS / is_pageless_report and subs_report_area
 # went 2026-09-29: their one caller was What is new.)

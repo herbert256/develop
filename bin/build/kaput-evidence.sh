@@ -15,7 +15,7 @@
 # Its readers name the fault behind a red flow from it: bin/transfer/reports/
 # failed.sh (Failed Subscriptions' server rows and Reason), publish_lib.sh (the
 # Entities Subscriptions Error view's Reason) and bin/analyses/
-# publish-insights.sh (the _subs-boxes.tsv reason fallback).
+# reason-boxes.sh (the _subs-boxes.tsv reason fallback).
 #
 # Sources (no _parse.tsv scan of its own — it reads the caches the parse built):
 #   - $TRANSFER_CACHE/_files.tsv (transfer, cross-area): the LAST transfer per

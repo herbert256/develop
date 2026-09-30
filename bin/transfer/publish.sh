@@ -116,7 +116,7 @@ render_file_pages() {
 # _failed-reasons.tsv, _errpage-evidence.tsv, _srvsubs.tsv, _srvsubs-map.tsv
 # and the errors/ + files/ .rpt sets, rewritten whole), failed-files.rpt,
 # failing-reasons.rpt, and
-# analyses/reports/_subs-boxes.tsv (publish-insights.sh, in the analyses
+# analyses/reports/_subs-boxes.tsv (reason-boxes.sh, in the analyses
 # publishes, which run AFTER the first run of this script). Their transfer
 # pages:
 #   transfer/entities/subscription-*.html  the Error view's Reason column

@@ -76,7 +76,7 @@ nmiss=$(printf '%s\n' "$rows" | grep -c . || true)
 {
     printf 'TITLE\tMissing cronjobs\n'
 
-    # PAGELESS: its reader, publish-insights.sh box 9, takes ROW field 2 (the
+    # PAGELESS: its reader, reason-boxes.sh box 9, takes ROW field 2 (the
     # Polling page shows the rows as Schedule "no cron" from its own join) —
     # the Use case column, the row tint, the empty-state row and the TOTAL
     # went with the second 2026-09-29 audit
