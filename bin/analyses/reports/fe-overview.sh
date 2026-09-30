@@ -175,7 +175,7 @@ awk -F'\t' -v LBASE="$LBASE" -v LSUB="$LSUB" -v UCDF="$UCDF" -v LOGONS="$LOGONS"
       if ($17 == "in") FIN[k]++; else if ($17 == "out") { FOUT[k]++; if ($2 == "Processed") RET[k]++ }   # Retrieved = the collected out-side Files
       if ($2 == "Waiting") { WCNT[k]++; if (t9 > 0 && (!(k in WOLD) || t9 < WOLD[k])) WOLD[k] = t9 }
       else if ($2 == "Expired") XCNT[k]++
-      if ($2 == "Failed") ECNT[k]++ }   # Error = a failed File, delivered or picked up (2026-09-03, user request; Expired has its own column)
+      if ($2 == "Failed") { ECNT[k]++; if ($17 == "in") EIN[k]++; else if ($17 == "out") EOUT[k]++ } }   # Error = a failed File, delivered or picked up (2026-09-03, user request; Expired has its own column); split by movement for Partners in (2026-09-30)
     END {
         gold = -1
         for (i = 1; i <= nr; i++) { k = toupper(NAME[i])
@@ -197,16 +197,17 @@ awk -F'\t' -v LBASE="$LBASE" -v LSUB="$LSUB" -v UCDF="$UCDF" -v LOGONS="$LOGONS"
             pk = (k in PK) ? PK[k] + 0 : 0; ret = (k in RET) ? RET[k] + 0 : 0; err = (k in ECNT) ? ECNT[k] + 0 : 0
             pat = (pk > 0 && (k in PAT)) ? PAT[k] : ""
             s_pk += pk; s_ret += ret; s_err += err
-            printf "R\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%s\t%d\n", \
+            s_ein += EIN[k] + 0; s_eout += EOUT[k] + 0
+            printf "R\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\n", \
                 NAME[i], nz(uc), ((k in LAST) ? LAST[k] : "-"), ((k in GW) ? nz(GW[k]) : "-"), nz(RES[i]), \
-                FIN[k] + 0, FOUT[k] + 0, WCNT[k] + 0, ow, XCNT[k] + 0, pk, ret, nz(pat), err
+                FIN[k] + 0, FOUT[k] + 0, WCNT[k] + 0, ow, XCNT[k] + 0, pk, ret, nz(pat), err, EIN[k] + 0, EOUT[k] + 0
         }
-        printf "S\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%d\t%d\t%d\n", nr, s_uc2 + 0, s_uc4 + 0, s_both + 0, s_here + 0, s_never + 0, s_gw + 0, s_old + 0, \
-            s_in + 0, s_out + 0, s_wait + 0, s_exp + 0, (gold >= 0 ? hage(gold) : "-"), s_pk + 0, s_ret + 0, s_err + 0
+        printf "S\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%d\n", nr, s_uc2 + 0, s_uc4 + 0, s_both + 0, s_here + 0, s_never + 0, s_gw + 0, s_old + 0, \
+            s_in + 0, s_out + 0, s_wait + 0, s_exp + 0, (gold >= 0 ? hage(gold) : "-"), s_pk + 0, s_ret + 0, s_err + 0, s_ein + 0, s_eout + 0
     }
 ' "$TF" > "$OUT.rows"
 
-IFS=$'\t' read -r _ n_all n_uc2 n_uc4 n_both n_here n_never n_gw n_old n_in n_out n_wait n_exp t_old n_pk n_ret n_err <<< "$(command grep $'^S\t' "$OUT.rows")"
+IFS=$'\t' read -r _ n_all n_uc2 n_uc4 n_both n_here n_never n_gw n_old n_in n_out n_wait n_exp t_old n_pk n_ret n_err n_ein n_eout <<< "$(command grep $'^S\t' "$OUT.rows")"
 [ "$t_old" = "-" ] && t_old=""   # the sentinel (a middle field — an empty one would shift the read)
 # a 0 total renders empty like the 0 cells (the outcome-kind totals z-blank themselves)
 nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"; fi; }
@@ -218,15 +219,18 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
     # default sort, the column groups) — the modifiers went here with the
     # second 2026-09-29 audit; the HEAD stays as the column legend
     printf 'TABLE\tFE logins\n'
-    printf 'HEAD\tLogin\tUse cases\tCloud\tGateway\tFiles in\tFiles out\tError\tRetrieved\tWaiting\tExpired\tOldest waiting\tPickups\n'
+    printf 'HEAD\tLogin\tUse cases\tCloud\tGateway\tFiles in\tFiles out\tError\tRetrieved\tWaiting\tExpired\tOldest waiting\tPickups\tError in\tError out\n'
     # baked Files out DESC, then Files in DESC, then Pickups DESC, then Cloud DESC, then Gateway DESC (no stamp last), then login name (the secondary sort keys — see the
     # TABLE line); the sentinels swap back here, the result colour
     # becomes the row tint, an old-gateway-only login carries no tint. R
     # fields: 2 login 3 uc 4 cloud 5 gw 6 res 7 in 8 out 9 waiting 10 oldest
     # 11 expired 12 pickups 13 retrieved 14 pattern (not written — its one
-    # reader, partners-in.sh, dropped it; 2026-09-29) 15 error. The ROW
-    # carries @data:res right after Pickups (field 14): partners-in.sh takes
-    # cells 3-13 and looks for the tint from field 14 on. The processed-kind count
+    # reader, partners-in.sh, dropped it; 2026-09-29) 15 error, 16 / 17 the
+    # Failed Files by movement in / out (2026-09-30, the Partners in Files In /
+    # Files Out groups; a Failed File with no movement is in neither). The ROW
+    # carries Error in / Error out (fields 14 / 15) after Pickups, then
+    # @data:res (field 16): partners-in.sh takes the cells by position and
+    # looks for the tint from field 16 on. The processed-kind count
     # passes its 0 through: the renderer z-blanks it (an empty non-z
     # processed cell would show the base green on an untinted row).
     command grep $'^R\t' "$OUT.rows" | LC_ALL=C sort -t$'\t' -k8,8nr -k7,7nr -k12,12nr -k4,4r -k5,5r -k2,2f | awk -F'\t' '
@@ -234,10 +238,10 @@ nz() { if [ "${1:-0}" -eq 0 ] 2>/dev/null; then printf ''; else printf '%s' "$1"
         { uc = ($3 == "-" ? "" : $3); last = ($4 == "-" ? "" : $4); gw = ($5 == "-" ? "" : $5)
           ow = ($10 == "-" ? "" : $10)
           res = ($6 == "-" ? "" : "\t@data:res=" $6)
-          printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%s\t%s%s\n", \
-              $2, uc, last, gw, z($7), z($8), $15, $13, $9, $11, ow, z($12), res }'
-    printf 'TOTAL\tTotal (%s rows)\t\t\t\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num failed}%s\t%s\t@{class=num}%s\n' \
-        "$n_all" "$(nz "$n_in")" "$(nz "$n_out")" "$n_err" "$n_ret" "$n_wait" "$n_exp" "$t_old" "$(nz "$n_pk")"
+          printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%s\t%s\t%d\t%d%s\n", \
+              $2, uc, last, gw, z($7), z($8), $15, $13, $9, $11, ow, z($12), $16, $17, res }'
+    printf 'TOTAL\tTotal (%s rows)\t\t\t\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num failed}%s\t%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num failed}%s\n' \
+        "$n_all" "$(nz "$n_in")" "$(nz "$n_out")" "$n_err" "$n_ret" "$n_wait" "$n_exp" "$t_old" "$(nz "$n_pk")" "$n_ein" "$n_eout"
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 rm -f "$OUT.rows"

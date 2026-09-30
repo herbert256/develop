@@ -12,9 +12,13 @@
 # each ended on a failed File (a green evening clears the day, matching the
 # from-green-to-red day rule); "recovered on" is the first active day after it,
 # which by construction ended green. State per the site-wide outcome policy:
-# Waiting counts as OK (green), Expired as Error (red). Full-period semantics
-# (`nofilter`, like from-green-to-red): the flip back is a sequence in time,
-# so narrowing the date range would fabricate or hide recoveries.
+# Waiting counts as OK (green), Expired as Error (red). The episodes are
+# computed over the WHOLE window (the flip back is a sequence in time, so
+# recomputing them for a range would fabricate or hide recoveries); since
+# 2026-09-30 (user request: every Errors-group page gets the From/To
+# selection) the table is no longer `nofilter`: a narrowed range SHOWS the
+# episodes whose Red from .. Recovered on span overlaps it (report.js dates a
+# row by the span of its date cells), each with its full-period figures.
 #
 # Reads data/_files.tsv (1=coreid, 2=outcome, 4=date_iso, 5=time, 6=sortkey,
 # 7=jdn, 12=dest_site), sorted per subscription. Writes
@@ -107,7 +111,7 @@ n_rows=0; sum_out=0; sum_ff=0; sum_ok=0
 
 {
     printf 'TITLE\tRecovered flows\n'
-    printf 'TABLE\tSubscriptions back to green after a red episode\twide\tnofilter\n'
+    printf 'TABLE\tSubscriptions back to green after a red episode\twide\n'
     printf 'HEAD\tSubscription\tRed from\tRed until\tOutage days\tError Files in episode\tOK Files since\tRecovered on\n'
     printf 'KIND\tsite\ttext\ttext\tnum\tnumfailed\tnumprocessed\ttext\n'
     # Most recent recoveries first (the freshest fixes are the ones to check),

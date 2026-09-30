@@ -62,6 +62,13 @@ printf 'One-legged\nFailed Subtransmission\n' >> "$TMP/vocab"
 LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" '
     # the Failed files page searched on the reason as a WHOLE cell (quoted),
     # URL-encoded — the list the per-reason drill pages held until 2026-09-29
+    # the per-day counts of a reason in the DATED bucket form (date:count, date order)
+    function bkt(r,   n, D, i, j, v, o) {
+        n = split(substr(BD[r], 2), D, SUBSEP)
+        for (i = 2; i <= n; i++) { v = D[i]; j = i - 1; while (j >= 1 && D[j] > v) { D[j + 1] = D[j]; j-- } D[j + 1] = v }
+        o = ""; for (i = 1; i <= n; i++) o = o (i > 1 ? "," : "") D[i] ":" BC[r SUBSEP D[i]]
+        return o
+    }
     function srch(r,   q) { q = r; gsub(/%/, "%25", q); gsub(/ /, "%20", q); gsub(/"/, "%22", q)
         gsub(/&/, "%26", q); gsub(/#/, "%23", q); gsub(/\+/, "%2B", q); gsub(/,/, "%2C", q)
         return "../transfer/failed-files.html?axway_search=%22" q "%22" }
@@ -77,6 +84,10 @@ LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" '
         r = (rc == "" || rc == "-") ? "(none)" : rc
         if (!(r in RIX)) { RN[++nr] = r; RIX[r] = nr }   # a reason outside the vocabulary
         CN[r]++; tot++
+        # the per-day counts (2026-09-30, user request: every Errors-group page
+        # gets the From/To selection) — the row re-counts for the range
+        d = substr($3, 1, 10)
+        if (d ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) { if (!((r SUBSEP d) in BC)) BD[r] = BD[r] SUBSEP d; BC[r SUBSEP d]++ }
         if ($3 > LS[r]) LS[r] = $3
         next
     }
@@ -85,21 +96,25 @@ LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" '
         f = OUT
         printf "TITLE\tError reasons\n" > f
         printf "DESC\tEvery error Reason that occurs — how many Files in error (Failed or Expired) carry it and the newest occurrence; a row opens the Failed files page filtered to it.\n" > f
-        # a snapshot per reason, so no date semantics: nofilter keeps the
-        # From/To machinery off this table
+        # DATE-AWARE since 2026-09-30 (user request: every Errors-group page
+        # gets the From/To selection): each row carries its per-day counts
+        # (@data:buckets) and Count re-sums for the range (RECALC s0); a reason
+        # with nothing in the range hides; Last stays the newest occurrence
+        # over the whole window (the site rule for First / Last columns)
         # sort=2:-1 (2026-09-14, user request): Last (the newest occurrence)
         # descending. 2026-09-15 (user request): reasons with nothing counted
         # get no row, and the Total row sits at the bottom again (no totaltop)
-        printf "TABLE\t\tnofilter\tnosearch\trowlink\tsort=2:-1\n" > f
+        printf "TABLE\t\tnosearch\trowlink\tsort=2:-1\n" > f
         printf "HEAD\tReason\tCount\tLast\n" > f
         printf "KIND\ttext\tnum\ttext\n" > f
+        printf "RECALC\t-\ts0\t-\n" > f
         for (i = 1; i <= nr; i++) {
             r = RN[i]
             if (CN[r] + 0 == 0) continue
             nz++
             sl = (r == "(none)") ? "../transfer/failed-files.html" : srch(r)
-            printf "ROW\t@{href=%s}%s\t@{href=%s}%d\t%s\t@data:href=%s\n", \
-                   sl, r, sl, CN[r], LS[r], sl > f
+            printf "ROW\t@{href=%s}%s\t@{href=%s}%d\t%s\t@data:href=%s\t@data:buckets=%s\n", \
+                   sl, r, sl, CN[r], LS[r], sl, bkt(r) > f
         }
         printf "TOTAL\tTotal (%d reasons)\t%d\t\n", nz, tot + 0 > f
         printf "FOOT\n" > f

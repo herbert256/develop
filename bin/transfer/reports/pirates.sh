@@ -67,13 +67,16 @@ pd=$(printf '%s\n' "$agg" | awk -F'\t' '
         printf 'KIND\tsite\tnumfailed\ttext\ttext\n'
         printf 'ROW\t(none)\t\t\t\n'
     else
-        # nofilter (2026-09-30 audit T-03): the rows are full-period rollups
-        # with no per-day payload, so a narrowed From/To kept every row whose
-        # First..Last span overlapped it at its FULL count; the per-day view
-        # is the Per day tab
-        printf 'TABLE\tDetails\tnofilter\tdrill=File\n'
+        # DATE-AWARE (2026-09-30, user request: every Errors-group page gets
+        # the From/To selection; the audit T-03 nofilter of the same morning
+        # went): each row carries its per-day counts (@data:buckets) and
+        # One-legged Files re-sums for the range (RECALC s0); a subscription
+        # with none in the range hides; First / Last date and the drill stay
+        # full-period (the site rule)
+        printf 'TABLE\tDetails\tdrill=File\n'
         printf 'HEAD\tSubscription\tOne-legged Files\tFirst date\tLast date\n'
         printf 'KIND\tsite\tnumfailed\ttext\ttext\n'
+        printf 'RECALC\t-\ts0\t-\t-\n'
         # most one-legged Files first, subscription name as the tiebreaker;
         # the count cell drills to its 10 newest Files (coreids-failed binds
         # the one numfailed cell). "Unknown" = no subscription: skipped here
@@ -82,12 +85,19 @@ pd=$(printf '%s\n' "$agg" | awk -F'\t' '
                 $3 == "" || $3 == "Unknown" { next }
                 { s = $3; d = $1
                   c[s]++
-                  if (d != "") { if (f[s] == "" || d < f[s]) f[s] = d; if (d > l[s]) l[s] = d }
+                  if (d != "") { if (f[s] == "" || d < f[s]) f[s] = d; if (d > l[s]) l[s] = d
+                                 if (!((s SUBSEP d) in BC)) BD[s] = BD[s] SUBSEP d; BC[s SUBSEP d]++ }
                   addtop(s, $4, $1 " " $2, $5) }
-                END { for (s in c) printf "%d\t%s\t%s\t%s\t%s\n", c[s], s, f[s], l[s], buildlist(top[s]) }' \
+                # the per-day counts in the DATED bucket form (date:count, date order)
+                function bkt(s,   n, D, i, j, v, o) {
+                    n = split(substr(BD[s], 2), D, SUBSEP)
+                    for (i = 2; i <= n; i++) { v = D[i]; j = i - 1; while (j >= 1 && D[j] > v) { D[j + 1] = D[j]; j-- } D[j + 1] = v }
+                    o = ""; for (i = 1; i <= n; i++) o = o (i > 1 ? "," : "") D[i] ":" BC[s SUBSEP D[i]]
+                    return o }
+                END { for (s in c) printf "%d\t%s\t%s\t%s\t%s\t%s\n", c[s], s, f[s], l[s], buildlist(top[s]), bkt(s) }' \
             | LC_ALL=C sort -t$'\t' -k1,1rn -k2,2 \
             | awk -F'\t' '
-                { printf "ROW\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\n", $2, $1, $3, $4, $5; t += $1 }
+                { printf "ROW\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:buckets=%s\n", $2, $1, $3, $4, $5, $6; t += $1 }
                 END { printf "TOTAL\tTotal (%d subscription(s))\t@{class=num failed}%d\t\t\n", NR, t }'
     fi
 

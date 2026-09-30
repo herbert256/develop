@@ -58,7 +58,8 @@ trap 'rm -rf "$TMPD"' EXIT
 
 # ONE pass over _files.tsv. Emits (pipe-separated; file names go LAST):
 #   D|date|nwait|nexp|waitdrill|expdrill          per start day (every File)
-#   S|site|nwait|nexp|ncoll|oldest_dt|last_exp    per subscription (W or X > 0)
+#   S|site|nwait|nexp|ncoll|oldest_age|lastexp_age  per subscription (W or X > 0);
+#                                                 the ages in seconds, -1 = none
 #   F|stagesec|staged_dt|site|acct|bytes|size|wait_for|wait_sec|coreid|file
 #                                                 each Waiting File (its list page)
 #   X|site|staged|expired|coreid|file             each Expired File (its list page)
@@ -80,7 +81,7 @@ awk -F'\t' "$COREIDS_AWK$AWKLIB$WT_HDUR_AWK"'
         if ($2 == "Waiting") {
             if (!(s in SW) && !(s in SX)) SL[++ns] = s
             SW[s]++
-            if (!(s in OSK) || $6 < OSK[s]) { OSK[s] = $6; ODT[s] = $4 " " substr($5, 1, 8) }
+            if (!(s in OSK) || $6 < OSK[s]) { OSK[s] = $6; OSEC[s] = tsec($4, $5) }
             FL[++nf] = tsec($4, $5) "|" $4 " " substr($5, 1, 8) "|" s "|" $3 "|" ($8 + 0) "|" hbytes1($8 + 0) "|" $1 "|" $11
         } else if ($2 == "Expired") {
             if (!(s in SW) && !(s in SX)) SL[++ns] = s
@@ -95,7 +96,12 @@ awk -F'\t' "$COREIDS_AWK$AWKLIB$WT_HDUR_AWK"'
         for (i = 1; i <= nd; i++) { d = DL[i]
             printf "D|%s|%d|%d|%s|%s\n", d, DW[d] + 0, DX[d] + 0, buildlist(top["W" SUBSEP d]), buildlist(top["X" SUBSEP d]) }
         for (i = 1; i <= ns; i++) { s = SL[i]
-            printf "S|%s|%d|%d|%d|%s|%s\n", s, SW[s] + 0, SX[s] + 0, SC[s] + 0, ODT[s], LX[s] }
+            # the two ages to the last record of the data (-1 = none): the wait
+            # of the oldest still-waiting File (the longest Waiting for of its list
+            # page) and the time since the newest deletion
+            oa = (s in OSEC) ? g_lastsec - OSEC[s] : -1; if (s in OSEC && oa < 0) oa = 0
+            xa = (LX[s] != "") ? g_lastsec - tsec(substr(LX[s], 1, 10), substr(LX[s], 12, 8)) : -1; if (LX[s] != "" && xa < 0) xa = 0
+            printf "S|%s|%d|%d|%d|%d|%d\n", s, SW[s] + 0, SX[s] + 0, SC[s] + 0, oa, xa }
         for (i = 1; i <= nf; i++) {
             m = split(FL[i], a, "|")
             fn = a[8]; for (j = 9; j <= m; j++) fn = fn "|" a[j]   # a file name may hold "|"
@@ -174,22 +180,28 @@ rm -rf "$XSUB"; mv "$XSUB.new" "$XSUB"
     printf 'DESC\tUC2 Files staged for pickup: per day how many are still waiting and how many the retention sweep deleted before any pickup, and per subscription its waiting, expired and collected Files.\n'
 
     # Summary — per START day, newest first; the counts drill to the day's Files
+    # (an Expired 0 goes out as "0": the renderer z-blanks it, so a day without an
+    # Expired File shows no red — an EMPTY errc cell would keep the pink, 2026-09-30)
     printf 'TABLE\tSummary\tkeephead\tsxs\tdrillcols=wait:1:Waiting_Files,exp:2:Expired_Files\n'
     printf 'HEAD\tDate\tWaiting\tExpired\n'
     printf 'KIND\ttext\tnumwarn\tnumerr\n'
     awk -F'|' '$1 == "D"' "$TMPD/agg" | LC_ALL=C sort -t'|' -k2,2r | awk -F'|' '
         { tw += $3; tx += $4; n++
           printf "ROW\t@{href=../day/%s.html}%s\t%s\t%s\t@data:coreids-wait=%s\t@data:coreids-exp=%s\n", \
-              $2, $2, ($3 > 0 ? $3 : ""), ($4 > 0 ? $4 : ""), ($3 > 0 ? $5 : ""), ($4 > 0 ? $6 : "") }
+              $2, $2, ($3 > 0 ? $3 : ""), $4 + 0, ($3 > 0 ? $5 : ""), ($4 > 0 ? $6 : "") }
         END { if (n == 0) printf "ROW\t@{colspan=3}No Waiting or Expired Files in this data window.\n"
-              printf "TOTAL\tTotal (%d day(s))\t@{class=num warn}%s\t@{class=num errc}%s\n", n, (tw > 0 ? tw : ""), (tx > 0 ? tx : "") }'
+              printf "TOTAL\tTotal (%d day(s))\t@{class=num warn}%s\t@{class=num errc}%s\n", n, (tw > 0 ? tw : ""), tx + 0 }'
 
     # Subscriptions — the state at the data's end; Waiting first, then Expired
-    printf 'TABLE\tSubscriptions\tnofilter\trestint\tsxs\n'
+    # (2026-09-30, user request: Oldest Waiting / Last Expired as one-unit ages
+    # "5d" / "16h" / "14m" with the seconds as sortval, the Expired counts red
+    # — numfailed keeps its tint on a tinted row — and the default sort Oldest
+    # Waiting descending, baked the same way)
+    printf 'TABLE\tSubscriptions\tnofilter\trestint\tsxs\tsort=4:-1\n'
     printf 'HEAD\tSubscription\tWaiting\tExpired\tCollected\tOldest Waiting\tLast Expired\n'
-    printf 'KIND\tsite\tnumwarn\tnumerr\tnumok\ttext\ttext\n'
-    awk -F'|' '$1 == "S"' "$TMPD/agg" | LC_ALL=C sort -t'|' -k3,3nr -k4,4nr -k2,2 | awk -F'|' \
-        -v ws="$TMPD/wslugs" -v xs="$TMPD/xslugs" -v subres="$SUBRES" '
+    printf 'KIND\tsite\tnumwarn\tnumfailed\tnumok\ttext\ttext\n'
+    awk -F'|' '$1 == "S"' "$TMPD/agg" | LC_ALL=C sort -t'|' -k6,6nr -k4,4nr -k2,2 | awk -F'|' \
+        -v ws="$TMPD/wslugs" -v xs="$TMPD/xslugs" -v subres="$SUBRES" "$AWKLIB"'
         BEGIN { while ((getline l < ws) > 0) { split(l, a, "\t"); WSL[a[1]] = a[2] } close(ws)
                 while ((getline l < xs) > 0) { split(l, a, "\t"); XSL[a[1]] = a[2] } close(xs)
                 while ((getline l < subres) > 0) { n9 = split(l, a, "\t"); if (n9 >= 3 && a[1] != "") RES[toupper(a[1])] = a[3] } close(subres) }
@@ -198,11 +210,12 @@ rm -rf "$XSUB"; mv "$XSUB.new" "$XSUB"
             wc = (w > 0 ? ((s in WSL) ? "@{href=waiting/" WSL[s] ".html}" : "") w : "")
             xc = (x > 0 ? ((s in XSL) ? "@{href=expired/" XSL[s] ".html}" : "") x : "")
             r = RES[toupper(s)]; tint = (r == "green" || r == "orange" || r == "red") ? "\t@data:res=" r : ""
-            printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s%s\n", s, wc, xc, (c > 0 ? c : ""), $6, $7, tint
+            oc = ($6 >= 0) ? "@{sortval=" $6 "}" hage1($6) : ""; ec = ($7 >= 0) ? "@{sortval=" $7 "}" hage1($7) : ""
+            printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s%s\n", s, wc, xc, (c > 0 ? c : ""), oc, ec, tint
             n++; tw += w; tx += x; tc += c
         }
         END { if (n == 0) printf "ROW\t@{colspan=6}No subscription has a Waiting or Expired File in this data window.\n"
-              printf "TOTAL\tTotal (%d subscription(s))\t@{class=num warn}%s\t@{class=num errc}%s\t@{class=num okc}%s\t\t\n", n, (tw > 0 ? tw : ""), (tx > 0 ? tx : ""), (tc > 0 ? tc : "") }'
+              printf "TOTAL\tTotal (%d subscription(s))\t@{class=num warn}%s\t@{class=num failed}%s\t@{class=num okc}%s\t\t\n", n, (tw > 0 ? tw : ""), (tx > 0 ? tx : ""), (tc > 0 ? tc : "") }'
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

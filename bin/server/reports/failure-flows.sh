@@ -131,14 +131,25 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK"'
         if (d != "") {
             if (!((tk SUBSEP b) in fst) || d < fst[tk SUBSEP b]) fst[tk SUBSEP b] = d
             if (!((tk SUBSEP b) in lst) || d > lst[tk SUBSEP b]) lst[tk SUBSEP b] = d
+            # the per-day counts (2026-09-30: the From/To re-count, RECALC s0)
+            if (!((tk SUBSEP b SUBSEP d) in BC)) BD[tk SUBSEP b] = BD[tk SUBSEP b] SUBSEP d
+            BC[tk SUBSEP b SUBSEP d]++
         }
+    }
+    # the per-day counts of a (flow, reason) pair in the DATED bucket form
+    # (date:count, date order)
+    function bkt(k,   n, D, i, j, v, o) {
+        n = split(substr(BD[k], 2), D, SUBSEP)
+        for (i = 2; i <= n; i++) { v = D[i]; j = i - 1; while (j >= 1 && D[j] > v) { D[j + 1] = D[j]; j-- } D[j + 1] = v }
+        o = ""; for (i = 1; i <= n; i++) o = o (i > 1 ? "," : "") D[i] ":" BC[k SUBSEP D[i]]
+        return o
     }
     END {
         for (k in cnt) {
             split(k, a, SUBSEP)
             share = (attr > 0) ? sprintf("%.1f", cnt[k] * 100 / attr) : "0.0"
-            printf "F\t%d\t%s\t%s\t%s\t%s\t%s\t%s\n", cnt[k], a[1], a[2], \
-                   (k in fst ? fst[k] : ""), (k in lst ? lst[k] : ""), share, lastlines("F" SUBSEP a[1] SUBSEP a[2])
+            printf "F\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", cnt[k], a[1], a[2], \
+                   (k in fst ? fst[k] : ""), (k in lst ? lst[k] : ""), share, bkt(k), lastlines("F" SUBSEP a[1] SUBSEP a[2])
         }
         printf "TOT\t%d\t%d\n", tot, attr
     }
@@ -160,10 +171,10 @@ attr_share=$(awk -v c="$tot_attr" -v t="$tot_err" 'BEGIN { if (t > 0) printf "%.
 # pattern). Sorts carry explicit tiebreakers: no output depends on awk
 # hash-iteration order.
 flow_rows() {
-    while IFS=$'\t' read -r _k count disp reason fst lst share lines; do
+    while IFS=$'\t' read -r _k count disp reason fst lst share bk lines; do
         [ -z "$disp" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t%s%%\t%s\t%s\t@data:loglines=%s\n' \
-            "$disp" "$reason" "$count" "$share" "$fst" "$lst" "$lines"
+        printf 'ROW\t%s\t%s\t%s\t%s%%\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' \
+            "$disp" "$reason" "$count" "$share" "$fst" "$lst" "$bk" "$lines"
     done <<< "$(printf '%s\n' "$agg" | grep $'^F\t' | sort -t"$(printf '\t')" -k2,2nr -k3,3 -k4,4)"
 }
 
@@ -171,9 +182,14 @@ flow_rows() {
     printf 'TITLE\tPer flow\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tServer-log ERROR messages classified by reason and attributed to the subscription each message names.\n'
 
-    printf 'TABLE\tSubscription × reason\twide\tnofilter\tpager=50\n'
+    # DATE-AWARE since 2026-09-30 (user request: every Errors-group page gets
+    # the From/To selection): Errors re-sums for the range from the per-day
+    # buckets and Share re-divides over the visible rows (RECALC s0 %0); a
+    # pair with nothing in the range hides; First / Last seen stay full-period
+    printf 'TABLE\tSubscription × reason\twide\tpager=50\n'
     printf 'HEAD\tSubscription\tReason\tErrors\tShare\tFirst seen\tLast seen\n'
     printf 'KIND\tsite\ttext\tnumfailed\tnum\ttext\ttext\n'
+    printf 'RECALC\t-\t-\ts0\t%%0\t-\t-\n'
     flow_rows
     printf 'TOTAL\tTotal (%s pair(s))\t\t@{class=num failed}%s\t@{class=num}100.0%%\t\t\n' "$n_pairs" "$tot_attr"
 

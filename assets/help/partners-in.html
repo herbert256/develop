@@ -1,23 +1,23 @@
 <h1>Partners in</h1>
 <h2>What it shows</h2>
 <ul>
-<li>One row per <strong>login</strong> a partner connects in with: its use cases, last logons, Files and pickups, and the whole SSH screening funnel. Full period; no date filter.</li>
-<li><strong>Views</strong> &mdash; <strong>Endpoint</strong> (a row per login), <strong>Accounts</strong> and <strong>Partners</strong>: the same table per account / partner, over the logins the configuration pairs it with. A login serving two accounts counts for both, so the rows can add up to more than the Total, which counts every login once; a login no account / partner is configured for is left out. Per entity: counts summed, Cloud / Gateway the newest, Oldest waiting the oldest, First logon the earliest, Pattern the busiest login&rsquo;s.</li>
+<li>One row per <strong>login</strong> a partner connects in with: its use cases, its Files in and out, the pickup state, its logons and the SSH screening funnel. Full period; no date filter. Laid out like <a href="partners-out.html">Partners Out</a>.</li>
+<li><strong>Views</strong> &mdash; <strong>Endpoint</strong> (a row per login), <strong>Accounts</strong> and <strong>Partners</strong>: the same table per account / partner, over the logins the configuration pairs it with. A login serving two accounts counts for both, so the rows can add up to more than the Total, which counts every login once; a login no account / partner is configured for is left out. Per entity: counts summed, Cloud / Gateway the newest, Pattern the busiest login&rsquo;s.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
 <li><strong>Login</strong> &mdash; links its detail page. <strong>Use cases</strong> &mdash; <strong>UC2</strong> (the partner picks up), <strong>UC4</strong> (the partner delivers) or both.</li>
-<li><strong>Cloud</strong> &mdash; the newest successful logon here, any protocol. <strong>Gateway</strong> &mdash; the last logon on the old gateway (<code>input/logons_old.txt</code>).</li>
-<li><strong>Files in</strong> / <strong>Files out</strong> &mdash; by movement; <strong>Error</strong>, <strong>Retrieved</strong>, <strong>Waiting</strong>, <strong>Expired</strong>; <strong>Oldest waiting</strong> &mdash; the oldest uncollected File&rsquo;s age. <strong>Pickups</strong> &mdash; pickup logons.</li>
-<li>The funnel, in log lines: <strong>Allowed</strong> / <strong>Disallowed</strong> (whitelist), <strong>Authenticated</strong>, <strong>No account</strong>, <strong>Bad key</strong>, <strong>Key failures</strong>, <strong>Locked</strong>, <strong>Auth failed</strong> (the anonymous &ldquo;Authentication failed using local.&rdquo;, booked to the login whose Allowed precedes it), <strong>Session errors</strong> (Error/Warning <code>[Ssh Default]</code> lines of no other column, booked to the session&rsquo;s login), <strong>Re-screens</strong> (an Allowed on an already authenticated connection &mdash; a re-key; not in Allowed).</li>
-<li><strong>First logon</strong>, <strong>Logons</strong>, <strong>Pattern</strong> &mdash; successful logons, any protocol.</li>
+<li><strong>Files In</strong> / <strong>Files Out</strong> &mdash; <strong>Count</strong>: the login&rsquo;s Files by movement; <strong>Errors</strong>: those that failed (Expired has its own column).</li>
+<li><strong>Pickup</strong> &mdash; the out-side Files: <strong>Retrieved</strong> (collected), <strong>Waiting</strong>, <strong>Expired</strong>.</li>
+<li><strong>Logons</strong> &mdash; successful logons, any protocol; <strong>Cloud</strong> the newest one here, <strong>Gateway</strong> the last one on the old gateway (<code>input/logons_old.txt</code>), <strong>Pattern</strong> their rhythm.</li>
+<li><strong>Screening</strong>, in log lines: <strong>Allowed</strong> / <strong>Disallowed</strong> (whitelist), <strong>Authenticated</strong>, <strong>Bad key</strong>, <strong>Locked</strong>, <strong>Auth failed</strong> (the anonymous &ldquo;Authentication failed using local.&rdquo;, booked to the login whose Allowed precedes it).</li>
 </ul>
 <h2>Rules</h2>
 <ul>
 <li>Rows: every configured login, every login only the old-gateway file names, then logins only the funnel knows (untinted).</li>
-<li>Row tint = the login&rsquo;s result colour; the funnel&rsquo;s red cells keep their red. A 0 renders empty.</li>
+<li>Row tint = the login&rsquo;s result colour; red cells keep their red. A 0 renders empty. Sorted by Waiting.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Click a funnel count for its 5 newest log lines. Outbound logons: <a href="partners-out.html">Partners Out</a>.</li>
+<li>Click a Screening count for its 5 newest log lines. Outbound logons: <a href="partners-out.html">Partners Out</a>.</li>
 </ul>

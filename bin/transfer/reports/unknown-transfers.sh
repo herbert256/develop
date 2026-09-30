@@ -57,6 +57,14 @@ agg=$(LC_ALL=C awk -F'\t' -v PAGES="$pages" "$AWKLIB"'
             close(PAGES) }
     function nz(x) { return (x + 0 == 0) ? "" : x + 0 }
     function clean(s) { gsub(/[\t\r]/, " ", s); return s }
+    # the per-day counts of an account in the DATED bucket form
+    # (date:Files:OK:Error, date order)
+    function bkt(a,   n, D, i, j, v, o, k) {
+        n = split(substr(BD[a], 2), D, SUBSEP)
+        for (i = 2; i <= n; i++) { v = D[i]; j = i - 1; while (j >= 1 && D[j] > v) { D[j + 1] = D[j]; j-- } D[j + 1] = v }
+        o = ""; for (i = 1; i <= n; i++) { k = a SUBSEP D[i]; o = o (i > 1 ? "," : "") D[i] ":" BF[k] ":" (BK[k] + 0) ":" (BE[k] + 0) }
+        return o
+    }
     # (lit() — a raw name kept literal, audit 2026-09-29 F07 — comes from bin/fmt.awk via $AWKLIB)
     $12 == "Unknown" && $4 != "" {
         cid = $1; n++
@@ -69,6 +77,10 @@ agg=$(LC_ALL=C awk -F'\t' -v PAGES="$pages" "$AWKLIB"'
         a = $3; err = ($2 == "Failed" || $2 == "Expired")
         if (!(a in AF)) AO[++na] = a
         AF[a]++; if (err) { AE[a]++; te++ } else { AK[a]++; tk++ }
+        # the per-day Files / OK / Error of the account (the Per account
+        # table re-counts for the From/To range, RECALC s0 s1 s2 — 2026-09-30)
+        if (!((a SUBSEP $4) in BF)) BD[a] = BD[a] SUBSEP $4
+        BF[a SUBSEP $4]++; if (err) BE[a SUBSEP $4]++; else BK[a SUBSEP $4]++
         tl += $10; tv += $8
         t = $4 " " substr($5, 1, 8)
         if (!(a in FT) || t < FT[a]) FT[a] = t
@@ -76,7 +88,7 @@ agg=$(LC_ALL=C awk -F'\t' -v PAGES="$pages" "$AWKLIB"'
     }
     END {
         for (i = 1; i <= na; i++) { a = AO[i]
-            printf "A\t%s\tROW\t%s\t%d\t%s\t%s\t%s\t%s\n", a, clean(a), AF[a], nz(AK[a]), nz(AE[a]), FT[a], LT[a] }
+            printf "A\t%s\tROW\t%s\t%d\t%s\t%s\t%s\t%s\t@data:buckets=%s\n", a, clean(a), AF[a], nz(AK[a]), nz(AE[a]), FT[a], LT[a], bkt(a) }
         # the totals of the additive columns (2026-09-29 audit: the TOTAL rows
         # left Legs, Volume, OK and Error blank)
         printf "~N\t%d\t%d\t%d\t%s\t%s\t%s\n", n + 0, na + 0, tl + 0, (tv > 0 ? hbytes0(tv) : ""), nz(tk), nz(te)
@@ -100,9 +112,14 @@ T=$(printf '\t')
         printf 'ROW\t@{colspan=10}No unknown transfers in this data window.\n'
     fi
     printf 'TOTAL\tTotal (%s Files)\t\t\t\t\t@{class=num}%s\t\t@{class=num}%s\t\t\n' "${nf:-0}" "${tlegs:-}" "${tvol:-}"
-    printf 'TABLE\tPer account\tnofilter\tsort=2:-1\n'
+    # DATE-AWARE since 2026-09-30 (user request: every Errors-group page gets
+    # the From/To selection): Files / OK / Error re-count for the range from
+    # the per-day buckets; an account with none in the range hides; First /
+    # Last stay full-period (the site rule)
+    if [ "${na:-0}" -gt 0 ]; then printf 'TABLE\tPer account\tsort=2:-1\n'; else printf 'TABLE\tPer account\tnofilter\tsort=2:-1\n'; fi
     printf 'HEAD\tAccount\tFiles\tOK\tError\tFirst\tLast\n'
     printf 'KIND\tacct\tnum\tnumprocessed\tnumfailed\ttext\ttext\n'
+    printf 'RECALC\t-\ts0\ts1\ts2\t-\t-\n'
     if [ "${na:-0}" -gt 0 ]; then
         printf '%s\n' "$agg" | awk -F'\t' '$1 == "A"' | LC_ALL=C sort -t"$T" -k2,2 | cut -f3- || true
     else

@@ -38,6 +38,13 @@ function hdsecs(s) { if (s < 90) return sprintf("%d s", s)
     if (s < 5400) return sprintf("%.0f min", s / 60)
     if (s < 172800) return sprintf("%.1f h", s / 3600)
     return sprintf("%.1f d", s / 86400) }
+# an age in SECONDS as ONE whole unit, one letter, truncated: "5d", "16h", "14m", "40s"
+# (Waiting & Expired's Oldest Waiting / Last Expired, 2026-09-30)
+function hage1(s) { s = int(s); if (s < 0) s = 0
+    if (s >= 86400) return int(s / 86400) "d"
+    if (s >= 3600) return int(s / 3600) "h"
+    if (s >= 60) return int(s / 60) "m"
+    return s "s" }
 
 # qsortn(A, lo, hi): A[lo..hi] ascending, numerically (an in-place quicksort,
 # the smaller half recursed — bounded stack)

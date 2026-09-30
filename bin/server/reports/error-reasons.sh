@@ -98,14 +98,25 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$AWKLIB"'
             }
         }
     }
+    # a (reason, week) row in the DATED bucket form: its days in date order,
+    # each with the reason count of that day (cd2)
+    function wbkt(b, k,   n, D, i, j, v, o) {
+        n = split(substr(WD[k], 2), D, SUBSEP)
+        for (i = 2; i <= n; i++) { v = D[i]; j = i - 1; while (j >= 1 && D[j] > v) { D[j + 1] = D[j]; j-- } D[j + 1] = v }
+        o = ""; for (i = 1; i <= n; i++) o = o (i > 1 ? "," : "") D[i] ":" cd2[b SUBSEP D[i]]
+        return o
+    }
     END {
         for (k in cd2) { split(k, a, SUBSEP); bk[a[1]] = bk[a[1]] (bk[a[1]] ? "," : "") a[2] ":" cd2[k] }
         # share is field 2 — computed HERE, where the pass total already is, not
         # by an awk fork per row down in the shell
         for (b in cnt) printf "%d\t%.1f\t%s\t%s\t%s\t%s\n", cnt[b], (tot ? cnt[b]*100/tot : 0), b, bk[b], ex[b], lastlines(b)
+        # the days of each (reason, ISO week) row — its per-day counts are the
+        # row buckets of the Reasons over time table (2026-09-30: date-aware)
+        for (k in cd2) { split(k, a, SUBSEP); wk = isoweek(a[2]); if (wk != "") WD[a[1] SUBSEP wk] = WD[a[1] SUBSEP wk] SUBSEP a[2] }
         for (k in wcnt) {
             split(k, a, SUBSEP)
-            printf "W\t%s\t%s\t%d\t%s\n", a[2], a[1], wcnt[k], lastlines("W" SUBSEP a[1] SUBSEP a[2])
+            printf "W\t%s\t%s\t%d\t%s\t%s\n", a[2], a[1], wcnt[k], wbkt(a[1], k), lastlines("W" SUBSEP a[1] SUBSEP a[2])
         }
         printf "TOT\t%d\n", tot
     }
@@ -130,9 +141,9 @@ rows() {
     done <<< "$(printf '%s\n' "$agg" | grep -Ev $'^(TOT|W)\t' | sort -t"$(printf '\t')" -k1,1nr -k3,3)"
 }
 week_rows() {
-    while IFS=$'\t' read -r _k wk reason count lines; do
+    while IFS=$'\t' read -r _k wk reason count bk lines; do
         [ -z "$wk" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t@data:loglines=%s\n' "$wk" "$reason" "$count" "$lines"
+        printf 'ROW\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$wk" "$reason" "$count" "$bk" "$lines"
     done <<< "$(printf '%s\n' "$agg" | grep $'^W\t' | sort -t"$(printf '\t')" -k2,2r -k4,4nr -k3,3)"
 }
 
@@ -145,9 +156,15 @@ week_rows() {
     rows
     printf 'TOTAL\tTotal (%s reason(s))\t@{class=num failed}%s\t@{class=num}100.0%%\t\n' "$nreasons" "$tot_err"
 
-    printf 'TABLE\tReasons over time\twide\tnofilter\ttab=reasons\n'
+    # DATE-AWARE since 2026-09-30 (user request: every Errors-group page gets
+    # the From/To selection): each (week, reason) row carries its per-day
+    # counts, so Errors re-sums over the days of the week inside the range
+    # (a week cut by the range shows its partial count) and a row with no
+    # day in the range hides
+    printf 'TABLE\tReasons over time\twide\ttab=reasons\n'
     printf 'HEAD\tISO week\tReason\tErrors\n'
     printf 'KIND\ttext\ttext\tnumfailed\n'
+    printf 'RECALC\t-\t-\ts0\n'
     week_rows
     printf 'TOTAL\tTotal (%s row(s))\t\t@{class=num failed}%s\n' "$n_weeks" "$tot_err"
     printf 'FOOT\n'

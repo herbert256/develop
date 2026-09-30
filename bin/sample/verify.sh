@@ -138,21 +138,23 @@ check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "fe-overview.rpt has 0 tinted r
 check $([ -f "docs/analyses/partners-in.html" ] && echo 0 || echo 1) "docs/analyses/partners-in.html missing"
 n=$(command grep -c '^ROW' "data/analyses/reports/partners-in.rpt" 2>/dev/null || true); m=$(command grep -c '^ROW' "data/analyses/reports/fe-overview.rpt" 2>/dev/null || true)
 check $([ "${n:-0}" -ge "${m:-1}" ] && [ "${m:-0}" -gt 0 ] && echo 0 || echo 1) "partners-in.rpt has $n row(s), fewer than the FE overview ($m)"
-n=$(command grep -c '@data:drill-cell-12=' "data/analyses/reports/partners-in.rpt" 2>/dev/null || true)
-check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "partners-in.rpt carries no re-keyed funnel drill (Allowed at column 12)"
+n=$(command grep -c '@data:drill-cell-13=' "data/analyses/reports/partners-in.rpt" 2>/dev/null || true)
+check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "partners-in.rpt carries no re-keyed funnel drill (Allowed at column 13)"
 # ... and since 2026-09-30 (user request: Logons › Incoming merged in) the
 # WHOLE Incoming funnel: every logon.rpt Incoming row is a Partners in row
-# with the same Allowed … Session errors, Re-screens, First logon, Logons
-# and Pattern cells, and the retired tab pages are gone and unlinked
-pm=$(awk -F'\t' 'FILENAME ~ /logon\.rpt$/ { if ($1 == "TABLE") t++; if (t == 1 && $1 == "ROW") { k = toupper($2); v = ""; for (i = 3; i <= 11; i++) v = v "|" $i; W[k] = v "|" $16 "|" $12 "|" $14 "|" $15; nw++ } next }
-    $1 == "HEAD" { for (i = 2; i <= NF; i++) C[$i] = i; next }
-    $1 == "ROW" { k = toupper($2); if (!(k in W)) next; v = ""; split("Allowed Disallowed Authenticated No_account Bad_key Key_failures Locked Auth_failed Session_errors Re-screens First_logon Logons Pattern", H, " ")
-        for (j = 1; j <= 13; j++) { h = H[j]; gsub(/_/, " ", h); v = v "|" $(C[h]) }
+# with the same Allowed, Disallowed, Authenticated, Bad key, Locked, Auth failed,
+# Logons and Pattern cells (the evening batch dropped No account, Key failures,
+# Session errors, Re-screens and First logon), and the retired tab pages are
+# gone and unlinked
+pm=$(awk -F'\t' 'FILENAME ~ /logon\.rpt$/ { if ($1 == "TABLE") t++; if (t == 1 && $1 == "ROW") { k = toupper($2); W[k] = "|" $3 "|" $4 "|" $5 "|" $7 "|" $9 "|" $10 "|" $14 "|" $15; nw++ } next }
+    $1 == "HEAD" { for (i = 2; i <= NF; i++) if (!($i in C)) C[$i] = i; next }
+    $1 == "ROW" { k = toupper($2); if (!(k in W)) next; v = ""; split("Allowed Disallowed Authenticated Bad_key Locked Auth_failed Logons Pattern", H, " ")
+        for (j = 1; j <= 8; j++) { h = H[j]; gsub(/_/, " ", h); v = v "|" $(C[h]) }
         if (v == W[k]) ok++; seen[k] = 1 }
     END { for (k in W) if (!(k in seen)) miss++; print nw + 0, ok + 0, miss + 0 }' data/server/reports/logon.rpt data/analyses/reports/partners-in.rpt 2>/dev/null)
 read -r pmn pmok pmmiss <<< "$pm"
 check $([ "${pmn:-0}" -gt 0 ] && [ "${pmok:-x}" = "$pmn" ] && [ "${pmmiss:-1}" = 0 ] && echo 0 || echo 1) "Partners in: ${pmok:-?} of ${pmn:-?} logon.rpt Incoming row(s) carry the same funnel cells (${pmmiss:-?} missing)"
-check $(awk -F'\t' '$1 == "HEAD" { h = $0 } END { print (h ~ /\tNo account\t/ && h ~ /\tSession errors\t/ && h ~ /\tRe-screens\t/ && h ~ /\tFirst logon\t/ && h !~ /\tLast logon/ && h !~ /\tAuth Failed/) ? 0 : 1 }' data/analyses/reports/partners-in.rpt 2>/dev/null || echo 1) "partners-in.rpt HEAD lacks the Incoming columns (or still carries Last logon / the summed Auth Failed)"
+check $(awk -F'\t' '$1 == "GHEAD" { g = $0 } $1 == "HEAD" { h = $0 } END { print (g ~ /Files In/ && g ~ /Files Out/ && g ~ /Pickup/ && g ~ /Logons/ && g ~ /Screening/ && h !~ /\tNo account|\tKey failures|\tSession errors|\tRe-screens|\tFirst logon|\tOldest waiting|\tPickups|\tLast logon/) ? 0 : 1 }' data/analyses/reports/partners-in.rpt 2>/dev/null || echo 1) "partners-in.rpt lacks the Files In / Files Out / Pickup / Logons / Screening groups or still carries a removed column (No account, Key failures, Session errors, Re-screens, First logon, Oldest waiting, Pickups, Last logon)"
 n=$(ls docs/server/logons-incoming.html docs/server/logons-outgoing.html 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${n:-1}" = 0 ] && ! grep -rqs 'logons-incoming\.html\|logons-outgoing\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "the retired Logons Incoming / Outgoing tab pages are back or still linked"
 check $([ -f docs/server/logons-scanners.html ] && [ "$(command grep -c $'^TABLE\t' data/server/reports/logons.rpt 2>/dev/null)" = 3 ] && echo 0 || echo 1) "Logons is not Scanners · By account · By source IP (docs/server/logons-scanners.html + 3 tables)"
@@ -164,7 +166,7 @@ check $([ -f "docs/analyses/partners-out.html" ] && echo 0 || echo 1) "docs/anal
 n=$(awk -F'\t' 'FILENAME ~ /_hosts\.tsv$/ { if ($1 != "") want[tolower($1)] = 1; next } $1 == "ROW" { v = $2; sub(/^@\{[^}]*\}/, "", v); got[tolower(v)] = 1 } END { for (h in want) if (!(h in got)) m++; print m + 0 }' data/flow-manager/base/_hosts.tsv data/analyses/reports/partners-out.rpt 2>/dev/null)
 check $([ "${n:-1}" = 0 ] && [ -s data/analyses/reports/partners-out.rpt ] && echo 0 || echo 1) "Partners Out lacks ${n:-?} configured host(s)"
 ot=$(awk -F'\t' '$1 == "TABLE" { t++ } t == 2 && $1 == "TOTAL" { s = ""; for (i = 3; i <= 7; i++) { v = $i; sub(/^@\{[^}]*\}/, "", v); s = s "|" (v + 0) } print s; exit }' data/server/reports/logon.rpt 2>/dev/null)
-pt=$(awk -F'\t' '$1 == "TOTAL" { s = ""; for (i = 6; i <= 10; i++) { v = $i; sub(/^@\{[^}]*\}/, "", v); s = s "|" (v + 0) } print s; exit }' data/analyses/reports/partners-out.rpt 2>/dev/null)
+pt=$(awk -F'\t' '$1 == "TOTAL" { s = ""; for (i = 10; i <= 14; i++) { v = $i; sub(/^@\{[^}]*\}/, "", v); s = s "|" (v + 0) } print s; exit }' data/analyses/reports/partners-out.rpt 2>/dev/null)
 check $([ -n "$ot" ] && [ "$ot" = "$pt" ] && echo 0 || echo 1) "Partners Out failure totals ${pt:-?} != logon.rpt Outgoing ${ot:-?} (Failures|Password|Key|Certificate|Other)"
 read -r n m <<< "$(awk -F'\t' 'function strip(c) { sub(/^@\{[^}]*\}/, "", c); return c }
     FILENAME ~ /_hosts-subscriptions\.tsv$/ { if (match($2, /^UC[0-9]+/)) W[tolower($1), substr($2, 1, RLENGTH)] = 1; next }
@@ -172,8 +174,14 @@ read -r n m <<< "$(awk -F'\t' 'function strip(c) { sub(/^@\{[^}]*\}/, "", c); re
     $1 == "ROW" { h = tolower(strip($2)); k = split($3, U, "/"); for (i = 1; i <= k; i++) G[h, U[i]] = 1 }
     END { for (p in W) { c++; if (p in G) ok++ } if (hd != "Use cases") ok = -1; print ok + 0, c + 0 }' data/flow-manager/xref/_hosts-subscriptions.tsv data/analyses/reports/partners-out.rpt 2>/dev/null)"
 check $([ "${m:-0}" -gt 0 ] && [ "${n:-x}" = "$m" ] && echo 0 || echo 1) "Partners Out: ${n:-?} of ${m:-?} (host, use case) pair(s) of the UC-named configured subscriptions in the Use cases column (or column 2 is not Use cases)"
-n=$(awk -F'\t' '$1 == "ROW" && $4 != "" { n++ } END { print n + 0 }' data/analyses/reports/partners-out.rpt 2>/dev/null)
+n=$(awk -F'\t' '$1 == "ROW" && $8 != "" { n++ } END { print n + 0 }' data/analyses/reports/partners-out.rpt 2>/dev/null)
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "Partners Out: no host carries Connections"
+# the Files In / Files Out groups (2026-09-30): every row's counts add up to
+# the TOTAL (fields 4-7 = TOTAL 3-6 under the colspan=2 label) and some host
+# moved Files
+read -r fsum ftot <<< "$(awk -F'\t' 'function s(c) { sub(/^@\{[^}]*\}/, "", c); return c + 0 }
+    $1 == "ROW" { r += s($4) + s($5) + s($6) + s($7) } $1 == "TOTAL" { t = s($3) + s($4) + s($5) + s($6) } END { print r + 0, t + 0 }' data/analyses/reports/partners-out.rpt 2>/dev/null)"
+check $([ "${fsum:-0}" -gt 0 ] && [ "${fsum:-x}" = "${ftot:-y}" ] && echo 0 || echo 1) "Partners Out: the Files In / Files Out cells sum to ${fsum:-?}, the TOTAL says ${ftot:-?} (or no host moved Files)"
 # the view row Endpoint · Accounts · Partners on both Partners pages
 # (2026-09-30, user request; bin/rpt-rollup.awk): every view page exists and
 # carries the row with its own view current, every entity view has rows, each
@@ -193,11 +201,30 @@ for pv in partners-in partners-out; do
         read -r nrow nbad tv te <<< "$(awk -F'\t' 'function strip(c) { while (index(c, "@{") == 1) sub(/^@\{[^}]*\}/, "", c); return c }
             FILENAME ~ /\/base\// { B[$1] = 1; next }
             FILENAME ~ /\/xref\// { if ($2 != "" && $2 != "Unknown") MP[toupper($1)] = 1; next }
-            FILENAME ~ /-(accounts|partners)\.rpt$/ { if ($1 == "ROW") { n++; if (!(strip($2) in B)) bad++ } else if ($1 == "TOTAL") tv = strip($6); next }
-            $1 == "ROW" && (toupper(strip($2)) in MP) { te += strip($(ep == "hosts" ? 7 : 6)) }
+            FILENAME ~ /-(accounts|partners)\.rpt$/ { if ($1 == "ROW") { n++; if (!(strip($2) in B)) bad++ } else if ($1 == "TOTAL") tv = strip($(ep == "hosts" ? 10 : 4)); next }
+            $1 == "ROW" && (toupper(strip($2)) in MP) { te += strip($(ep == "hosts" ? 11 : 4)) }
             END { print n + 0, bad + 0, tv + 0, te + 0 }' ep="$ep" data/flow-manager/base/_$v.tsv data/flow-manager/xref/_$ep-$v.tsv data/analyses/reports/$pv-$v.rpt data/analyses/reports/$pv.rpt 2>/dev/null)"
         check $([ "${nrow:-0}" -gt 0 ] && [ "${nbad:-1}" = 0 ] && [ "${tv:-x}" = "${te:-y}" ] && echo 0 || echo 1) "$pv-$v.rpt: ${nrow:-?} row(s), ${nbad:-?} not in base/_$v.tsv, TOTAL ${tv:-?} != the mapped $ep' Endpoint sum ${te:-?} (Files in / Failures)"
     done
+done
+# every Errors-group page has the From/To selection (2026-09-30, user request:
+# "Give all reports in the Errors group the date period selection"): at least
+# one table that is not nofilter and re-aggregates (data-recalc / data-heat /
+# rangehook / row buckets) or carries date cells — report.js isDateAware
+n=0; bad=""
+for pg in docs/analyses/failed.html docs/analyses/failed-sub-all.html docs/analyses/failing-reasons.html docs/transfer/failed-files.html docs/transfer/unknown-transfers.html docs/transfer/pirates-*.html docs/transfer/episodes.html docs/transfer/retries-*.html docs/transfer/failure-heatmap*.html docs/server/errors-*.html docs/server/failure-flows.html docs/server/io-errors.html docs/server/routing-errors.html; do
+    [ -f "$pg" ] || continue; n=$((n + 1))
+    awk 'BEGIN { RS = "<table" } NR > 1 { t = $0; sub(/<\/table>.*/, "", t); h = substr(t, 1, index(t, ">"))
+            if (h ~ /data-nofilter/) next
+            if (h ~ /data-recalc|data-heat|data-rangehook/ || t ~ /data-buckets=/ || t ~ /<td[^>]*>(<[^>]*>)*[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/) ok = 1 }
+         END { exit ok ? 0 : 1 }' "$pg" || bad="$bad ${pg#docs/}"
+done
+check $([ "$n" -gt 0 ] && [ -z "$bad" ] && echo 0 || echo 1) "Errors-group page(s) without a date-aware table (no From/To):$bad"
+# the six tables made date-aware that day keep it (no nofilter; RECALC where they re-count)
+for pr in analyses/failing-reasons:1 transfer/pirates-details:1 server/failure-flows:1 transfer/unknown-transfers:1 server/errors-log-reasons:2 transfer/episodes:0; do
+    p=${pr%:*}; want=${pr#*:}
+    got=$(grep -o 'data-recalc=' "docs/$p.html" 2>/dev/null | wc -l | tr -d ' ')
+    check $([ -f "docs/$p.html" ] && [ "${got:-0}" -ge "$want" ] && ! grep -q 'data-nofilter' "docs/$p.html" && echo 0 || echo 1) "docs/$p.html is nofilter again or lost its RECALC ($got of $want) — the From/To re-count (2026-09-30)"
 done
 # the three partner study reports are GONE (2026-09-30, user request): no
 # writer, .rpt, page or help page may come back
@@ -479,6 +506,14 @@ check $([ "${fw:-0}" -gt 0 ] && [ "${fx:-0}" -gt 0 ] && [ "${sw:-x}" = "$fw" ] &
 check $([ "${tw:-x}" = "${uw:-y}" ] && [ "${tx:-x}" = "${ux:-y}" ] && echo 0 || echo 1) "waiting-expired Subscriptions totals Waiting/Expired = ${tw:-?}/${tx:-?}, the Files cache has ${uw:-?}/${ux:-?} (dated, subscription not Unknown)"
 n=$(awk -F'\t' '$1 == "TABLE" { t++ } t == 2 && $1 == "ROW" { for (i = 3; i <= 4; i++) if (match($i, /href=[^,}]*/)) print substr($i, RSTART + 5, RLENGTH - 5) }' "$WE" 2>/dev/null | while read -r h; do [ -f "docs/transfer/$h" ] || echo "$h"; done | wc -l | tr -d ' ')
 check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "waiting-expired Subscriptions: ${n:-?} Waiting / Expired cell link(s) to a missing File-list page"
+# (2026-09-30, user request) the Subscriptions table: Oldest Waiting / Last
+# Expired are one-unit ages ("5d", "16h", "14m") with their seconds as sortval,
+# the Expired count is numfailed (red on a tinted row), default sort Oldest
+# Waiting descending
+read -r wok wbad wsort wkind <<< "$(awk -F'\t' '$1 == "TABLE" { t++; if (t == 2) s = ($0 ~ /\tsort=4:-1(\t|$)/) } t == 2 && $1 == "KIND" { k = ($4 == "numfailed") }
+    t == 2 && $1 == "ROW" { for (i = 6; i <= 7; i++) if ($i != "") { if ($i ~ /^@\{sortval=[0-9]+\}[0-9]+[dhms]$/) ok++; else bad++ } }
+    END { print ok + 0, bad + 0, s + 0, k + 0 }' "$WE" 2>/dev/null)"
+check $([ "${wok:-0}" -gt 0 ] && [ "${wbad:-1}" = 0 ] && [ "${wsort:-0}" = 1 ] && [ "${wkind:-0}" = 1 ] && echo 0 || echo 1) "waiting-expired Subscriptions: ${wok:-?} age cell(s) ok, ${wbad:-?} not '@{sortval=N}<n><d|h|m|s>', sort=4:-1 ${wsort:-?}, Expired numfailed ${wkind:-?}"
 n=$(ls docs/transfer/waiting.html docs/transfer/expired.html docs/help/waiting.html docs/help/expired.html bin/transfer/reports/waiting.sh bin/transfer/reports/expired.sh data/transfer/reports/waiting.rpt data/transfer/reports/expired.rpt 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${n:-1}" = 0 ] && ! grep -rqsE '(["/])(waiting|expired)\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "the retired Waiting / Expired pages, writers or help pages are back (${n:-?} file(s)), or a page still links waiting.html / expired.html"
 # every Entities Waiting / Expired link lands on a row: ?axway_row=<name> on

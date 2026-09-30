@@ -1794,6 +1794,31 @@ front end) then four fix workers with disjoint files. The rules it left:
   Partners row by stem. verify.sh checks the rows, the names and the totals. A column change in a writer needs
   its RULES string changed in step (one rule per ROW field from field 3).
 
+## Rules from the fifth 2026-09-30 "few little things" batch (user request, the evening)
+
+- **Waiting & Expired › Subscriptions**: Oldest Waiting / Last Expired are one-unit AGES to the data's last
+  record — `bin/fmt.awk hage1` ("5d", "16h", "14m", "40s"; the seconds as `@{sortval=…}`), the Expired
+  count KIND `numfailed` (red on a tinted row; `numerr` loses its tint there), default sort Oldest Waiting
+  descending (`sort=4:-1`, baked the same way). verify.sh checks the cell shape, the KIND and the sort.
+- **Every Errors-group page has the From/To selection**: Error reasons, One-legged › Details, Per flow,
+  Unknown transfers › Per account and Errors › Reasons over time carry per-row `@data:buckets` (dated form,
+  in date order) + RECALC — their counts (and Per flow's Share) re-count for the range, a row with nothing
+  in range hides, First / Last columns and drills stay full-period; Recovered flows only dropped nofilter
+  (its episodes are computed over the whole window; a range shows those whose date span overlaps it). A new
+  Errors-group table must be date-aware (no nofilter) — verify.sh asserts it per page.
+- **Partners in / Partners Out look alike**: both open with Name · Use cases | **Files In** (Count · Errors) |
+  **Files Out** (Count · Errors) under a GHEAD banner; then Partners in: Pickup (Retrieved · Waiting ·
+  Expired) | Logons (Logons · Cloud · Gateway · Pattern) | Screening (Allowed · Disallowed · Authenticated ·
+  Bad key · Locked · Auth failed); Partners Out: Connections (Connections · Last connection) | Failed logons
+  (User … Last). Partners in dropped Session errors, Re-screens, First logon, No account, Oldest waiting,
+  Pickups, Key failures and the combined Error (user request) — they stay in logon.rpt / fe-overview.rpt for
+  their other readers. fe-overview.rpt gained Error in / Error out (fields 14 / 15, the Failed Files by
+  movement; @data:res moved to field 16); Partners in Errors = Failed (Expired has its column). Partners Out
+  Files = the Entities Remote Hosts rule (every distinct leg host of a dated OUT-connection File, In / Out by
+  movement else connection side, Errors = Failed or Expired), computed by a pre-pass over the two caches.
+  The funnel drills are re-keyed to 13-17 (Allowed · Disallowed · Authenticated · Bad key · Locked); the
+  rollup RULES / ORDER strings changed in step.
+
 ## Rules from the third 2026-09-30 "few little things" batch (user request)
 
 - **Logons**: the Near misses and Certificates tabs are GONE (logon.sh no longer writes the FE-namespace
