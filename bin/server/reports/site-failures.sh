@@ -69,6 +69,6 @@ LC_ALL=C awk -F'\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
         if (!(nm in NEW) || st > NEW[nm]) NEW[nm] = st
     }
     END { for (nm in NEW) print nm "\t" NEW[nm] }
-' "$TSITE" "$PARSED" | LC_ALL=C sort > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+' "$TSITE" "$(srv_subset connection-diagnostics)" | LC_ALL=C sort > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
 echo "Data written to $OUT ($(wc -l < "$OUT" | tr -d ' ') subscription(s) with connection failures)." >&2

@@ -964,7 +964,26 @@ bg2_step_start "report: detail pages .rpt files"                          env AX
 run_step "report: transfer .rpt files (phase 1)"                          bin/transfer/reports.sh phase1
 bg_step_wait   # the logon summary: logon.sh (server reports) + fe-overview.sh (analyses) read it
 run_step "report: server .rpt files"                                      bin/server/reports.sh
+# THE REASON CATCH-UP, BEFORE THE PUBLISHES (2026-09-30, the lean round — it
+# ran after the transfer + analyses publishes until then, which re-rendered
+# their failed / Entities / files/ pages in "catch-up" modes). The cycle it
+# breaks: failed.sh's full run (phase 1) writes _errpage-evidence.tsv, which
+# the box-reason sidecar reads, and the server-failing rows' Reason reads that
+# sidecar back — plus the lists' red-run columns read _red-run.tsv, a phase-1
+# PEER. reason-boxes.sh reads report-stage outputs only (failed.sh's evidence,
+# the server reports, the red-run + kaput sidecars, _files.tsv, the config) —
+# all final here; details.sh (in bg2 until the wait below) reads none of its
+# output, so it runs beside it. failed.sh catchup rewrites the lists, the
+# server-failing pages and the _srvsubs sidecars — _srvsubs-map.tsv is a
+# details.sh INPUT (identical content: the catch-up keeps the set, slug and
+# stamp columns or falls back to a full run), so it runs AFTER the wait.
+# The File reasons (_failed-reasons.tsv), the evidence sidecar and the drill
+# / File pages stay the full run's, so failed-files.rpt, failing-reasons.rpt
+# and unknown-transfers.rpt — written once, in phase 1 / the analyses step —
+# are final too: their former catch-up re-runs came out identical.
+run_step "reason boxes (the Reason fallback sidecar)"                     bin/build/reason-boxes.sh
 bg2_step_wait  # details.sh
+run_step "report catch-up: failed subscriptions (the Reason columns)"     bin/transfer/reports/failed.sh catchup
 # dashboards and day both need the two areas' reports and nothing of each
 # other — disjoint output dirs, so they overlap (2026-08) — and since
 # 2026-09-27 (speed round 8) they run BESIDE THE PUBLISHES below, in the
@@ -998,33 +1017,14 @@ run_step "report: analyses .rpt files"                                    bin/an
 # docs/details — so the detail pages render in the background beside the
 # report pages (2026-07; ~11 s off the critical path)
 bg_step_start "publish: detail pages"                                     bin/transfer/publish-details.sh
-# FIRSTPASS (2026-09-29): every transfer page but docs/files/ — the transfer
-# catch-up below renders that directory from the .rpt sets the failed.sh
-# catch-up rewrites, so it renders ONCE per build (nothing in between reads it)
-run_step "publish: transfer report pages"                                 bin/transfer/publish.sh firstpass
+# every transfer page, docs/files/ included — ONCE per build: every input is
+# final since the Reason catch-up above (the firstpass / catchup modes and
+# the "publish catch-ups" step of 2026-09-29 went 2026-09-30)
+run_step "publish: transfer report pages"                                 bin/transfer/publish.sh
 bg_step_wait
 run_step "publish: partner group pages"                                   bin/analyses/publish-partner-groups.sh
 run_step "publish: server report pages"                                   bin/server/publish.sh
-# the box-reason sidecar (the Reason chain's last fallback) — every input is
-# final here; the catch-ups below read it (bin/analyses/publish-insights.sh,
-# called from inside the analyses publish, until 2026-09-30)
-run_step "reason boxes (the Reason fallback sidecar)"                     bin/build/reason-boxes.sh
 run_step "publish: analyses + coverage pages"                             bin/analyses/publish.sh
-# THE EVIDENCE CATCH-UP (2026-08): reports that read evidence steps AFTER
-# them produce — failed.sh the kaput/boxes classifications (the server
-# reports and reason-boxes above), failed-files.sh the reasons failed.sh
-# classifies, failing-reasons.sh reads failed-files.rpt. Their first runs happen
-# before that evidence exists, so they run AGAIN here, and the pages they
-# feed are re-rendered below.
-# failed.sh in its explicit CATCH-UP MODE (2026-09-29, build speed — the
-# whole script ran again, both server-log passes included): only the
-# server-failing set's reasons (the boxes sidecar), their pages, the two
-# lists (their red-run columns read phase-1 peers) and the _srvsubs
-# sidecars; the trace is at THE MODE in the script
-run_step "report catch-up: failed subscriptions"                          bin/transfer/reports/failed.sh catchup
-run_step "report catch-up: failed files"                                  bin/transfer/reports/failed-files.sh   # 2026-09-14: the reasons the failed.sh catch-up just classified
-run_step "report catch-up: unknown transfers"                             bin/transfer/reports/unknown-transfers.sh   # 2026-09-29: the File-page links of the sets the failed.sh catch-up just rewrote
-run_step "report catch-up: error reasons"                                 bin/analyses/reports/failing-reasons.sh
 # (The DETAIL-PAGES re-render that ran here — 2026-08 — is GONE, 2026-09-29,
 # build speed: the detail pages read the detail .rpt files, the slugmaps,
 # the base colours and the published File-page set (_filepages.tsv, final
@@ -1033,53 +1033,23 @@ run_step "report catch-up: error reasons"                                 bin/an
 # render with the re-render: identical but for the display renames, which
 # the sweep below applies to the final pages anyway.)
 # THE TAIL IN PARALLEL (2026-09-29, build speed): the all files search, the
-# dashboards and the day pages go to the second slot together, BESIDE the two
-# publish catch-ups below (the tail left most cores idle, ~11 s in a row).
-# Checked: the all files search reads the data rosters the failed.sh
-# catch-up above settled (errors/ + files/ .rpt sets, the slugmap), never a
-# rendered page; dashboards + day read their own .rpt (the slot's previous
-# step) — none reads what the catch-ups write, and every writer owns its own
-# docs/ directory (topbar-data.js: an atomic rename, _asset_put).
+# dashboards and the day pages go to the second slot together, beside the
+# index-pages step's wait. Checked: the all files search reads the data
+# rosters the failed.sh catch-up settled in the report stage (errors/ +
+# files/ .rpt sets, the slugmap), never a rendered page; dashboards + day read
+# their own .rpt (the slot's previous step); every writer owns its own docs/
+# directory (topbar-data.js: an atomic rename, _asset_put).
 bg2_step_wait   # the dashboards + day reports (started before the publishes)
 bg2_step_start "publish: all files search + dashboards + day pages"         bash -c 'bin/analyses/publish-all-files.sh & a=$!; bin/dashboards/publish.sh && bin/day/publish.sh; s=$?; wait "$a" || s=$?; exit "$s"'
-# THE TWO PUBLISH CATCH-UPS run in their explicit CATCH-UP MODE (2026-09-29;
-# until then both re-ran their whole script): each re-renders ONLY the pages
-# that read what the report catch-ups above rewrote — the dependency trace is
-# in each script (THE CATCH-UP MODE). The analyses one: Configured
-# subscriptions (failed-files.rpt), Failed Subscriptions + its All view and
-# Error reasons (its box-reason sidecar is not recomputed — see below).
-# THE BOXES-REASON CATCH-UP (2026-08): the Entities Error view's Reason
-# column reads analyses/reports/_subs-boxes.tsv, which reason-boxes.sh
-# (above) writes AFTER the transfer publish
-# already ran — on a fresh data/ the box-tier reasons would render blank
-# until the NEXT build — and failed-sub-all.rpt + _srvsubs.tsv, which the
-# failed.sh catch-up rewrote. The transfer catch-up mode re-renders the
-# Subscriptions entity views, the Failed files page (failed-files.rpt) and
-# the whole docs/files/ tree (the errors/ + files/ .rpt sets failed.sh wrote;
-# its ONLY render in the build — the first pass above is `firstpass`) —
-# nothing else of the transfer area.
-# THE TWO CATCH-UPS SIDE BY SIDE (2026-09-29, build speed — they ran one
-# after the other, ~4 s each, in the half-idle tail). The box-reason sidecar
-# _subs-boxes.tsv — the one thing the transfer catch-up took from the
-# analyses one — is NOT recomputed any more: the analyses publish above wrote
-# it, and nothing it reads has changed since (the report-stage lists, the
-# server reports, _kaput-evidence.tsv and failed.sh's _errpage-evidence.tsv,
-# which the failed.sh CATCH-UP MODE leaves as the full run wrote it — a
-# catch-up that rewrote the evidence would need the sidecar step back here).
-# (The `catchup-pages` name went 2026-09-29: `catchup` is that mode now.)
-# Checked: the analyses
-# catch-up renders docs/analyses/ only (Configured subscriptions, Failed
-# Subscriptions + its All view, Error reasons — from failed-files.rpt,
-# failed*.rpt, failing-reasons.rpt) and reads no page; the transfer catch-up
-# renders docs/transfer/entities/subscription-*, failed-files,
-# unknown-transfers and docs/files/ from the data/ trees and reads no
-# docs/analyses/ page; both share only topbar-data.js, written atomically.
-run_step "publish catch-ups: analyses (failed pages) + transfer (boxes reasons)" bash -c 'bin/analyses/publish.sh catchup & a=$!; bin/transfer/publish.sh catchup; s=$?; wait "$a" || s=$?; exit "$s"'
+# (THE TWO PUBLISH CATCH-UPS — the analyses and transfer publishes re-run in
+# their CATCH-UP modes for the pages the report catch-ups rewrote — went
+# 2026-09-30: the Reason catch-up runs in the report stage now, so every
+# publish renders once, from final inputs.)
 # (THE ALL FILES SEARCH — 2026-09-27, user request, "Implementation 3, all
 # files": one day shard per data day + the bloom-filter manifest, and the
-# search/all-files.html page — runs in the second slot started above, after
-# the failed.sh catch-up: its rows link the files/ pages that catch-up
-# settled, so the rosters it reads are final. Outside the per-area
+# search/all-files.html page — runs in the second slot started above; its
+# rows link the files/ pages the failed.sh catch-up (report stage) settled,
+# so the rosters it reads are final. Outside the per-area
 # publishes, like publish-partner-groups.sh — a manual re-publish runs it too.)
 bg2_step_wait   # the all files search + dashboards + day pages
 # the index pages + the home LAST: they live in dirs the per-area publishes

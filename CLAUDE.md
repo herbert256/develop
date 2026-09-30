@@ -238,32 +238,27 @@ reports dir before reading what phase 1 writes, 2026-09-28), then — right afte
 reports since 2026-09-29 — the dashboards MONITOR (`monitor.sh`, foreground: whether
 `monitor.rpt` exists sets every page's top bar) and dashboards ∥ day in background slot 2 (their
 inputs are all final there), then transfer phase 2 and analyses, the dashboards + day reports
-waited for right before the dashboards publish → *publish*: detail
-pages ∥ transfer (the detail pages' ONLY render — the catch-up re-render went 2026-09-29: it
-came out identical), then partner-groups, server, analyses, then THE CATCH-UPS — re-runs folding the
-cross-phase evidence into THIS build: failed.sh in its CATCH-UP MODE (`failed.sh catchup`,
-2026-09-29: only the server-failing rows' reasons — the boxes sidecar — their pages, the two
-lists — their red-run columns read phase-1 peers — and the `_srvsubs` sidecars; the drill /
-File pages, both server-log passes and the evidence stay the full run's, the intermediates in
-`data/transfer/reports/.failed-state/`; proven identical to a full run), failed-files.sh,
-failing-reasons.sh, then the two publish catch-ups SIDE BY SIDE — the transfer publish catch-up
-(`bin/transfer/publish.sh catchup` — 2026-09-29: only the Subscriptions Entities views, Failed
-files and docs/files/ — docs/files/'s ONLY render in a build: the first transfer publish runs
-`bin/transfer/publish.sh firstpass`, every transfer page but docs/files/; a hand-run publish with
-no argument still renders everything; the analyses one is `bin/analyses/publish.sh catchup` —
-Configured subscriptions, Failed Subscriptions, Error reasons; `_subs-boxes.tsv` is written
-once, by the build step `bin/build/reason-boxes.sh` right before the analyses publish (nothing it
-reads changes after that point) (the separate `catchup-pages` name went 2026-09-29 — one catch-up mode); the trace of what reads the catch-up inputs is in each
-script, THE CATCH-UP MODE),
-the all-files search (`bin/analyses/publish-all-files.sh` — its rows link the files/ pages the
-catch-ups settle), dashboards, day → `bin/build/publish.sh` (index pages + the home, reads every area) →
+waited for right before the dashboards publish. After the server reports: `bin/build/reason-boxes.sh`
+(the box-reason sidecar, beside details.sh), then — after details.sh's wait — `failed.sh catchup`,
+THE REASON CATCH-UP: the server-failing rows' Reason column and the lists' red-run columns,
+which read `_subs-boxes.tsv` and the phase-1 peer `_red-run.tsv`; it keeps the File reasons, the
+evidence sidecar, the drill / File pages and the `_srvsubs-map` content, the intermediates in
+`data/transfer/reports/.failed-state/` — proven identical to a full run — so failed-files.rpt,
+failing-reasons.rpt and unknown-transfers.rpt are final at their first run (2026-09-30, the lean
+round: the catch-ups ran after the publishes until then) → *publish*: detail pages ∥ transfer
+(EVERY transfer page, docs/files/ included, rendered ONCE — the `firstpass` / `catchup` publish
+modes went 2026-09-30; the detail pages' ONLY render), then partner-groups, server, analyses
+(every analyses page, once — its `catchup` mode went too), the all-files search
+(`bin/analyses/publish-all-files.sh` — its rows link the files/ pages), dashboards, day → `bin/build/publish.sh` (index pages + the home, reads every area) →
 `bin/build/display-rename.sh` → (runtime only) `bin/build/st-reports-archive.sh`.
 
 Dependency rules: transfer reports before server and analyses reports; dashboards + day after both areas;
 `bin/build/publish.sh` last of the publishes (the area publishes clear the dirs its index pages
 live in). A script that ran twice in one build only to skip the second time runs ONCE now:
-`bin/build/kaput-evidence.sh` (not in the server-reports pool), `monitor.sh` (not in `bin/dashboards/reports.sh`)
-and `details.sh` (not in the catch-up).
+`bin/build/kaput-evidence.sh` (not in the server-reports pool), `monitor.sh` (not in `bin/dashboards/reports.sh`),
+`details.sh`, failed-files.sh, unknown-transfers.sh and failing-reasons.sh (no catch-up re-runs since
+2026-09-30); `failed.sh` runs twice on purpose (full in phase 1, `catchup` after reason-boxes — the
+evidence ↔ box-reason cycle).
 
 **BUILD SPEED (2026-09-27/28, the "prd build" analysis — production 6:34 → 3:44 min in 14 rounds,
 then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a develop fresh build).** What a change must not break:
@@ -290,14 +285,22 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
   and 2, result.sh's session vote, the mention rescan. A scan whose result depends on line ORDER
   across parts needs an order-preserving merge (result.sh's vote shows one); `unknown-entities`
   scans line-aligned byte slices (NW = the core count, capped at 6).
-- **Server-cache subsets** (`bin/server/subsets.sh`, `srv_subset NAME` in `bin/server/lib.sh`):
-  the RARE message families of uc1/uc3-status, remote-poll, connection-diagnostics,
-  ssh-sessions, deploy-errors and routing-errors, copied once per cache; every line a consumer
-  acts on must contain one of its fixed-string MARKERS — change a consumer's patterns, change
-  its markers. Two RULE subsets sit outside the marker gate (2026-09-29): `noninfo` (every
-  line whose level is not I — top-messages, error-timing, error-reasons, failure-flows) and
-  `io-errors` (its own regex behind an `index()`); the pass runs beside the server pool. A missing subset set
-  (no `subsets/.done`) falls back to the whole cache.
+- **Server-cache subsets** (`bin/server/subsets.sh`, `srv_subset NAME` in `bin/server/lib.sh`): the
+  RARE message families of uc1-status, the POLL families (`poll`: uc3-status, remote-poll,
+  no-remote-dir, no-remote-files — one subset since 2026-09-30; the old uc3 / remote-poll pair were
+  72 lines apart), connection-diagnostics (+ site-failures), ssh-sessions, deploy-errors (it keeps
+  the poll marker: its UC3 poll-recovery clear reads those lines), routing-errors and event-queue,
+  copied once per cache. Every line a consumer acts on must contain one of its fixed-string
+  MARKERS — change a consumer's patterns, change its markers. Two RULE subsets sit outside the
+  marker gate: `noninfo` (every line whose level is not I — top-messages, error-timing,
+  error-reasons, failure-flows, pesit, and the Top view / errors-day drill lines) and
+  `io-errors`. The same pass writes the COUNTS table `subsets/counts.tsv` (date · hour · level ·
+  component → count, plus per-date first / last time over the whole cache; `srv_counts`), which the
+  server Top view and errors-day read instead of a full pass. A missing subset set (no
+  `subsets/.done`) falls back to the whole cache (`srv_counts` builds the set). **Measured, not
+  worth it (2026-09-30):** an `inbound` subset for inbound-connections (+1.0 CPU-s for 0.3 saved)
+  and a `day` marker subset for day_srv (+2.6 for 1.1) — only long, rare markers pay; the gate
+  regex runs on every character of every line.
 - **Key-aligned and line-aligned slices** (2026-09-28, `bin/ranges.sh`): `grp_cuts FILE N` cuts a
   file SORTED on its first TAB field into byte slices that never split a run of equal keys (blank
   included), `grp_par FILE OUT N CMD…` runs CMD per slice in parallel (slice on stdin, `GRP_PART`
@@ -367,7 +370,7 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
   host and one with a discovered subscription. `unknown-entities.sh` scans line-aligned byte
   slices, buckets date-sorted (its latest-mention tie rule `TIEMOD` went with the sidecars'
   stamp columns, the second 2026-09-29 audit — the sidecars carry names only). The tail: the all files search + dashboards + day publishes
-  run in slot 2 beside the two publish catch-ups.
+  run in slot 2 (beside the two publish catch-ups until those went, 2026-09-30).
   **Tried and reverted — do not retry:** the server reports that read only the server cache
   (topview, errors-day, error-*, event-queue, config-defects, pesit, top-messages,
   ssh-sessions + subsets) in the background beside the server-log -> transfer steps, plain
@@ -379,7 +382,8 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
   `[cpu Ns]` (`times` of the step's own subshell — `step_cpu`; a background step's from its
   subshell), and a pooled page render of 2 s or more prints `TIME Ns render <area>/<report>`
   (pub_run, `$SECONDS` — no fork per page). The wins: failed.sh's catch-up mode (6 → 0 s); the
-  publish catch-ups side by side, the redundant sidecar step and the redundant detail-pages
+  publish catch-ups side by side (gone altogether 2026-09-30: the Reason catch-up moved into the
+  report stage, so each publish renders once), the redundant sidecar step and the redundant detail-pages
   re-render dropped; dashboards + day started right after the server reports; overview.sh's
   slot pass in the background beside its seen pass (22 → 15 s) with every series split by ONE
   `read` loop (`series_vars` — the 42 `printf "$ser" | awk` pipes per block went) and the
@@ -534,8 +538,8 @@ mtime (the former cmp-guards) — except the two under `input/` (`bin/ip.sh`'s m
 snapshot), whose files outlive the build. Do not reintroduce a freshness check: a script that
 must not repeat work inside one build gets an explicit mode or a single call site instead (the
 server parse's `AXWAY_SKIP_MENTIONS` / `AXWAY_MENTIONS_ONLY`, the transfer parse's
-`AXWAY_DERIVE_ONLY`, the transfer publish's `firstpass` / `catchup` and the analyses publish's
-`catchup` modes, kaput-evidence / monitor run once). Within-build DEPENDENCY guards stay:
+`AXWAY_DERIVE_ONLY`, failed.sh's `catchup` mode — the publishes' `firstpass` / `catchup` modes went
+2026-09-30 — kaput-evidence / monitor run once). Within-build DEPENDENCY guards stay:
 `ensure_logons` builds the logon summary only when it is not there yet (the background step
 normally has), `srv_subset` falls back to the whole cache without `subsets/.done`, and the
 appended-names mention rescan is skipped when it cannot change anything. (The one tracked
@@ -1401,11 +1405,11 @@ errors (+ Deploy errors), Polling (+ Missing cronjobs as Schedule "no cron"), En
 Boxes pages 2026-07..09-29 — are ordinary group members since the one Reports pulldown; went-kaput is pageless.) The full
 merged-component list is in ARCHITECTURE.md.
 
-(**Month stats** — 18 pages, 2026-09-13, `month-stats.sh` → `docs/transfer/month-stats/` — and
+(**Month stats** — 18 pages, 2026-09-13, `entities.sh` (its `month_stats` part; `month-stats.sh` until 2026-09-30) → `docs/transfer/month-stats/` — and
 **Missing entities** — the five unknown-* tables, `missing-entities.sh` — went the morning of
 2026-09-29 and CAME BACK the same day, user request: Month stats in Activity & volume (its member
 `transfer/month-stats/this` is special-cased in `rg_landing` / `apply_report_groups` —
-every page of the directory belongs to it; month-stats.sh also writes the
+every page of the directory belongs to it; entities.sh also writes the
 Subscriptions page's `_alltime.tsv`), Missing entities in Coverage (a ↗ detail-page icon beside
 each name that has a detail page — its value column carries the entity KIND). The **Goodies** short-cut
 dropdown of 2026-09-13 went with the one Reports pulldown; Partners - Incoming —
@@ -1642,7 +1646,8 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
 - **Help**: a help page's "?", the build report's "?" and the sitemap's Help open
   `help/general.html` (help/index.html is the Reports start page's help); the help SOURCES carry a
   one-link placeholder bar (`apply_help_chrome` swaps in the real one).
-- **One analyses catch-up mode**: `bin/analyses/publish.sh catchup` (no `catchup-pages`, no sidecar).
+- **No publish catch-up modes** (2026-09-30): `bin/transfer/publish.sh` and `bin/analyses/publish.sh` take no
+  argument and render everything once; the only catch-up is `failed.sh catchup`, in the report stage.
 - **The sample** plants the server log's resubmit trail and the admin test connections without a
   PRNG draw (gen-events.awk), so Resubmission outcomes and Test connections have rows; verify.sh
   asserts both.
@@ -1729,8 +1734,8 @@ front end) then four fix workers with disjoint files. The rules it left:
   Top-5s); FILES tables (failed-files, File pages, incoming-connections, all-files, …) keep it as
   the Subscription value, unlinked. **A new subscription-keyed writer must skip it too** —
   verify.sh fails on any `ROW⇥Unknown⇥` outside the Files tables. `Unknown transfers`
-  (transfer/unknown-transfers.sh, Errors group; serial tail + build catch-up + transfer publish
-  catchup, for its File-page links) lists every such File + a per-account table; verify checks
+  (transfer/unknown-transfers.sh, Errors group; the transfer serial tail, once — its File-page
+  links test `_filepages.tsv`, final before phase 1) lists every such File + a per-account table; verify checks
   its row count against `_files.tsv`. Unknown Files cannot read Processed (no movement), so they
   are Error or Waiting / Expired.
 

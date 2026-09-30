@@ -130,3 +130,13 @@ srv_subset() {
         printf '%s' "$PARSED"
     fi
 }
+# srv_counts — the path of the COUNTS table (bin/server/subsets.sh: per date ·
+# hour · level · component line counts + per-date first / last time over the
+# WHOLE cache, 2026-09-30). It has no whole-cache fallback of its own, so a
+# consumer run without the subset set builds it first (a within-build
+# dependency guard: the build runs subsets.sh before its consumers).
+srv_counts() {
+    local d="$CACHE_DIR/subsets"
+    [ -f "$d/.done" ] || "$LIB_DIR/subsets.sh" >&2
+    printf '%s' "$d/counts.tsv"
+}

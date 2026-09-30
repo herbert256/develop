@@ -31,26 +31,34 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # per-component level counts (+ per-day buckets so the component table
 # re-aggregates under the date filter).
 # Emits: COMP|comp|info|warn|err|total|buckets  TOT|recs|info|warn|err|errpct|days
-agg=$(awk -F'\t' "$LOGLINES_AWK"'
+# The counts come from the COUNTS table (bin/server/subsets.sh — a full cache
+# pass of its own until 2026-09-30), the drill lines from the non-Info subset
+# (in cache order). An UNDATED line counts for the totals and its component,
+# never for a day (date "" in the table).
+CNTF=$(srv_counts)
+agg=$(awk -F'\t' -v CNTF="$CNTF" "$LOGLINES_AWK"'
     function cname(x) {
         if (x == "T") return "TM"
         if (x == "P") return "PESITD"
         if (x == "S") return "SSHD"
         return x
     }
-    {
-        d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) d = ""
-        lv = $3; cp = $4
-        tot++; if (lv == "I") ti++; else if (lv == "W") tw++; else if (lv == "E") te++
-        cr[cp]++
-        if (lv == "I") ci[cp]++; else if (lv == "W") cw[cp]++; else if (lv == "E") ce[cp]++
-        if (lv != "I" && d != "")                    # drill-down: last warn/error lines per component
-            addline("C" SUBSEP cp, $1 " " $2, lvlname($3) " " compname($4) "  " substr($5, 1, 200))
+    FILENAME == CNTF {   # C date hour level component count  (T lines: not read here)
+        if ($1 != "C") next
+        d = $2; n = $6 + 0; lv = $4; cp = $5
+        tot += n; if (lv == "I") ti += n; else if (lv == "W") tw += n; else if (lv == "E") te += n
+        cr[cp] += n
+        if (lv == "I") ci[cp] += n; else if (lv == "W") cw[cp] += n; else if (lv == "E") ce[cp] += n
         if (d != "") {
             if (!(d in dseen)) { dseen[d] = 1; days++ }
-            cdr[cp SUBSEP d]++
-            if (lv == "I") cdi[cp SUBSEP d]++; else if (lv == "W") cdw[cp SUBSEP d]++; else if (lv == "E") cde[cp SUBSEP d]++
+            cdr[cp SUBSEP d] += n
+            if (lv == "I") cdi[cp SUBSEP d] += n; else if (lv == "W") cdw[cp SUBSEP d] += n; else if (lv == "E") cde[cp SUBSEP d] += n
         }
+        next
+    }
+    {   # the non-Info lines, in cache order: the last warn/error lines per component
+        d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) next
+        addline("C" SUBSEP $4, $1 " " $2, lvlname($3) " " compname($4) "  " substr($5, 1, 200))
     }
     END {
         for (k in cdr) { split(k, a, SUBSEP); bk[a[1]] = bk[a[1]] (bk[a[1]] ? "," : "") a[2] ":" (cdi[k]+0) ":" (cdw[k]+0) ":" (cde[k]+0) ":" cdr[k] }
@@ -58,7 +66,7 @@ agg=$(awk -F'\t' "$LOGLINES_AWK"'
         tep = tot > 0 ? sprintf("%.1f", (te+0) * 100 / tot) : "0.0"
         printf "TOT|%d|%d|%d|%d|%s|%d\n", tot, ti+0, tw+0, te+0, tep, days+0
     }
-' "$PARSED")
+' "$CNTF" "$(srv_subset noninfo)")
 
 if [ -z "$agg" ]; then
     echo "No usable records found." >&2

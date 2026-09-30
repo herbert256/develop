@@ -95,7 +95,7 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
     function upd(t, n, d, tm,   cu, k, ts) {
         if (n == "" || d == "") return
         cu = toupper(n); k = t SUBSEP cu; ts = d " " tm
-        if (!(k in first) || ts < first[k]) { first[k] = ts; fdisp[k] = n }
+        if (!(k in first) || ts < first[k]) first[k] = ts
     }
     # first transfer of the entity key k2 ("" if never seen); a
     # subscription falls back to the prefix rule against the logged

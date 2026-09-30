@@ -257,7 +257,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" -v ucdf="$UCDF" "$LOGLINES_AWK$RENAMES_A
         npath = 0; for (x in pseen) npath++
         printf "TOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", tot+0, nsub+0, nacc+0, npath+0, nday+0, nres+0, reserr+0, nresf+0, nresp+0
     }
-' <(known_names KS "$TSITE"; last_ok_files) "$PARSED")
+' <(known_names KS "$TSITE"; last_ok_files) "$(srv_subset poll)")   # the poll subset (2026-09-30): its two families are poll markers
 
 IFS=$'\t' read -r _ tot_err n_sub n_acc n_path n_day n_res n_reserr n_resfile n_respoll <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 if [ "${tot_err:-0}" -eq 0 ]; then

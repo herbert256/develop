@@ -638,7 +638,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         nu = split(udays, UD, " "); for (i = 1; i <= nu; i++) UX[UD[i]] = i
         trec = 0; twarn = 0; sumAF = 0; tT=0; tP=0; tS=0
         for (x = 1; x <= nd; x++) { d = D[x]; trec += REC[d]+0; twarn += WRN[d]+0; sumAF += AF[d]+0; tT += CT[d]+0; tP += CP[d]+0; tS += CS[d]+0
-            wd = wdname(d); wdc[wd]++; aRec[wd] += REC[d]+0; aErr[wd] += ERR[d]+0; aWrn[wd] += WRN[d]+0 }
+            wd = wdname(d); wdc[wd]++; aRec[wd] += REC[d]+0; aErr[wd] += ERR[d]+0 }
         avgW = nd > 0 ? twarn / nd : 0
         avgAF = nd > 0 ? sumAF / nd : 0
         # busiest single ERROR shape per day (the dominant-error fact) — count

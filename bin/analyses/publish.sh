@@ -25,23 +25,18 @@
 # per-area publishes and BEFORE bin/build/publish.sh (which applies the report
 # groups to these pages). Runs from any working directory.
 #
-# Usage:  bin/analyses/publish.sh            every analyses page
-#         bin/analyses/publish.sh catchup    ONLY the pages the report catch-ups
-#                                            feed (see THE CATCH-UP MODE at the
-#                                            bottom) — bin/build.sh's catch-up,
-#                                            beside the transfer catch-up
+# Usage:  bin/analyses/publish.sh            every analyses page (bin/build.sh
+#                                            runs it ONCE, after the report
+#                                            stage's Reason catch-up — its
+#                                            catchup mode of 2026-09-29 went
+#                                            2026-09-30)
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; html_head/esc/dotify/first_page/…
 source "$SCRIPT_DIR/../uc-cases.sh"      # uc_meta(): the shared UC<n> description (From/To/role/human)
 
-# the MODE (2026-09-29): an explicit argument — never a freshness check
-AP_MODE=${1:-full}
-case $AP_MODE in
-    full|catchup) ;;
-    *) printf 'usage: bin/analyses/publish.sh [catchup]\n' >&2; exit 2 ;;
-esac
+[ $# -eq 0 ] || { printf 'usage: bin/analyses/publish.sh (no arguments)\n' >&2; exit 2; }
 
 ARPT="$DATA/analyses/reports"
 FSRPT="$DATA/first-seen"
@@ -53,7 +48,7 @@ COVDIR="$DOCS/coverage"   # and their pages (restored 2026-07, linked from the h
 ensure_assets   # topbar-data.js (the menus' data file)
 
 mkdir -p "$ADIR"
-if [ "$AP_MODE" = full ]; then rm -f "$ADIR"/*.html; fi   # the catch-up overwrites its own pages only
+rm -f "$ADIR"/*.html
 # ---- First seen cell pages (docs/first-seen/) --------------------------------
 # One page per data/first-seen/*.rpt (bin/analyses/reports/first-seen.sh:
 # TITLE / MEMBER / KEY + ROW name|dir|seen|link|first_ts[|log]): the items
@@ -333,7 +328,7 @@ render_coverage_pages() {
                                 # entity member subscriptions (raw names;
                                 # linked at row time once the slugmaps are in)
                                 su=toupper(a[2])
-                                if (!ssdup[ku SUBSEP su]++) { ssn[ku]++; ss[ku] = ss[ku] US a[2] }
+                                if (!ssdup[ku SUBSEP su]++) ss[ku] = ss[ku] US a[2]
                                 # a name without a UC prefix counts under its DERIVED use case
                                 # (2026-09-29: the columns counted UC-named subscriptions only)
                                 if (!ucdl) { ucdl = 1; while ((getline ul < ucdf) > 0) { uk = split(ul, ua, "\t"); if (uk >= 2 && ua[1] != "") UCD[toupper(ua[1])] = ua[2] } close(ucdf) }
@@ -346,11 +341,11 @@ render_coverage_pages() {
                     # (raw values, deduped per entity; endpoints carry a type
                     # prefix — l login, h host — read back at render time)
                     if (amf != "") { while ((getline line < amf) > 0) { k=split(line,a,"\t"); if (k>=2 && a[1]!="" && a[2]!="") { ku=toupper(a[1])
-                        if (!acdup[ku SUBSEP toupper(a[2])]++) { acn[ku]++; ac2[ku] = ac2[ku] US a[2] } } } close(amf) }
+                        if (!acdup[ku SUBSEP toupper(a[2])]++) ac2[ku] = ac2[ku] US a[2] } } close(amf) }
                     if (elf != "") { while ((getline line < elf) > 0) { k=split(line,a,"\t"); if (k>=2 && a[1]!="" && a[2]!="") { ku=toupper(a[1])
-                        if (!epdup[ku SUBSEP toupper(a[2])]++) { epn[ku]++; epv[ku] = epv[ku] US "l" a[2] } } } close(elf) }
+                        if (!epdup[ku SUBSEP toupper(a[2])]++) epv[ku] = epv[ku] US "l" a[2] } } close(elf) }
                     if (ehf != "") { while ((getline line < ehf) > 0) { k=split(line,a,"\t"); if (k>=2 && a[1]!="" && a[2]!="") { ku=toupper(a[1])
-                        if (!epdup[ku SUBSEP toupper(a[2])]++) { epn[ku]++; epv[ku] = epv[ku] US "h" a[2] } } } close(ehf) }
+                        if (!epdup[ku SUBSEP toupper(a[2])]++) epv[ku] = epv[ku] US "h" a[2] } } close(ehf) }
                     if (whf != "") { while ((getline line < whf) > 0) { k=split(line,a,"\t"); if (k>=2 && a[1]!="" && a[2]!="") { ku=toupper(a[1])
                         if (!wdup[ku SUBSEP a[2]]++) { wn2[ku]++; wip[ku] = wip[ku] US a[2] } } } close(whf) }
                     if (lmap != "") { while ((getline line < lmap) > 0) { split(line, a, "\t"); lslug[a[1]] = a[2] } close(lmap) }
@@ -763,7 +758,7 @@ write_logical_detection_page() {
 # them (subscriptions.json via jq + bin/cron2human.awk, the same pipeline as
 # polling.sh; blank without a cron), and the ALL-TIME File counts — Files · In · Out · Error ·
 # Automatic · Resubmit Ok / Error · Waiting · Expired (the Month stats labels, 2026-09-30) — from
-# month-stats.sh's _alltime.tsv sidecar (the Entities
+# entities.sh's _alltime.tsv sidecar (month-stats.sh until 2026-09-30; the Entities
 # definitions; a subscription never seen in the log shows blanks; 0 shows
 # blank). Rows tint by the subscription's result (green / orange / red);
 # baked order use case (the name prefix, else the derived one) then
@@ -784,8 +779,8 @@ write_logical_detection_page() {
 # tint. COLOR (2026-09-15): the result as a word, green / red / orange,
 # white for a skipped or unresulted subscription. ERROR REASON (2026-09-15):
 # the reason of the NEWEST File in error of the subscription (failed-files.rpt,
-# the Failed files page: Failed or Expired), linking its error page; the
-# analyses publish catch-up runs after failed-files.sh, so one build converges.
+# the Failed files page: Failed or Expired), linking its error page
+# (failed-files.rpt is final before the publishes, 2026-09-30).
 # A name containing SWIFT shows Active "CFT" (2026-09-15, user rule).
 # DIRECTION (2026-09-15, user request): connection / file movement, e.g.
 # out/in, exactly the detail page title prefix lowercased (base direction;
@@ -1501,70 +1496,28 @@ _acc_links() {
 # laps (2026-09-27, speed round 10): TIME lines on the build console
 _ap0=$(date +%s)
 _aplap() { local _t1; _t1=$(date +%s); printf "TIME %5ds  analyses publish: %s\n" "$((_t1 - _ap0))" "$1" >&2; _ap0=$_t1; }
-# ---- THE CATCH-UP MODE ------------------------------------------------------
-# `bin/analyses/publish.sh catchup` (2026-09-29) is bin/build.sh's "publish
-# catch-up: analyses" step. It runs after the report catch-ups (failed.sh,
-# failed-files.sh, failing-reasons.sh) and re-renders ONLY the
-# analyses outputs that read what those rewrote after the first (full) run of
-# this script. Until 2026-09-29 the step re-ran the whole script.
-# THE DEPENDENCY TRACE (keep it in step with the readers). What changed since
-# the first run: failed.sh's outputs (failed.rpt, failed-sub-all.rpt,
-# _failed-reasons.tsv, _errpage-evidence.tsv, _srvsubs.tsv, _srvsubs-map.tsv,
-# the errors/ + files/ .rpt sets), failed-files.rpt and failing-reasons.rpt.
-# Their readers here:
-#   subscriptions.html            failed-files.rpt (the Error reason column —
-#                                 write_subscriptions_page)
-#   (_subs-boxes.tsv, bin/build/reason-boxes.sh's sidecar, reads
-#   _errpage-evidence.tsv — written by failed.sh's FULL run only, so the
-#   sidecar the build wrote before this script is final: no re-run here)
-#   failed.html                   failed.rpt       } render_subs_group_pages,
-#   failing-reasons.html          failing-reasons.rpt } those two members only
-#   failed-sub-all.html           failed-sub-all.rpt (+ the selector row on it
-#                                 and on failed.html, below)
-# Everything else here reads report-stage .rpt files, caches and config that no
-# step since the first run rewrites, and no docs/ page but the Entities views, which exist since the transfer publish.
-# A NEW analyses-page reader of one of the files above joins this list.
-if [ "$AP_MODE" = catchup ]; then
-    write_subscriptions_page
-    _aplap "catch-up: Configured subscriptions"
-    # the two members through the ONE group renderer: its member list
-    # narrowed for the call (render_report reads it only for its own name)
-    _ap_sgr=$SUBS_GROUP_REPORTS
-    SUBS_GROUP_REPORTS=" "
-    for _ap_spec in $_ap_sgr; do
-        case ${_ap_spec#*:} in failed|failing-reasons) SUBS_GROUP_REPORTS="$SUBS_GROUP_REPORTS$_ap_spec " ;; esac
-    done
-    render_subs_group_pages
-    SUBS_GROUP_REPORTS=$_ap_sgr
-    _aplap "catch-up: Failed Subscriptions + Error reasons"
-    # the view pages below render only when their .rpt exists: clear the
-    # first run's copies, as the full mode's rm -f does (never a page with a
-    # stale view or a second selector row)
-    rm -f "$ADIR"/failed-sub-*.html
-else
-    render_coverage_pages   # the 5 PDA Configured cell pages (linked from the home)
-    _aplap "coverage pages"
-    # (the Use cases per-cell pages went 2026-09-29 — the counts link the
-    # Subscriptions page; nothing writes docs/use-cases/, use-case-patterns.html,
-    # added-bl.html or analyses/index.html any more, and every build starts from
-    # an empty docs/, so there is nothing to clean up)
-    render_first_seen_pages # docs/first-seen/*.html, before the First seen table links them
-    write_use_cases_page
-    write_subscriptions_page
-    write_logical_detection_page
-    write_accounts_page
-    write_first_seen_page
-    _aplap "use cases, first seen, configuration pages"
-    # (the box-reason sidecar _subs-boxes.tsv is bin/build/reason-boxes.sh, a
-    # build step right before this publish since 2026-09-30 — it was called
-    # from here as publish-insights.sh)
-    # The SUBS_GROUP_REPORTS pages (four Configuration-group reports whose DATA is
-    # transfer/server but whose PAGES belong here). Rendered from THIS script (not
-    # the area publishes, which run earlier — the rm -f above would wipe their
-    # output).
-    render_subs_group_pages
-    _aplap "subscription group pages"
-fi
+render_coverage_pages   # the 5 PDA Configured cell pages (linked from the home)
+_aplap "coverage pages"
+# (the Use cases per-cell pages went 2026-09-29 — the counts link the
+# Subscriptions page; nothing writes docs/use-cases/, use-case-patterns.html,
+# added-bl.html or analyses/index.html any more, and every build starts from
+# an empty docs/, so there is nothing to clean up)
+render_first_seen_pages # docs/first-seen/*.html, before the First seen table links them
+write_use_cases_page
+write_subscriptions_page
+write_logical_detection_page
+write_accounts_page
+write_first_seen_page
+_aplap "use cases, first seen, configuration pages"
+# (the box-reason sidecar _subs-boxes.tsv is bin/build/reason-boxes.sh, a
+# report-stage build step since 2026-09-30 — it was called from here as
+# publish-insights.sh)
+# The SUBS_GROUP_REPORTS pages (four Configuration-group reports whose DATA is
+# transfer/server but whose PAGES belong here). Rendered from THIS script (not
+# the area publishes, which run earlier — the rm -f above would wipe their
+# output).
+render_subs_group_pages
+_aplap "subscription group pages"
 
 # The Failed Subscriptions VIEW page (failed-sub-all.rpt, written by
 # bin/transfer/reports/failed.sh beside the default failed.rpt, which
@@ -1612,8 +1565,4 @@ done
 
 _aplap "the rest"
 
-if [ "$AP_MODE" = catchup ]; then
-    echo "Wrote the analyses catch-up (subscriptions, failed, failed-sub-*, failing-reasons)." >&2
-else
-    echo "Wrote docs/analyses (the analysis pages), docs/first-seen and docs/coverage." >&2
-fi
+echo "Wrote docs/analyses (the analysis pages), docs/first-seen and docs/coverage." >&2

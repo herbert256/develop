@@ -267,7 +267,7 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -
             close(SL)
         }
     }
-' "$RFLIP" "$SUBB" "$FILESC" "$(srv_subset uc3)")
+' "$RFLIP" "$SUBB" "$FILESC" "$(srv_subset poll)")
 
 IFS=$'\t' read -r _ n_err n_okerr n_ok n_notseen t_files t_ok t_er t_poll t_prob t_empty \
     <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"

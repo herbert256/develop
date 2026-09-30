@@ -181,7 +181,6 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
             if (dhit && khit) vb2G[g]++
             else if (dhit)    vd2G[g]++
             else if (khit)    vc2G[g]++
-            else              vn2G[g]++
             for (li = lo; li <= VE[vi]; li++) {
                 k2 = g SUBSEP LG[li]
                 if (dhit && !khit) del2G[g] += lgcG[k2]
@@ -300,10 +299,9 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                 # signal appears in the per-hour sidecar
                 if ($22 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:/) {
                     hx = jdn(substr($22,1,4)+0, substr($22,6,2)+0, substr($22,9,2)+0) * 24 + int(substr($22,12,2)); span(hx); hexs[ps SUBSEP hx] = 1 } }
-            stagedany[a] = 1                                 # this account staged >=1 pickup file
             if (d != "") { if (!(a in afst)||d<afst[a]) afst[a]=d; if (!(a in alst)||d>alst[a]) alst[a]=d
                            if (!(ps in sfst)||d<sfst[ps]) sfst[ps]=d; if (!(ps in slst)||d>slst[ps]) slst[ps]=d }
-            if ($5 ~ /^[0-9][0-9]:/) { hs = $7 * 24 + int(substr($5, 1, 2)); span(hs); hst[a SUBSEP hs] = 1; hsts[ps SUBSEP hs] = 1 }
+            if ($5 ~ /^[0-9][0-9]:/) { hs = $7 * 24 + int(substr($5, 1, 2)); span(hs); hsts[ps SUBSEP hs] = 1 }
         }
         next
     }
@@ -378,14 +376,13 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
             # every first pickup look like Jul 6 and hid the earlier collects),
             # and it is a whitelist ADMISSION that can fire without successful
             # authentication — not a logon.
-            a = acctof(m); if (a != "") { pk[a]++
+            a = acctof(m); if (a != "") {
                 # the multi-FE mirror: the same minute bookkeeping per
                 # (account, login) GROUP — recorded only for accounts with
                 # several configured logins, so memory stays proportional
                 lg9 = ""; if (match(m, /login name "[^"]*"/)) lg9 = toupper(substr(m, RSTART + 12, RLENGTH - 13))
                 g9 = ""
                 if (aln[a] + 0 >= 2) { g9 = a SUBSEP lg9
-                    pkG[g9]++
                     if (!(g9 in GSEEN)) { GSEEN[g9] = 1; GRO[++ngr] = g9 } }
                 if (d != "" && $2 ~ /^[0-9][0-9]:/) {
                     # (2026-09-27, speed round 12: the day number once per
@@ -445,7 +442,7 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                 acm[a SUBSEP m] = 1
                 if (!(a in ak0) || m < ak0[a]) ak0[a] = m
                 if (!(a in ak1) || m > ak1[a]) ak1[a] = m
-                h9 = int(m / 60); span(h9); hca[a SUBSEP h9] = 1
+                h9 = int(m / 60); span(h9)
             }
         }
         # ---- per-account logon classification (2026-08) ----------------------
@@ -490,7 +487,6 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
                 if (dhit && khit) vb2[a]++
                 else if (dhit)    vd2[a]++
                 else if (khit)    vc2[a]++
-                else              vn2[a]++
                 for (li = lo; li <= VE[vi]; li++) {
                     k2 = a SUBSEP LG[li]
                     if (dhit && !khit) {
@@ -583,25 +579,25 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
             attr = (a in xany)                                   # expiries attributable per flow on this account
             e = attr ? (xpd[ps] + 0 > 0) : (a in aseen)
             efp = attr ? xpd[ps] + 0 : ef[a] + 0                 # the Expired column: this flow'\''s, or the account'\''s
-            # the LOGON-derived figures per pair (attP/delP/pkP/fatP/latP/
+            # the LOGON-derived figures per pair (attP/delP/fatP/latP/
             # patP + the visit classes): the subscription OWN login group(s)
             # on a multi-FE account (scP=1), else the account figures — see
             # the BEGIN comment. Stored per ps; the two sidecar walks reuse them.
             scP[ps] = (aln[a] + 0 >= 2 && SUBL[su] != "") ? 1 : 0
             if (scP[ps]) {
-                attP[ps]=0; delP[ps]=0; pkP[ps]=0; fatP[ps]=""; latP[ps]=""; patP[ps]=""
-                vtP[ps]=0; vcP[ps]=0; vbP[ps]=0; vdP[ps]=0; vnP[ps]=0
+                attP[ps]=0; delP[ps]=0; fatP[ps]=""; latP[ps]=""; patP[ps]=""
+                vtP[ps]=0; vcP[ps]=0; vbP[ps]=0; vdP[ps]=0
                 nls = split(substr(SUBL[su], 2), LS9, SUBSEP)
                 for (li9 = 1; li9 <= nls; li9++) { g9 = a SUBSEP LS9[li9]
-                    attP[ps] += attG[g9]; delP[ps] += del2G[g9]; pkP[ps] += pkG[g9]
-                    vtP[ps] += vt2G[g9]; vcP[ps] += vc2G[g9]; vbP[ps] += vb2G[g9]; vdP[ps] += vd2G[g9]; vnP[ps] += vn2G[g9]
+                    attP[ps] += attG[g9]; delP[ps] += del2G[g9]
+                    vtP[ps] += vt2G[g9]; vcP[ps] += vc2G[g9]; vbP[ps] += vb2G[g9]; vdP[ps] += vd2G[g9]
                     if (fatG[g9] != "" && (fatP[ps] == "" || fatG[g9] < fatP[ps])) fatP[ps] = fatG[g9]
                     if (latG[g9] != "" && (latP[ps] == "" || latG[g9] > latP[ps])) latP[ps] = latG[g9]
                     if (patP[ps] == "" && patG[g9] != "") patP[ps] = patG[g9]
                 }
-            } else { attP[ps] = att[a]+0; delP[ps] = del[a]+0; pkP[ps] = pk[a]+0
+            } else { attP[ps] = att[a]+0; delP[ps] = del[a]+0
                      fatP[ps] = fat[a]; latP[ps] = lat[a]; patP[ps] = patA[a]
-                     vtP[ps] = vt2[a]+0; vcP[ps] = vc2[a]+0; vbP[ps] = vb2[a]+0; vdP[ps] = vd2[a]+0; vnP[ps] = vn2[a]+0 }
+                     vtP[ps] = vt2[a]+0; vcP[ps] = vc2[a]+0; vbP[ps] = vb2[a]+0; vdP[ps] = vd2[a]+0 }
             p = (attP[ps] > 0); sh = (subc[ps] + 0 > 0); c = (su in cm0)
             if      (e && !c)         stc = 0
             else if (!e && p && !sh)  stc = 1

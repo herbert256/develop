@@ -308,7 +308,6 @@ agg2=$(awk -F'\t' -v spx="$SPX" "$COREIDS_AWK"'
         if (minws == 0 || ws < minws) minws = ws
         if (ws > maxws) maxws = ws
         kk = $12 SUBSEP ws
-        if (!(kk in KC)) KWL[++nkk] = kk
         KC[kk]++; KWA[kk, KC[kk]] = (w "") + 0; KA[kk] += w
         if (KS[$12] == "") KSL[++nks] = $12
         KS[$12] = KS[$12] + 1
@@ -364,7 +363,7 @@ agg2=$(awk -F'\t' -v spx="$SPX" "$COREIDS_AWK"'
     }
 ' "$FILES")
 
-IFS='|' read -r _ n_bdays bk_peak bk_peakdate bk_end <<< "$(printf '%s\n' "$agg2" | grep '^T2|' || printf 'T2|0|0||0')"
+IFS='|' read -r _ _ bk_peak _ _ <<< "$(printf '%s\n' "$agg2" | grep '^T2|' || printf 'T2|0|0||0')"
 
 # All four row loops run INSIDE the report block below (a herestring keeps them
 # in this shell), so the counters each table's TOTAL line needs are ready by the
@@ -375,8 +374,6 @@ n_wrows=0
 n_shown=0; sum_bytes=0
 b1h_sum=0; b24_sum=0; bgt_sum=0; n_prows=0
 
-oldest_cell="-"
-[ -n "$oldest_dt" ] && oldest_cell="$oldest_dt ($oldest_site)"
 
 {
     printf 'TITLE\tWaiting\n'   # = its Reports menu label (2026-09-29)

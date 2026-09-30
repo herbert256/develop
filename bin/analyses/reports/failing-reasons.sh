@@ -32,8 +32,9 @@
 # 2026-09-14 held exactly those rows).
 #
 # An ANALYSES report reading a TRANSFER report — analyses reports run after the
-# transfer reports in bin/build.sh, and again after the failed-files catch-up,
-# so the source is always this build's.
+# transfer reports in bin/build.sh, so the source is always this build's
+# (failed-files.rpt is final after phase 1; the re-run after the failed-files
+# catch-up went with it, 2026-09-30).
 #
 # Usage:
 #   ./failing-reasons.sh    # -> data/analyses/reports/failing-reasons.rpt

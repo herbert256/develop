@@ -38,7 +38,7 @@ another page: the red-run sidecar (`red-run.sh` → `_red-run.tsv`, 2026-09-30 �
 from-green-to-red + only-red .rpt files before; Failed Subscriptions' Last green day / Days red /
 Failures in a row columns, the day pages and the boxes sidecar), missing-cronjobs (the boxes sidecar; Polling
 shows Schedule "no cron"), deploy-errors (the boxes sidecar's Deploy cause; Routing errors lists
-the lines), fe-overview (Partners - Incoming). month-stats.sh also writes `_alltime.tsv` (the Subscriptions page).
+the lines), fe-overview (Partners - Incoming). entities.sh (its month_stats part — month-stats.sh until 2026-09-30) also writes `_alltime.tsv` (the Subscriptions page).
 `report_tabs` names one tab per component table (tables sharing a `tab=KEY` modifier are ONE tab);
 `_merge_pad` pads a missing component with empty stubs so the tab count always matches. **The
 2026-09-28 fewer-server-reports round** (user request: "there are too many, are there
@@ -724,8 +724,9 @@ name match, case aside). Runs after `details.sh` (needs the slugmaps). No Logica
 
 ### Month stats (2026-09-13; retired and brought back 2026-09-29 — Activity & volume group)
 
-`bin/transfer/reports/month-stats.sh` reuses the Entities attribution (same rules, same nine
-entities, same total-row pair/once rule) but counts only the Files whose START date (`_files.tsv`
+The month stats — `bin/transfer/reports/entities.sh`'s `month_stats` part since 2026-09-30
+(`month-stats.sh` before) — sum each Entities row's per-day buckets over a month (the same
+attribution, nine entities and total-row pair/once rule), counting only the Files whose START date (`_files.tsv`
 col 4) falls in ONE calendar month: "this" = the month of the newest File start, "previous" = the
 month before. 18 `.rpt` under `data/transfer/reports/month-stats/{this,previous}-<entity>.rpt`
 (`META month` / `META which`), columns Files · In Files · Out Files · Error · Automatic · Resubmit

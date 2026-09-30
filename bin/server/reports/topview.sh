@@ -32,20 +32,28 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
-# One pass: per-day records, level split (I/W/E), per-component counts
-# (T/P/S), first/last time, and the per-day Warning/Error drill lines. END
-# walks the Julian-day range so calendar gaps become explicit "0" rows.
-agg=$(awk -F'\t' "$LOGLINES_AWK"'
+# The per-day records, level split (I/W/E), per-component counts (T/P/S) and
+# first/last time come from the COUNTS table (bin/server/subsets.sh, one pass
+# for every consumer — until 2026-09-30 this script read the whole cache for
+# them), the per-day Warning/Error drill lines from the non-Info subset (the
+# very lines the drill takes, in cache order). END walks the Julian-day range
+# so calendar gaps become explicit "0" rows.
+CNTF=$(srv_counts)
+agg=$(awk -F'\t' -v CNTF="$CNTF" "$LOGLINES_AWK"'
     function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     function fromjdn(j,  a,b,c,dd,e,mm,day,mon,yr){ a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d",yr,mon,day) }
-    {
+    FILENAME == CNTF {   # C date hour level component count  |  T date first last
+        if ($1 == "T") { first[$2] = $3; last[$2] = $4; next }
+        d = $2; if (d == "") next                  # an undated line: no Top view day
+        n = $6 + 0; lv = $4; cp = $5
+        rec[d] += n; trec += n; allday[d] = 1
+        if (lv == "I") { inf[d] += n; tinf += n } else if (lv == "W") { warn[d] += n; twarn += n } else if (lv == "E") { err[d] += n; terr += n }
+        if (cp == "T") { cT[d] += n; tT += n } else if (cp == "P") { cP[d] += n; tP += n } else if (cp == "S") { cS[d] += n; tS += n }
+        next
+    }
+    {   # the non-Info lines, in cache order: the Warning/Error drill lines
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) next
-        lv = $3; cp = $4; t = $2
-        rec[d]++; trec++; allday[d] = 1
-        if (lv == "I") { inf[d]++; tinf++ } else if (lv == "W") { warn[d]++; twarn++ } else if (lv == "E") { err[d]++; terr++ }
-        if (cp == "T") { cT[d]++; tT++ } else if (cp == "P") { cP[d]++; tP++ } else if (cp == "S") { cS[d]++; tS++ }
-        if (t != "") { if (!(d in first) || t < first[d]) first[d] = t; if (!(d in last) || t > last[d]) last[d] = t }
-        if (lv != "I") addline(d, $1 " " $2, lvlname(lv) " " compname(cp) "  " substr($5, 1, 200))   # Warning/Error drill lines
+        addline(d, $1 " " $2, lvlname($3) " " compname($4) "  " substr($5, 1, 200))
     }
     END {
         maxr = 1; for (d in rec) if (rec[d] > maxr) maxr = rec[d]
@@ -76,7 +84,7 @@ agg=$(awk -F'\t' "$LOGLINES_AWK"'
         printf "TOT|%d|%d|%d|%d|%s|%d|%d|%d\n", trec, tinf+0, twarn+0, terr+0, tep, tT+0, tP+0, tS+0
         printf "KPI|%d|%s|%d|%s|%d|%s|%d|%s|%s\n", ndays, busyd, busyc, worstd, worste, noisy, noisyc, fromjdn(mn), fromjdn(mx)
     }
-' "$PARSED")
+' "$CNTF" "$(srv_subset noninfo)")
 
 if [ -z "$agg" ]; then echo "No usable records found." >&2; rm -f "$OUT"; exit 0; fi
 

@@ -236,10 +236,10 @@ cov_view() {
             ok = ($2 != "Failed" && $2 != "Expired")
             for (p in FP) {
                 if ($16 == "in") {
-                    infile[p]++; if (ok) infileok[p]++
+                    infile[p]++
                     if ($6 > lastin[p]) { lastin[p] = $6; lastinok[p] = ok }
                 } else if ($16 == "out") {
-                    outfile[p]++; if (ok) outfileok[p]++
+                    outfile[p]++
                     if ($6 > lastout[p]) { lastout[p] = $6; lastoutok[p] = ok }
                 }
             }

@@ -69,16 +69,9 @@ pool_run "$SCRIPT_DIR/../analyses/reports/uc4-status.sh"
 # the stage (11 s on production); an early start folds it into the busy part
 pool_run "$SCRIPT_DIR/reports/unknown-entities.sh"   # ONE map-reduce pass -> all five unknown-* rpts (2026-07)
 pool_run "$SCRIPT_DIR/reports/auth-activity.sh"
-pool_run "$SCRIPT_DIR/reports/topview.sh"
+pool_run "$SCRIPT_DIR/reports/inbound-connections.sh"   # the whole cache (an "inbound" subset measured a loss, 2026-09-30 — bin/server/subsets.sh)
 # (bin/build/kaput-evidence.sh — went-kaput.sh here until 2026-09-30 — is not in this pool: bin/build.sh runs it once, early — right
 # after result.sh — because failed.sh and details.sh read its evidence sidecar)
-pool_run "$SCRIPT_DIR/reports/errors-day.sh"
-pool_run "$SCRIPT_DIR/reports/inbound-connections.sh"
-pool_run "$SCRIPT_DIR/reports/event-queue.sh"        # "[Pesit Default] Unable to submit event AgentEvent" -> the dashboards' 30-min sidecar (2026-09-14); an unpublished intermediate since 2026-09-27
-pool_run "$SCRIPT_DIR/reports/site-failures.sh"
-pool_run "$SCRIPT_DIR/reports/pesit.sh"              # -> pesit-slots.tsv only (the dashboards' / day pages' PeSIT view; no page since 2026-09-27, no .rpt since 2026-09-29)
-pool_run "$SCRIPT_DIR/reports/no-remote-dir.sh"
-pool_run "$SCRIPT_DIR/reports/no-remote-files.sh"
 # (transfer-site-missing.sh — the "Transfer site missing" report — was removed
 # 2026-09-27, user request. Likewise the 2026-09-28 fewer-server-reports round:
 # ssh-key-auth — its tables were the Incoming Bad key / Locked columns and a
@@ -90,6 +83,16 @@ if ! wait "$SUBSETS_PID"; then
     pool_wait || true
     exit 1
 fi
+# (2026-09-30, the lean round: topview, errors-day, event-queue,
+# site-failures, pesit, no-remote-dir and no-remote-files read the whole
+# cache until then — now the COUNTS table or an exact subset)
+pool_run "$SCRIPT_DIR/reports/topview.sh"
+pool_run "$SCRIPT_DIR/reports/errors-day.sh"
+pool_run "$SCRIPT_DIR/reports/event-queue.sh"        # "[Pesit Default] Unable to submit event AgentEvent" -> the dashboards' 30-min sidecar (2026-09-14); an unpublished intermediate since 2026-09-27
+pool_run "$SCRIPT_DIR/reports/site-failures.sh"
+pool_run "$SCRIPT_DIR/reports/pesit.sh"              # -> pesit-slots.tsv only (the dashboards' / day pages' PeSIT view; no page since 2026-09-27, no .rpt since 2026-09-29)
+pool_run "$SCRIPT_DIR/reports/no-remote-dir.sh"
+pool_run "$SCRIPT_DIR/reports/no-remote-files.sh"
 pool_run "$SCRIPT_DIR/reports/error-timing.sh"
 pool_run "$SCRIPT_DIR/reports/error-reasons.sh"
 pool_run "$SCRIPT_DIR/reports/failure-flows.sh"

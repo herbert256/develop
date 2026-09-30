@@ -27,11 +27,12 @@
 # Table 2, one row per account: Files, OK, Error (the outcome policy: Error =
 # Failed or Expired), First / Last start.
 #
-# Runs in the transfer serial tail (bin/transfer/reports.sh, after the pool:
-# the File-page sets errors/ + files/ exist) and again in bin/build.sh right
-# after the failed.sh catch-up, which rewrites those sets (the page is
-# re-rendered by bin/transfer/publish.sh catchup). No prose on the page (help
-# page unknown-transfers).
+# Runs ONCE, in the transfer serial tail (bin/transfer/reports.sh, after the
+# pool). Its File-page links test _filepages.tsv — the published set,
+# final before phase 1 — and it reads _files.tsv only, so the build's former
+# re-run after the failed.sh catch-up (and its catch-up re-render) went
+# 2026-09-30: it came out identical. No prose on the page (help page
+# unknown-transfers).
 #
 # Usage:
 #   ./unknown-transfers.sh   # -> data/transfer/reports/unknown-transfers.rpt

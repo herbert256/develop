@@ -25,10 +25,11 @@
 # configuration lacks) takes its OWN colour, _files.tsv col 25 (2026-09-30
 # audit: those rows were the only untinted ones).
 #
-# Runs after the transfer pool (bin/transfer/reports.sh, serial tail — the
-# pool's failed.sh has finished) and again in bin/build.sh right after the
-# failed.sh catch-up, whose reasons it needs. No prose on the page (help page
-# failed-files).
+# Runs ONCE, after the transfer pool (bin/transfer/reports.sh, serial tail —
+# the pool's failed.sh has finished and written _failed-reasons.tsv, which
+# the failed.sh catch-up leaves as it is; the build's re-run after that
+# catch-up went 2026-09-30: it came out identical). No prose on the page
+# (help page failed-files).
 #
 # Usage:
 #   ./failed-files.sh   # -> data/transfer/reports/failed-files.rpt

@@ -112,7 +112,7 @@ agg=$(awk -F'\t' '
                     printf "%s\t%d\t%d\t%d\n", d, s, souts[d, s]+0, sins[d, s]+0
         }
     }
-' "$PARSED")
+' "$(srv_subset noninfo)")   # the non-Info lines (2026-09-30): both rules skip level I
 
 if [ -z "$agg" ]; then echo "No PeSIT problem records found." >&2; rm -f "$SLOTS"; exit 0; fi
 # tmp+mv, so its readers never see a torn write

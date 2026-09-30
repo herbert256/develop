@@ -1194,7 +1194,7 @@ check $([ "$fh" = "Subscription" ] && [ "${n:-0}" = 0 ] && echo 0 || echo 1) "an
 n=$(grep -c 'class="gband[^"]*">Transfers</th>' docs/transfer/entities/remote-host-all.html 2>/dev/null || true)
 m=$(grep -c 'class="gband[^"]*">State</th>' docs/transfer/entities/remote-host-all.html 2>/dev/null || true)
 check $([ "${n:-0}" -ge 1 ] && [ "${m:-1}" = 0 ] && echo 0 || echo 1) "entities/remote-host-all.html group banner: ${n:-0} Transfers band(s), ${m:-?} State band(s), expected Transfers and no State"
-# the Subscriptions page's all-time counts sidecar (month-stats.sh) and its count cells
+# the Subscriptions page's all-time counts sidecar (entities.sh, month-stats.sh until 2026-09-30) and its count cells
 check $([ -s data/transfer/reports/_alltime.tsv ] && echo 0 || echo 1) "data/transfer/reports/_alltime.tsv missing or empty"
 n=$(grep -oE '<td class="num[^"]*">(<a [^>]*>)?[1-9][0-9]*(</a>)?</td>' docs/analyses/subscriptions.html 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "analyses/subscriptions.html: every count cell is blank"

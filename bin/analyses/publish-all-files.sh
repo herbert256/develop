@@ -38,9 +38,9 @@
 #
 # The File pages: a row whose CoreId has a page in docs/files/ (the failed.sh
 # rosters: data/transfer/reports/errors/ + files/) carries an UPPERCASE flag
-# and the engine links that page. Runs as its own build step AFTER the
-# failed.sh catch-ups and the transfer publish catch-up (their rosters are
-# final by then); a manual re-publish must run it too (it is outside the
+# and the engine links that page. Runs as its own build step after the
+# transfer publish (the failed.sh catch-up runs in the report stage, so the
+# rosters are final by then); a manual re-publish must run it too (it is outside the
 # per-area publishes, like publish-partner-groups.sh).
 #
 # Usage: bin/analyses/publish-all-files.sh

@@ -5,10 +5,10 @@
 # most specific box it sits in), read by the Entities Subscriptions Error
 # view's Reason column (publish_lib.sh) and failed.sh's server rows — the
 # LAST fallback of their Reason chain (after the flow's own error page and the
-# kaput evidence). A build-only step: bin/build.sh runs it once, right before
-# the analyses publish, when every input is final (failed.sh's
-# _errpage-evidence.tsv, the server reports, the red-run and kaput sidecars);
-# the catch-ups after it (failed.sh catchup, the transfer publish catchup)
+# kaput evidence). A build-only step: bin/build.sh runs it once, in the REPORT
+# stage right after the server reports (2026-09-30), when every input is final
+# (failed.sh's _errpage-evidence.tsv, the server reports, the red-run and
+# kaput sidecars); failed.sh's catch-up right after it and the publishes
 # read it. It was bin/analyses/publish-insights.sh, called from inside the
 # analyses publish, until 2026-09-30 (user decision): its three insight
 # PAGES went 2026-09-29 (Whitelist audit and Config hygiene with the Cleanup

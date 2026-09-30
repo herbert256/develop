@@ -485,8 +485,6 @@ tuples=$( {
     END { flush() }')
 
 ntot=$(printf '%s\n' "$tuples" | awk 'NF{n++} END{print n+0}')
-nseen=$(printf '%s\n' "$tuples" | awk -F'\t' '$3=="1"{n++} END{print n+0}')
-nnot=$((ntot - nseen))
 # footer sums for the numeric columns (report.js re-totals per search/view)
 IFS=$'\t' read -r tsc tsf tsp <<< "$(printf '%s\n' "$tuples" | awk -F'\t' '{c+=$4; f+=$5; p+=$6} END{printf "%d\t%d\t%d", c+0, f+0, p+0}')"
 

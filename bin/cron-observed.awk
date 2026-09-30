@@ -67,7 +67,7 @@ BEGIN {
         if (n < 7 || a[1] == "") continue
         u = toupper(a[1])
         if (!(u in QN) || a[2]+0 > QN[u]) { QN[u] = a[2]+0; QD[u] = a[3]+0
-            QT[u] = a[4]; QW[u] = a[5]+0; QC[u] = a[6]; QPD[u] = a[7]+0 }
+            QT[u] = a[4]; QW[u] = a[5]+0; QPD[u] = a[7]+0 }
     } close(POLLT)
     nqu = 0; for (u in QN) { nqu++; QU[nqu] = u }
     # poll-failures.tsv (remote-poll.sh): S/C/L rows keyed by site,

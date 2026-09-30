@@ -56,7 +56,7 @@ LC_ALL=C awk -F'\t' -v SLTF="$TMP/slots" '
         for (k in SL) { split(k, a, SUBSEP); printf "%s\t%d\t%d\n", a[1], a[2], SL[k] > SLTF }
         printf "%d\n", n + 0
     }
-' "$PARSED" > "$TMP/total"
+' "$(srv_subset event-queue)" > "$TMP/total"   # its marker subset (2026-09-30)
 touch "$TMP/slots"
 n_lines=$(cat "$TMP/total")
 TAB=$(printf '\t')

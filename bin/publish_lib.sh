@@ -1453,9 +1453,8 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # bin/flip-reason.awk); else the most specific box (_subs-boxes.tsv).
     # Appended AFTER Last seen, before the @data cells, so every baked column
     # index — and the ?axway_sort= links into these pages — stay put.
-    # _subs-boxes.tsv is written by the LATER analyses publish, so a
-    # box-FALLBACK reason can lag one build (fresh data/ included); the two
-    # primary sources are report-stage and always current.
+    # _subs-boxes.tsv is final before every publish (bin/build/reason-boxes.sh,
+    # report stage, 2026-09-30), like the two primary sources.
     if [ "$name" = subscription ] && [ -n "$blk_err" ]; then
         local _lfr="$DATA/$area/reports/failed-sub-all.rpt" _kap="$DATA/server/reports/_kaput-evidence.tsv"
         local _box="$DATA/analyses/reports/_subs-boxes.tsv" _rfl="$DATA/colour/_redflip.tsv" _reasonf
@@ -1969,7 +1968,8 @@ entry_label() {   # $1 area  $2 basename
     t=${t#Transfer }; echo "${t% Counts}"
 }
 # ---- Month stats (2026-09-13, user request) ---------------------------------
-# The 18 pages of bin/transfer/reports/month-stats.sh — {this,previous} × the
+# The 18 pages of the month stats (bin/transfer/reports/entities.sh's
+# month_stats part; month-stats.sh until 2026-09-30) — {this,previous} × the
 # nine entities — under docs/<area>/month-stats/, the Reports pulldown's
 # Activity & volume group (retired and brought back 2026-09-29). Two tab rows: the MONTH (Current month · Previous month, each
 # with its yyyy-mm from the .rpt META) and the ENTITY (the Entities order).
@@ -1978,7 +1978,7 @@ render_month_stats() {   # $1 area
     local area=$1
     local rdir="$DATA/$area/reports/month-stats" odir="$DOCS/$area/month-stats"
     mkdir -p "$odir"; rm -f "$odir"/*.html
-    [ -f "$rdir/this-subscription.rpt" ] || { echo "  (no month-stats .rpt yet — bin/transfer/reports/month-stats.sh writes them)" >&2; return 0; }
+    [ -f "$rdir/this-subscription.rpt" ] || { echo "  (no month-stats .rpt yet — bin/transfer/reports/entities.sh writes them)" >&2; return 0; }
     local ents="subscription logical partner account login remote-host domain application bl"
     local w e a rpt tmp nav row1 row2 lbl n=0 mon_this mon_prev
     mon_this=$(meta_val "$rdir/this-subscription.rpt" month); mon_prev=$(meta_val "$rdir/previous-subscription.rpt" month)

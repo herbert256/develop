@@ -157,7 +157,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
         for (d in dc) { nday++; printf "DAY\t%s\t%d\t%d\n", d, dc[d], dsn[d] }
         printf "TOT\t%d\t%d\t%d\t%d\n", tot+0, nsub+0, nday+0, nskip+0
     }
-' <(notx_uc3; known_names KS "$TSITE") "$PARSED")
+' <(notx_uc3; known_names KS "$TSITE") "$(srv_subset poll)")   # the poll subset (2026-09-30): it reads the Applying the search pattern lines only
 
 IFS=$'\t' read -r _ tot_polls n_sub n_day n_skip <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 if [ "${tot_polls:-0}" -eq 0 ]; then

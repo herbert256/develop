@@ -33,8 +33,8 @@
 # the flip's SINCE (_redflip.tsv col 3 — when it went red) to the data
 # window's last day, Reason =
 # the classified newest server E line (_kaput-evidence.tsv through
-# bin/flip-reason.awk) else its Subscriptions-in-boxes box (one build behind,
-# like the entities Reason column). Like a file row, the whole row opens the
+# bin/flip-reason.awk) else its Subscriptions-in-boxes box (_subs-boxes.tsv,
+# final on the catch-up run — see THE MODE). Like a file row, the whole row opens the
 # flow's OWN error page — files/<slug>.html, NAMED BY THE SUBSCRIPTION,
 # holding the facts and the server-log mention ring (the page step below the
 # finishing pass writes them). So each view covers ALL failing
@@ -118,7 +118,10 @@ _flap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  failed: %s\n' "$((_t1 -
 # THE MODE (2026-09-29, build speed) — an explicit argument, never a
 # freshness check:
 #   (none) | full   everything below; the build's phase-1 run
-#   catchup         bin/build.sh's "report catch-up: failed subscriptions":
+#   catchup         bin/build.sh's "report catch-up: failed subscriptions",
+#                   in the REPORT stage right after bin/build/reason-boxes.sh
+#                   and before every publish (2026-09-30 — after the
+#                   publishes until then, which re-rendered in catch-up modes):
 #                   ONLY what reads an input that changed since the full run
 #                   of THIS build — the Subscriptions-in-boxes sidecar
 #                   (_subs-boxes.tsv, the Reason of a server-failing row
@@ -127,8 +130,9 @@ _flap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  failed: %s\n' "$((_t1 -
 #                   red-run columns; written by a phase-1 PEER of the full
 #                   run). So: the server-failing set again (its REASON column;
 #                   the rest must come out identical, else a full run), their
-#                   pages (the reason is in the TITLE), the two lists and the
-#                   _srvsubs sidecars. The drill and File pages, both
+#                   pages, the two lists and the _srvsubs sidecars
+#                   (_srvsubs-map.tsv — details.sh reads it — keeps its
+#                   content: the set / slug / stamp columns may not move). The drill and File pages, both
 #                   server-log passes, the evidence sidecar and the File
 #                   reasons read nothing that changed and are left as the full
 #                   run wrote them; the full run leaves the intermediates this
@@ -376,23 +380,19 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" \
         ALLF[$2] = 1                            # the lastst collection set
         if ($8 !~ /L/) next                     # only the leg selection gets a page here
         ord[++nord] = $2                        # CoreId, newest first
-        SITE[$2] = $3; LEGS[$2] = $4; SD[$2] = $5; ST[$2] = $6
-        OC[$2] = $7                             # Failed | Expired — the title wording (2026-09-29: unset here, an Expired File in the lists got "Failed subscription")
+        SITE[$2] = $3; SD[$2] = $5; ST[$2] = $6
         WANT[$2] = 1
         next
     }
     FILENAME == EXTRAF {                        # drill-only: the 30-day
         ord[++nord] = $2                        # window errors the selection skipped
-        SITE[$2] = $3; LEGS[$2] = $4; SD[$2] = $5; ST[$2] = $6
-        OC[$2] = $7                             # Failed | Expired (page wording)
+        SITE[$2] = $3; SD[$2] = $5; ST[$2] = $6
         WANT[$2] = 1
         next
     }
     FILENAME == FILESF {                        # the FILE pages (any outcome): the
         ord[++nord] = $2                        # Transfer patterns "Last 5 files" links
-        SITE[$2] = $3; LEGS[$2] = $4; SD[$2] = $5; ST[$2] = $6
-        OC[$2] = $7                             # Processed | Waiting | Failed | Expired
-        SRC[$2] = $8                            # P (patterns) / L (longest) / PL: the back link(s)
+        SITE[$2] = $3; SD[$2] = $5; ST[$2] = $6
         WANT[$2] = 1; FSET[$2] = 1              # -> FILEDIR, neutral wording, no list mark
         next
     }
@@ -823,7 +823,7 @@ if [ -s "$TMP/meta" ]; then
     LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v CAP="$SRVCAP" -v FILEDIR="$FILEDIR" -v FSETF="$TMP/fileset" '
         # the FILE pages live in FILEDIR (2026-09-03): the same sections, the
         # page path and the back link decided per CoreId
-        BEGIN { while ((getline l9 < FSETF) > 0) { split(l9, y9, "\t"); if (y9[1] != "") { FSET[y9[1]] = 1; FSRC[y9[1]] = y9[2] } } close(FSETF) }
+        BEGIN { while ((getline l9 < FSETF) > 0) { split(l9, y9, "\t"); if (y9[1] != "") FSET[y9[1]] = 1 } close(FSETF) }
         function pdir(c9) { return ((c9 in FSET) ? FILEDIR : ERRDIR) }
         # srvlines: coreid, kind, date, time, level, comp, session, why, message
         # — sorted by coreid, kind, date, time, so each page is contiguous and
@@ -1265,7 +1265,6 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" \
     -v RRUN="$REPORTS_DIR/_red-run.tsv" '
     function rescol(nm,   r) { r = (toupper(nm) in SRES) ? SRES[toupper(nm)] : ""
         return (r == "green" || r == "orange" || r == "red") ? r : "" }
-    function cl(s) { sub(/^@\{[^}]*\}/, "", s); return s }
     # the RED-RUN columns (2026-09-29: the From green to red and Only red
     # pages went — their figures ride here, after the CoreID column so the
     # positional readers keep fields 3-5): Last green day ("never" for a flow

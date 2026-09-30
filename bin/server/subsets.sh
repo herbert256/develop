@@ -38,14 +38,39 @@ source "$SCRIPT_DIR/lib.sh"
 source "$SCRIPT_DIR/../ranges.sh"
 
 # consumer <TAB> marker <TAB> marker ... (one consumer per line)
+#   poll        the UC3 polling families — uc3-status, remote-poll,
+#               no-remote-dir, no-remote-files (2026-09-30: ONE subset for the
+#               former uc3 + remote-poll pair, 45 % of the cache each and 72
+#               lines apart — every consumer acts only on lines holding one of
+#               ITS markers, and those are all here)
+#   event-queue event-queue (the PeSIT AgentEvent submit failures)
+#   (MEASURED, NOT WORTH IT — 2026-09-30, single job on an 8x sample cache:
+#   an "inbound" subset for inbound-connections ("had initiated a connection
+#   over ", ~4-10 % of the cache) cost +1.0 CPU-s in this pass to save 0.3;
+#   a "day" subset for bin/day/reports.sh day_srv's problem signals — twelve
+#   short markers like "is locked" / "Login failed" in the gate — cost +2.6 to
+#   save 1.1. The gate regex runs on every character of every line: only
+#   long, rare markers pay.)
+#   (deploy-errors keeps "Applying the search pattern": its UC3 poll-recovery
+#   clear reads the poll lines, 2026-09-30 audit C-10 checked)
 SPEC='uc1	Could not send file	An error occurred while sending	finished with error	Connection failure while 	listing files from partner
-uc3	Applying the search pattern	listing files from partner 	Connection failure while 	Remote folder of transfer site: 	Remote files pattern of transfer site:
+poll	Applying the search pattern	listing files from partner 	Connection failure while 	Remote folder of transfer site: 	Remote files pattern of transfer site	failure connecting to remote host 
 ssh-sessions	Channel is not active	No registered SSH session with ID	No SSH connection with ID	Network stream read/write error	Ignoring message for not active session
 connection-diagnostics	Connection failure while 	could not be established	Wrong server fingerprint: got	~performs test connection
-remote-poll	Applying the search pattern	listing files from partner 	Remote files pattern of transfer site	Connection failure while 	failure connecting to remote host 
 deploy-errors	Applying the search pattern	is used for incoming transfer	stop further route execution
-routing-errors	Could not send file	while publishing the file	post client action	stop further route execution'
+routing-errors	Could not send file	while publishing the file	post client action	stop further route execution
+event-queue	[Pesit Default] Unable to submit event AgentEvent'
 # + TWO RULE SUBSETS (2026-09-29, speed round 3), outside the marker gate —
+# (and, since 2026-09-30, the COUNTS table: counts.tsv, one line per
+#   C <TAB> date <TAB> hour <TAB> level <TAB> component <TAB> count
+#   T <TAB> date <TAB> first time <TAB> last time
+# over EVERY cache line — the per-day / per-hour / level / component figures
+# the server Top view (topview.sh) and the levels per component
+# (errors-day.sh) each counted in a full pass of their own. date = field 1
+# when it starts yyyy- (else "": the line counts for errors-day's totals
+# only); hour = the first two characters of field 2 when they are digits,
+# else "00"; T only for a valid date and a non-empty time, min / max as
+# STRINGS (topview's rule).)
 # every alternative in the gate regex is paid on every character of every
 # line, and case-insensitive markers the most (they cost +40 % of this pass):
 #   noninfo    every line whose level (field 3) is not I — ~2 % of the
@@ -101,20 +126,41 @@ part() {   # $1 = part index: its range of line starts is [lo, hi)
                 print | OC[i]; break }
         }
         # the RULE subsets (see SPEC_EXTRA), on every line
-        {   # noninfo: field 3 is not "I" (the date and time fields hold no
-            # TAB; a time wider than the 40-byte window falls back to split)
-            p9 = index($0, "\t"); q9 = index(substr($0, p9 + 1, 40), "\t")
-            if (q9) lv9 = substr($0, p9 + q9 + 1, 2); else { split($0, F9, "\t"); lv9 = F9[3] "\t" }
-            if (lv9 != "I\t") { if (NIC == "") NIC = "cat > \"" OUTP "noninfo.p" PART "\""; print | NIC }
+        {   # the four leading fields (date, time, level, component) from the
+            # head of the line — the message may be long; a head that does
+            # not reach the message falls back to the whole line
+            n9 = split(substr($0, 1, 120), F9, "\t"); if (n9 < 5) split($0, F9, "\t")
+            # COUNTS (see the header): date / hour / level / component
+            d9 = substr(F9[1], 1, 10); if (d9 !~ /^[0-9][0-9][0-9][0-9]-/) { d9 = ""; h9 = "" }
+            else { h9 = substr(F9[2], 1, 2); if (h9 !~ /^[0-9][0-9]$/) h9 = "00"
+                   t9 = F9[2]; if (t9 != "") { if (!(d9 in TF) || t9 < TF[d9]) TF[d9] = t9; if (!(d9 in TL) || t9 > TL[d9]) TL[d9] = t9 } }
+            CNT[d9 "\t" h9 "\t" F9[3] "\t" F9[4]]++
+            # noninfo: field 3 is not "I"
+            if (F9[3] != "I") { if (NIC == "") NIC = "cat > \"" OUTP "noninfo.p" PART "\""; print | NIC }
             # io-errors: its regex (io-errors.sh, on the message) over the line
             if (index($0, "rror") && $0 ~ /[Ii][Oo] [Ee]rror|[Ii]nput\/[Oo]utput [Ee]rror/) {
                 if (IOC == "") IOC = "cat > \"" OUTP "io-errors.p" PART "\""; print | IOC }
         }
-        END { for (i in OC) close(OC[i]); if (NIC != "") close(NIC); if (IOC != "") close(IOC) }' /dev/stdin
+        END { for (i in OC) close(OC[i]); if (NIC != "") close(NIC); if (IOC != "") close(IOC)
+              for (k in CNT) print "C\t" k "\t" CNT[k] > (OUTP "counts.p" PART)
+              for (d in TF) print "T\t" d "\t" TF[d] "\t" TL[d] > (OUTP "counts.p" PART)
+              close(OUTP "counts.p" PART) }' /dev/stdin
 }
 pids=()
 for ((pi = 1; pi <= NJ; pi++)); do part "$pi" & pids+=("$!"); done
 for p in "${pids[@]}"; do wait "$p"; done
+# the COUNTS table: every part's counters summed, the first / last times
+# folded (string min / max), sorted — no hash-order dependence
+: > "$SUBDIR/counts.tsv.tmp"
+for ((pi = 1; pi <= NJ; pi++)); do
+    if [ -f "$SUBDIR/counts.p$pi" ]; then cat "$SUBDIR/counts.p$pi" >> "$SUBDIR/counts.tsv.tmp"; rm -f "$SUBDIR/counts.p$pi"; fi
+done
+LC_ALL=C awk -F'\t' -v OFS='\t' '
+    $1 == "C" { k = $2 OFS $3 OFS $4 OFS $5; C[k] += $6; next }
+    $1 == "T" { if (!($2 in TF) || ($3 "") < TF[$2]) TF[$2] = $3; if (!($2 in TL) || ($4 "") > TL[$2]) TL[$2] = $4 }
+    END { for (k in C) print "C", k, C[k]; for (d in TF) print "T", d, TF[d], TL[d] }' "$SUBDIR/counts.tsv.tmp" \
+    | LC_ALL=C sort > "$SUBDIR/counts.tsv"
+rm -f "$SUBDIR/counts.tsv.tmp"
 # stitch each consumer's parts in RANGE order (= cache order)
 { printf '%s\n' "$SPEC" | cut -f1; printf '%s\n' "$SPEC_EXTRA"; } | while IFS= read -r c; do
     : > "$SUBDIR/$c.tsv"

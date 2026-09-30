@@ -12,25 +12,17 @@
 # once) — this step never touches the input CSVs.
 #
 # Usage:  bin/transfer/publish.sh            (run after the transfer reports —
-#                                             every page, docs/files/ included:
-#                                             a manual publish is complete)
-#         bin/transfer/publish.sh firstpass  (bin/build.sh's first transfer
-#                                             publish only: every page BUT
-#                                             docs/files/, which the catch-up
-#                                             renders — once per build)
-#         bin/transfer/publish.sh catchup    (bin/build.sh's transfer catch-up
-#                                             step only — see THE CATCH-UP MODE)
+#                                             every page, docs/files/ included;
+#                                             bin/build.sh runs it ONCE, after the
+#                                             report stage's Reason catch-up — the
+#                                             firstpass / catchup modes of
+#                                             2026-09-29 went 2026-09-30)
 #
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; defines the renderer
 
-# the MODE (2026-09-29): an explicit argument — never a freshness check
-TP_MODE=${1:-full}
-case $TP_MODE in
-    full|firstpass|catchup) ;;
-    *) printf 'usage: bin/transfer/publish.sh [firstpass|catchup]\n' >&2; exit 2 ;;
-esac
+[ $# -eq 0 ] || { printf 'usage: bin/transfer/publish.sh (no arguments)\n' >&2; exit 2; }
 
 ensure_assets   # topbar-data.js (the menus' data file)
 
@@ -53,7 +45,6 @@ _tplap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  transfer publish: %s\n
 # filter — a page is one file, not a period. The errors set renders LAST, after
 # the files set has been waited for: should a CoreId ever sit in both, the
 # failed-File page wins and the two renders never race on one path.
-# The full mode and the catch-up render it; the firstpass mode does not.
 # IN BATCHES (2026-09-27, speed round 9): thousands of ~10 ms renders, one
 # pooled job EACH, spent more on the job fork and the pool's polling than on
 # the pages — a job now renders a run of pages (4 runs per pool slot). The
@@ -105,52 +96,6 @@ render_file_pages() {
     echo "Rendered docs/files/ (${#errp[@]} failed-file page(s) + ${#filp[@]} File page(s))." >&2
 }
 
-# ---- THE CATCH-UP MODE ------------------------------------------------------
-# `bin/transfer/publish.sh catchup` (2026-09-29) is bin/build.sh's "publish:
-# transfer catch-up" step. It runs after the report catch-ups (failed.sh,
-# failed-files.sh, failing-reasons.sh) and the analyses publish catch-up, and re-renders ONLY the transfer pages that read what those steps
-# rewrote after the first (full) run of this script. Until 2026-09-29 the
-# step re-ran the whole script, every transfer page included.
-# THE DEPENDENCY TRACE (keep it in step with the readers). What changed since
-# the first run: failed.sh's outputs (failed.rpt, failed-sub-all.rpt,
-# _failed-reasons.tsv, _errpage-evidence.tsv, _srvsubs.tsv, _srvsubs-map.tsv
-# and the errors/ + files/ .rpt sets, rewritten whole), failed-files.rpt,
-# failing-reasons.rpt, and
-# analyses/reports/_subs-boxes.tsv (reason-boxes.sh, in the analyses
-# publishes, which run AFTER the first run of this script). Their transfer
-# pages:
-#   transfer/entities/subscription-*.html  the Error view's Reason column
-#       (publish_lib render_entity_report) reads failed-sub-all.rpt,
-#       _srvsubs.tsv and _subs-boxes.tsv; the six views render together (the
-#       other five read nothing that moved, so they come out the same)
-#   transfer/failed-files.html             failed-files.rpt
-#   transfer/unknown-transfers.html        unknown-transfers.rpt (its File-page
-#       links follow the errors/ + files/ sets; 2026-09-29)
-#   files/*.html                           the errors/ + files/ .rpt sets —
-#       cleared and rendered in full (render_file_pages): the ONLY render of
-#       docs/files/ in a build, the first run being the firstpass mode
-# Every other page of this script reads report-stage .rpt files and caches
-# that no step since the first run rewrites (the render reads no docs/
-# page). The analyses-housed failed / failed-sub-all / failing-reasons pages
-# are bin/analyses/publish.sh catchup's; the detail pages publish-details.sh's.
-# A NEW transfer-page reader of one of the files above joins this list.
-if [ "$TP_MODE" = catchup ]; then
-    CUR_DATES=$TRANSFER_DATES
-    for name in subscription failed-files unknown-transfers; do
-        rpt="$DATA/transfer/reports/$name.rpt"
-        [ -f "$rpt" ] || { echo "  (no data yet: $name)" >&2; continue; }
-        pub_run render_report "transfer" "$name" "$rpt"
-    done
-    # NO pub_wait here: the two report jobs (the Subscriptions entity views
-    # are the slowest single render of the area, ~1 s on the sample) run
-    # BESIDE the files/ batches — disjoint trees (docs/transfer/ vs
-    # docs/files/), each job with its own CUR_DATES copy — and
-    # render_file_pages' first pub_wait reaps them with its own jobs
-    render_file_pages
-    _tplap "catch-up: Subscriptions entity views + Failed files + Unknown transfers + files/ pages"
-    echo "Rendered the transfer catch-up (the Subscriptions entity views, Failed files, Unknown transfers, docs/files/)." >&2
-    exit 0
-fi
 
 mkdir -p "$DOCS/transfer"
 rm -f "$DOCS"/transfer/*.html   # clear stale report pages (the index is rewritten by bin/build/publish.sh)
@@ -256,25 +201,16 @@ if [ ${#waip[@]} -gt 0 ]; then
     echo "Rendered docs/transfer/waiting/ (${#waip[@]} subscription page(s))." >&2
 fi
 
-# THE FILE PAGES — docs/files/ (render_file_pages above) — NOT in the
-# FIRSTPASS mode (2026-09-29, bin/build.sh's first transfer publish): failed.sh
-# rewrites both .rpt sets whole in the report catch-up and the transfer
-# catch-up renders the directory from them, so a first-pass render was
-# overwritten page for page — docs/files/ now renders ONCE per build. Checked:
-# no step between the two reads docs/files/ (the detail, partner-group,
-# server and analyses publishes, failed / failed-files /
-# failing-reasons and the dashboards + day reports read the data/ trees, the
-# rosters included — never the pages; linkcheck and the all-files search run
-# after the catch-up, and the search reads the data/ rosters anyway).
+# THE FILE PAGES — docs/files/ (render_file_pages above), from the errors/ +
+# files/ .rpt sets failed.sh settled in the report stage (its Reason
+# catch-up included) — ONCE per build.
 _tplap "report pages + sub-pages"
-if [ "$TP_MODE" = full ]; then
-    render_file_pages
-    _tplap "files/ pages"
-fi
+render_file_pages
+_tplap "files/ pages"
 
 # MONTH STATS (2026-09-13, user request; retired the morning of 2026-09-29
 # and brought back the same day): the 18 {this,previous} × entity pages of
-# month-stats.sh -> docs/transfer/month-stats/ (publish_lib
+# entities.sh's month stats -> docs/transfer/month-stats/ (publish_lib
 # render_month_stats clears the dir itself)
 render_month_stats transfer
 
