@@ -47,18 +47,19 @@
   // 1 the brand — its TEXT is the environment label (input/environment.txt;
   // "Axway ST" without one), or on a runtime checkout the pair "Acceptance /
   // Production", the active one bold and yellow (.envcur) linking the home
-  // page · 2 Overview · Errors · Duration · Partners · Waiting/Expired ·
-  // Security · Seen · Configuration · Use cases · Patterns · Activity ·
-  // Entities · Files + the search icon (ONE cluster, 2026-09-29; since
+  // page · 2 Entities · Files (a group of their own since 2026-09-30) · 3
+  // Overview · Errors · Duration · Partners · Waiting/Expired · Security ·
+  // Seen · Configuration · Use cases · Activity (ONE cluster, 2026-09-29; since
   // 2026-09-30, user request, Errors right after Overview, Duration ->
   // transfer/duration.html and Waiting/Expired -> transfer/waiting-expired.html
   // added, the data period between the brand and the cluster gone; later that
   // day the pair "Partners: In / Out", since the evening just "Partners" ->
   // analyses/partners-in.html (Partners Out through its group row), fixed paths
   // like Duration, right after Duration since the night; the six links after
-  // Waiting/Expired replaced the Reports pulldown the same night) · 3 the
-  // Dashboard link · 4 the help icon (the site map icon went 2026-09-30 with
-  // the site map; Logons, after Partners, went again with its reports).
+  // Waiting/Expired replaced the Reports pulldown the same night; Patterns went
+  // with the Flow patterns reports) · 4 the Dashboard link · 5 the search and
+  // help icons (the search icon beside help since 2026-09-30; the site map
+  // icon went with the site map; Logons went again with its reports).
   function buildTopbar() {
     var tb = document.querySelector("div.topbar");
     if (!tb || tb.firstChild) return;
@@ -79,6 +80,12 @@
     } else brandHtml = '<a class="brand" href="' + b + 'index.html">' + esc(brand) + "</a>";
     tb.innerHTML =
       brandHtml +
+      // Entities · Files — a group of their own right after the environment
+      // name (2026-09-30, user request: "Move Entities & Files to an own group
+      // in the menu bar, between Acceptance/Production and Topview")
+      '<span class="entgroup">' +
+      '<a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
+      '<a class="entlabel" href="' + b + 'search/all-files.html">Files</a></span>' +
       '<span class="entgroup">' +
       (M.overview ? '<a class="entlabel" href="' + b + esc(M.overview) + '">Overview</a>' : "") +
       (M.errors ? '<a class="entlabel" href="' + b + esc(M.errors) + '">Errors</a>' : "") +
@@ -91,13 +98,12 @@
       '<a class="entlabel" href="' + b + 'analyses/first-seen.html">Seen</a>' +
       '<a class="entlabel" href="' + b + 'analyses/subscriptions.html">Configuration</a>' +
       '<a class="entlabel" href="' + b + 'analyses/use-cases.html">Use cases</a>' +
-      '<a class="entlabel" href="' + b + 'transfer/file-journey-patterns.html">Patterns</a>' +
       '<a class="entlabel" href="' + b + 'transfer/activity-per-week.html">Activity</a>' +
-      '<a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
-      '<a class="entlabel" href="' + b + 'search/all-files.html">Files</a>' +
-      '<a class="searchbtn" href="' + b + 'search/search.html" title="Search" aria-label="Search">🔍</a></span>' +
+      "</span>" +
       '<a class="dashlink" href="' + b + 'dashboards/index.html">Dashboard</a>' +
       '<span class="tr-group">' +
+      // the search icon beside the help icon (2026-09-30, user request)
+      '<a class="searchbtn" href="' + b + 'search/search.html" title="Search" aria-label="Search">🔍</a>' +
       (help ? '<a class="helpbtn" href="' + b + "help/" + help + '.html" title="Help" aria-label="Help">?</a>' : "") +
       "</span>";
     envLinks(M);
