@@ -549,6 +549,9 @@ td.desc { color:#444; white-space:normal; }
 body.home h1, body.home .subtitle, body.home h2 { text-align:center; }
 body.home .sxs { width:max-content; max-width:100%; margin-left:auto; margin-right:auto; }
 body.home .tablewrap table { margin-left:auto; margin-right:auto; }
+/* the "Build on …" link at the bottom of the home page (2026-09-30) — quiet, centered */
+body.home .buildstamp { text-align:center; font-size:0.8rem; margin:1.6rem 0 0.6rem; }
+body.home .buildstamp a { color:#6b7785; }
 /* ---- help pages (docs/help/*.html) ----
    Hand-authored, persistent prose — the publish scripts never touch docs/help/
    (see CLAUDE.md). Reuses the site's h1/h2/a styling; adds just the reading-

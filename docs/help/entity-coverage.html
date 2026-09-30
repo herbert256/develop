@@ -7,9 +7,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: Entity coverage — Axway ST reports</title>
-<link rel="stylesheet" href="../assets/style.css?v=1020504938">
+<link rel="stylesheet" href="../assets/style.css?v=2740747380">
 <script src="../assets/topbar-data.js?v=2002570715" defer></script>
-<script src="../assets/topbar.js?v=1020504938" defer></script>
+<script src="../assets/topbar.js?v=2740747380" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="general"></div>
@@ -30,7 +30,7 @@
 <h2>Rules</h2>
 <ul>
 <li>A side is covered when a real File moved that way or the server log proves the link; 0 Subs = covered. A both-ways entity needs In and Out.</li>
-<li><strong>In proof</strong>: a successful SSH authentication by one of the entity&rsquo;s logins (see <a href="server-logon.html">Logons</a>). <strong>Out proof</strong>: a successful UC3 remote poll, even one finding 0 files (see <a href="server-uc3-status.html">UC status &rsaquo; UC3</a>).</li>
+<li><strong>In proof</strong>: a successful SSH authentication by one of the entity&rsquo;s logins (the server log&rsquo;s &ldquo;successfully authenticated over SSH&rdquo; lines; a login&rsquo;s logons show on <a href="partners-in.html">Partners in</a>). <strong>Out proof</strong>: a successful UC3 remote poll, even one finding 0 files (see <a href="server-uc3-status.html">UC status &rsaquo; UC3</a>).</li>
 <li><strong>Current</strong>: the newest File that way was OK, or a logon / poll proves the link. <strong>Once</strong>: any File, logon or poll ever. <strong>OK transfers</strong>: the newest File was OK; proofs do not count.</li>
 <li><strong>Regressed</strong> = covered Once, not Current; search <code>regressed</code> for that list. OK transfers &sube; Current &sube; Once.</li>
 <li>Rows are green (Current covered) or red (not), overruling the usual result colours. Full period, no date filter.</li>
