@@ -165,7 +165,7 @@ awk -F'\t' "$AWKLIB"'
                     win = sprintf("%02d:00-%02d:59", hs, he)
                     if (m == 1)      printf "1\t%s\t%02d\tError rate\t%s\t%d%%\t%s\t%.1f\t%d\t%d\tError%%20%%25%%20Files\t%s\n",  d, hs, win, pk + 0.5, tyc(sprintf("%.1f%%", mx(RB[k], 2)), RB[k], 2, sprintf("%.1f%%", RB[k])), pkr, wf, wff, (pkr >= 10 ? "red" : "orange")
                     else if (m == 2) printf "1\t%s\t%02d\tDuration\t%s\t%s\t%s\t%.1f\t%d\t%d\tDuration\t%s\n",               d, hs, win, hdur(pk), tyc(hdur(mx(DB[k], 30000)), DB[k], 30000, hdur(DB[k])), pkr, wf, wff, (pkr >= 10 ? "red" : "orange")
-                    else if (m == 3) printf "1\t%s\t%02d\tFiles spike\t%s\t%d OK Files\t%s\t%.1f\t%d\t%d\tOK%%20Files\t%s\n", d, hs, win, pk, tyc(sprintf("%d", mx(OB[k], 5) + 0.5), OB[k], 5, sprintf("%d", OB[k] + 0.5)), pkr, wf, wff, (pkr >= 10 ? "red" : "orange")
+                    else if (m == 3) printf "1\t%s\t%02d\tFiles spike\t%s\t%d Files\t%s\t%.1f\t%d\t%d\tOK%%20Files\t%s\n", d, hs, win, pk, tyc(sprintf("%d", mx(OB[k], 5) + 0.5), OB[k], 5, sprintf("%d", OB[k] + 0.5)), pkr, wf, wff, (pkr >= 10 ? "red" : "orange")
                     else if (m == 4) printf "1\t%s\t%02d\tSilence\t%s\t0 Files\t%d\t\t0\t0\tOK%%20Files\tred\n",           d, hs, win, FB[k] + 0.5
                     else             printf "1\t%s\t%02d\tVolume\t%s\t%s\t%s\t%.1f\t%d\t%d\tVolume\t%s\n",                   d, hs, win, hbytes2(pk), tyc(hbytes2(mx(VBASE[k], 10000000)), VBASE[k], 10000000, hbytes2(VBASE[k])), pkr, wf, wff, (pkr >= 10 ? "red" : "orange")
                 }
@@ -206,9 +206,9 @@ awk -F'\t' "$AWKLIB"'
             if (DDN[d] + 0 >= 20 && avg >= 300000 && avg >= 4 * mx(DDB[cl], 60000)) { r = avg / mx(DDB[cl], 60000)
                 printf "2\t%s\t00\tDuration\t\t%s\t%s\t%.1f\t%d\t%d\tDuration\t%s\n", d, hdur(avg), tyc(hdur(mx(DDB[cl], 60000)), DDB[cl], 60000, hdur(DDB[cl])), r, f, ff, (r >= 10 ? "red" : "orange") }
             if (fo >= 100 && fo >= 2 * mx(ODB[cl], 50)) { r = fo / mx(ODB[cl], 50)
-                printf "2\t%s\t00\tFiles spike\t\t%d OK Files\t%s\t%.1f\t%d\t%d\tOK%%20Files\t%s\n", d, fo, tyc(sprintf("%d", mx(ODB[cl], 50) + 0.5), ODB[cl], 50, sprintf("%d", ODB[cl] + 0.5)), r, f, ff, (r >= 10 ? "red" : "orange") }
+                printf "2\t%s\t00\tFiles spike\t\t%d Files\t%s\t%.1f\t%d\t%d\tOK%%20Files\t%s\n", d, fo, tyc(sprintf("%d", mx(ODB[cl], 50) + 0.5), ODB[cl], 50, sprintf("%d", ODB[cl] + 0.5)), r, f, ff, (r >= 10 ? "red" : "orange") }
             else if (ODB[cl] >= 100 && fo <= ODB[cl] / 4 && !((d == FD0 && PF0) || (d == LD0 && PL0)))
-                printf "2\t%s\t00\tFiles drop\t\t%d OK Files\t%d\t%.2f\t%d\t%d\tOK%%20Files\t%s\n", d, fo, ODB[cl] + 0.5, fo / ODB[cl], f, ff, (fo <= ODB[cl] / 10 ? "red" : "orange")
+                printf "2\t%s\t00\tFiles drop\t\t%d Files\t%d\t%.2f\t%d\t%d\tOK%%20Files\t%s\n", d, fo, ODB[cl] + 0.5, fo / ODB[cl], f, ff, (fo <= ODB[cl] / 10 ? "red" : "orange")
             if (v >= 200000000 && v >= 2 * mx(VDB[cl], 50000000)) { r = v / mx(VDB[cl], 50000000)
                 printf "2\t%s\t00\tVolume\t\t%s\t%s\t%.1f\t%d\t%d\tVolume\t%s\n", d, hbytes2(v), tyc(hbytes2(mx(VDB[cl], 50000000)), VDB[cl], 50000000, hbytes2(VDB[cl])), r, f, ff, (r >= 10 ? "red" : "orange") }
         }

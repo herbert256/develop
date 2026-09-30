@@ -309,7 +309,7 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         partners-in) echo "Partners in" ;; partners-out) echo "Partners Out" ;;   # 2026-09-30, user request (Partner scorecard, Blast radius and Application dependencies went the same day)
         errors) echo "Errors" ;;
         missing-entities) echo "Missing entities" ;;
-        uc-status) echo "UC status" ;; polling) echo "Polling" ;;
+        uc-status) echo "UC status" ;; polling) echo "UC3 Polling" ;;
         anomalies) echo "Anomalies" ;;
         account) echo "Accounts" ;; login) echo "Logins" ;; subscription) echo "Subscriptions" ;;
         remote-host) echo "Hosts" ;;
@@ -968,15 +968,15 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # twin under transfer/entities2/, then made THE layout; the classic Name ·
     # Direction · Files · Volume · OK · Retry · Resubmit · Error · Last seen
     # pages are gone): the .rpt is already in display order — Name, then the
-    # Files / Retry-Resubmit / Duration / Volume / Transfers / State / Dates
-    # column groups (a GHEAD banner + gsep dividers) — its rows baked
+    # Files / Retry-Resubmit / Duration / Volume / Transfers column groups (State
+    # and Dates went 2026-09-30, user request) (a GHEAD banner + gsep dividers) — its rows baked
     # busiest-first with no sort= marker. Below: the views, the
     # subset totals re-summing the grouped columns (entity_res_block), an
     # empty group hidden per view (entity_hide_groups), the TOTAL row last
     # (entity_total_last). The nine classic <name>.rpt records (written by
     # entities.sh too) are DATA (showseen, entity-search, the rosters) and
     # render no page.
-    local _nreal=23   # the directive + Name + 21 figure columns (the Reason column follows Days)
+    local _nreal=18   # the directive + Name + 16 figure columns (the Reason column follows the Transfers Error %)
     segment_rpt "$rpt"                                  # TBLOCK[1]=Summary
     local sumblk=${TBLOCK[1]:-}
     local stable shead stotal srows
@@ -1202,8 +1202,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # @data:buckets bytes).
     # The subset TOTAL of the OK / Warning / Error views: the @data:res filter,
     # re-summing the grouped columns — the count cells, the Files total and
-    # bytes from the buckets (metrics 0 and 4), Days = the DISTINCT bucket
-    # dates, the Duration percentiles from the rows' merged @data:durdays
+    # bytes from the buckets (metrics 0 and 4), the Duration percentiles from the rows' merged @data:durdays
     # per-day histograms (display-grid values, the writer's nearest-rank
     # rule) — into the writer's own baked TOTAL line, whose @{class=…} cell
     # prefixes are kept (the formatting lives in the writer: whole-unit
@@ -1212,8 +1211,8 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # tint following the subset value). Template cells (the 2026-09-13
     # order, Transfers after Volume): 2 label · 3 In · 4 Out · 5 Error ·
     # 6 Error % · 7 Auto · 8 Ok · 9 Error · 10 p90 · 11 p95 · 12 p99 ·
-    # 13 p100 · 14 Total · 15 Avg · 16 Ok · 17 Error · 18 Error % ·
-    # 19 Waiting · 20 Expired · 21 First · 22 Last · 23 Days.
+    # 13 p100 · 14 Total · 15 Avg · 16 Ok · 17 Error · 18 Error % (the State and
+    # Dates cells 19-23 went 2026-09-30).
     entity_res_block() {   # $1 = green|orange|red   $2 = the All-view rows to filter
         # (the whole-unit byte format hbytes0 and the quicksort qsortn come
         # from $AWKLIB — bin/fmt.awk, 2026-09-30; pasted copies before)
@@ -1231,15 +1230,14 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                 hit=0; for (i=1;i<=NF;i++) if ($i==want) hit=1
                 if (!hit) next
                 cnt++
-                for (c = 3; c <= 20; c++) if (c != 6 && c != 18 && !(c >= 10 && c <= 15)) S[c] += n($c)   # the count cells: In Out Error | Auto Ok Error | Ok Error | Waiting Expired
+                for (c = 3; c <= 17; c++) if (c != 6 && !(c >= 10 && c <= 15)) S[c] += n($c)   # the count cells: In Out Error | Auto Ok Error | Ok Error
                 for (i=1;i<=NF;i++) {
-                    if ($i ~ /^@data:buckets=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ split(B[j],C,":"); files += C[2]+0; sb += C[6]+0; dd[C[1]] = 1 } }
+                    if ($i ~ /^@data:buckets=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ split(B[j],C,":"); files += C[2]+0; sb += C[6]+0 } }
                     else if ($i ~ /^@data:durdays=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ p = index(B[j], ":"); if (p < 1) continue
                         nq = split(substr(B[j],p+1),QQ,";"); for (m=1;m<=nq;m++){ p2 = index(QQ[m], "."); if (p2 > 1) HH[substr(QQ[m],1,p2-1)+0] += substr(QQ[m],p2+1)+0 } } }
                 }
                 rows[++nr]=$0 }
             END {
-                for (d in dd) days++
                 # the merged histogram, sorted by grid value — a QUICKSORT of
                 # the distinct values (speed round 5: an insertion sort here
                 # was O(n^2) on production histograms of thousands of values)
@@ -1249,9 +1247,9 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                 for (j = 1; j <= hq; j++) HC[j] = HH[HQ[j]]
                 V[3]=nz(S[3]); V[4]=nz(S[4]); V[5]=S[5]+0; V[6]=pr(S[5], files); V[7]=S[7]+0; V[8]=S[8]+0; V[9]=S[9]+0
                 W[10] = (HN > 0) ? dcell(prank(90)) : ""; W[11] = (HN > 0) ? dcell(prank(95)) : ""; W[12] = (HN > 0) ? dcell(prank(99)) : ""; W[13] = (HN > 0) ? dcell(prank(100)) : ""   # WHOLE cells (their tint follows the value)
-                V[14]=hbytes0(sb); V[15]=hbytes0(files > 0 ? sb / files : 0); V[16]=S[16]+0; V[17]=S[17]+0; V[18]=pr(S[17], S[16]+S[17]); V[19]=S[19]+0; V[20]=S[20]+0; V[23]=days+0
+                V[14]=hbytes0(sb); V[15]=hbytes0(files > 0 ? sb / files : 0); V[16]=S[16]+0; V[17]=S[17]+0; V[18]=pr(S[17], S[16]+S[17])
                 nt = split(tmpl, T, "\t"); while (nt > 2 && T[nt] ~ /^@data:/) nt--   # the All total own distinct @data:buckets never ride a SUBSET total (2026-09-29)
-                if (cnt + 0 == 0) { V[14] = ""; V[15] = ""; V[23] = "" }   # an EMPTY view (2026-09-29): no "0 B" / 0 days in its total
+                if (cnt + 0 == 0) { V[14] = ""; V[15] = "" }   # an EMPTY view (2026-09-29): no "0 B" in its total
                 l = T[2]; sub(/\([0-9,]+/, "(" (cnt + 0), l); out = T[1] OFS l
                 for (c = 3; c <= nt; c++) { cell = T[c]
                     if (c in W) cell = W[c]
@@ -1272,15 +1270,14 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     }
     # HIDE an EMPTY group (2026-09-13, user request) — the Retry /
     # Resubmit group (Auto · Ok · Error, .rpt fields 7-9, display columns
-    # 5-7, banner cell 4) and the State group (Waiting · Expired, fields
-    # 19-20, columns 17-18, banner cell 7) — on a view whose rows carry no
-    # such value at all. At the full range that holds for every narrower
+    # 5-7, banner cell 4; the State group went 2026-09-30) — on a view whose
+    # rows carry no such value at all. At the full range that holds for every narrower
     # range too, so the page drops the columns for good: the fields of every
     # HEAD/KIND/RECALC/ROW/TOTAL line (a trailing Reason column shifts left
     # with the rest), the banner cell, and the TABLE modifiers that name
     # columns by index (gsep=, noagg=, pct=, drillcols= — remapped past the
-    # dropped columns, the dropped groups' own entries removed). Name-only
-    # views (a HEAD under 20 fields) pass through.
+    # dropped columns, the dropped group's own entries removed). Name-only
+    # views (a HEAD under 10 fields) pass through.
     entity_hide_groups() {
         LC_ALL=C awk -F'\t' -v OFS='\t' '
             function nm(d,   k, c) { c = 0; for (k in DD) if (k + 0 < d) c++; return d - c }   # a display index, the dropped columns before it removed
@@ -1299,19 +1296,14 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                     out = out (out == "" ? "" : ",") P[1] ":" nm(P[2] + 0) (P[3] != "" ? ":" P[3] : "") } return out }
             function keep(   out, i) { out = ""; for (i = 1; i <= NF; i++) { if (i in DF) continue; out = out (i == 1 ? "" : OFS) $i } return out }
             { L[++n] = $0
-              if ($1 == "HEAD" && NF < 20) skip = 1
-              if ($1 == "ROW") { for (i = 7; i <= 9; i++) { v = $i; gsub(/[^0-9]/, "", v); if (v + 0 > 0) hasR = 1 }
-                                 for (i = 19; i <= 20; i++) { v = $i; gsub(/[^0-9]/, "", v); if (v + 0 > 0) hasS = 1 } } }
+              if ($1 == "HEAD" && NF < 10) skip = 1
+              if ($1 == "ROW") { for (i = 7; i <= 9; i++) { v = $i; gsub(/[^0-9]/, "", v); if (v + 0 > 0) hasR = 1 } } }
             END {
-                if (skip || (hasR && hasS)) { for (k = 1; k <= n; k++) print L[k]; exit }
-                # DF = the .rpt fields to drop, DD = the same as display columns, DB = the banner cells
-                if (!hasR) { DF[7] = 1; DF[8] = 1; DF[9] = 1; DD[5] = 1; DD[6] = 1; DD[7] = 1; DB[4] = 1 }
-                # the banner cells: GHEAD $3 Files · $4 Retry / Resubmit · $5 Duration ·
-                # $6 Volume · $7 Transfers · $8 State · $9 Dates (2026-09-29 fix: State
-                # dropped $7 since Transfers moved in front of it, 2026-09-13 — a view
-                # without Waiting / Expired lost the Transfers BANNER and kept "State"
-                # over the Transfers columns, the Hosts page)
-                if (!hasS) { DF[19] = 1; DF[20] = 1; DD[17] = 1; DD[18] = 1; DB[8] = 1 }
+                if (skip || hasR) { for (k = 1; k <= n; k++) print L[k]; exit }
+                # DF = the .rpt fields to drop, DD = the same as display columns, DB = the
+                # banner cells: GHEAD $3 Files · $4 Retry / Resubmit · $5 Duration ·
+                # $6 Volume · $7 Transfers (the State and Dates groups went 2026-09-30)
+                DF[7] = 1; DF[8] = 1; DF[9] = 1; DD[5] = 1; DD[6] = 1; DD[7] = 1; DB[4] = 1
                 for (k = 1; k <= n; k++) { $0 = L[k]
                     if ($1 == "TABLE") {
                         for (i = 3; i <= NF; i++) {
@@ -2017,7 +2009,7 @@ _report_groups() {
         "Entities|transfer/entities/subscription=Subscriptions|transfer/entities/logical=Logical|transfer/entities/partner=Partners|transfer/entities/account=Accounts|transfer/entities/login=Logins|transfer/entities/remote-host=Hosts|transfer/entities/domain=Domains|transfer/entities/application=Applications|transfer/entities/bl=BL" \
         "Errors|analyses/failed=Failed Subscriptions|analyses/failing-reasons=Error reasons|transfer/failed-files=Failed files|transfer/unknown-transfers=Unknown transfers|transfer/pirates=One-legged|transfer/episodes=Recovered flows|transfer/retries=Retries & resubmissions|transfer/failure-heatmap=Failure heatmap|server/errors=Errors|server/failure-flows=Per flow|server/io-errors=IO errors|server/routing-errors=Routing errors" \
         "Performance|transfer/duration=Duration|transfer/duration-longest=Longest Files|transfer/duration-dwell=Store-and-forward|transfer/anomalies=Anomalies" \
-        "Use cases & delivery|analyses/use-cases=Use cases|analyses/uc-status=UC status|analyses/polling=Polling|transfer/waiting-expired=Waiting & Expired|transfer/went-quiet=Went quiet" \
+        "Use cases & delivery|analyses/use-cases=Use cases|analyses/uc-status=UC status|analyses/polling=UC3 Polling|transfer/waiting-expired=Waiting & Expired|transfer/went-quiet=Went quiet" \
         "Activity & volume|transfer/activity=Activity|transfer/ranking=Ranking|transfer/files=Sizes & types|transfer/month-stats/this=Month stats" \
         "Protocols & security|transfer/protocol=Direction & Mode|transfer/security-params=Security Parameters|transfer/security-outreach=Security outreach|transfer/av-scan=AV Scan|transfer/connection-efficiency=Connection efficiency" \
         "Partners|analyses/partners-in=Partners in|analyses/partners-out=Partners Out" \

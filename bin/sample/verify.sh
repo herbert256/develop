@@ -138,23 +138,24 @@ check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "fe-overview.rpt has 0 tinted r
 check $([ -f "docs/analyses/partners-in.html" ] && echo 0 || echo 1) "docs/analyses/partners-in.html missing"
 n=$(command grep -c '^ROW' "data/analyses/reports/partners-in.rpt" 2>/dev/null || true); m=$(command grep -c '^ROW' "data/analyses/reports/fe-overview.rpt" 2>/dev/null || true)
 check $([ "${n:-0}" -ge "${m:-1}" ] && [ "${m:-0}" -gt 0 ] && echo 0 || echo 1) "partners-in.rpt has $n row(s), fewer than the FE overview ($m)"
-n=$(command grep -c '@data:drill-cell-13=' "data/analyses/reports/partners-in.rpt" 2>/dev/null || true)
-check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "partners-in.rpt carries no re-keyed funnel drill (Allowed at column 13)"
+n=$(command grep -c '@data:drill-cell-12=' "data/analyses/reports/partners-in.rpt" 2>/dev/null || true)
+check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "partners-in.rpt carries no re-keyed funnel drill (Allowed at column 12)"
 # ... and since 2026-09-30 (user request: Logons › Incoming merged in) the
 # WHOLE Incoming funnel: every logon.rpt Incoming row is a Partners in row
-# with the same Allowed, Disallowed, Authenticated, Bad key, Locked, Auth failed,
-# Logons and Pattern cells (the evening batch dropped No account, Key failures,
-# Session errors, Re-screens and First logon), and the retired tab pages are
-# gone and unlinked
-pm=$(awk -F'\t' 'FILENAME ~ /logon\.rpt$/ { if ($1 == "TABLE") t++; if (t == 1 && $1 == "ROW") { k = toupper($2); W[k] = "|" $3 "|" $4 "|" $5 "|" $7 "|" $9 "|" $10 "|" $14 "|" $15; nw++ } next }
+# with the same Allowed, Disallowed, Authenticated, Locked and Pattern cells
+# and Auth failed = the funnel's Auth failed + Bad key (the late-night batch
+# folded Bad key in and dropped the Logons column; the evening batch dropped
+# No account, Key failures, Session errors, Re-screens and First logon), and
+# the retired tab pages are gone and unlinked
+pm=$(awk -F'\t' 'FILENAME ~ /logon\.rpt$/ { if ($1 == "TABLE") t++; if (t == 1 && $1 == "ROW") { k = toupper($2); W[k] = "|" $3 "|" $4 "|" $5 "|" $9 "|" ($10 + $7) "|" $15; nw++ } next }
     $1 == "HEAD" { for (i = 2; i <= NF; i++) if (!($i in C)) C[$i] = i; next }
-    $1 == "ROW" { k = toupper($2); if (!(k in W)) next; v = ""; split("Allowed Disallowed Authenticated Bad_key Locked Auth_failed Logons Pattern", H, " ")
-        for (j = 1; j <= 8; j++) { h = H[j]; gsub(/_/, " ", h); v = v "|" $(C[h]) }
+    $1 == "ROW" { k = toupper($2); if (!(k in W)) next
+        v = "|" $(C["Allowed"]) "|" $(C["Disallowed"]) "|" $(C["Authenticated"]) "|" $(C["Locked"]) "|" ($(C["Auth failed"]) + 0) "|" $(C["Pattern"])
         if (v == W[k]) ok++; seen[k] = 1 }
     END { for (k in W) if (!(k in seen)) miss++; print nw + 0, ok + 0, miss + 0 }' data/server/reports/logon.rpt data/analyses/reports/partners-in.rpt 2>/dev/null)
 read -r pmn pmok pmmiss <<< "$pm"
 check $([ "${pmn:-0}" -gt 0 ] && [ "${pmok:-x}" = "$pmn" ] && [ "${pmmiss:-1}" = 0 ] && echo 0 || echo 1) "Partners in: ${pmok:-?} of ${pmn:-?} logon.rpt Incoming row(s) carry the same funnel cells (${pmmiss:-?} missing)"
-check $(awk -F'\t' '$1 == "GHEAD" { g = $0 } $1 == "HEAD" { h = $0 } END { print (g ~ /Files In/ && g ~ /colspan=5,class=gband gsep}Files Out/ && g !~ /Pickup/ && g ~ /Logons/ && g ~ /Screening/ && h !~ /\tNo account|\tKey failures|\tSession errors|\tRe-screens|\tFirst logon|\tOldest waiting|\tPickups|\tLast logon/) ? 0 : 1 }' data/analyses/reports/partners-in.rpt 2>/dev/null || echo 1) "partners-in.rpt lacks the Files In / Files Out (5 columns, Pickup merged in) / Logons / Screening groups or still carries a removed column (No account, Key failures, Session errors, Re-screens, First logon, Oldest waiting, Pickups, Last logon)"
+check $(awk -F'\t' '$1 == "GHEAD" { g = $0 } $1 == "HEAD" { h = $0 } END { print (index(g, "}Logons") && index(g, "}Logons") < index(g, "colspan=2,class=gband gsep}Files in - UC4") && index(g, "colspan=2,class=gband gsep}Files in - UC4") < index(g, "colspan=5,class=gband gsep}Files out - UC2") && index(g, "colspan=5,class=gband gsep}Files out - UC2") < index(g, "colspan=6,class=gband gsep}Screening") && h ~ /\tExpired\tPattern\tAllowed\t/ && h !~ /\tBad key|\tLogons\t|\tNo account|\tKey failures|\tSession errors|\tRe-screens|\tFirst logon|\tOldest waiting|\tPickups|\tLast logon/) ? 0 : 1 }' data/analyses/reports/partners-in.rpt 2>/dev/null || echo 1) "partners-in.rpt lacks the Logons / Files in - UC4 / Files out - UC2 / Screening (Pattern first) groups in that order, or still carries a removed column (Bad key, Logons, No account, Key failures, Session errors, Re-screens, First logon, Oldest waiting, Pickups, Last logon)"
 n=$(ls docs/server/logons-incoming.html docs/server/logons-outgoing.html 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${n:-1}" = 0 ] && ! grep -rqs 'logons-incoming\.html\|logons-outgoing\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "the retired Logons Incoming / Outgoing tab pages are back or still linked"
 # the Logons & connections group is GONE (2026-09-30, user request: "Remove the
@@ -206,8 +207,8 @@ for pv in partners-in partners-out; do
         read -r nrow nbad tv te <<< "$(awk -F'\t' 'function strip(c) { while (index(c, "@{") == 1) sub(/^@\{[^}]*\}/, "", c); return c }
             FILENAME ~ /\/base\// { B[$1] = 1; next }
             FILENAME ~ /\/xref\// { if ($2 != "" && $2 != "Unknown") MP[toupper($1)] = 1; next }
-            FILENAME ~ /-(accounts|partners)\.rpt$/ { if ($1 == "ROW") { n++; if (!(strip($2) in B)) bad++ } else if ($1 == "TOTAL") tv = strip($(ep == "hosts" ? 10 : 4)); next }
-            $1 == "ROW" && (toupper(strip($2)) in MP) { te += strip($(ep == "hosts" ? 11 : 4)) }
+            FILENAME ~ /-(accounts|partners)\.rpt$/ { if ($1 == "ROW") { n++; if (!(strip($2) in B)) bad++ } else if ($1 == "TOTAL") tv = strip($(ep == "hosts" ? 10 : 6)); next }
+            $1 == "ROW" && (toupper(strip($2)) in MP) { te += strip($(ep == "hosts" ? 11 : 6)) }
             END { print n + 0, bad + 0, tv + 0, te + 0 }' ep="$ep" data/flow-manager/base/_$v.tsv data/flow-manager/xref/_$ep-$v.tsv data/analyses/reports/$pv-$v.rpt data/analyses/reports/$pv.rpt 2>/dev/null)"
         check $([ "${nrow:-0}" -gt 0 ] && [ "${nbad:-1}" = 0 ] && [ "${tv:-x}" = "${te:-y}" ] && echo 0 || echo 1) "$pv-$v.rpt: ${nrow:-?} row(s), ${nbad:-?} not in base/_$v.tsv, TOTAL ${tv:-?} != the mapped $ep' Endpoint sum ${te:-?} (Files in / Failures)"
     done
@@ -550,16 +551,9 @@ read -r wok wbad wsort wkind <<< "$(awk -F'\t' '$1 == "TABLE" { t++; if (t == 2)
 check $([ "${wok:-0}" -gt 0 ] && [ "${wbad:-1}" = 0 ] && [ "${wsort:-0}" = 1 ] && [ "${wkind:-0}" = 1 ] && echo 0 || echo 1) "waiting-expired Subscriptions: ${wok:-?} age cell(s) ok, ${wbad:-?} not '@{sortval=N}<n><d|h|m|s>', sort=4:-1 ${wsort:-?}, Expired numfailed ${wkind:-?}"
 n=$(ls docs/transfer/waiting.html docs/transfer/expired.html docs/help/waiting.html docs/help/expired.html bin/transfer/reports/waiting.sh bin/transfer/reports/expired.sh data/transfer/reports/waiting.rpt data/transfer/reports/expired.rpt 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${n:-1}" = 0 ] && ! grep -rqsE '(["/])(waiting|expired)\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "the retired Waiting / Expired pages, writers or help pages are back (${n:-?} file(s)), or a page still links waiting.html / expired.html"
-# every Entities Waiting / Expired link lands on a row: ?axway_row=<name> on
-# the Subscriptions pages names a first cell of the report (report.js
-# markUrlRow matches the first cell's text)
-bad=$(cat docs/transfer/entities/subscription-*.html docs/transfer/entities/subscription-data.js 2>/dev/null | grep -o 'waiting-expired\.html?axway_row=[^"&]*' | sed 's/.*axway_row=//' | sort -u | awk -F'\t' '
-    function dec(s,   o, i, c) { o = ""; for (i = 1; i <= length(s); i++) { c = substr(s, i, 1); if (c == "%" ) { o = o sprintf("%c", index("0123456789ABCDEF", toupper(substr(s, i + 1, 1))) * 16 - 16 + index("0123456789ABCDEF", toupper(substr(s, i + 2, 1))) - 1); i += 2 } else if (c == "+") o = o " "; else o = o c } return o }
-    FNR == NR { if ($1 == "TABLE") t++; if (t == 2 && $1 == "ROW") { v = $2; sub(/^@\{[^}]*\}/, "", v); R[v] = 1 } next }
-    { if (!(dec($0) in R)) { b++; print "  no Waiting & Expired row for ?axway_row=" $0 > "/dev/stderr" } }
-    END { print b + 0 }' "$WE" -)
-m=$(cat docs/transfer/entities/subscription-*.html docs/transfer/entities/subscription-data.js 2>/dev/null | grep -c 'waiting-expired\.html?axway_row=' || true)
-check $([ "${bad:-1}" = 0 ] && [ "${m:-0}" -gt 0 ] && echo 0 || echo 1) "Entities Subscriptions: ${m:-0} Waiting / Expired link(s), ${bad:-?} whose ?axway_row names no Waiting & Expired row"
+# the Entities pages carry no State / Dates groups and no Waiting & Expired
+# links since 2026-09-30 (user request: "remove the State & Dates sub tables")
+check $(! cat docs/transfer/entities/*.html docs/transfer/entities/*-data.js 2>/dev/null | grep -q 'waiting-expired\.html' && ! grep -qE 'gband[^>]*>(State|Dates)<' docs/transfer/entities/*.html && echo 0 || echo 1) "the Entities pages still carry the State / Dates groups or their Waiting & Expired links (removed 2026-09-30)"
 n=$(rpt_rows "data/transfer/reports/missing-cronjobs.rpt"); en=$(exp nocron)
 [ "$en" -gt 0 ] && check $([ "$n" -ge "$en" ] && echo 0 || echo 1) "missing-cronjobs rows $n < planted $en"
 
@@ -606,7 +600,7 @@ n=$(awk -F'\t' '$1 == "ROW" { ok = 0
         if ($7 + $8 > ok) n++ } END { print n + 0 }' "$ES" 2>/dev/null)
 check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "entities/subscription.rpt: ${n:-?} row(s) with Auto + Resubmit Ok > the OK Files"
 hdr=$(grep -o '<tr><th>Account</th>.*' "docs/transfer/entities/account-all.html" 2>/dev/null | head -1 | sed 's/^<tr>//; s/<\/tr>.*//; s/<th[^>]*>//g; s/<\/th>/|/g')
-check $([ "$hdr" = "Account|In|Out|Error|Error %|Auto|Ok|Error|p90|p95|p99|p100|Total|Avg|Ok|Error|Error %|Waiting|Expired|First|Last|Days|" ] && echo 0 || echo 1) "entities/account-all.html header is '$hdr', expected the grouped layout Account|In|Out|Error|Error %|Auto|Ok|Error|p90|p95|p99|p100|Total|Avg|Ok|Error|Error %|Waiting|Expired|First|Last|Days"
+check $([ "$hdr" = "Account|In|Out|Error|Error %|Auto|Ok|Error|p90|p95|p99|p100|Total|Avg|Ok|Error|Error %|" ] && echo 0 || echo 1) "entities/account-all.html header is '$hdr', expected the grouped layout Account|In|Out|Error|Error %|Auto|Ok|Error|p90|p95|p99|p100|Total|Avg|Ok|Error|Error %|Waiting|Expired|First|Last|Days"
 read -r want wantm wante <<< "$(awk -F'\t' 'FNR == 1 { fno++ } fno == 1 { if ($3 != "Processed") fl[$1] = 1; if ($22 == "true") rs[$1] = 1; next }
     $3 != "" && $4 != "" { ok = ($2 != "Failed" && $2 != "Expired"); if (ok && ($1 in fl) && !($1 in rs)) a++; if ($1 in rs) { if (ok) m++; else e++ } }
     END { print a + 0, m + 0, e + 0 }' "$T" "$F" 2>/dev/null)"

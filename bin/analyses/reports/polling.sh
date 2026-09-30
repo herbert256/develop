@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# polling.sh — "Polling" (2026-09-05, user request): ONE flat table, one row
+# polling.sh — "UC3 Polling" ("Polling" until 2026-09-30; 2026-09-05, user request): ONE flat table, one row
 # per polling subscription, with the columns of the two pages retired the same
 # day — the Remote polls report (polls / empty polls / files matched / empty %
 # / listing errors, per subscription, date-filterable with the log-line drill)
@@ -33,6 +33,12 @@
 # page is Subscription · Cron expression · Schedule · Observed · Polls · Empty
 # polls · Files matched · Empty % · Listing errors · Poll starts · Failure
 # lines · What goes wrong.
+#
+# 2026-09-30 (user request): "UC3 Polling" (TITLE, the table and the menu
+# label), and Empty polls, Poll starts and Failure lines left the page: it is
+# Subscription · Active · Cron expression · Schedule · Observed · Polls · Files
+# matched · Empty % · Listing errors · What goes wrong (Empty % still re-counts
+# from the empty-poll bucket metric).
 #
 # 2026-09-20 (user request): ACTIVE, the second column — the Subscriptions
 # page's Active column (bin/analyses/publish.sh): "Yes", or the ", "-joined
@@ -198,12 +204,11 @@ agg=$(printf '%s\n' "$cron" | awk -F'\t' -v RPF="$_rp" -v USF="$_us" -v ACTF="$a
         for (i3 = 1; i3 <= n3; i3++) { o = o (o == "" ? "" : ", ") A3[i3]; t = t (t == "" ? "" : "; ") A3[i3] " " W3[A3[i3] + 0] }
         return "@{title=" t "}" o
     }
-    function emit(name, u, pk, lk, sk,   cronx, sched, obs, polls, empty, matched, pct, lst, starts, fails, why, ll, nm) {
+    function emit(name, u, pk, lk, sk,   cronx, sched, obs, polls, empty, matched, pct, lst, why, ll, nm) {
         # UC3 ONLY (2026-09-13): in the UC3 status roster, or UC3-named
         if (sk == "" && toupper(substr(name, 1, 3)) != "UC3") return
-        cronx = ""; sched = ""; obs = ""; starts = ""; fails = ""; why = ""
-        if (u in CN) { cronx = CC[u]; sched = CS[u]; obs = (CBAD[u] ? "@{class=obsbad}" : "") CO[u]
-                       if (CST[u] > 0) starts = CST[u]; if (CFL[u] > 0) fails = CFL[u]; why = CWHY[u] }
+        cronx = ""; sched = ""; obs = ""; why = ""
+        if (u in CN) { cronx = CC[u]; sched = CS[u]; obs = (CBAD[u] ? "@{class=obsbad}" : "") CO[u]; why = CWHY[u] }
         else sched = "no cron"   # a UC3 without a receive schedule: it never polls on its own (the former Missing cronjobs page, 2026-09-29)
         polls = ""; empty = ""; matched = ""; pct = ""; ll = ""; lst = ""   # no polls = a blank count, like UC status (a "-" until 2026-09-30)
         if (pk != "") { polls = PP[pk]; empty = PE[pk]; matched = PM[pk]; pct = PPCT[pk]; ll = PLL[pk] }
@@ -211,10 +216,12 @@ agg=$(printf '%s\n' "$cron" | awk -F'\t' -v RPF="$_rp" -v USF="$_us" -v ACTF="$a
         if (lk != "") lst = LE[lk]
         if (ll == "" && sk != "") ll = SDL[sk]   # no poll lines: the status drill (the lines that decided the status)
         nm = "@{alink=subscriptions/" name "}" name
-        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n", \
-            nm, actcell(u, sk), cronx, sched, (obs != "" ? obs : (pk != "" ? "" : "-")), polls, empty, matched, pct, lst, starts, fails, why, buckets((pk != "" ? PB[pk] : ""), (lk != "" ? LB[lk] : "")), ll
-        # the totals (this pass): rows, polls, empty, matched, listing, starts, failures, schedules, never
-        NR9++; if (polls != "-" && polls != "") TP += polls; TE += empty; TM += matched; TL += lst; TS += starts; TF += fails
+        # (Empty polls, Poll starts and Failure lines left the page 2026-09-30, user
+        # request; the buckets keep the empty-poll metric: Empty % re-counts from it)
+        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n", \
+            nm, actcell(u, sk), cronx, sched, (obs != "" ? obs : (pk != "" ? "" : "-")), polls, matched, pct, lst, why, buckets((pk != "" ? PB[pk] : ""), (lk != "" ? LB[lk] : "")), ll
+        # the totals (this pass): rows, polls, empty (for Empty %), matched, listing, schedules, never
+        NR9++; if (polls != "-" && polls != "") TP += polls; TE += empty; TM += matched; TL += lst
         if (u in CN) { NC++; if (CNEV[u]) NNEV++ }
     }
     END {
@@ -233,20 +240,20 @@ agg=$(printf '%s\n' "$cron" | awk -F'\t' -v RPF="$_rp" -v USF="$_us" -v ACTF="$a
         # the configured UC3 flows nothing else knows: never seen polling, no cron
         for (i = 1; i <= nsk; i++) { u = SU[i]; if (u in useds) continue
             emit(SN[u], u, "", "", u) }
-        printf "TOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", NR9+0, TP+0, TE+0, TM+0, TL+0, TS+0, TF+0, NC+0, NNEV+0
+        printf "TOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", NR9+0, TP+0, TE+0, TM+0, TL+0, NC+0, NNEV+0
     }')
-IFS=$'\t' read -r _ n_rows t_polls t_empty t_matched t_list t_starts t_fails n_cron n_never <<< "$(printf '%s\n' "$agg" | command grep $'^TOT\t')"
+IFS=$'\t' read -r _ n_rows t_polls t_empty t_matched t_list n_cron n_never <<< "$(printf '%s\n' "$agg" | command grep $'^TOT\t')"
 pct_empty=$(awk -v p="$t_polls" -v e="$t_empty" 'BEGIN { printf "%.1f%%", (p > 0 ? 100 * e / p : 0) }')
 
 {
-    printf 'TITLE\tPolling\n'
-    printf 'TABLE\tPolling\twide\n'   # (its anchor=polling went 2026-09-29: the heading is dropped, nothing linked it)
-    printf 'HEAD\tSubscription\tActive\tCron expression\tSchedule\tObserved\tPolls\tEmpty polls\tFiles matched\tEmpty %%\tListing errors\tPoll starts\tFailure lines\tWhat goes wrong\n'
-    printf 'KIND\tmono\ttext\tmono\ttext\ttext\tnum\tnumwarn\tnumprocessed\tnum\tnumfailed\tnum\tnum\ttext\n'
-    printf 'RECALC\t-\t-\t-\t-\t-\ts0\ts1\ts2\tp1.0\ts3\t-\t-\t-\n'
+    printf 'TITLE\tUC3 Polling\n'   # "Polling" until 2026-09-30 (user request)
+    printf 'TABLE\tUC3 Polling\twide\n'   # (its anchor=polling went 2026-09-29: the heading is dropped, nothing linked it)
+    printf 'HEAD\tSubscription\tActive\tCron expression\tSchedule\tObserved\tPolls\tFiles matched\tEmpty %%\tListing errors\tWhat goes wrong\n'
+    printf 'KIND\tmono\ttext\tmono\ttext\ttext\tnum\tnumprocessed\tnum\tnumfailed\ttext\n'
+    printf 'RECALC\t-\t-\t-\t-\t-\ts0\ts2\tp1.0\ts3\t-\n'
     printf '%s\n' "$agg" | command grep $'^ROW\t' || true
-    printf 'TOTAL\tTotal (%s subscription(s))\t\t\t\t\t@{class=num}%s\t@{class=num warn}%s\t@{class=num processed}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num}%s\t\n' \
-        "$n_rows" "$t_polls" "$t_empty" "$t_matched" "$pct_empty" "$t_list" "$t_starts" "$t_fails"
+    printf 'TOTAL\tTotal (%s subscription(s))\t\t\t\t\t@{class=num}%s\t@{class=num processed}%s\t@{class=num}%s\t@{class=num failed}%s\t\n' \
+        "$n_rows" "$t_polls" "$t_matched" "$pct_empty" "$t_list"
     printf 'LINK\thttps://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html\tQuartz cron trigger reference\n'
     printf 'SUMMARY	UC3 polling subscriptions: %s  |  Polls: %s  |  Empty: %s  |  Listing failures: %s  |  Cron schedules: %s  |  Never complete a poll: %s
 ' "$n_rows" "$t_polls" "$pct_empty" "$t_list" "$n_cron" "$n_never"

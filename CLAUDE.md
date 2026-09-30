@@ -1330,9 +1330,9 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   2026-09-29 — the Duration report's scope and nearest-rank rule, FOLLOWING the date
   filter: per-day display-grid histograms `@data:durdays` + the RECALC tokens `P90`…`P100`, rows
   and TOTAL alike, the publish-time subset totals merging the same payload) · Volume (Total · Avg
-  per File) · Transfers (Ok · Error · Error % — the LEGS of the entity's Files) · State (Waiting ·
-  Expired) · Dates (First · Last · Days with traffic). DISPLAY RULES (user): the TOTAL row LAST
-  (`entity_total_last`); an EMPTY Retry / Resubmit or State group HIDDEN per view
+  per File) · Transfers (Ok · Error · Error % — the LEGS of the entity's Files) (the State and Dates
+  groups went 2026-09-30, user request: "remove the State & Dates sub tables"). DISPLAY RULES (user): the TOTAL row LAST
+  (`entity_total_last`); an EMPTY Retry / Resubmit group HIDDEN per view
   (`entity_hide_groups` drops the columns and the banner cell and remaps every index-naming
   modifier — gsep=, noagg=, pct=, drillcols=) AND, in the browser, hidden whenever a date range or
   a search leaves every visible row's cells of the group empty (the `autohide=Group;Group` TABLE
@@ -1803,6 +1803,30 @@ front end) then four fix workers with disjoint files. The rules it left:
   Partners row by stem. verify.sh checks the rows, the names and the totals. A column change in a writer needs
   its RULES string changed in step (one rule per ROW field from field 3).
 
+## Rules from the eleventh 2026-09-30 request ("a few different things")
+
+- **Entities pages** = Name + Files · Retry / Resubmit · Duration · Volume · Transfers — the State (Waiting ·
+  Expired) and Dates (First · Last · Days) groups and the Waiting / Expired links went; Waiting and Expired
+  Files live on Waiting & Expired only. The S| fields (waiting / expired, first / last / days) are still
+  produced for their other readers; the per-day buckets keep metrics 10 / 11 (unread) so metric 12 (the
+  Transfers Error %) keeps its position.
+- **Partners in** (all three views): Login · Use cases | Logons (Cloud · Gateway) | Files in - UC4 (Count ·
+  Errors) | Files out - UC2 (Count · Errors · Retrieved · Waiting · Expired) | Screening (Pattern · Allowed ·
+  Disallowed · Authenticated · Locked · Auth failed, where Auth failed = the funnel's Auth failed + Bad key);
+  `gsep=2,4,6,11`, `sort=9:-1` (Waiting); drills 12 · 13 · 14 · 15 (Allowed · Disallowed · Authenticated ·
+  Locked); rollup RULES `uc max max sum×7 best:16 sum×5` (Pattern of the login with the most Authenticated).
+  Partners Out keeps Files In / Files Out (its Files are UC3 / UC1).
+- **UC3 Polling** ("Polling" until 2026-09-30): Subscription · Active · Cron expression · Schedule · Observed ·
+  Polls · Files matched · Empty % · Listing errors · What goes wrong (Empty polls, Poll starts and Failure
+  lines went; the buckets keep the empty-poll count, Empty % recomputes from it).
+- **Anomalies**: a Files value reads "N Files" (it still counts the OK Files).
+- **All files search**: with both fields empty the line beside them reads "N files in M subscriptions" for the
+  From/To period, from per-day TALLIES (File count + distinct subscription names; Unknown's Files count, Unknown
+  is no subscription). The period's days load first, then every other day file (4 at a time) — so the browser
+  caches them all; a tally-only read keeps NO rows (rows are cached only when a typed search reads that day,
+  through the same `?v=` URL, from the browser cache). A From/To change recounts from the tallies; a failed
+  day is named, never guessed.
+
 ## Rules from the tenth 2026-09-30 request (Patterns, the search icon, Entities & Files)
 
 - **The Flow patterns group is GONE** (user request: "Remove the Patterns top menu entry and also remove the
@@ -1981,8 +2005,8 @@ browser, front end + gates), then four fix workers with disjoint files, each pro
   `help/server-ssh-crypto.html` are GONE (never restore). The Deprecated-parameter warnings rows
   carry their own `@data:res` (the server publish's automatic subscription tint does not reach a
   transfer page). A hand-run security-params.sh drops the SSH tables until the server reports run.
-- **Entities Waiting / Expired cells LINK** `transfer/waiting-expired.html` (waiting.html /
-  expired.html until the second batch the same day) — on the
+- (**Entities Waiting / Expired cells LINKED** `transfer/waiting-expired.html` until the State group went,
+  the eleventh request; waiting.html / expired.html until the second batch the same day) — on the
   Subscriptions pages with `?axway_row=<subscription>` (the real name, URL-encoded), the other
   entities the page itself; their `coreids-wait` / `coreids-exp` drills went (S| fields 28–29 stay,
   empty). report.js `setCellVal` keeps a recalculated cell's ONE link (a 0 blanks the cell).

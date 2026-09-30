@@ -17,7 +17,7 @@
 # data/transfer/reports/_alltime.tsv (the analyses Subscriptions page) — sums
 # of the same rows' per-day buckets.
 #
-# Layout: the Name, then SEVEN column groups (a GHEAD banner + the gsep=
+# Layout: the Name, then FIVE column groups (a GHEAD banner + the gsep=
 # dividers, the Top view way), in this order:
 #   Files      In · Out · Error · Error %   In/Out = the MOVEMENT direction
 #              (_files.tsv col 17 — the home page's In/Out rule; a File with
@@ -32,12 +32,13 @@
 #   Transfers  Ok · Error · Error %      the LEGS (log rows) of the entity's
 #              Files — every leg of every attributed File, credited to the
 #              File's start day like every per-File figure on the site
-#   State      Waiting · Expired         _files.tsv col 2
-#   Dates      First · Last · Days (days with traffic)
+#   (the State group — Waiting · Expired — and the Dates group — First · Last
+#   · Days — went 2026-09-30, user request: "remove the State & Dates sub
+#   tables"; their S| fields stay for the other readers)
 # Every count cell drills to its 10 newest Files (CoreIds); the Transfers
 # cells to the Files that carried a leg of that outcome; a Duration cell to
 # the 10 newest OK Files at or above that percentile. An empty Retry /
-# Resubmit or State group is hidden per view, the TOTAL row is last
+# Resubmit group is hidden per view, the TOTAL row is last
 # (publish_lib).
 #
 # Attribution per entity — the rule of the five former classic writers
@@ -362,35 +363,19 @@ fmt_dim() {
     : "${tc:=0}" "${tdays:=0}" "${ttok:=0}" "${tter:=0}" "${tin:=0}" "${tout:=0}" "${tfe:=0}" "${tra:=0}" "${tmo:=0}" "${tme:=0}" "${twt:=0}" "${tex:=0}" "${tv:=0}" "${ns:=0}" "${tp90:=}" "${tp95:=}" "${tp99:=}" "${tp100:=}"
     # the display order (2026-09-13, user request; Transfers moved after
     # Volume the same day): Files · Retry / Resubmit · Duration (p90 p95 p99
-    # p100) · Volume · Transfers · State · Dates — 22 cells, the Dates LAST
+    # p100) · Volume · Transfers — 17 cells (State and Dates went 2026-09-30)
     # NOFERR: the Subscriptions view's Error cell links Failed files (its
     # drillcols leave ferr out), so its ferr list is not shipped (2026-09-29 audit)
     # — nor the empty attribute itself since the 2026-09-30 audit (A1-09)
-    # THE WAITING / EXPIRED CELLS LINK (2026-09-30, user request: "clicking
-    # on a Expired or Waiting cell must go to /transfer/expired.html or
-    # /transfer/waiting.html with the row highlighted that is the right
-    # subscription (?axway_row=xxxx)"): a non-zero cell opens the page — on
-    # the SUBSCRIPTION pages with ?axway_row=<the subscription> (ONE page since
-    # 2026-09-30, transfer/waiting-expired.html: its Subscriptions table is
-    # keyed by Subscription, the REAL name: the display
-    # renames touch no subscription); the other entities open the page itself
-    # (a name there is no row key, and a ?axway_search would stick as the
-    # remembered search). Their drill lists went (a linked cell never drills).
-    rows=$({ grep "^S|$dim|" "$AGG.$dim" 2>/dev/null || true; } | LC_ALL=C sort -t'|' -k4,4nr -k3,3f -k3,3 | awk -F'|' -v NOFERR="$([ "$dim" = subscription ] && echo 1)" -v ROWQ="$([ "$dim" = subscription ] && echo 1)" "$FMT_AWK"'
-        # a URL component: every byte outside [A-Za-z0-9_.~-] as %XX
-        function uenc(v,   o, i, c) { o = ""
-            for (i = 1; i <= length(v); i++) { c = substr(v, i, 1)
-                o = o (c ~ /[A-Za-z0-9_.~-]/ ? c : sprintf("%%%02X", HX[c])) }
-            return o }
-        function stcell(n, page, nm) { if (n + 0 <= 0) return n + 0
-            return "@{href=../" page ".html" (ROWQ ? "?axway_row=" uenc(nm) : "") "}" (n + 0) }
-        BEGIN { for (i = 1; i < 256; i++) HX[sprintf("%c", i)] = i }
+    # (the Waiting / Expired cells and their ?axway_row links to
+    # transfer/waiting-expired.html went 2026-09-30 with the State group)
+    rows=$({ grep "^S|$dim|" "$AGG.$dim" 2>/dev/null || true; } | LC_ALL=C sort -t'|' -k4,4nr -k3,3f -k3,3 | awk -F'|' -v NOFERR="$([ "$dim" = subscription ] && echo 1)" "$FMT_AWK"'
         $3 == "" { next }
         { files = $4 + 0; tok = $8 + 0; ter = $9 + 0; fe = $12 + 0; bytes = $18 + 0
-          printf "ROW\t%s\t%s\t%s\t%d\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d\t@data:buckets=%s\t@data:coreids-tok=%s\t@data:coreids-terr=%s\t@data:coreids-fin=%s\t@data:coreids-fout=%s%s\t@data:coreids-rauto=%s\t@data:coreids-rmok=%s\t@data:coreids-rmerr=%s\t@data:durdays=%s\t@data:coreids-d90=%s\t@data:coreids-d95=%s\t@data:coreids-d99=%s\t@data:coreids-d100=%s\n", \
+          printf "ROW\t%s\t%s\t%s\t%d\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t@data:buckets=%s\t@data:coreids-tok=%s\t@data:coreids-terr=%s\t@data:coreids-fin=%s\t@data:coreids-fout=%s%s\t@data:coreids-rauto=%s\t@data:coreids-rmok=%s\t@data:coreids-rmerr=%s\t@data:durdays=%s\t@data:coreids-d90=%s\t@data:coreids-d95=%s\t@data:coreids-d99=%s\t@data:coreids-d100=%s\n", \
               $3, nz($10), nz($11), fe, pr(fe, files), $13, $14, $15, \
               dcell($30), dcell($31), dcell($32), dcell($33), hbytes0(bytes), hbytes0(files > 0 ? bytes / files : 0), \
-              tok, ter, pr(ter, tok + ter), stcell($16, "waiting-expired", $3), stcell($17, "waiting-expired", $3), $5, $6, $7, \
+              tok, ter, pr(ter, tok + ter), \
               $19, $20, $21, $22, $23, (NOFERR ? "" : "\t@data:coreids-ferr=" $24), $25, $26, $27, $34, $35, $36, $37, $38 }')
     tot_line=$(awk -F'|' "$FMT_AWK"'BEGIN { tc = ARGV[1]; ttok = ARGV[2]; tter = ARGV[3]; tfe = ARGV[4]; tv = ARGV[5]; tin = ARGV[6]; tout = ARGV[7]
         printf "%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\n", pr(tter, ttok + tter), pr(tfe, tc), hbytes0(tv), hbytes0(tc > 0 ? tv / tc : 0), nz(tin), nz(tout), dcell(ARGV[8]), dcell(ARGV[9]), dcell(ARGV[10]), dcell(ARGV[11]); exit }' \
@@ -405,14 +390,14 @@ fmt_dim() {
         # it opens transfer/failed-files.html for that subscription and the active From/To (report.js
         # setupEntityErrorLinks, 2026-09-15 user request) — so its drill is left out there
         ferrdc="ferr:3:Files_Error,"; [ "$chead" = "Subscription" ] && ferrdc=""
-        printf 'TABLE\tSummary per %s\twide\tgsep=1,5,8,12,14,17,19\tnoagg=8,9,10,11,13,21\tpct=4:3:1+2;16:15:14+15\tautohide=Retry / Resubmit;State\tdrillcols=fin:1:Files_In,fout:2:Files_Out,%srauto:5:Retry,rmok:6:Resubmit_Ok,rmerr:7:Resubmit_Error,d90:8:Duration_p90,d95:9:Duration_p95,d99:10:Duration_p99,d100:11:Duration_p100,tok:14:Transfers_Ok,terr:15:Transfers_Error\n' "$chead" "$ferrdc"
-        printf 'GHEAD\t\t@{colspan=4,class=gband gsep}Files\t@{colspan=3,class=gband gsep}Retry / Resubmit\t@{colspan=4,class=gband gsep}Duration\t@{colspan=2,class=gband gsep}Volume\t@{colspan=3,class=gband gsep}Transfers\t@{colspan=2,class=gband gsep}State\t@{colspan=3,class=gband gsep}Dates\n'
-        printf 'HEAD\t%s\tIn\tOut\tError\tError %%\tAuto\tOk\tError\tp90\tp95\tp99\tp100\tTotal\tAvg\tOk\tError\tError %%\tWaiting\tExpired\tFirst\tLast\tDays\n' "$chead"
-        printf 'KIND\t%s\tnum\tnum\tnumfailed\tnum\tnumwarn\tnumwarn\tnumfailed\tnum\tnum\tnum\tnum\tnum\tnum\tnumok\tnumfailed\tnum\tnumwarn\tnumfailed\ttext\ttext\tnum\n' "$nkind"
-        printf 'RECALC\t-\tS1\tS2\ts3\te3.0\ts7\ts8\ts9\tP90\tP95\tP99\tP100\tH4\tV4.0\ts5\ts6\te6.12\ts10\ts11\t-\t-\tc\n'
+        printf 'TABLE\tSummary per %s\twide\tgsep=1,5,8,12,14\tnoagg=8,9,10,11,13\tpct=4:3:1+2;16:15:14+15\tautohide=Retry / Resubmit\tdrillcols=fin:1:Files_In,fout:2:Files_Out,%srauto:5:Retry,rmok:6:Resubmit_Ok,rmerr:7:Resubmit_Error,d90:8:Duration_p90,d95:9:Duration_p95,d99:10:Duration_p99,d100:11:Duration_p100,tok:14:Transfers_Ok,terr:15:Transfers_Error\n' "$chead" "$ferrdc"
+        printf 'GHEAD\t\t@{colspan=4,class=gband gsep}Files\t@{colspan=3,class=gband gsep}Retry / Resubmit\t@{colspan=4,class=gband gsep}Duration\t@{colspan=2,class=gband gsep}Volume\t@{colspan=3,class=gband gsep}Transfers\n'
+        printf 'HEAD\t%s\tIn\tOut\tError\tError %%\tAuto\tOk\tError\tp90\tp95\tp99\tp100\tTotal\tAvg\tOk\tError\tError %%\n' "$chead"
+        printf 'KIND\t%s\tnum\tnum\tnumfailed\tnum\tnumwarn\tnumwarn\tnumfailed\tnum\tnum\tnum\tnum\tnum\tnum\tnumok\tnumfailed\tnum\n' "$nkind"
+        printf 'RECALC\t-\tS1\tS2\ts3\te3.0\ts7\ts8\ts9\tP90\tP95\tP99\tP100\tH4\tV4.0\ts5\ts6\te6.12\n'
         [ -n "$rows" ] && printf '%s\n' "$rows"
-        printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s\t%s\t%s\t%s\t%s\t@{class=num}%s\t@{class=num}%s\t@{class=num okc}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num warn}%s\t@{class=num failed}%s\t\t\t@{class=num}%s%s\n' \
-            "$ns" "$noun" "$tinz" "$toutz" "$tfe" "$tfep" "$tra" "$tmo" "$tme" "$td90" "$td95" "$td99" "$td100" "$tvh" "$tavg" "$ttok" "$tter" "$tterp" "$twt" "$tex" "$tdays" \
+        printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s\t%s\t%s\t%s\t%s\t@{class=num}%s\t@{class=num}%s\t@{class=num okc}%s\t@{class=num failed}%s\t@{class=num}%s%s\n' \
+            "$ns" "$noun" "$tinz" "$toutz" "$tfe" "$tfep" "$tra" "$tmo" "$tme" "$td90" "$td95" "$td99" "$td100" "$tvh" "$tavg" "$ttok" "$tter" "$tterp" \
             "${tbk:+$'\t'@data:buckets=$tbk}"   # the DISTINCT per-day totals (2026-09-29: report.js re-totals a narrowed range from them)
         printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
