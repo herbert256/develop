@@ -7,9 +7,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: Partners in — Axway ST reports</title>
-<link rel="stylesheet" href="../assets/style.css?v=213821628">
+<link rel="stylesheet" href="../assets/style.css?v=41842898">
 <script src="../assets/topbar-data.js?v=2002570715" defer></script>
-<script src="../assets/topbar.js?v=213821628" defer></script>
+<script src="../assets/topbar.js?v=41842898" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="general"></div>
@@ -19,20 +19,21 @@
 <h1>Partners in</h1>
 <h2>What it shows</h2>
 <ul>
-<li>One row per <strong>login</strong> a partner connects in with: use cases, Files in and out, logons and the SSH screening funnel. Full period; no date filter. Laid out like <a href="partners-out.html">Partners Out</a>.</li>
+<li>One row per <strong>login</strong> a partner connects in with: use cases, logons, Files in and out and the SSH screening funnel. Full period; no date filter. Laid out like <a href="partners-out.html">Partners Out</a>.</li>
 <li><strong>Views</strong> &mdash; <strong>Endpoint</strong> (per login), <strong>Accounts</strong>, <strong>Partners</strong>: the same table per entity the configuration pairs the logins with. A login of two accounts counts for both, so rows can exceed the Total, which counts each login once; an unpaired login is left out.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
 <li><strong>Login</strong> links its detail page. <strong>Use cases</strong>: <strong>UC2</strong> (the partner picks up), <strong>UC4</strong> (it delivers) or both.</li>
-<li><strong>Files In</strong> / <strong>Files Out</strong> &mdash; <strong>Count</strong> by movement, <strong>Errors</strong> the failed ones; Files Out adds <strong>Retrieved</strong>, <strong>Waiting</strong> and <strong>Expired</strong>.</li>
-<li><strong>Logons</strong> &mdash; successful logons; <strong>Cloud</strong> the newest here, <strong>Gateway</strong> the last on the old gateway (<code>input/logons_old.txt</code>), <strong>Pattern</strong> their rhythm.</li>
-<li><strong>Screening</strong>, in log lines: <strong>Allowed</strong> / <strong>Disallowed</strong> (whitelist), <strong>Authenticated</strong>, <strong>Bad key</strong>, <strong>Locked</strong>, <strong>Auth failed</strong> (the anonymous &ldquo;Authentication failed using local.&rdquo;, booked to the login screened just before).</li>
+<li><strong>Logons</strong> &mdash; <strong>Cloud</strong> the newest successful logon here, <strong>Gateway</strong> the last on the old gateway (<code>input/logons_old.txt</code>).</li>
+<li><strong>Files in - UC4</strong> / <strong>Files out - UC2</strong> &mdash; <strong>Count</strong> by movement, <strong>Errors</strong> the failed ones; Files out adds <strong>Retrieved</strong>, <strong>Waiting</strong> and <strong>Expired</strong>.</li>
+<li><strong>Screening</strong> &mdash; <strong>Pattern</strong> (the logon rhythm), then in log lines: <strong>Allowed</strong> / <strong>Disallowed</strong> (whitelist), <strong>Authenticated</strong>, <strong>Locked</strong>, <strong>Auth failed</strong> (a rejected key plus the anonymous &ldquo;Authentication failed using local.&rdquo;, booked to the login screened just before).</li>
 </ul>
 <h2>Rules</h2>
 <ul>
 <li>Rows: every configured login, then logins only the old-gateway file or the funnel knows (untinted).</li>
 <li>Row tint = the login&rsquo;s result colour; red cells keep their red. A 0 is empty. Sorted by Waiting.</li>
+<li>Accounts / Partners views: Pattern is that of the login with the most authentications.</li>
 </ul>
 <h2>Tips</h2>
 <ul>

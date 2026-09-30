@@ -7,9 +7,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: Entities — Axway ST reports</title>
-<link rel="stylesheet" href="../assets/style.css?v=213821628">
+<link rel="stylesheet" href="../assets/style.css?v=41842898">
 <script src="../assets/topbar-data.js?v=2002570715" defer></script>
-<script src="../assets/topbar.js?v=213821628" defer></script>
+<script src="../assets/topbar.js?v=41842898" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="general"></div>
@@ -29,18 +29,16 @@
 <li><strong>Duration</strong> &mdash; <strong>p90</strong> &hellip; <strong>p100</strong> span of the delivered Files, nearest rank; seconds green, minutes amber, hours and days red.</li>
 <li><strong>Volume</strong> &mdash; <strong>Total</strong>, <strong>Avg</strong> per File.</li>
 <li><strong>Transfers</strong> &mdash; their legs: <strong>Ok</strong>, <strong>Error</strong>, <strong>Error %</strong>.</li>
-<li><strong>State</strong> &mdash; <strong>Waiting</strong> (UC2, uncollected) and <strong>Expired</strong> (deleted unclaimed) Files.</li>
-<li><strong>Dates</strong> &mdash; <strong>First</strong>, <strong>Last</strong>, <strong>Days</strong> with traffic.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Waiting counts as OK, Expired as Error. Figures follow From/To, except First and Last. Retry / Resubmit and State show only while a visible row has a value.</li>
+<li>Waiting counts as OK, Expired as Error. Figures follow From/To. Retry / Resubmit shows only while a visible row has a value. Waiting and Expired Files per subscription: <a href="waiting-expired.html">Waiting &amp; Expired</a>.</li>
 <li>Logical, Partners, Applications and BL can count a File for several names; their Total counts it once. OK / Warning / Error views sum their rows.</li>
 <li>Row tint = the name&rsquo;s result (<a href="general.html">Generic help</a>); untinted = not configured.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>A count opens its 10 newest Files; a Transfers cell those with such a leg; a Duration cell those at or above it. Waiting and Expired open <a href="waiting-expired.html">Waiting &amp; Expired</a> (a subscription&rsquo;s row marked).</li>
+<li>A count opens its 10 newest Files; a Transfers cell those with such a leg; a Duration cell those at or above it.</li>
 </ul>
 </main>
 </body>
