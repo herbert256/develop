@@ -27,9 +27,6 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
    The bar's justify-content:space-between distributes the leftover space
    evenly — no part carries a pushing margin, so the first part sits on the
    left border and the last on the right. */
-.topbar .nav { display:flex; align-items:center; gap:0.4rem 1.4rem; }
-.topbar .nav a { color:#fff; font-size:0.95rem; }   /* help pages' plain area links (report pages use .dd dropdowns instead) */
-.topbar .nav a:hover { text-decoration:underline; }
 /* the brand = the home link; its TEXT is the ENVIRONMENT label (report.js
    buildTopbar, from input/environment.txt via topbar-data.js; "Cloud" on a
    checkout without one) — one site = one environment since 2026-09-11, and
@@ -52,21 +49,10 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
 .topbar .envlink.envcur { color:#ffd400; font-weight:bold; }
 .topbar .envsep { color:#fff; opacity:0.7; }
 .topbar .tright { color:#fff; font-size:0.95rem; white-space:nowrap; }
-/* hover dropdowns of report links (left-anchored: the menus live on the bar's left side) */
-.dd { position:relative; }
-/* the plain Dashboard link between the dropdowns and the right icons (ONE
-   dashboard page — no dropdown); dressed like a .ddlabel so the bar reads
-   as one family */
+/* the plain Dashboard link between the link cluster and the right icons (ONE
+   dashboard page — no dropdown; the Reports pulldown went 2026-09-30) */
 .topbar a.dashlink { color:#fff; font-size:0.95rem; white-space:nowrap; }
 .topbar a.dashlink:hover { text-decoration:underline; }
-.dd .ddlabel { color:#fff; font-size:0.95rem; cursor:default; user-select:none; }
-.dd:hover .ddlabel { text-decoration:underline; }
-.dd .ddm { position:absolute; top:100%; left:0; display:none; min-width:210px; max-height:75vh; overflow:auto;
-           background:#fff; border:1px solid #b9c4d0; border-radius:0 0 4px 4px; box-shadow:0 4px 10px rgba(0,0,0,0.3); z-index:30; }
-.dd:hover .ddm, .dd:focus-within .ddm { display:block; }
-.dd .ddm a { display:block; padding:6px 14px; color:#20344a; font-size:0.9rem; white-space:nowrap; }
-.dd .ddm a:hover { background:#e8f0fe; text-decoration:none; }
-.dd .ddm a.ddtop { font-weight:bold; border-bottom:1px solid #ddd; }   /* "Start page" -> area index */
 
 
 /* the three right icons travel as ONE flex part (part 6), so space-between

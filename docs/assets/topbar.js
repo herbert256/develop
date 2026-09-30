@@ -48,22 +48,22 @@
   // "Axway ST" without one), or on a runtime checkout the pair "Acceptance /
   // Production", the active one bold and yellow (.envcur) linking the home
   // page · 2 Overview · Errors · Duration · Partners · Waiting/Expired ·
+  // Security · Seen · Configuration · Use cases · Patterns · Activity ·
   // Entities · Files + the search icon (ONE cluster, 2026-09-29; since
   // 2026-09-30, user request, Errors right after Overview, Duration ->
   // transfer/duration.html and Waiting/Expired -> transfer/waiting-expired.html
   // added, the data period between the brand and the cluster gone; later that
   // day the pair "Partners: In / Out", since the evening just "Partners" ->
   // analyses/partners-in.html (Partners Out through its group row), fixed paths
-  // like Duration, right after Duration since the night) · 3 the ONE Reports
-  // pulldown · 4 the Dashboard link · 5 the
-  // site map and help icons.
+  // like Duration, right after Duration since the night; the six links after
+  // Waiting/Expired replaced the Reports pulldown the same night) · 3 the
+  // Dashboard link · 4 the site map and help icons.
   function buildTopbar() {
     var tb = document.querySelector("div.topbar");
     if (!tb || tb.firstChild) return;
     var M = window.AXWAY_TB || {};
     var b = tb.getAttribute("data-b") || "";
     var help = tb.getAttribute("data-help") || "";
-    function menu(s) { return (s || "").replace(/@/g, b); }
     var brand = (typeof M.env === "string" && M.env) ? M.env : "Axway ST";
     var brandHtml, keys = ["acceptance", "production"], ki, kk, pair = "";
     if (M.envkey === "acceptance" || M.envkey === "production") {
@@ -84,14 +84,17 @@
       '<a class="entlabel" href="' + b + 'transfer/duration.html">Duration</a>' +
       '<a class="entlabel" href="' + b + 'analyses/partners-in.html">Partners</a>' +
       '<a class="entlabel" href="' + b + 'transfer/waiting-expired.html">Waiting/Expired</a>' +
+      // (2026-09-30, user request, with the Reports pulldown gone: the
+      // groups it opened, as fixed paths right after Waiting/Expired)
+      '<a class="entlabel" href="' + b + 'transfer/security-params.html">Security</a>' +
+      '<a class="entlabel" href="' + b + 'analyses/first-seen.html">Seen</a>' +
+      '<a class="entlabel" href="' + b + 'analyses/subscriptions.html">Configuration</a>' +
+      '<a class="entlabel" href="' + b + 'analyses/use-cases.html">Use cases</a>' +
+      '<a class="entlabel" href="' + b + 'transfer/file-journey-patterns.html">Patterns</a>' +
+      '<a class="entlabel" href="' + b + 'transfer/activity-per-week.html">Activity</a>' +
       '<a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
       '<a class="entlabel" href="' + b + 'search/all-files.html">Files</a>' +
       '<a class="searchbtn" href="' + b + 'search/search.html" title="Search" aria-label="Search">🔍</a></span>' +
-      '<nav class="nav">' +
-      // the Reports label is focusable: focus opens the menu through the CSS
-      // :focus-within, Tab walks its links (report.js: Escape leaves it)
-      '<div class="dd"><span class="ddlabel" tabindex="0" aria-haspopup="true">Reports ▾</span><div class="ddm">' + menu(M.reports) + "</div></div>" +
-      "</nav>" +
       '<a class="dashlink" href="' + b + 'dashboards/index.html">Dashboard</a>' +
       '<span class="tr-group">' +
       '<a class="searchbtn" href="' + b + 'tools/sitemap.html" title="Site map" aria-label="Site map">🗺</a>' +
