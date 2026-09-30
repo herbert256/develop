@@ -11,11 +11,15 @@
 #                target address of the logon summary with outbound
 #                connections — under the host input/ip/ip-hosts.tsv maps it
 #                to, else as the raw address
-#   Subscription the subscriptions that TRIED: the Outgoing table's session
-#                join (the failed attempt's connection joined to its transfer
-#                legs); a host with no resolved failure shows its CONFIGURED
-#                subscriptions instead (xref/_hosts-subscriptions.tsv) —
-#                one @{alist=subscriptions} cell either way
+#   Use cases    the use cases of the host's subscriptions — its CONFIGURED
+#                ones (xref/_hosts-subscriptions.tsv) plus the ones that
+#                TRIED (the Outgoing table's session join: the failed
+#                attempt's connection joined to its transfer legs); the
+#                Partners in cell's rule (fe-overview.sh): a subscription's
+#                use case is its name prefix, else the DERIVED one
+#                (xref/_subscriptions-ucderived.tsv), UC1..UC4 in order,
+#                any other after, "/"-joined (2026-09-30, user request: it
+#                replaced the Subscription column)
 #   Connections, Last connection
 #                our outbound connections to the host — the logon summary
 #                (bin/logons.sh _logons-hosts.tsv fields 10 / 12, the "had
@@ -43,6 +47,7 @@ source "$ROOT/bin/logons.sh"     # ensure_logons(): the logon summary (_logons-h
 OUT="$REPORTS_DIR/partners-out.rpt"
 HB="$DATA/flow-manager/base/_hosts.tsv"
 HS="$DATA/flow-manager/xref/_hosts-subscriptions.tsv"
+UCDF="$DATA/flow-manager/xref/_subscriptions-ucderived.tsv"
 SCACHE="$DATA/server/cache"
 LG="$DATA/server/reports/logon.rpt"
 
@@ -57,10 +62,11 @@ ensure_logons "$SCACHE"
 LGH="$SCACHE/_logons-hosts.tsv"
 IPM="$IP_HOSTS_FILE"
 [ -f "$HS" ]  || HS=/dev/null
+[ -f "$UCDF" ] || UCDF=/dev/null
 [ -f "$LG" ]  || LG=/dev/null
 [ -f "$IPM" ] || IPM=/dev/null
 
-awk -F'\t' -v HB="$HB" -v HS="$HS" -v LGH="$LGH" -v IPM="$IPM" -v LG="$LG" "$AWKLIB"'
+awk -F'\t' -v HB="$HB" -v HS="$HS" -v UCDF="$UCDF" -v LGH="$LGH" -v IPM="$IPM" -v LG="$LG" "$AWKLIB"'
     function strip(c) { while (index(c, "@{") == 1) sub(/^@\{[^}]*\}/, "", c); return c }
     function z(v) { return (v + 0 == 0) ? "" : v + 0 }
     # a SUBSEP-joined set -> its members sorted, ", "-joined
@@ -71,11 +77,26 @@ awk -F'\t' -v HB="$HB" -v HS="$HS" -v LGH="$LGH" -v IPM="$IPM" -v LG="$LG" "$AWK
         o = ""; for (i = 1; i <= n; i++) o = o (i > 1 ? ", " : "") A[i]
         return o
     }
+    # the use case of a subscription: its name prefix, else the derived one
+    function ucof(s) { if (match(s, /^UC[0-9]+/)) return substr(s, 1, RLENGTH); if (toupper(s) in UCD) return UCD[toupper(s)]; return "" }
+    # the Use cases cell (the Partners in rule, fe-overview.sh): over the
+    # configured AND the tried subscriptions of the host, UC1..UC4 in order, any
+    # other use case after (sorted), "/"-joined
+    function ucs(h,   s, n, A, i, u, H, o, j, X) {
+        s = CSUB[h] TSUB[h]; if (s == "") return ""
+        n = split(substr(s, 2), A, SUBSEP); X = ""
+        for (i = 1; i <= n; i++) { u = ucof(A[i]); if (u == "" || (u in H)) continue; H[u] = 1; if (u !~ /^UC[1-4]$/) X = X SUBSEP u }
+        o = ""; for (j = 1; j <= 4; j++) if (("UC" j) in H) o = o (o == "" ? "" : "/") "UC" j
+        if (X != "") { X = sortedlist(X); gsub(/, /, "/", X); o = o (o == "" ? "" : "/") X }
+        return o
+    }
     function addrow(h, disp) { if (!(h in ROWK)) { ROWK[h] = ++nr; KEY[nr] = h; DISP[nr] = disp } }
     # a set per key, one SEEN space per set (tag): a configured subscription
     # must not hide the same name in the tried set
     function addset(arr, tag, k, v) { if (!((tag SUBSEP k SUBSEP v) in SEEN)) { SEEN[tag SUBSEP k SUBSEP v] = 1; arr[k] = arr[k] SUBSEP v } }
     BEGIN {
+        while ((getline l < UCDF) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "" && a[2] != "") UCD[toupper(a[1])] = a[2] }
+        close(UCDF)
         # the hosts (lowercase, canonical) and their result colour
         while ((getline l < HB) > 0) { split(l, a, "\t"); if (a[1] == "") continue
             h = tolower(a[1]); addrow(h, a[1]); if (a[3] != "") RES[h] = a[3] }
@@ -133,15 +154,15 @@ awk -F'\t' -v HB="$HB" -v HS="$HS" -v LGH="$LGH" -v IPM="$IPM" -v LG="$LG" "$AWK
             while (j >= 1 && before(v, ORD[j])) { ORD[j + 1] = ORD[j]; j-- }
             ORD[j + 1] = v }
         print "TITLE\tPartners Out"
-        print "DESC\tEvery host this server connects out to: the subscriptions that use it, our connections and the last one, and our failed logons there — Password, Key, Certificate and Other with the newest reason and the first and last day."
+        print "DESC\tEvery host this server connects out to: the use cases of its subscriptions, our connections and the last one, and our failed logons there — Password, Key, Certificate and Other with the newest reason and the first and last day."
         print "TABLE\tHosts\twide\tnofilter\trestint\tgsep=2,4\tdrill=log line"
-        print "HEAD\tRemote host\tSubscription\tConnections\tLast connection\tUser\tFailures\tPassword\tKey\tCertificate\tOther\tReason (last seen)\tFirst\tLast"
+        print "HEAD\tRemote host\tUse cases\tConnections\tLast connection\tUser\tFailures\tPassword\tKey\tCertificate\tOther\tReason (last seen)\tFirst\tLast"
         print "KIND\thost\ttext\tnum\ttext\ttext\tnumfailed\tnumfailed\tnumfailed\tnumfailed\tnumfailed\ttext\ttext\ttext"
         tc = 0; tf = 0; tp = 0; tk = 0; tcr = 0; to = 0
         for (i = 1; i <= nr; i++) { r = ORD[i]; h = KEY[r]
-            sub1 = sortedlist(TSUB[h]); if (sub1 == "") sub1 = sortedlist(CSUB[h])
+            uc = ucs(h)
             us = sortedlist(USR[h])
-            line = "ROW\t" lit(DISP[r]) "\t" (sub1 == "" ? "" : "@{alist=subscriptions}" sub1) "\t" z(CN[r]) "\t" LCN[r] \
+            line = "ROW\t" lit(DISP[r]) "\t" uc "\t" z(CN[r]) "\t" LCN[r] \
                    "\t" (us == "" ? "" : "@{alist=accounts}" us) "\t" z(FA[h]) "\t" z(PW[h]) "\t" z(KY[h]) "\t" z(CR[h]) "\t" z(OT[h]) \
                    "\t" RSN[h] "\t" FST[h] "\t" LST[h]
             if (h in RES) line = line "\t@data:res=" RES[h]

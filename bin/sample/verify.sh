@@ -158,7 +158,8 @@ check $([ "${n:-1}" = 0 ] && ! grep -rqs 'logons-incoming\.html\|logons-outgoing
 check $([ -f docs/server/logons-scanners.html ] && [ "$(command grep -c $'^TABLE\t' data/server/reports/logons.rpt 2>/dev/null)" = 3 ] && echo 0 || echo 1) "Logons is not Scanners · By account · By source IP (docs/server/logons-scanners.html + 3 tables)"
 # Partners Out (2026-09-30, user request: Logons › Outgoing renamed, all
 # hosts): every base host has a row, the failure totals equal logon.rpt's
-# Outgoing TOTAL, a failing host names the subscription that tried
+# Outgoing TOTAL, every host of a UC-named configured subscription shows that
+# use case (the Use cases column replaced Subscription later that day)
 check $([ -f "docs/analyses/partners-out.html" ] && echo 0 || echo 1) "docs/analyses/partners-out.html missing"
 n=$(awk -F'\t' 'FILENAME ~ /_hosts\.tsv$/ { if ($1 != "") want[tolower($1)] = 1; next } $1 == "ROW" { v = $2; sub(/^@\{[^}]*\}/, "", v); got[tolower(v)] = 1 } END { for (h in want) if (!(h in got)) m++; print m + 0 }' data/flow-manager/base/_hosts.tsv data/analyses/reports/partners-out.rpt 2>/dev/null)
 check $([ "${n:-1}" = 0 ] && [ -s data/analyses/reports/partners-out.rpt ] && echo 0 || echo 1) "Partners Out lacks ${n:-?} configured host(s)"
@@ -166,13 +167,11 @@ ot=$(awk -F'\t' '$1 == "TABLE" { t++ } t == 2 && $1 == "TOTAL" { s = ""; for (i 
 pt=$(awk -F'\t' '$1 == "TOTAL" { s = ""; for (i = 6; i <= 10; i++) { v = $i; sub(/^@\{[^}]*\}/, "", v); s = s "|" (v + 0) } print s; exit }' data/analyses/reports/partners-out.rpt 2>/dev/null)
 check $([ -n "$ot" ] && [ "$ot" = "$pt" ] && echo 0 || echo 1) "Partners Out failure totals ${pt:-?} != logon.rpt Outgoing ${ot:-?} (Failures|Password|Key|Certificate|Other)"
 read -r n m <<< "$(awk -F'\t' 'function strip(c) { sub(/^@\{[^}]*\}/, "", c); return c }
-    FILENAME ~ /logon\.rpt$/ { if ($1 == "TABLE") t++; if (t == 2 && $1 == "ROW" && strip($4) != "") { h = tolower(strip($2)); k = split(strip($4), S, ", "); for (i = 1; i <= k; i++) if (!((h, S[i]) in U)) { U[h, S[i]] = 1; W[h] = W[h] "|" S[i] } } next }
-    $1 == "ROW" && (tolower(strip($2)) in W) { h = tolower(strip($2)); k = split(strip($3), S, ", "); g = ""; for (i = 1; i <= k; i++) g = g "|" S[i]
-        # the cell is sorted; compare as sets
-        n9 = split(substr(W[h], 2), A, "|"); m9 = split(substr(g, 2), B, "|"); same = (n9 == m9); for (i = 1; i <= m9; i++) if (!((h, B[i]) in U)) same = 0
-        c++; if (same) ok++ }
-    END { print ok + 0, c + 0 }' data/server/reports/logon.rpt data/analyses/reports/partners-out.rpt 2>/dev/null)"
-check $([ "${m:-0}" -gt 0 ] && [ "${n:-x}" = "$m" ] && echo 0 || echo 1) "Partners Out: ${n:-?} of ${m:-?} failing host(s) name exactly the subscriptions that tried (the Outgoing session join)"
+    FILENAME ~ /_hosts-subscriptions\.tsv$/ { if (match($2, /^UC[0-9]+/)) W[tolower($1), substr($2, 1, RLENGTH)] = 1; next }
+    $1 == "HEAD" { hd = $3 }
+    $1 == "ROW" { h = tolower(strip($2)); k = split($3, U, "/"); for (i = 1; i <= k; i++) G[h, U[i]] = 1 }
+    END { for (p in W) { c++; if (p in G) ok++ } if (hd != "Use cases") ok = -1; print ok + 0, c + 0 }' data/flow-manager/xref/_hosts-subscriptions.tsv data/analyses/reports/partners-out.rpt 2>/dev/null)"
+check $([ "${m:-0}" -gt 0 ] && [ "${n:-x}" = "$m" ] && echo 0 || echo 1) "Partners Out: ${n:-?} of ${m:-?} (host, use case) pair(s) of the UC-named configured subscriptions in the Use cases column (or column 2 is not Use cases)"
 n=$(awk -F'\t' '$1 == "ROW" && $4 != "" { n++ } END { print n + 0 }' data/analyses/reports/partners-out.rpt 2>/dev/null)
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "Partners Out: no host carries Connections"
 # the three partner study reports are GONE (2026-09-30, user request): no

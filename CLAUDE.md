@@ -1761,8 +1761,10 @@ front end) then four fix workers with disjoint files. The rules it left:
 - **Partners Out** (`analyses/partners-out.html`, `bin/analyses/reports/partners-out.sh`, analyses wave 1)
   replaces Logons › Outgoing: one row per host we connect OUT to — base/_hosts.tsv ∪ the Outgoing hosts ∪ the
   logon summary's outbound target addresses (via input/ip/ip-hosts.tsv, else the raw address). Remote host ·
-  Subscription (the Outgoing session join; a host with no resolved failure → its configured
-  xref/_hosts-subscriptions.tsv) · Connections · Last connection (_logons-hosts.tsv fields 10 / 12 over the name
+  Use cases (the evening of 2026-09-30, user request: "have a second column Use cases, just like on Partners
+  In, remove the subscriptions column" — the Partners in cell's rule, UC1..UC4 by name prefix else
+  xref/_subscriptions-ucderived.tsv, over the host's configured xref/_hosts-subscriptions.tsv ∪ the
+  Outgoing session join's tried ones) · Connections · Last connection (_logons-hosts.tsv fields 10 / 12 over the name
   + its addresses = the host page's figures) | User · Failures · Password · Key · Certificate · Other · Reason
   (last seen) · First · Last (the Outgoing pairs folded per host, 10 newest lines as the drill). Tint = host
   result colour (raw addresses untinted); 0 blank; full period; baked order Failures, Connections, name.
@@ -1786,7 +1788,8 @@ front end) then four fix workers with disjoint files. The rules it left:
   knocker table — those names stay out of Incoming, listed nowhere; auth-activity.sh no longer scans the
   certificate lines); tabs Scanners · By account · By source IP (Incoming / Outgoing became Partners in /
   Partners Out, fourth batch).
-- **Partners Out's Subscription column names the subscription that tried** (Logons › Outgoing's, after User, until the fourth batch): the sessions of the pair's
+- **logon.rpt's Outgoing Subscription field names the subscription that tried** (a Logons › Outgoing column,
+  after User, until the fourth batch; Partners Out showed it until the same evening, now it feeds its Use cases): the sessions of the pair's
   failed attempts joined to the transfer legs of the same connection (`_transfers.tsv` col 24 → col 6,
   the site's session join; a session naming two flows names neither; `Unknown` is no subscription),
   one `@{alist=subscriptions}` cell. reason-boxes reads the Outgoing Last date as field 12 now.
