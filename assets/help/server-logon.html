@@ -1,20 +1,14 @@
 <h1>Logons</h1>
 <h2>What it shows</h2>
 <ul>
-<li>SSH authentication from the server log, counted in log lines.</li>
+<li>SSH authentication from the server log, counted in log lines. The screening funnel per login is on <a href="partners-in.html">Partners in</a>, our failed logons at partners on <a href="partners-out.html">Partners Out</a>.</li>
 </ul>
 <h2>Tabs</h2>
 <ul>
-<li><strong>Incoming</strong> &mdash; each configured login through the screening funnel: <strong>Allowed</strong> / <strong>Disallowed</strong>, <strong>Authenticated</strong>, <strong>No account</strong>, <strong>Bad key</strong>, <strong>Key failures</strong>, <strong>Locked</strong>, <strong>Auth failed</strong>, <strong>Session errors</strong>; then <strong>First logon</strong> / <strong>Last logon</strong> / <strong>Logons</strong> / <strong>Pattern</strong> (successful logons, any protocol) and <strong>Re-screens</strong>.</li>
-<li><strong>Outgoing</strong> &mdash; this server failing to log on at a partner: <strong>Remote host</strong>, <strong>User</strong>, <strong>Subscription</strong> (the flow that tried: the failed attempt&rsquo;s connection joined to its transfer legs), <strong>Failures</strong> = <strong>Password</strong> + <strong>Key</strong> + <strong>Certificate</strong> + <strong>Other</strong>, <strong>Reason (last seen)</strong>, <strong>First</strong>, <strong>Last</strong>.</li>
-<li><strong>Scanners</strong> &mdash; the 25 most-tried other names.</li>
+<li><strong>Scanners</strong> &mdash; the 25 most-tried usernames that match no account (the &ldquo;not associated with any account&rdquo; lines and the no-account rejections of unconfigured names): <strong>Attempts</strong>, <strong>Source IPs</strong>, <strong>IPs</strong>, <strong>First</strong>, <strong>Last</strong>.</li>
 <li><strong>By account</strong> / <strong>By source IP</strong> &mdash; successful SSH logins, distinct <strong>Source IPs</strong> / <strong>Accounts</strong>, <strong>First seen</strong> / <strong>Last seen</strong>.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li><strong>Auth failed</strong> = the anonymous &ldquo;Authentication failed using local.&rdquo; line, booked to the login whose Allowed precedes it within a second.</li>
-<li><strong>Re-screens</strong> = an Allowed on an already-authenticated session (a held connection re-keys); not in Allowed.</li>
-<li>Incoming row colour = the latest funnel line: <strong>green</strong> an authentication, <strong>red</strong> anything else, <strong>orange</strong> never in the funnel.</li>
-<li><strong>Session errors</strong> = Error/Warning <code>[Ssh Default]</code> lines of no other column, booked to the session&rsquo;s login (not the &ldquo;No session cycleId&rdquo; re-key warning).</li>
 <li>A count opens its newest lines. Distinct counts stay full period under a date filter.</li>
 </ul>

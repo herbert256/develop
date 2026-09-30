@@ -77,6 +77,9 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
 .topbar .entgroup { display:flex; align-items:center; gap:1rem; white-space:nowrap; }
 .topbar .entlabel { color:#fff; font-size:0.9rem; }
 .topbar .entlabel:hover { text-decoration:underline; }
+/* "Partners: In / Out" (2026-09-30): a plain label and two links, tight */
+.topbar .entpair { display:inline-flex; align-items:center; gap:0.35rem; color:#fff; font-size:0.9rem; }
+.topbar .entsep { color:#fff; opacity:0.7; }
 /* the search magnifier: a circle icon matching the help icon */
 .topbar .searchbtn { display:inline-flex; align-items:center; justify-content:center; flex:none;
                    width:1.7rem; height:1.7rem; border-radius:50%; background:rgba(255,255,255,0.18);

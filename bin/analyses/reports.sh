@@ -64,12 +64,13 @@ run_bg "$SCRIPT_DIR/reports/cross-reference.sh"
 run_bg "$SCRIPT_DIR/reports/entity-coverage.sh"
 run_bg "$SCRIPT_DIR/reports/skipped.sh"               # reads the parse-time skip sidecars only
 run_bg "$SCRIPT_DIR/reports/failing-reasons.sh"       # Error reasons (reads failed-files.rpt — the transfer reports ran first)
-# the 2026-08 study reports — transfer caches + base/xref/colour reads only,
-# independent of the PDA TSVs and of home.rpt, so wave 1 is safe.
-run_bg "$SCRIPT_DIR/reports/partner-scorecard.sh"
-run_bg "$SCRIPT_DIR/reports/blast-radius.sh"
-run_bg "$SCRIPT_DIR/reports/app-partners.sh"
-run_bg "$SCRIPT_DIR/reports/fe-overview.sh"          # Partners - Incoming: config + files cache + logon summary + input/logons_old.txt + the UC2 pickup sidecar (server pool output — bin/build.sh runs the server reports first)
+# (the 2026-08 study reports Partner scorecard, Blast radius and Application
+# dependencies went 2026-09-30, user request)
+# Partners Out (2026-09-30, user request): every host we connect OUT to —
+# base/_hosts.tsv, the logon summary, the ip map, the xref and the server
+# pool's logon.rpt Outgoing table; independent of the PDA TSVs and home.rpt
+run_bg "$SCRIPT_DIR/reports/partners-out.sh"
+run_bg "$SCRIPT_DIR/reports/fe-overview.sh"          # Partners in: config + files cache + logon summary + input/logons_old.txt + the UC2 pickup sidecar (server pool output — bin/build.sh runs the server reports first)
 
 # wave 2 — the ensure_pda_tsvs chain, strictly in order (first-seen moved here
 # 2026-08: its seen split now reads the coverage TSVs, incl. the PDA partners).
@@ -82,9 +83,10 @@ run_bg "$SCRIPT_DIR/reports/fe-overview.sh"          # Partners - Incoming: conf
   timed "$SCRIPT_DIR/reports/home.sh"
   timed "$SCRIPT_DIR/reports/entity-search.sh" ) & PIDS+=("$!")
 wait_all
-# MERGED (2026-09-13, user request): fe-overview.rpt (wave 1, just above) + the
-# Incoming table of the server pool's logon.rpt -> Partners - Incoming
-# (analyses/partners-in.html); reads the two .rpt files only
+# MERGED (2026-09-13, user request; the whole Logons › Incoming table since
+# 2026-09-30): fe-overview.rpt (wave 1, just above) + the Incoming table of
+# the server pool's logon.rpt -> Partners in (analyses/partners-in.html);
+# reads the two .rpt files only
 timed "$SCRIPT_DIR/reports/partners-in.sh"
 
 echo "All analyses reports done." >&2

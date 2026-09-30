@@ -134,12 +134,51 @@ check $([ "${n:-0}" -eq 1 ] && echo 0 || echo 1) "BL10042 is not an entity in ba
 check $([ ! -f "docs/analyses/fe-overview.html" ] && echo 0 || echo 1) "docs/analyses/fe-overview.html still published (retired 2026-09-29)"
 n=$(command grep -c '@data:res=' "data/analyses/reports/fe-overview.rpt" 2>/dev/null || true)
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "fe-overview.rpt has 0 tinted rows"
-# Partners - Incoming (2026-09-13): the merged page exists and carries every FE overview row plus the funnel cell drills
+# Partners in (2026-09-13 as Partners - Incoming): the merged page exists and carries every FE overview row plus the funnel cell drills
 check $([ -f "docs/analyses/partners-in.html" ] && echo 0 || echo 1) "docs/analyses/partners-in.html missing"
 n=$(command grep -c '^ROW' "data/analyses/reports/partners-in.rpt" 2>/dev/null || true); m=$(command grep -c '^ROW' "data/analyses/reports/fe-overview.rpt" 2>/dev/null || true)
 check $([ "${n:-0}" -ge "${m:-1}" ] && [ "${m:-0}" -gt 0 ] && echo 0 || echo 1) "partners-in.rpt has $n row(s), fewer than the FE overview ($m)"
 n=$(command grep -c '@data:drill-cell-12=' "data/analyses/reports/partners-in.rpt" 2>/dev/null || true)
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "partners-in.rpt carries no re-keyed funnel drill (Allowed at column 12)"
+# ... and since 2026-09-30 (user request: Logons › Incoming merged in) the
+# WHOLE Incoming funnel: every logon.rpt Incoming row is a Partners in row
+# with the same Allowed … Session errors, Re-screens, First logon, Logons
+# and Pattern cells, and the retired tab pages are gone and unlinked
+pm=$(awk -F'\t' 'FILENAME ~ /logon\.rpt$/ { if ($1 == "TABLE") t++; if (t == 1 && $1 == "ROW") { k = toupper($2); v = ""; for (i = 3; i <= 11; i++) v = v "|" $i; W[k] = v "|" $16 "|" $12 "|" $14 "|" $15; nw++ } next }
+    $1 == "HEAD" { for (i = 2; i <= NF; i++) C[$i] = i; next }
+    $1 == "ROW" { k = toupper($2); if (!(k in W)) next; v = ""; split("Allowed Disallowed Authenticated No_account Bad_key Key_failures Locked Auth_failed Session_errors Re-screens First_logon Logons Pattern", H, " ")
+        for (j = 1; j <= 13; j++) { h = H[j]; gsub(/_/, " ", h); v = v "|" $(C[h]) }
+        if (v == W[k]) ok++; seen[k] = 1 }
+    END { for (k in W) if (!(k in seen)) miss++; print nw + 0, ok + 0, miss + 0 }' data/server/reports/logon.rpt data/analyses/reports/partners-in.rpt 2>/dev/null)
+read -r pmn pmok pmmiss <<< "$pm"
+check $([ "${pmn:-0}" -gt 0 ] && [ "${pmok:-x}" = "$pmn" ] && [ "${pmmiss:-1}" = 0 ] && echo 0 || echo 1) "Partners in: ${pmok:-?} of ${pmn:-?} logon.rpt Incoming row(s) carry the same funnel cells (${pmmiss:-?} missing)"
+check $(awk -F'\t' '$1 == "HEAD" { h = $0 } END { print (h ~ /\tNo account\t/ && h ~ /\tSession errors\t/ && h ~ /\tRe-screens\t/ && h ~ /\tFirst logon\t/ && h !~ /\tLast logon/ && h !~ /\tAuth Failed/) ? 0 : 1 }' data/analyses/reports/partners-in.rpt 2>/dev/null || echo 1) "partners-in.rpt HEAD lacks the Incoming columns (or still carries Last logon / the summed Auth Failed)"
+n=$(ls docs/server/logons-incoming.html docs/server/logons-outgoing.html 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-1}" = 0 ] && ! grep -rqs 'logons-incoming\.html\|logons-outgoing\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "the retired Logons Incoming / Outgoing tab pages are back or still linked"
+check $([ -f docs/server/logons-scanners.html ] && [ "$(command grep -c $'^TABLE\t' data/server/reports/logons.rpt 2>/dev/null)" = 3 ] && echo 0 || echo 1) "Logons is not Scanners · By account · By source IP (docs/server/logons-scanners.html + 3 tables)"
+# Partners Out (2026-09-30, user request: Logons › Outgoing renamed, all
+# hosts): every base host has a row, the failure totals equal logon.rpt's
+# Outgoing TOTAL, a failing host names the subscription that tried
+check $([ -f "docs/analyses/partners-out.html" ] && echo 0 || echo 1) "docs/analyses/partners-out.html missing"
+n=$(awk -F'\t' 'FILENAME ~ /_hosts\.tsv$/ { if ($1 != "") want[tolower($1)] = 1; next } $1 == "ROW" { v = $2; sub(/^@\{[^}]*\}/, "", v); got[tolower(v)] = 1 } END { for (h in want) if (!(h in got)) m++; print m + 0 }' data/flow-manager/base/_hosts.tsv data/analyses/reports/partners-out.rpt 2>/dev/null)
+check $([ "${n:-1}" = 0 ] && [ -s data/analyses/reports/partners-out.rpt ] && echo 0 || echo 1) "Partners Out lacks ${n:-?} configured host(s)"
+ot=$(awk -F'\t' '$1 == "TABLE" { t++ } t == 2 && $1 == "TOTAL" { s = ""; for (i = 3; i <= 7; i++) { v = $i; sub(/^@\{[^}]*\}/, "", v); s = s "|" (v + 0) } print s; exit }' data/server/reports/logon.rpt 2>/dev/null)
+pt=$(awk -F'\t' '$1 == "TOTAL" { s = ""; for (i = 6; i <= 10; i++) { v = $i; sub(/^@\{[^}]*\}/, "", v); s = s "|" (v + 0) } print s; exit }' data/analyses/reports/partners-out.rpt 2>/dev/null)
+check $([ -n "$ot" ] && [ "$ot" = "$pt" ] && echo 0 || echo 1) "Partners Out failure totals ${pt:-?} != logon.rpt Outgoing ${ot:-?} (Failures|Password|Key|Certificate|Other)"
+read -r n m <<< "$(awk -F'\t' 'function strip(c) { sub(/^@\{[^}]*\}/, "", c); return c }
+    FILENAME ~ /logon\.rpt$/ { if ($1 == "TABLE") t++; if (t == 2 && $1 == "ROW" && strip($4) != "") { h = tolower(strip($2)); k = split(strip($4), S, ", "); for (i = 1; i <= k; i++) if (!((h, S[i]) in U)) { U[h, S[i]] = 1; W[h] = W[h] "|" S[i] } } next }
+    $1 == "ROW" && (tolower(strip($2)) in W) { h = tolower(strip($2)); k = split(strip($3), S, ", "); g = ""; for (i = 1; i <= k; i++) g = g "|" S[i]
+        # the cell is sorted; compare as sets
+        n9 = split(substr(W[h], 2), A, "|"); m9 = split(substr(g, 2), B, "|"); same = (n9 == m9); for (i = 1; i <= m9; i++) if (!((h, B[i]) in U)) same = 0
+        c++; if (same) ok++ }
+    END { print ok + 0, c + 0 }' data/server/reports/logon.rpt data/analyses/reports/partners-out.rpt 2>/dev/null)"
+check $([ "${m:-0}" -gt 0 ] && [ "${n:-x}" = "$m" ] && echo 0 || echo 1) "Partners Out: ${n:-?} of ${m:-?} failing host(s) name exactly the subscriptions that tried (the Outgoing session join)"
+n=$(awk -F'\t' '$1 == "ROW" && $4 != "" { n++ } END { print n + 0 }' data/analyses/reports/partners-out.rpt 2>/dev/null)
+check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "Partners Out: no host carries Connections"
+# the three partner study reports are GONE (2026-09-30, user request): no
+# writer, .rpt, page or help page may come back
+n=$(ls bin/analyses/reports/partner-scorecard.sh bin/analyses/reports/blast-radius.sh bin/analyses/reports/app-partners.sh data/analyses/reports/partner-scorecard.rpt data/analyses/reports/blast-radius.rpt data/analyses/reports/app-partners.rpt docs/analyses/partner-scorecard.html docs/analyses/blast-radius.html docs/analyses/app-partners.html docs/help/partner-scorecard.html docs/help/blast-radius.html docs/help/app-partners.html 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-1}" = 0 ] && ! grep -rqs 'partner-scorecard\.html\|blast-radius\.html\|app-partners\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "Partner scorecard / Blast radius / Application dependencies are back or still linked"
 # Partners - Outgoing retired 2026-09-29 (= Entities › Remote Hosts column for column)
 check $([ ! -f "docs/analyses/hosts-overview.html" ] && echo 0 || echo 1) "docs/analyses/hosts-overview.html still published (retired 2026-09-29)"
 # the Subscriptions page's Active column (2026-09-14): Yes on the active ones, and exactly the planted
@@ -181,16 +220,17 @@ check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "the extended-site flow UC3_APS
 # Incoming row without a detail page)
 R="data/server/reports/logon.rpt"
 inc=$(awk -F'\t' '$1=="TABLE" { t=$2 } $1=="ROW" && t=="Incoming" && index($2, "svc-backup") { n++ } END { print n+0 }' "$R" 2>/dev/null)
-scn=$(awk -F'\t' '$1=="TABLE" { t=$2 } $1=="ROW" && t ~ /scanner names/ && index($2, "svc-backup") { n++ } END { print n+0 }' "$R" 2>/dev/null)
+scn=$(awk -F'\t' '$1=="TABLE" { t=$2 } $1=="ROW" && t ~ /scanner names/ && index($2, "svc-backup") { n++ } END { print n+0 }' "data/server/reports/logon-scanners.rpt" 2>/dev/null)
 check $([ "${inc:-1}" -eq 0 ] && echo 0 || echo 1) "logon Incoming lists svc-backup ($inc row(s)), expected none (unconfigured no-account name is a door knocker)"
 check $([ "${scn:-0}" -ge 1 ] && echo 0 || echo 1) "logon Scanners lacks svc-backup, expected a row (the funnel no-account rejection)"
 # the PERSISTENT connection (2026-09-06, the FE000508 finding): the first
 # login's hourly re-key screenings count under Re-screens, not Allowed,
-# its row stays green, its weekly CMS-parsing pair lands in Session
-# errors — and the report's figures equal the detail pages' sidecar
-# (the two matchers must agree)
-rs=$(awk -F'\t' '$1=="TABLE" { t++ } t==1 && $1=="HEAD" { for (i=2;i<=NF;i++) { if ($i=="Re-screens") c=i; if ($i=="Session errors") x=i } } t==1 && $1=="ROW" && c && $c+0>0 && $x+0>0 && index($0, "@data:res=green") { n++ } END { print n+0 }' "$R" 2>/dev/null)
-check $([ "${rs:-0}" -ge 1 ] && echo 0 || echo 1) "logon Incoming has $rs green row(s) with both Re-screens and Session errors, expected the persistent connection"
+# its weekly CMS-parsing pair lands in Session errors (the row's green
+# screening-verdict tint went 2026-09-30 with the Incoming page) — and
+# the report's figures equal the detail pages' sidecar (the two matchers
+# must agree)
+rs=$(awk -F'\t' '$1=="TABLE" { t++ } t==1 && $1=="HEAD" { for (i=2;i<=NF;i++) { if ($i=="Re-screens") c=i; if ($i=="Session errors") x=i } } t==1 && $1=="ROW" && c && $c+0>0 && $x+0>0 { n++ } END { print n+0 }' "$R" 2>/dev/null)
+check $([ "${rs:-0}" -ge 1 ] && echo 0 || echo 1) "logon Incoming has $rs row(s) with both Re-screens and Session errors, expected the persistent connection"
 tw=$(awk -F'\t' -v LG="data/server/cache/_logons.tsv" 'BEGIN { while ((getline l < LG) > 0) { split(l, A, "\t"); LA[A[1]] = A[6] + 0; LR[A[1]] = A[22] + 0; LX[A[1]] = A[23] + 0 } } $1=="TABLE" { t++ } t==1 && $1=="HEAD" { for (i=2;i<=NF;i++) { if ($i=="Allowed") a=i; if ($i=="Re-screens") c=i; if ($i=="Session errors") x=i } } t==1 && $1=="ROW" && c && ($a+0>0 || $c+0>0 || $x+0>0) { u=toupper($2); if (LA[u] != $a+0 || LR[u] != $c+0 || LX[u] != $x+0) bad++ } END { print bad+0 }' "$R" 2>/dev/null)
 check $([ "${tw:-1}" -eq 0 ] && echo 0 || echo 1) "$tw Incoming row(s) whose Allowed/Re-screens/Session errors differ from the _logons.tsv sidecar (the two matchers must agree)"
 # the MULTI-FE account (2026-08-31, user report): CD-PARCEL-BLUTH carries
@@ -203,17 +243,17 @@ n=$(awk -F'\t' '$1=="CD-PARCEL-BLUTH"' "data/flow-manager/xref/_accounts-logins.
 check $([ "${n:-0}" -eq 2 ] && echo 0 || echo 1) "CD-PARCEL-BLUTH has $n login(s), expected 2 (the multi-FE account)"
 st=$(awk -F'\t' '$1=="ROW" && index($0, "UC2_CD_PARCELX_BLUTH") { s=$2; sub(/^@\{[^}]*\}/, "", s); print s; exit }' "data/server/reports/uc2-status.rpt" 2>/dev/null)
 check $([ "$st" = "Nothing" ] && echo 0 || echo 1) "UC2_CD_PARCELX_BLUTH uc2-status is '${st:-absent}', expected Nothing (multi-FE login scoping)"
-# Partners - Incoming (2026-09-02): the pickup sidecar joins to LOGINS, once per
+# Partners in (2026-09-02): the pickup sidecar joins to LOGINS, once per
 # login and account — the multi-FE account's pickups land on FE186976
 # alone (FE624205 stays empty), and the 8-flow GLOBEX account's count
 # lands once on FE243615 (never the x8 per-subscription repeat)
 R="data/analyses/reports/fe-overview.rpt"; SC="data/server/reports/uc2-pickups.tsv"
 # the sample plants Disallowed lines for configured logins, so at least one
-# Partners - Incoming row carries a Disallowed count (the funnel column; the
+# Partners in row carries a Disallowed count (the funnel column; the
 # FE overview's summed "Logon problems" column and its _logon-problems.tsv
 # sidecar went 2026-09-29)
 pc=$(awk -F'\t' '$1=="HEAD" { for (i=2;i<=NF;i++) if ($i=="Disallowed") c=i } $1=="ROW" && c { v=$c; sub(/^@\{[^}]*\}/, "", v); if (v+0 > 0) n++ } END { print n+0 }' "data/analyses/reports/partners-in.rpt" 2>/dev/null)
-check $([ "${pc:-0}" -ge 1 ] && echo 0 || echo 1) "Partners - Incoming has $pc row(s) with a Disallowed count, expected at least 1 (the planted Disallowed logins)"
+check $([ "${pc:-0}" -ge 1 ] && echo 0 || echo 1) "Partners in has $pc row(s) with a Disallowed count, expected at least 1 (the planted Disallowed logins)"
 check $([ ! -e "data/server/reports/_logon-problems.tsv" ] && echo 0 || echo 1) "the retired data/server/reports/_logon-problems.tsv still exists"
 pk=$(awk -F'\t' '$1=="HEAD" { for (i = 2; i <= NF; i++) if ($i == "Pickups") c = i } $1=="ROW" && $2=="FE186976" { print $c+0; exit }' "$R" 2>/dev/null)
 sp=$(awk -F'\t' '$1=="UC2_CD_PARCEL_BLUTH" { print $5+0; exit }' "$SC" 2>/dev/null)
@@ -697,10 +737,11 @@ check $(grep -q 'data-restint' docs/transfer/duration-longest.html 2>/dev/null &
 # cluster's links in this order)
 # (2026-09-30, user request: Errors right after Overview, then Duration ->
 # transfer/duration.html and Waiting/Expired -> transfer/waiting-expired.html,
-# then Entities and Files)
-n=$(awk '/<span class="entgroup">/ && !a { a = NR } />Overview<\/a>/ && !o { o = NR } />Errors<\/a>/ && !r { r = NR } />Duration<\/a>/ && !d { d = NR } />Waiting\/Expired<\/a>/ && !w { w = NR } />Entities<\/a>/ && !e { e = NR } />Files<\/a>/ && !f { f = NR } /search\/search.html" title="Search"/ && !s { s = NR }
-    END { print (a && a <= o && o < r && r < d && d < w && w < e && e < f && f <= s) ? 1 : 0 }' docs/assets/topbar.js 2>/dev/null)
-check $([ "${n:-0}" = 1 ] && grep -q 'subscription-all.html">Entities</a>' docs/assets/topbar.js && grep -q 'search/all-files.html">Files</a>' docs/assets/topbar.js && grep -q "transfer/duration.html\">Duration</a>" docs/assets/topbar.js && grep -q "transfer/waiting-expired.html\">Waiting/Expired</a>" docs/assets/topbar.js && echo 0 || echo 1) "topbar.js lacks the Overview / Errors / Duration / Waiting/Expired / Entities / Files cluster in that order (Duration -> transfer/duration.html, Waiting/Expired -> transfer/waiting-expired.html, Files -> search/all-files.html)"
+# then Entities and Files; later that day "Partners: In / Out" after Files ->
+# analyses/partners-in.html / partners-out.html)
+n=$(awk '/<span class="entgroup">/ && !a { a = NR } />Overview<\/a>/ && !o { o = NR } />Errors<\/a>/ && !r { r = NR } />Duration<\/a>/ && !d { d = NR } />Waiting\/Expired<\/a>/ && !w { w = NR } />Entities<\/a>/ && !e { e = NR } />Files<\/a>/ && !f { f = NR } /partners-in\.html">In<\/a>/ && !p { p = NR } /search\/search.html" title="Search"/ && !s { s = NR }
+    END { print (a && a <= o && o < r && r < d && d < w && w < e && e < f && f < p && p <= s) ? 1 : 0 }' docs/assets/topbar.js 2>/dev/null)
+check $([ "${n:-0}" = 1 ] && grep -q 'subscription-all.html">Entities</a>' docs/assets/topbar.js && grep -q 'search/all-files.html">Files</a>' docs/assets/topbar.js && grep -q "transfer/duration.html\">Duration</a>" docs/assets/topbar.js && grep -q "transfer/waiting-expired.html\">Waiting/Expired</a>" docs/assets/topbar.js && grep -q '>Partners: <a class="entlabel" href="'"'"' + b + '"'"'analyses/partners-in.html">In</a><span class="entsep">/</span><a class="entlabel" href="'"'"' + b + '"'"'analyses/partners-out.html">Out</a>' docs/assets/topbar.js && echo 0 || echo 1) "topbar.js lacks the Overview / Errors / Duration / Waiting/Expired / Entities / Files / Partners: In / Out cluster in that order (Duration -> transfer/duration.html, Waiting/Expired -> transfer/waiting-expired.html, Files -> search/all-files.html, In / Out -> analyses/partners-in.html / partners-out.html)"
 # Errors is a top-bar link, not a Reports pulldown line
 check $(grep -oE 'reports:"([^"\\]|\\.)*"' docs/assets/topbar-data.js 2>/dev/null | grep -q 'analyses/failed.html' && echo 1 || echo 0) "the Reports pulldown still lists the Errors group"
 check $(grep -q 'errors:"analyses/failed.html"' docs/assets/topbar-data.js 2>/dev/null && echo 0 || echo 1) "topbar-data.js lacks errors:\"analyses/failed.html\" (the runtime bar's Errors link)"
@@ -1241,9 +1282,8 @@ fi
 # date-named, and the dashboard's server record total equals the per-day sum
 n=$(ls docs/day/ 2>/dev/null | command grep -vcE '^[0-9]{4}-[0-9]{2}-[0-9]{2}\.html$' || true)
 check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "docs/day/ holds ${n:-?} page(s) not named after a date (the Top view's component rows read as days?)"
-# Blast radius: the Partner redundancy table went; Sole endpoint for names partners
-n=$(grep -c '^TABLE\tPartner redundancy' data/analyses/reports/blast-radius.rpt 2>/dev/null)
-check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "blast-radius.rpt still carries the Partner redundancy table (retired 2026-09-29)"
+# (Blast radius — its Partner redundancy table checked here until 2026-09-30 —
+# went with the report; its absence is asserted with the Partners pages above)
 
 # ---- the 2026-09-29 site-audit fixes -----------------------------------------
 # Failed Subscriptions: the Environment letter column went — Subscription leads

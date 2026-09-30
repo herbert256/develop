@@ -602,7 +602,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         # extra per-day problem signals -> PROBLEM links in the combined day page
         # "Problems this day" section (emitted below, one report per non-zero signal)
         if ($5 ~ /^Connection failure while /) CF[d]++                                              # the Per flow connection-failure rows (site-failures until 2026-09-28)
-        if ($5 ~ /^Authentication failure connecting to remote host /) LGO[d]++                     # logons-outgoing (us failing AT the partner)
+        if ($5 ~ /^Authentication failure connecting to remote host /) LGO[d]++                     # Partners Out (us failing AT the partner)
         if (index($5, "stop further route execution")) DEP[d]++                                     # deploy-errors (ARSP0001 route abandoned)
         if ($4 == "T" && index($5, "[Ssh Default]")) {                                              # incoming logon funnel
             if ($5 ~ /\[Ssh Default\] Disallowed user /) LGF[d]++                                   #   Disallowed
@@ -700,10 +700,13 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             #      surfaced in the combined day page "Problems this day" section ----
             if (ERR[d] + 0 > 0 || WRN[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../server/errors-top-messages.html" q "\tServer errors/warnings\t**%d** errors (%.2f%% of records) and **%d** warnings (%.2f%%) — the most-repeated message shapes\n", ERR[d]+0, ep, WRN[d]+0, (REC[d] > 0 ? WRN[d]*100/REC[d] : 0) >> out
+            # the two logon lines open Partners in / Partners Out (the Logons
+            # Incoming / Outgoing tabs until 2026-09-30) — FULL-PERIOD pages,
+            # so no ?axway_date= (like the Went red / Never delivered lines)
             if (LGF[d] + 0 > 0)
-                printf "PROBLEM\tserver\t../server/logons-incoming.html" q "\tLogon screening failures\t**%d** disallowed / bad-key / key-failure / locked SSH logons — the incoming screening funnel\n", LGF[d] >> out
+                printf "PROBLEM\tserver\t../analyses/partners-in.html\tLogon screening failures\t**%d** disallowed / bad-key / key-failure / locked SSH logons — the incoming screening funnel\n", LGF[d] >> out
             if (LGO[d] + 0 > 0)
-                printf "PROBLEM\tserver\t../server/logons-outgoing.html" q "\tOutbound logon failures\t**%d** failed authentications AT remote hosts — us being refused by the partner (expired password, refused key, certificate policy)\n", LGO[d] >> out
+                printf "PROBLEM\tserver\t../analyses/partners-out.html\tOutbound logon failures\t**%d** failed authentications AT remote hosts — us being refused by the partner (expired password, refused key, certificate policy)\n", LGO[d] >> out
             if (CF[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../server/failure-flows.html" q "\tConnection failures\t**%d** connection-failure messages — retry storms toward an unreachable partner\n", CF[d] >> out
             # the ARSP0001 lines are rows of Routing errors (one dated row per

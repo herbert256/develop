@@ -1463,9 +1463,9 @@ merged-component list is in ARCHITECTURE.md.
 every page of the directory belongs to it; entities.sh also writes the
 Subscriptions page's `_alltime.tsv`), Missing entities in Coverage (a ↗ detail-page icon beside
 each name that has a detail page — its value column carries the entity KIND). The **Goodies** short-cut
-dropdown of 2026-09-13 went with the one Reports pulldown; Partners - Incoming —
-`bin/analyses/reports/partners-in.sh` = fe-overview.rpt + the Incoming logon funnel of logon.rpt,
-one row per login — is a Partners member.)
+dropdown of 2026-09-13 went with the one Reports pulldown; Partners in —
+`bin/analyses/reports/partners-in.sh` = fe-overview.rpt + the whole Incoming funnel of the pageless
+logon.rpt, one row per login — and its sibling Partners Out are the Partners members.)
 
 ## Publishing (GitHub Pages)
 
@@ -1720,9 +1720,8 @@ front end) then four fix workers with disjoint files. The rules it left:
   run — failed.sh, the day pages and reason-boxes read it); `went-kaput.rpt` is GONE (see
   below); `publish-insights.sh` → `bin/build/reason-boxes.sh`. A reader that takes a
   field by NUMBER names the column in a comment — a column change silently drops a link.
-- **Every row tints by the ENTITY's result colour** (Partner scorecard, Blast radius, Application
-  dependencies included — their metric colours its own CELL: Score, Sole endpoint for, Pairs at
-  100% Error). A Files table keeps the File colour.
+- **Every row tints by the ENTITY's result colour**; a metric colours its own CELL. A Files table keeps
+  the File colour.
 - **Every entity name links its detail page** wherever it appears — Top-5 cards (day pages +
   Overview; TOP field 7 / TOPDATA field 4 carry the slug, report.js keeps the links on a From/To
   change), server By-account / Remote-host columns (KIND `acct` / `host`, the known set includes
@@ -1739,8 +1738,7 @@ front end) then four fix workers with disjoint files. The rules it left:
   "Failed subscription: …" — the evidence pass reads the facts-table Subscription row, never the
   TITLE); incoming-connection pages "Incoming connection: <ip>".
 - **Durations / counts follow scope**: the dwell Gap per day = Processed Files only; Hour ×
-  weekday and the anomaly Files spike / drop count OK Files; Application dependencies totals are
-  DISTINCT (noagg); Security Parameters value counts skip Unknown legs so a value equals its
+  weekday and the anomaly Files spike / drop count OK Files; Security Parameters value counts skip Unknown legs so a value equals its
   value page's Total; Recovered files / Retries / One-legged per-subscription tables skip Unknown.
 - **A per-DAY cell never links a full-period page** (Top view Waiting / Expired day cells are
   plain; the TOTAL keeps the link); a day-page line links a page that can narrow to that day
@@ -1750,12 +1748,44 @@ front end) then four fix workers with disjoint files. The rules it left:
 - **Detail pages**: the Waiting/Expired summary is HELD and rendered after the Features block
   (`we_table`), so the section order does not depend on whether an entity has such Files.
 
+## Rules from the fourth 2026-09-30 "few little things" batch (user request)
+
+- **Partners in** (`analyses/partners-in.html`; "Partners - Incoming" until 2026-09-30) = the FE overview + the
+  WHOLE former Logons › Incoming funnel, one row per login: Login · Use cases · Cloud · Gateway | Files in ·
+  Files out · Error · Retrieved · Waiting · Expired | Oldest waiting | Pickups | Allowed · Disallowed ·
+  Authenticated · No account · Bad key · Key failures · Locked · Auth failed · Session errors · Re-screens |
+  First logon · Logons · Pattern. Dropped as the same figure twice: the funnel's Last logon (= Cloud) and the
+  summed Auth Failed. Drills re-keyed (Incoming cells 1..7 → 12..18, 9 → 20, 14 → 21); full period
+  (`nofilter`); tint = the login result colour; logon.rpt's WARN is carried. (The Incoming screening-verdict
+  tint and @data:seen went.)
+- **Partners Out** (`analyses/partners-out.html`, `bin/analyses/reports/partners-out.sh`, analyses wave 1)
+  replaces Logons › Outgoing: one row per host we connect OUT to — base/_hosts.tsv ∪ the Outgoing hosts ∪ the
+  logon summary's outbound target addresses (via input/ip/ip-hosts.tsv, else the raw address). Remote host ·
+  Subscription (the Outgoing session join; a host with no resolved failure → its configured
+  xref/_hosts-subscriptions.tsv) · Connections · Last connection (_logons-hosts.tsv fields 10 / 12 over the name
+  + its addresses = the host page's figures) | User · Failures · Password · Key · Certificate · Other · Reason
+  (last seen) · First · Last (the Outgoing pairs folded per host, 10 newest lines as the drill). Tint = host
+  result colour (raw addresses untinted); 0 blank; full period; baked order Failures, Connections, name.
+- **logon.rpt is PAGELESS**: table 1 Incoming, table 2 Outgoing, field positions unchanged, no TABLE modifiers /
+  KIND / RECALC (HEAD stays as the legend), no Outgoing buckets. Positional readers: partners-in.sh,
+  partners-out.sh, reason-boxes.sh boxes 20 / 21, verify.sh. The Scanners table is its own component
+  `logon-scanners.rpt`; **Logons** = Scanners · By account · By source IP (logons.sh merges logon-scanners +
+  auth-activity).
+- **Partner scorecard, Blast radius and Application dependencies are GONE** (writers, .rpt, pages, help pages) —
+  never restore; verify.sh asserts the absence.
+- **Top bar**: Overview · Errors · Duration · Waiting/Expired · Entities · Files · **Partners: In / Out** + the
+  search icon (fixed paths in topbar.js like Duration; CSS `.entpair` / `.entsep`; linkcheck models both edges;
+  verify.sh checks the order).
+- The day pages' "Logon screening failures" / "Outbound logon failures" lines open Partners in / Partners Out
+  WITHOUT ?axway_date (full-period pages).
+
 ## Rules from the third 2026-09-30 "few little things" batch (user request)
 
 - **Logons**: the Near misses and Certificates tabs are GONE (logon.sh no longer writes the FE-namespace
   knocker table — those names stay out of Incoming, listed nowhere; auth-activity.sh no longer scans the
-  certificate lines); tabs Incoming · Outgoing · Scanners · By account · By source IP.
-- **Logons › Outgoing names the SUBSCRIPTION that tried** (after User): the sessions of the pair's
+  certificate lines); tabs Scanners · By account · By source IP (Incoming / Outgoing became Partners in /
+  Partners Out, fourth batch).
+- **Partners Out's Subscription column names the subscription that tried** (Logons › Outgoing's, after User, until the fourth batch): the sessions of the pair's
   failed attempts joined to the transfer legs of the same connection (`_transfers.tsv` col 24 → col 6,
   the site's session join; a session naming two flows names neither; `Unknown` is no subscription),
   one `@{alist=subscriptions}` cell. reason-boxes reads the Outgoing Last date as field 12 now.
@@ -1770,7 +1800,7 @@ front end) then four fix workers with disjoint files. The rules it left:
   colour; its Waiting / Expired cells open the `waiting/` / `expired/` File lists. The Entities
   Waiting / Expired cells, the Top view TOTAL cells and the day-page lines link here.
 - **Top bar**: Overview · Errors · Duration (`transfer/duration.html`) · Waiting/Expired
-  (`transfer/waiting-expired.html`) · Entities · Files + the search icon; NO data period.
+  (`transfer/waiting-expired.html`) · Entities · Files · Partners: In / Out (fourth batch) + the search icon; NO data period.
 - **Column groups**: the `gsep` gap is 30 px site-wide (= the home table's spacers).
 - **Activity › Per weekday**: Weekday · Days · Files · Avg/day · Volume · Load — Files = the OK
   Files, no Error %. The Per week / Per hour tabs keep "OK Files".
@@ -1890,7 +1920,7 @@ front end) then four fix workers with disjoint files. The rules it left:
   failed / episodes / punctuality / red-run / recovered
   / retry / security-params / same-protocol / size-dist / size-profile /
   went-quiet / waiting-expired / file-in-file-out / entity-search /
-  not-in-flow-manager / blast-radius / the boxes sidecar / the day and overview
+  not-in-flow-manager / the boxes sidecar / the day and overview
   Top-5s); FILES tables (failed-files, File pages, incoming-connections, all-files, …) keep it as
   the Subscription value, unlinked. **A new subscription-keyed writer must skip it too** —
   verify.sh fails on any `ROW⇥Unknown⇥` outside the Files tables. `Unknown transfers`
@@ -2019,7 +2049,7 @@ became a full entity; a listed FlowID skips the derivation),
 `BL.txt` (BL numbers per subscription, `<subscription> <BL>[,<BL>...]` — several numbers
 comma-separated in the second field — a SECOND source of BL entities beside the subscriptions.json tags,
 unioned in `bin/flow-manager.sh`; the real files live in the runtime repos' `input/`, develop's are
-the sample template), `logons_old.txt` (2026-09-02: the FE logins' last logon on the OLD gateway, `<login> <stamp>` per line — the Partners - Incoming page's (Reports › Partners) Gateway column; hand-maintained, sample template in develop), `coreid-url.txt` (2026-09-07: the SecureTransport File Tracking URL every CoreId on the site links to — ONE line, `@COREID@` where the id goes; hand-maintained per checkout, the REAL admin hosts live only in the runtime copies, develop's sample carries an `.example` host — read by `publish_lib.sh` into topbar-data.js) and
+the sample template), `logons_old.txt` (2026-09-02: the FE logins' last logon on the OLD gateway, `<login> <stamp>` per line — the Partners in page's (Reports › Partners) Gateway column; hand-maintained, sample template in develop), `coreid-url.txt` (2026-09-07: the SecureTransport File Tracking URL every CoreId on the site links to — ONE line, `@COREID@` where the id goes; hand-maintained per checkout, the REAL admin hosts live only in the runtime copies, develop's sample carries an `.example` host — read by `publish_lib.sh` into topbar-data.js) and
 `logical_{domains,apps,partners}.txt` (hand-curated FROM→TO PART replacements for the
 Logical-based PDA derivation: part 1/2/3 of a three-part Logical name is replaced before it
 becomes the domain / application / partner-merge token — and since 2026-09-06 the Logical NAME ITSELF is recreated as Domain_Application_Partner from the replaced parts (the STREAM partner rule included), in the LOGICAL block before the base list / pair caches / PDA read the map, so two Logicals replacing to the same parts become one (the rule trail says "parts replaced").

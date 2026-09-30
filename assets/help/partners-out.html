@@ -1,0 +1,22 @@
+<h1>Partners Out</h1>
+<h2>What it shows</h2>
+<ul>
+<li>One row per <strong>host</strong> this server connects out to: every configured host, every host we failed to log on at, and every address we opened a connection to. Full period; no date filter.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Remote host</strong> &mdash; links its detail page; an address no host maps to shows as the address.</li>
+<li><strong>Subscription</strong> &mdash; the flows whose failed attempts reached the host (the attempt&rsquo;s connection joined to its transfer legs); a host without such a failure shows its configured subscriptions.</li>
+<li><strong>Connections</strong> / <strong>Last connection</strong> &mdash; the connections we opened (the &ldquo;had initiated a connection&rdquo; lines without a login name), over the host&rsquo;s name and addresses &mdash; the host page&rsquo;s figures.</li>
+<li><strong>User</strong> &mdash; the account(s) our failed logons used. <strong>Failures</strong> = <strong>Password</strong> + <strong>Key</strong> + <strong>Certificate</strong> + <strong>Other</strong>: our authentication failures at the host.</li>
+<li><strong>Reason (last seen)</strong> &mdash; the newest failure&rsquo;s reason; <strong>First</strong> / <strong>Last</strong> &mdash; the first and last failure day.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Row tint = the host&rsquo;s result colour; an address or an unconfigured host stays untinted. A 0 renders empty.</li>
+<li>Sorted by Failures, then Connections.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Click a row with failures for its 10 newest failure lines. Inbound logons: <a href="partners-in.html">Partners in</a>.</li>
+</ul>

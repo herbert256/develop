@@ -199,7 +199,7 @@ server_order=(topview errors failure-flows io-errors routing-errors uc-status po
 # OWNERSHIP: bin/analyses/publish.sh renders them, NOT the area publishes —
 # it clears docs/analyses/*.html and runs AFTER both, so a page written
 # there by the transfer/server loop would be deleted again.
-SUBS_GROUP_REPORTS=" transfer:failed analyses:failing-reasons server:uc-status server:polling analyses:partner-scorecard analyses:blast-radius analyses:app-partners analyses:partners-in "
+SUBS_GROUP_REPORTS=" transfer:failed analyses:failing-reasons server:uc-status server:polling analyses:partners-in analyses:partners-out "
 
 is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
     case $SUBS_GROUP_REPORTS in *:"$1 "*) return 0 ;; esac
@@ -248,7 +248,7 @@ report_tabs() {
         errors)        echo "Log reasons|Heatmap|Top messages" ;;   # 2026-09-29: "Log reasons" — server-log LINES by reason, not the Files in error the analyses Error reasons page counts   # 2026-09-29: Per component (the levels per component) rides the server Top view   # 2026-09-28: Per day went (= the Top view), By hour / By weekday folded into the Heatmap, Reasons carries the per-week table (tab=reasons)
         missing-entities) echo "Subscriptions|Accounts|Hosts|Whitelist|Logins" ;;   # the five unknown-* tables (retired and brought back 2026-09-29, user request)
         connections)   echo "Per day|By account|By address|Failure reasons|By remote host|Test connections|Host keys" ;;   # 2026-09-29: By protocol went (= the Per day column totals)   # 2026-08: + connection-diagnostics tables 4-5; 2026-09-28: Whitelist usage (= Incoming Allowed + Re-screens) and Test outcomes (empty by construction) gone
-        logons)        echo "Incoming|Outgoing|Scanners|By account|By source IP" ;;   # Near misses + Certificates went 2026-09-30, user request   # 2026-08: + the door-knocker tables (logon component tables 3-4); 2026-09-28: the ssh-key-auth tabs went (Key mismatches = Incoming Bad key, Lockouts now in Incoming Locked, Outbound key failures = a subset of Outgoing)
+        logons)        echo "Scanners|By account|By source IP" ;;   # Incoming / Outgoing went 2026-09-30, user request (-> Partners in / Partners Out, analyses/)   # Near misses + Certificates went 2026-09-30, user request   # 2026-08: + the door-knocker tables (logon component tables 3-4); 2026-09-28: the ssh-key-auth tabs went (Key mismatches = Incoming Bad key, Lockouts now in Incoming Locked, Outbound key failures = a subset of Outgoing)
         uc-status)     echo "UC1|UC2|UC3|UC4" ;;
         protocol)      echo "Protocol × direction|Direction × action by|Mode" ;;   # 2026-09-29: the one-dimension tables (By protocol / By direction / By action by) went — the subtotals of the crosstabs   # the 2026-07 merge: + direction-action's Action By/Crosstab tables + the Mode split
         av-scan)       echo "Breakdown|Per day|Per protocol|Blocked|Not performed|Not first inbound" ;;
@@ -309,9 +309,7 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         failed-files) echo "Failed files" ;; unknown-transfers) echo "Unknown transfers" ;; same-protocol) echo "Inbound and Outbound same Protocol" ;; security-outreach) echo "Security outreach" ;;
         connection-efficiency) echo "Connection efficiency" ;;
         failure-flows) echo "Per flow" ;; io-errors) echo "IO errors" ;; routing-errors) echo "Routing errors" ;;
-        partner-scorecard) echo "Partner scorecard" ;; blast-radius) echo "Blast radius" ;;
-        app-partners) echo "Application dependencies" ;;
-        partners-in) echo "Partners - Incoming" ;;
+        partners-in) echo "Partners in" ;; partners-out) echo "Partners Out" ;;   # 2026-09-30, user request (Partner scorecard, Blast radius and Application dependencies went the same day)
         errors) echo "Errors" ;; connections) echo "Connections" ;; logons) echo "Logons" ;;
         missing-entities) echo "Missing entities" ;;   # (ssh-security: SSH security went 2026-09-30 — its tables ride Security Parameters)
         uc-status) echo "UC status" ;; polling) echo "Polling" ;;
@@ -2031,7 +2029,7 @@ _report_groups() {
         "Flow patterns|transfer/file-journey=File journey|transfer/file-in-file-out=File in - File out|transfer/same-protocol=Inbound and Outbound same Protocol" \
         "Protocols & security|transfer/protocol=Protocol, Direction & Mode|transfer/security-params=Security Parameters|transfer/security-outreach=Security outreach|transfer/av-scan=AV Scan|transfer/connection-efficiency=Connection efficiency" \
         "Logons & connections|server/logons=Logons|server/connections=Connections" \
-        "Partners|analyses/partners-in=Partners - Incoming|analyses/partner-scorecard=Partner scorecard|analyses/blast-radius=Blast radius|analyses/app-partners=Application dependencies" \
+        "Partners|analyses/partners-in=Partners in|analyses/partners-out=Partners Out" \
         "Configuration|analyses/subscriptions=Configured subscriptions|analyses/accounts=Configured accounts|analyses/logical-detection=Logical detection|analyses/xref/cross=Cross References" \
         "Coverage|transfer/entity-coverage=Entity coverage|analyses/first-seen=First seen|transfer/not-in-flow-manager=Not in Flow Manager|transfer/skipped=Skipped|server/missing-entities=Missing entities"
 }

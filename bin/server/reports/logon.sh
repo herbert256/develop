@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 #
-# logon.sh — the SSH LOGON story, both directions, two table tabs:
+# logon.sh — the SSH LOGON story, both directions, TWO outputs (2026-09-30,
+# user request — the Logons Incoming / Outgoing tabs became Partners in /
+# Partners Out):
+#
+#   logon.rpt          PAGELESS — the Incoming and Outgoing tables, read by
+#                      position: analyses/reports/partners-in.sh (Incoming:
+#                      cells, drills, TOTAL, the WARN), partners-out.sh
+#                      (Outgoing: cells, loglines, TOTAL), bin/build/
+#                      reason-boxes.sh (boxes 20 / 21: Incoming cells +
+#                      buckets, Outgoing host + loglines + Last) and
+#                      bin/sample/verify.sh. No TABLE modifiers, KIND or
+#                      RECALC — no page renders them; HEAD stays as the legend.
+#   logon-scanners.rpt the Scanners table — a component of the merged Logons
+#                      report (logons.sh)
 #
 #   INCOMING — the logon funnel per login, from the TM "[Ssh Default]" lines:
 #     [Ssh Default] Allowed user 'U' from address 'IP'          (Info)
@@ -20,9 +33,10 @@
 #   finding): a RE-SCREEN is an Allowed line on a session (cache col 6) LATER
 #   than that session's last authentication — a persistent connection re-keys
 #   about hourly and the server logs "Start login process" + "Allowed user"
-#   again with no new authentication; counted apart, NOT as Allowed, never
-#   moving the row tint. (An Allowed that an authentication follows is a real
-#   screening, whatever the session logged before.) SESSION ERRORS are the Error/Warning [Ssh Default] lines of no
+#   again with no new authentication; counted apart, NOT as Allowed. (An
+#   Allowed that an authentication follows is a real screening, whatever
+#   the session logged before.) SESSION ERRORS are the Error/Warning [Ssh
+#   Default] lines of no
 #   counted family ("Stream read/write error. Exception message is: CMS
 #   parsing has failed" …), attributed to the login of their session — NOT
 #   the re-key bookkeeping W line "No session cycleId for file … SENT will
@@ -39,17 +53,19 @@
 #   repeated-failure counter) and Locked (lockout). The quote style varies
 #   per family (single vs double, or none), so the user token is read as
 #   "whatever sits between the first quote character and its twin" where
-#   quoted. Clicking any count drills to that CELL's 5 most recent log
-#   lines (@data:drill-cell-<i>, like the Duration report).
+#   quoted. Each count carries its 5 most recent log lines
+#   (@data:drill-cell-<i> — Partners in re-keys them to its own columns).
 #
 #   OUTGOING — "Authentication failure connecting to remote host H:P as
 #   user U: reason" (Error): this server failing to authenticate AT a
 #   partner (expired password/key, TLS policy). One row per host/user
-#   pair with the last-seen reason; click a row for its 10 most recent
-#   log lines. (Merged in from the former failed-logins report.)
+#   pair with the last-seen reason and its 10 most recent log lines
+#   (@data:loglines); Partners Out folds the pairs per host. (Merged in
+#   from the former failed-logins report.)
 #
 # Usage:
-#   ./logon.sh    # reads input/*.csv (via the cache), writes data/logon.rpt
+#   ./logon.sh    # reads the server parse cache, writes data/server/reports/
+#                 # logon.rpt + logon-scanners.rpt
 #
 set -euo pipefail
 
@@ -59,6 +75,7 @@ source "$SCRIPT_DIR/../../logons.sh"   # ensure_logons(): the per-login logon su
 source "$SCRIPT_DIR/../../blacklist.sh"   # the platform-internal pseudo-logins stay out of the Incoming/door-knocker rows
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/logon.rpt"
+SCAN_OUT="$REPORTS_DIR/logon-scanners.rpt"
 
 # Entity cross-links (outbound table): known account / remote-host names from
 # the transfer-side reports (ROW field 2 of each report's FIRST table). A user
@@ -98,8 +115,8 @@ LOGONS_TSV="$CACHE_DIR/_logons.tsv"
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Emits TAB-separated:
-#   R   <TAB> user <TAB> a t d n b k l r x <TAB> buckets <TAB> 9 drill fields <TAB> latest side (A T D N B K L) <TAB> its stamp
-#   OUT <TAB> count <TAB> host <TAB> user <TAB> pw key cert other <TAB> reason <TAB> buckets <TAB> first <TAB> last <TAB> sessions (\037) <TAB> loglines
+#   R   <TAB> user <TAB> a t d n b k l r x <TAB> buckets <TAB> 9 drill fields
+#   OUT <TAB> count <TAB> host <TAB> user <TAB> pw key cert other <TAB> reason <TAB> first <TAB> last <TAB> sessions (\037) <TAB> loglines
 #   SC  <TAB> name <TAB> count <TAB> nips <TAB> ips (", "-joined, "-" = none) <TAB> first <TAB> last <TAB> buckets <TAB> loglines  (scanner door knockers)
 #   DKT <TAB> total <TAB> nnames
 #   TOT <TAB> a t d n b k l totals <TAB> outbound_total
@@ -126,14 +143,13 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
         for (i = 1; i <= n && i <= 5; i++) out = out (out == "" ? "" : _US) a4[i]
         return out
     }
-    # one funnel event, booked: the counts, the per-day bucket, the
-    # newest stamp per family (the row tint — compared by TIMESTAMP, never by
-    # cache order, so no reader depends on how the cache is sorted) and the drill
-    function book(side9, u9, d9, ts9, txt9,   k9) {
+    # one funnel event, booked: the counts, the per-day bucket (reason-boxes
+    # box 20 dates a login error by it) and the drill. (The newest stamp per
+    # family — the Incoming row tint — went 2026-09-30 with the Incoming
+    # page: Partners in tints by the login result colour.)
+    function book(side9, u9, d9, ts9, txt9) {
         cnt[side9 SUBSEP u9]++; tot[side9]++
-        if (d9 ~ /^[0-9][0-9][0-9][0-9]-/) { bk[u9 SUBSEP d9 SUBSEP side9]++; days[u9 SUBSEP d9] = 1
-            k9 = side9 SUBSEP u9
-            if (!(k9 in lts) || ts9 > lts[k9]) lts[k9] = ts9 }
+        if (d9 ~ /^[0-9][0-9][0-9][0-9]-/) { bk[u9 SUBSEP d9 SUBSEP side9]++; days[u9 SUBSEP d9] = 1 }
         addline(side9 SUBSEP u9, ts9, txt9)
     }
     $1 == "KA" { kacct[$2] = 1; next }                       # known-entity lists (first input)
@@ -200,7 +216,8 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
             # empty field and shifted every later column (2026-09-28 fix)
             if (!(k in orsk) || osk >= orsk[k]) { orsk[k] = osk; orsn[k] = (reason == "") ? "-" : substr(reason, 1, 80) }
             d = $1
-            if (d ~ /^[0-9][0-9][0-9][0-9]-/) { ocd[k SUBSEP d]++; ocdc[k SUBSEP d SUBSEP cls]++
+            # (the per-day buckets went 2026-09-30: Partners Out is full period)
+            if (d ~ /^[0-9][0-9][0-9][0-9]-/) {
                 if (!(k in ofst) || d < ofst[k]) ofst[k] = d
                 if (!(k in olst) || d > olst[k]) olst[k] = d }
             next
@@ -283,11 +300,10 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
         # ---- the session errors (X): to the login of their session; a ----
         # session no funnel line named stays unattributed
         for (i = 1; i <= nxs; i++) if (XSs[i] in slog) book("X", slog[XSs[i]], XSd[i], XSt[i], XSl[i])
-        # column order — matches the HEAD/RECALC/drill-cell numbering below;
-        # the first SEVEN are the screening funnel (the row-tint verdict), R
-        # and X ride behind them (2026-09-06)
+        # column order — matches the HEAD/drill-cell numbering below; the
+        # first SEVEN are the screening funnel, R and X ride behind them
+        # (2026-09-06)
         ns = split("A T D N B K L R X", S, " ")
-        nsv = 7
         # an UNCONFIGURED name whose only funnel evidence is No account is a
         # door knocker the server logged with the funnel wording ("Unable to
         # find account with username"), not a login of ours (2026-09-04, user
@@ -329,18 +345,7 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
             for (i = 1; i <= ns; i++) line = line "\t" (cnt[S[i] SUBSEP u]+0)
             line = line "\t" (b[u] == "" ? "-" : b[u])
             for (i = 1; i <= ns; i++) { dr = last5(S[i] SUBSEP u); line = line "\t" (dr == "" ? "-" : dr) }
-            # the LATEST screening side + its stamp: the side whose newest
-            # line is newest of all; an exact tie goes to Authenticated (the
-            # Allowed line of the same logon precedes it by milliseconds).
-            # The anonymous Auth-failed family needs no seat here: such a
-            # line is attributed to an Allowed line no authentication
-            # consumed, so that Allowed is already the newest event and the
-            # verdict is red either way.
-            lsd = ""; lst = ""
-            for (i = 1; i <= nsv; i++) { k2 = S[i] SUBSEP u
-                if (!(k2 in lts)) continue
-                if (lst == "" || lts[k2] > lst || (lts[k2] == lst && S[i] == "T")) { lst = lts[k2]; lsd = S[i] } }
-            print line "\t" (lsd == "" ? "-" : lsd) "\t" (lst == "" ? "-" : lst)
+            print line
         }
         # every CONFIGURED login the funnel never saw still gets a row
         # (2026-08, the seenrows convention): zero counts, no buckets, no
@@ -353,14 +358,12 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
             for (i = 1; i <= ns; i++) line = line "\t0"
             line = line "\t-"
             for (i = 1; i <= ns; i++) line = line "\t-"
-            print line "\t-\t-"
+            print line
         }
-        for (x in ocd) { split(x, a2, SUBSEP); kk = a2[1] SUBSEP a2[2]
-            obk[kk] = obk[kk] (obk[kk] == "" ? "" : ",") a2[3] ":" ocd[x] ":" (ocdc[x SUBSEP "p"]+0) ":" (ocdc[x SUBSEP "k"]+0) ":" (ocdc[x SUBSEP "c"]+0) ":" (ocdc[x SUBSEP "o"]+0) }
         for (k in oc) { split(k, a, SUBSEP)
-            printf "OUT\t%d\t%s%s\t%s%s\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\n", oc[k], hostlink(a[1]), a[1], acctlink(a[2]), a[2], \
+            printf "OUT\t%d\t%s%s\t%s%s\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\n", oc[k], hostlink(a[1]), a[1], acctlink(a[2]), a[2], \
                    opw[k]+0, oky[k]+0, ocr[k]+0, oot[k]+0, \
-                   orsn[k], (obk[k] == "" ? "-" : obk[k]), ofst[k], olst[k], (oss[k] == "" ? "-" : substr(oss[k], 2)), lastlines("O" SUBSEP k)
+                   orsn[k], ofst[k], olst[k], (oss[k] == "" ? "-" : substr(oss[k], 2)), lastlines("O" SUBSEP k)
         }
         # ---- door knockers ----
         for (x in dkd) { split(x, a5, SUBSEP); dkb[a5[1]] = dkb[a5[1]] (dkb[a5[1]] == "" ? "" : ",") a5[2] ":" dkd[x] }
@@ -390,7 +393,7 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
 
 if [ -z "$agg" ]; then
     echo "No usable records found." >&2
-    rm -f "$OUT"   # no data for this ENV — page not published (an env-split legitimate state)
+    rm -f "$OUT" "$SCAN_OUT"   # no data for this ENV — nothing published (an env-split legitimate state)
     exit 0
 fi
 
@@ -399,47 +402,34 @@ IFS=$'\t' read -r _ cov_fad cov_fss <<< "$(printf '%s\n' "$agg" | grep $'^COV\t'
 
 # Both row writers print STRAIGHT to stdout inside the page block below — a
 # `rows+=$(printf …)` per row forks a subshell per row for nothing. Their row
-# counters (nrows / nnames / n_pairs) reach the TOTAL and SUMMARY lines because
+# counters (nrows / n_pairs) reach the TOTAL lines because
 # that block is a brace group, not a subshell. The "-" sentinels stay: a TAB is
 # IFS whitespace, so an empty middle field would collapse and shift the columns
 # — the tests that swap them back are shell builtins, not forks.
 nrows=0
-nnames=0
 # most rejections first, then no-account, bad keys, lockouts, key failures
 lgtot=0; aftot=0
 # (the per-login problem-counts sidecar _logon-problems.tsv, 2026-09-04..09-29,
 # fed fe-overview.sh's "Logon problems" column — which went 2026-09-29: the
-# FE overview page is retired and Partners - Incoming shows the funnel's own
+# FE overview page is retired and Partners in shows the funnel's own
 # columns)
 rows() {
-    while IFS=$'\t' read -r _ user a t d n b k l r x bkt d1 d2 d3 d4 d5 d6 d7 d8 d9 lside lstamp af9 lgf lgl lgn lgp; do
+    while IFS=$'\t' read -r _ user a t d n b k l r x bkt d1 d2 d3 d4 d5 d6 d7 d8 d9 af9 lgf lgl lgn lgp; do
         [ -n "$user" ] || continue
         [ "$bkt" = "-" ] && bkt=""
         [ "$d1" = "-" ] && d1=""; [ "$d2" = "-" ] && d2=""; [ "$d3" = "-" ] && d3=""; [ "$d4" = "-" ] && d4=""
         [ "$d5" = "-" ] && d5=""; [ "$d6" = "-" ] && d6=""; [ "$d7" = "-" ] && d7=""
         [ "$d8" = "-" ] && d8=""; [ "$d9" = "-" ] && d9=""
         [ "$af9" = "-" ] && af9=""
-        # SEEN = any funnel activity at all, the anonymous Auth-failed count
-        # included (before the 0-blanking below); a zero-everything row is a
-        # configured login the funnel never saw
-        local sn9=0; [ $((a + t + d + n + b + k + l + r + x + ${af9:-0})) -gt 0 ] && sn9=1
-        # THE ROW TINT (2026-09-02, user request) — @data:res on a restint
-        # table: ORANGE = never seen (every funnel column empty); GREEN = the
-        # login's LATEST screening line is a successful authentication; RED =
-        # its latest line is anything else (a refusal, a failure, or an
-        # Allowed that no authentication followed). A full-period verdict,
-        # like the logon-summary columns: a date range does not move it. The
-        # problem cells keep their own red/amber (the restint CSS).
-        local res9=red
-        if [ "$sn9" = 0 ]; then res9=orange; elif [ "$lside" = "T" ]; then res9=green; fi
+        # (the SEEN flag and the screening-verdict row tint — @data:seen /
+        # @data:res — went 2026-09-30 with the Incoming page: no reader)
         [ "$k" = "0" ] && k=""; [ "$l" = "0" ] && l=""; [ "$r" = "0" ] && r=""   # blank the 0s at source too (render_rpt z-blanks warn zeros as well since 2026-08 — this keeps the raw .rpt readable)
-        [ "${n:-0}" -gt 0 ] && nnames=$((nnames + 1))
         nrows=$((nrows + 1))
         [ "$lgn" = "-" ] && lgn=""
         [ -n "$lgn" ] && lgtot=$((lgtot + lgn))
         [ -n "$af9" ] && aftot=$((aftot + af9))
         # column order Allowed, Disallowed, Authenticated (the 2026-07 swap): the
-        # cells, their drill payloads and the RECALC tokens below all follow it.
+        # cells and their drill payloads follow it.
         # Session errors sits after Auth failed (2026-09-06); Re-screens is the
         # LAST column (2026-09-08, user request — it sat right after Allowed
         # for two days, which also shifted the cells reason-boxes.sh reads
@@ -447,9 +437,10 @@ rows() {
         # key / Key failures / Locked are back in place). drill-cell-<i> binds
         # cells positionally — 1 Allowed, 2 Disallowed, 3 Authenticated, 4 No
         # account, 5 Bad key, 6 Key failures, 7 Locked, (8 Auth failed: no
-        # drill), 9 Session errors, 14 Re-screens — so the block must not shift.
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:seen=%s\t@data:res=%s\t@data:buckets=%s\t@data:drill-cell-1=%s\t@data:drill-cell-2=%s\t@data:drill-cell-3=%s\t@data:drill-cell-4=%s\t@data:drill-cell-5=%s\t@data:drill-cell-6=%s\t@data:drill-cell-7=%s\t@data:drill-cell-9=%s\t@data:drill-cell-14=%s\n' \
-            "$user" "$a" "$d" "$t" "$n" "$b" "$k" "$l" "$af9" "$x" "$lgf" "$lgl" "$lgn" "$lgp" "$r" "$sn9" "$res9" "$bkt" "$d1" "$d3" "$d2" "$d4" "$d5" "$d6" "$d7" "$d9" "$d8"
+        # drill), 9 Session errors, 14 Re-screens — so the block must not shift
+        # (partners-in.sh reads every cell by POSITION as well).
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:drill-cell-1=%s\t@data:drill-cell-2=%s\t@data:drill-cell-3=%s\t@data:drill-cell-4=%s\t@data:drill-cell-5=%s\t@data:drill-cell-6=%s\t@data:drill-cell-7=%s\t@data:drill-cell-9=%s\t@data:drill-cell-14=%s\n' \
+            "$user" "$a" "$d" "$t" "$n" "$b" "$k" "$l" "$af9" "$x" "$lgf" "$lgl" "$lgn" "$lgp" "$r" "$bkt" "$d1" "$d3" "$d2" "$d4" "$d5" "$d6" "$d7" "$d9" "$d8"
     done <<< "$(printf '%s\n' "$agg" | grep $'^R\t' | LC_ALL=C sort -t"$(printf '\t')" -k5,5nr -k6,6nr -k7,7nr -k9,9nr -k8,8nr -k3,3nr -k2,2 \
         | awk -F'\t' -v OFS='\t' -v LG="$LOGONS_TSV" '
             # the per-login logon summary join (details.sh _logons.tsv): four
@@ -471,12 +462,11 @@ rows() {
               else          print $0, af9, "\342\200\224", "\342\200\224", "-", "Never" }')"
 }
 
-# ---- door knockers (2026-08): the two new tables' row writers. Near-miss ----
-# rows red-tint whole-row via restint/@data:res; the scanner table is capped
-# at 25 rows (awk NR guard, never head) and totals the SHOWN rows only, per
-# the top-N convention. Both tables are emitted UNCONDITIONALLY (placeholder
-# when the family is absent): logon is a merged-component of Logons, whose
-# tab bar enumerates tables, so the TABLE count must not vary per env.
+# ---- door knockers (2026-08): the scanner table's row writer. Capped at 25
+# rows (awk NR guard, never head), it totals the SHOWN rows only, per the
+# top-N convention. The table is emitted UNCONDITIONALLY (a placeholder row
+# when the family is absent): logon-scanners.rpt is a merged component of
+# Logons, whose tab bar enumerates tables, so the TABLE count must not vary.
 IFS=$'\t' read -r _ dk_tot dk_names <<< "$(printf '%s\n' "$agg" | grep $'^DKT\t' || printf 'DKT\t0\t0\n')"
 n_scan=0; scan_att=0
 scan_rows() {
@@ -498,69 +488,79 @@ n_pairs=0
 # session whose legs name two flows names neither (the site rule); "Unknown"
 # is no subscription. The pair's distinct subscriptions, sorted, as ONE
 # @{alist=subscriptions} cell (each name links its detail page); blank when
-# no session resolves. Replaces field 13 (the sessions) of the OUT line.
+# no session resolves. Replaces field 12 (the sessions) of the OUT line.
 out_subs() {
     # (the OUT lines arrive on stdin; FILENAME, not FNR == NR, tells the two
     # inputs apart — with NO Outgoing rows FNR == NR would hold for the legs)
     { printf '%s\n' "$agg" | grep $'^OUT\t' || true; } | awk -F'\t' -v OFS='\t' -v TRF="$TRANSFER_CACHE/_transfers.tsv" '
-        FILENAME != TRF { if ($0 == "") next; L[++n] = $0; m = split($13, S, "\037"); for (i = 1; i <= m; i++) if (S[i] != "" && S[i] != "-") want[S[i]] = 1; next }
+        FILENAME != TRF { if ($0 == "") next; L[++n] = $0; m = split($12, S, "\037"); for (i = 1; i <= m; i++) if (S[i] != "" && S[i] != "-") want[S[i]] = 1; next }
         ($24 in want) && $6 != "" && $6 != "Unknown" { if (!($24 in ss)) ss[$24] = $6; else if (ss[$24] != $6) ss[$24] = "\001" }
         END {
             for (i = 1; i <= n; i++) {
-                split(L[i], F, "\t"); m = split(F[13], S, "\037"); c = 0; delete got
+                split(L[i], F, "\t"); m = split(F[12], S, "\037"); c = 0; delete got
                 for (j = 1; j <= m; j++) { s = S[j]; if ((s in ss) && ss[s] != "\001" && !(ss[s] in got)) { got[ss[s]] = 1; U[++c] = ss[s] } }
                 for (a = 2; a <= c; a++) { v = U[a]; b = a - 1; while (b >= 1 && U[b] > v) { U[b + 1] = U[b]; b-- } U[b + 1] = v }
                 cell = ""; for (a = 1; a <= c; a++) cell = cell (a > 1 ? ", " : "") U[a]
-                F[13] = (cell == "") ? "-" : "@{alist=subscriptions}" cell
-                line = F[1]; for (a = 2; a <= 14; a++) line = line OFS F[a]
+                F[12] = (cell == "") ? "-" : "@{alist=subscriptions}" cell
+                line = F[1]; for (a = 2; a <= 13; a++) line = line OFS F[a]
                 print line
             }
         }' - "$TRANSFER_CACHE/_transfers.tsv"
 }
 out_rows() {
-    while IFS=$'\t' read -r _ count host ouser pw ky cr ot reason bkt fst lst subs lines; do
+    while IFS=$'\t' read -r _ count host ouser pw ky cr ot reason fst lst subs lines; do
         [ -n "$host" ] || continue
-        [ "$bkt" = "-" ] && bkt=""
         [ "$subs" = "-" ] && subs=""
         n_pairs=$((n_pairs + 1))
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' \
-            "$host" "$ouser" "$subs" "$count" "$pw" "$ky" "$cr" "$ot" "$reason" "$fst" "$lst" "$bkt" "$lines"
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:loglines=%s\n' \
+            "$host" "$ouser" "$subs" "$count" "$pw" "$ky" "$cr" "$ot" "$reason" "$fst" "$lst" "$lines"
     done <<< "$(out_subs | LC_ALL=C sort -t"$(printf '\t')" -k2,2nr)"
 }
 
+# logon.rpt — PAGELESS since 2026-09-30 (user request: Logons › Incoming
+# merged into Partners in, Logons › Outgoing became Partners Out): the two
+# tables its readers take by POSITION (see the header). No TABLE modifiers,
+# KIND or RECALC — nothing renders them; the HEAD lines stay as the legend.
 {
     printf 'TITLE\tLogon\n'
     if [ "$cov_fss" != "-" ] && [ "$cov_fad" = "-" ]; then
         # the FULLY-blind case — SSH screening lines exist but not one Allowed
-        # line in the whole window: the maximum undercount keeps its warning.
-        # (The partial case — Allowed only appearing mid-window after the
-        # server logging change — no longer warns, 2026-08: the banner said
-        # the same thing on every visit while the window start ages out.)
+        # line in the whole window: the maximum undercount keeps its warning
+        # (partners-in.sh carries it onto the Partners in page). (The partial
+        # case — Allowed only appearing mid-window after the server logging
+        # change — no longer warns, 2026-08: the banner said the same thing on
+        # every visit while the window start ages out.)
         printf 'WARN\tNo "Allowed user" screening line appears anywhere in this log window (which starts %s). The Allowed column is blind for the WHOLE period while Authenticated covers it, so funnel comparisons undercount the screening stage throughout.\n' "$cov_fss"
     fi
-    # seenrows keeps every row on the page under a date range (never hidden);
-    # restint paints each row its @data:res verdict (2026-09-02) — the CSS
-    # lets it beat the seenrows green/red, so the colour stays full-period
-    printf 'TABLE\tIncoming\twide\tseenrows\trestint\tdrill=log line\n'
-    # bucket slots (the R-line order A T D N B K L R X): s7 = Re-screens, s8 =
-    # Session errors
+    # Incoming: ROW fields 2 login, 3 Allowed, 4 Disallowed, 5 Authenticated,
+    # 6 No account, 7 Bad key, 8 Key failures, 9 Locked, 10 Auth failed, 11
+    # Session errors, 12 First logon, 13 Last logon, 14 Logons, 15 Pattern,
+    # 16 Re-screens, then @data:buckets (slots in the R-line order A T D N B
+    # K L R X — reason-boxes box 20) and the drill-cell lists (partners-in)
+    printf 'TABLE\tIncoming\n'
     printf 'HEAD\tLogin\tAllowed\tDisallowed\tAuthenticated\tNo account\tBad key\tKey failures\tLocked\tAuth failed\tSession errors\tFirst logon\tLast logon\tLogons\tPattern\tRe-screens\n'
-    printf 'KIND\tlogin\tnumprocessed\tnumfailed\tnumprocessed\tnumfailed\tnumfailed\tnumwarn\tnumwarn\tnumfailed\tnumfailed\ttext\ttext\tnum\ttext\tnum\n'
-    printf 'RECALC\t-\ts0\ts2\ts1\ts3\ts4\ts5\ts6\tk\ts8\tk\tk\tk\tk\ts7\n'
     rows
     [ "$aftot" -gt 0 ] || aftot=""
     [ "${rtot:-0}" -gt 0 ] || rtot=""
     printf 'TOTAL\tTotal (%s logins)\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num failed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s\t@{class=num failed}%s\t\t\t@{class=num}%s\t\t@{class=num}%s\n' \
         "$nrows" "$atot" "$dtot" "$ttot" "$ntot" "$btot" "$ktot" "$ltot" "$aftot" "$xtot" "$lgtot" "$rtot"
 
-    printf 'TABLE\tOutgoing\twide\tdrill=log line\n'
+    # Outgoing: ROW fields 2 Remote host, 3 User, 4 Subscription, 5 Failures,
+    # 6 Password, 7 Key, 8 Certificate, 9 Other, 10 Reason (last seen), 11
+    # First, 12 Last, then @data:loglines (the pair's 10 newest lines,
+    # newest first) — partners-out.sh folds the pairs per host,
+    # reason-boxes box 21 dates a host by the newest line (Last = field 12)
+    printf 'TABLE\tOutgoing\n'
     printf 'HEAD\tRemote host\tUser\tSubscription\tFailures\tPassword\tKey\tCertificate\tOther\tReason (last seen)\tFirst\tLast\n'
-    printf 'KIND\thost\tmono\ttext\tnumfailed\tnumfailed\tnumfailed\tnumfailed\tnumfailed\ttext\ttext\ttext\n'
-    printf 'RECALC\t-\t-\t-\ts0\ts1\ts2\ts3\ts4\t-\t-\t-\n'
     out_rows
     printf 'TOTAL\t@{colspan=3}Total (%s pair(s))\t@{class=num failed}%s\t@{class=num failed}%s\t@{class=num failed}%s\t@{class=num failed}%s\t@{class=num failed}%s\t\t\t\n' "$n_pairs" "$ototal" "$opwt" "$okyt" "$ocrt" "$oott"
+    printf 'FOOT\n'
+} > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
-
+# logon-scanners.rpt — the Scanners table, a component of the merged Logons
+# report (logons.sh: its first tab since 2026-09-30)
+{
+    printf 'TITLE\tLogon scanners\n'
     # ---- door knockers: the scanner top 25 (2026-08; the near-miss table went
     # 2026-09-30, user request)
     if [ "${dk_tot:-0}" -gt 0 ]; then
@@ -577,8 +577,7 @@ out_rows() {
         printf 'ROW\t@{colspan=6}No door-knocker lines in this data window.\n'
     fi
     printf 'TOTAL\tTotal (top %s of %s name(s))\t@{class=num failed}%s\t\t\t\t\n' "$n_scan" "${dk_names:-0}" "$scan_att"
-
     printf 'FOOT\n'
-} > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+} > "$SCAN_OUT.tmp" && mv "$SCAN_OUT.tmp" "$SCAN_OUT"
 
-echo "Data written to $OUT ($nrows login(s): $atot allowed, ${rtot:-0} re-screen(s), $ttot authenticated, $dtot disallowed, $ntot no-account, $btot bad-key, $ktot key-failure, $ltot locked, $xtot session error(s); $ototal outbound failure(s))." >&2
+echo "Data written to $OUT + logon-scanners.rpt ($nrows login(s): $atot allowed, ${rtot:-0} re-screen(s), $ttot authenticated, $dtot disallowed, $ntot no-account, $btot bad-key, $ktot key-failure, $ltot locked, $xtot session error(s); $ototal outbound failure(s))." >&2

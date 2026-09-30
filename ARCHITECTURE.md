@@ -26,7 +26,7 @@ protocol-journey's Last leg table went 2026-09-29, user request),
 `went-quiet` (went-quiet-src+stale-accounts), `duration-dwell` (the `trends` and `punctuality`
 merges went 2026-09-29 with their pages — user request; punctuality-src stays, pageless, for
 the Polling file-arrival slot). Server: `errors`
-(error-reasons+error-timing+top-messages), `connections`, `logons`, `ssh-security`; the server
+(error-reasons+error-timing+top-messages), `connections`, `logons` (logon-scanners+auth-activity since 2026-09-30), `ssh-security`; the server
 Top view takes errors-day's levels-per-component table through `append_rpt_tables` (2026-09-29).
 Analyses: `uc-status` (uc1-status · uc2-status+uc2-visits+pickups on the UC2 tab · uc3-status+uc3-polling+no-remote-dir+no-remote-files
 on the UC3 tab · uc4-status). (`platform-health` and `capacity` went with the Operations & Capacity
@@ -38,7 +38,7 @@ another page: the red-run sidecar (`red-run.sh` → `_red-run.tsv`, 2026-09-30 �
 from-green-to-red + only-red .rpt files before; Failed Subscriptions' Last green day / Days red /
 Failures in a row columns, the day pages and the boxes sidecar), missing-cronjobs (the boxes sidecar; Polling
 shows Schedule "no cron"), deploy-errors (the boxes sidecar's Deploy cause; Routing errors lists
-the lines), fe-overview (Partners - Incoming). entities.sh (its month_stats part — month-stats.sh until 2026-09-30) also writes `_alltime.tsv` (the Subscriptions page).
+the lines), fe-overview (Partners in). entities.sh (its month_stats part — month-stats.sh until 2026-09-30) also writes `_alltime.tsv` (the Subscriptions page).
 `report_tabs` names one tab per component table (tables sharing a `tab=KEY` modifier are ONE tab);
 `_merge_pad` pads a missing component with empty stubs so the tab count always matches. **The
 2026-09-28 fewer-server-reports round** (user request: "there are too many, are there
@@ -298,8 +298,8 @@ S = server/, A = analyses/):
 - **Protocols & security** — Protocol, Direction & Mode (T protocol) · Security Parameters (T) ·
   Security outreach (T) · AV Scan (T) · Connection efficiency (T) · SSH security (S)
 - **Logons & connections** — Logons (S) · Connections (S)
-- **Partners** — Partners - Incoming (A partners-in) · Partner scorecard (A) · Blast radius (A) ·
-  Application dependencies (A app-partners)
+- **Partners** — Partners in (A partners-in) · Partners Out (A partners-out) — 2026-09-30: Partner
+  scorecard, Blast radius and Application dependencies went, Logons › Incoming / Outgoing became these two
 - **Configuration** — Configured subscriptions (A subscriptions) · Configured accounts (A
   accounts) · Logical detection (A) · Cross References (analyses/xref, its pair selector under the group row)
 - **Coverage** — Entity coverage (T) · First seen (A) · Not in Flow Manager (T) · Skipped (T) ·
@@ -781,7 +781,7 @@ SAME row (it reuses the id it finds on the Features line instead of its own `sxs
   (collected / collected+delivered / delivered-only / empty-handed), rendered by the **UC2
   pickup visits** table (`bin/analyses/reports/uc2-visits.sh`, stacked on the UC status UC2 tab
   since 2026-09-29 — its own page went — it only formats the sidecar, so the three views cannot
-  disagree; runs after the server pool, behind `uc2-status.sh`; the **Partners - Incoming** page, `bin/analyses/reports/fe-overview.sh`, joins the same sidecar onto LOGIN rows, once per login and account — 2026-09-02; the FE overview page went 2026-09-29, `partners-in.sh` renders it). **The "Connection shared with
+  disagree; runs after the server pool, behind `uc2-status.sh`; the **Partners in** page, `bin/analyses/reports/fe-overview.sh`, joins the same sidecar onto LOGIN rows, once per login and account — 2026-09-02; the FE overview page went 2026-09-29, `partners-in.sh` renders it). **The "Connection shared with
   UC4 drop" row (and the UC4 pages' mirror INTRO, and the pickups report's UC4-drop flag) fires
   ONLY on sidecar col 18 — the SHARED-SESSION count**: distinct `_transfers.tsv` Session IDs
   (col 24, one id = one technical connection) in which the account both delivered (Inbound ssh)
@@ -854,8 +854,8 @@ SAME row (it reuses the id it finds on the Features line instead of its own `sxs
   ("-" stamps, count 0, Never) is a login that was screened but never got in. TWO consumers,
   which the build runs
   CONCURRENTLY, so each ensures the file itself: the detail writer, and the server Logon
-  report's Incoming table (the last four columns — full-period `k` tokens under RECALC; a
-  count-0 sidecar row renders there like an absent one). The
+  report's Incoming table (the last four columns — logon.rpt is pageless since 2026-09-30, Partners in
+  shows them; a count-0 sidecar row renders there like an absent one). The
   table sits in one `.sxs` flex row with Activity per day and Incoming connections
   (`login_sxs_row()` relocates the two blocks after the Activity table and tags all three
   `sxs=9`; a page WITHOUT an Activity table — a never-seen login — anchors the row on
@@ -931,7 +931,7 @@ SAME row (it reuses the id it finds on the Features line instead of its own `sxs
   table, `emit_srv_table` always two — its one-table mode and `srv_lines_for`, the never-seen
   pages' per-entity lists, went 2026-09-29, no caller). Any Error/Warn after the last
   transfer opens a red ALERT banner. Only the five classic types have per-name caches.
-- **Partners - Incoming** (2026-09-13, user request), `bin/analyses/reports/partners-in.sh` → `analyses/partners-in.html`: a MERGED report — fe-overview.rpt (the FE overview, renamed back from "Partners - Incoming" the same day) joined with the Incoming table of the server pool's `logon.rpt`, one row per login (the union; funnel-only logins untinted with empty transfer cells), the funnel cell drills re-keyed to their new columns; trimmed the same day (user request) to Login … Pickups + Allowed · Disallowed · Authenticated · Auth Failed (= Bad key + Key failures + Auth failed, its drill the 5 newest lines of the three) · Locked · Pattern. Runs after analyses wave 1. The FE overview page went 2026-09-29 (`fe-overview.sh` stays its pageless producer); the Logons report keeps its Incoming tab. (**Partners - Outgoing**, `hosts-overview.sh`, went 2026-09-29: the Entities Hosts view carries the same per-host figures.)
+- **Partners in** ("Partners - Incoming" 2026-09-13..09-30, user request), `bin/analyses/reports/partners-in.sh` → `analyses/partners-in.html`: a MERGED report — fe-overview.rpt (the FE overview, renamed back from "Partners - Incoming" the same day) joined with the Incoming table of the server pool's `logon.rpt`, one row per login (the union; funnel-only logins untinted with empty transfer cells), the funnel cell drills re-keyed to their new columns; trimmed the same day (user request) to Login … Pickups + Allowed · Disallowed · Authenticated · Auth Failed (= Bad key + Key failures + Auth failed, its drill the 5 newest lines of the three) · Locked · Pattern. Runs after analyses wave 1. The FE overview page went 2026-09-29 (`fe-overview.sh` stays its pageless producer). **2026-09-30** (user request, "merge … into one report Partners in"): the WHOLE Incoming table rides it — Login … Pickups · Allowed · Disallowed · Authenticated · No account · Bad key · Key failures · Locked · Auth failed · Session errors · Re-screens · First logon · Logons · Pattern (the funnel's Last logon = Cloud and the summed Auth Failed dropped as the same figures twice), drills re-keyed (+11; Session errors → 20, Re-screens → 21), logon.rpt's WARN carried; the Logons report lost its Incoming and Outgoing tabs and `logon.rpt` is PAGELESS (Incoming + Outgoing, no modifiers / KIND / RECALC; the Scanners table is the `logon-scanners.rpt` component). **Partners Out** (same day), `bin/analyses/reports/partners-out.sh` → `analyses/partners-out.html`: one row per host we connect OUT to (base/_hosts.tsv ∪ the Outgoing hosts ∪ the logon summary's outbound targets, mapped through input/ip/ip-hosts.tsv, else the raw address) — Subscription (the Outgoing session join, else the configured xref/_hosts-subscriptions.tsv) · Connections / Last connection (_logons-hosts.tsv fields 10 / 12 over the name + its addresses, the host page's rule) · the Outgoing failure columns folded per host, tinted by the host colour, full period. (**Partners - Outgoing**, `hosts-overview.sh`, went 2026-09-29: the Entities Hosts view carries the same per-host figures.)
 
 report.js `hideEmptyTables()` (detail pages only) hides emptied sections; `setupSectionTabs()`
 builds the sticky header (`div.detailhead`). The sticky-header CSS comment must never contain a

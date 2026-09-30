@@ -950,7 +950,7 @@ function host_logons_section(   V9, na9, i9, F9, cnt9, fst9, lst9, pat9, patc9, 
             emitl("ROW\t" CN9[ci9] "\t" CC9[ci9] "\t" (CL9[ci9] == "" ? "" : substr(CL9[ci9], 1, 19)) "\t@data:res=red")
     if (xf9 > 0) {
         emitl("ROW\tAuth failures\t" xf9 "\t" (xl9 == "" ? "" : substr(xl9, 1, 19)) "\t@data:res=red")
-        # the class rows — the Logon report Outgoing tab's columns, zeros
+        # the class rows — the Partners Out failure columns (logon.rpt Outgoing), zeros
         # omitted like everywhere else in this table
         ncl9 = split("Password\037Key\037Certificate\037Other", CLBL9, "\037")
         for (ci9 = 1; ci9 <= ncl9; ci9++)

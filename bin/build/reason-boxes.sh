@@ -159,7 +159,9 @@ _subs_box_rows() {
             ' "$SRPT/site-failures.tsv"
         fi
         # columns 20 / 21 — Login errors (in / out), UNRESOLVED (2026-08): the
-        # Logons report's failure rows joined onto subscriptions — in: the
+        # failure rows of logon.rpt (PAGELESS since 2026-09-30 — the Partners
+        # in / Partners Out pages show them; its table 1 Incoming and table 2
+        # Outgoing keep their field positions) joined onto subscriptions — in: the
         # login's Disallowed/Bad key/Key failures/Locked funnel counts, via
         # _logins-subscriptions; out: the remote host's outbound auth
         # failures, via _hosts-subscriptions. The one-legged rule applies: an

@@ -25,7 +25,7 @@ level anywhere. Layout:
   BL.txt         BL numbers per subscription ("<subscription> <BL>[,<BL>...]"),
                  a second source of BL entities beside the subscriptions.json tags
   logons_old.txt the FE logins' last logon on the OLD gateway ("<login> <stamp>"
-                 per line) — the Partners - Incoming page's Gateway column
+                 per line) — the Partners in page's Gateway column
   coreid-url.txt the SecureTransport File Tracking URL every CoreId on the site
                  links to — one line, @COREID@ where the id goes (2026-09-07)
   .sample/       the generator's estate spec + the figures verify.sh asserts
