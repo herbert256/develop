@@ -47,7 +47,7 @@
   // 1 the brand — its TEXT is the environment label (input/environment.txt;
   // "Axway ST" without one), or on a runtime checkout the pair "Acceptance /
   // Production", the active one bold and yellow (.envcur) linking the home
-  // page · 2 Overview · Errors · Duration · Partners · Waiting/Expired ·
+  // page · 2 Overview · Errors · Duration · Partners · Logons · Waiting/Expired ·
   // Security · Seen · Configuration · Use cases · Patterns · Activity ·
   // Entities · Files + the search icon (ONE cluster, 2026-09-29; since
   // 2026-09-30, user request, Errors right after Overview, Duration ->
@@ -57,7 +57,8 @@
   // analyses/partners-in.html (Partners Out through its group row), fixed paths
   // like Duration, right after Duration since the night; the six links after
   // Waiting/Expired replaced the Reports pulldown the same night) · 3 the
-  // Dashboard link · 4 the site map and help icons.
+  // Dashboard link · 4 the help icon (the site map icon went 2026-09-30 with
+  // the site map; Logons, after Partners, the same night).
   function buildTopbar() {
     var tb = document.querySelector("div.topbar");
     if (!tb || tb.firstChild) return;
@@ -83,6 +84,9 @@
       (M.errors ? '<a class="entlabel" href="' + b + esc(M.errors) + '">Errors</a>' : "") +
       '<a class="entlabel" href="' + b + 'transfer/duration.html">Duration</a>' +
       '<a class="entlabel" href="' + b + 'analyses/partners-in.html">Partners</a>' +
+      // (2026-09-30, with the site map and the Reports start page gone: the
+      // Logons & connections group's only way in — its first page, Logons)
+      '<a class="entlabel" href="' + b + 'server/logons-scanners.html">Logons</a>' +
       '<a class="entlabel" href="' + b + 'transfer/waiting-expired.html">Waiting/Expired</a>' +
       // (2026-09-30, user request, with the Reports pulldown gone: the
       // groups it opened, as fixed paths right after Waiting/Expired)
@@ -97,7 +101,6 @@
       '<a class="searchbtn" href="' + b + 'search/search.html" title="Search" aria-label="Search">🔍</a></span>' +
       '<a class="dashlink" href="' + b + 'dashboards/index.html">Dashboard</a>' +
       '<span class="tr-group">' +
-      '<a class="searchbtn" href="' + b + 'tools/sitemap.html" title="Site map" aria-label="Site map">🗺</a>' +
       (help ? '<a class="helpbtn" href="' + b + "help/" + help + '.html" title="Help" aria-label="Help">?</a>' : "") +
       "</span>";
     envLinks(M);
