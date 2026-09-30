@@ -1,15 +1,15 @@
 <h1>Longest Files</h1>
 <h2>What it shows</h2>
 <ul>
-<li>The 50 longest delivered Files by wall-clock duration &mdash; first record start to last record end, so the store-and-forward wait inside SecureTransport and any retry idle are included.</li>
+<li>The 250 longest delivered Files by wall-clock duration &mdash; first record start to last record end, so the store-and-forward wait inside SecureTransport and any retry idle are included &mdash; at most 10 per subscription, so one slow flow cannot fill the list.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
 <li><strong>Duration</strong> &mdash; the span; sorts by the exact milliseconds.</li>
 <li><strong>Start Time</strong> / <strong>End Time</strong> &mdash; the first record start and the latest record end.</li>
-<li><strong>CoreId</strong> &mdash; the File&rsquo;s id.</li>
-<li><strong>Destination Subscription</strong> &mdash; linked to its detail page.</li>
 <li><strong>File</strong> &mdash; the file name.</li>
+<li><strong>Destination Subscription</strong> &mdash; linked to its detail page.</li>
+<li><strong>CoreId</strong> &mdash; the File&rsquo;s id.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
@@ -17,5 +17,5 @@
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>The Duration, Start Time, End Time and CoreId cells open a File page when the File has one (per subscription the newest OK File and the three newest Error Files): its facts, every record of the CoreId and the server log of its connections. Rows green, or orange after a retry or resubmit (the <a href="general.html#colours">File colour</a>).</li>
+<li>Every listed File has a File page &mdash; a click anywhere on the row opens it (the subscription cell opens its detail page): its facts, every record of the CoreId and the server log of its connections. Rows green, or orange after a retry or resubmit (the <a href="general.html#colours">File colour</a>).</li>
 </ul>

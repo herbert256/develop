@@ -1,22 +1,19 @@
 <h1>Security Parameters</h1>
 <h2>What it shows</h2>
 <ul>
-<li>Every attribute parsed from the transfer log&rsquo;s free-text <strong>SecurityParameters</strong> column, in one table. A summary line gives all transfers with their Error / OK split.</li>
+<li>The cryptography in use, from both logs, on one page: first the transfer log&rsquo;s <strong>SecurityParameters</strong> column per leg, then the server log&rsquo;s SSH tables (SSH security until 2026-09-30).</li>
 </ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Attribute</strong> &mdash; TLS version, Cipher, Cipher suite, MAC, Key Exchange, Public Key.</li>
-<li><strong>Value</strong> &mdash; each attribute&rsquo;s values, busiest first; a value opens its own page.</li>
-<li><strong>OK transfers</strong> &mdash; the OK legs that used it; legs of the <strong>Unknown</strong> subscription are left out (the summary line keeps them).</li>
+<li><strong>Attribute</strong> (TLS version, Cipher, Cipher suite, MAC, Key Exchange, Public Key), <strong>Value</strong> (busiest first; opens its page: the Subscriptions and Partners that used it), <strong>OK transfers</strong> (OK legs; Unknown-subscription legs left out, the summary line keeps them).</li>
+<li><strong>Negotiations by protocol</strong>, <strong>Cipher suites</strong>, <strong>Key exchange</strong>, <strong>MAC algorithms</strong>, <strong>Public-key algorithms</strong> &mdash; Negotiations, Share, <strong>Assessment</strong> (OK or red <strong>Weak</strong>), First, Last.</li>
+<li><strong>Deprecated-parameter warnings</strong> &mdash; Parameter, Account, Subscription, Remote host, Warnings; rows tint by the subscription&rsquo;s colour.</li>
+<li><strong>Algorithm negotiation failures</strong>, <strong>PeSIT TLS adoption</strong> (the ST&ndash;CFT link over TLS, with Per week), <strong>Session-lifecycle problems</strong>; Hygiene signals and Certificate chain errors only when logged.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Counts <strong>transfers (legs)</strong>, not Files: parameters are negotiated per leg, so one File&rsquo;s Inbound and Outbound legs can differ.</li>
-<li>A leg counts once per attribute, so OK transfers does not add across attributes: the Total stays blank.</li>
-<li>&ldquo;TLS version&rdquo; is the log&rsquo;s <code>Protocol:</code> key, renamed to keep it apart from the transfer protocol (see <a href="protocol.html">Protocol, Direction &amp; Mode</a>).</li>
-<li><strong>Value pages</strong> &mdash; every <strong>Subscription</strong> that used the value, with its <strong>Partner</strong> and <strong>OK transfers</strong>, then a <strong>Partners</strong> table (Partner, Subscriptions, OK transfers); a value cell equals its page&rsquo;s Total. Full period. A leg counts under every partner of its subscription and under its remote host&rsquo;s partner.</li>
-</ul>
-<h2>Tips</h2>
-<ul>
+<li>The first table counts <strong>legs</strong>, once per attribute, so its Total stays blank. &ldquo;TLS version&rdquo; is the log&rsquo;s <code>Protocol:</code> key.</li>
+<li><strong>Weak</strong>: CBC / 3DES / RC4 ciphers, SHA-1 key exchange or MAC, <code>ssh-rsa</code> / <code>ssh-dss</code> keys.</li>
+<li>The SSH tables re-total under the date filter; a row opens its 10 most recent log lines.</li>
 <li>Deprecated values and who still uses them: <a href="security-outreach.html">Security outreach</a>.</li>
 </ul>

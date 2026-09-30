@@ -29,6 +29,10 @@ BEGIN {
     nrdi = 0
     HX = "[0-9a-f]"; H4 = HX HX HX HX; H8 = H4 H4; H12 = H8 H4
     UUIDRE = H8 "-" H4 "-" H4 "-" H4 "-" H12; H32RE = H8 H8 H8 H8
+    # the docs/files/ prefix of THIS page (2026-09-30): dlink is the page's
+    # docs/details/ prefix ("../details/", "../../details/"), or "../" on a
+    # detail page itself (docs/details/<type>/) — files/ sits beside details/
+    FPRE = dlink; if (FPRE ~ /details\/$/) sub(/details\/$/, "files/", FPRE); else FPRE = FPRE "../files/"
     if (rdates != "") { nrd = split(rdates, RDA, ","); for (i = 1; i <= nrd; i++) if (!(RDA[i] in RDI)) { RDI[RDA[i]] = i - 1; nrdi++ } }
     n = split(slugmaps, smf, " ")
     for (i = 1; i <= n; i++) {
@@ -454,10 +458,11 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         else if (kind == "numok") cls = "num okc"
         else if (kind == "numwarn") cls = "num warn"
         else if (kind == "file") cls = "file"
-        # prose (2026-09-29 audit): a SENTENCE cell (the detail pages' Last
-        # server log Message) — it wraps inside a readable width instead of
-        # stretching the table to thousands of pixels (style.css td.prose)
-        else if (kind == "prose") cls = "prose"
+        # prose: the detail pages' Last server log Message — a server-log LINE,
+        # so it renders on ONE line (2026-09-30, user request: "do not wrap
+        # server log lines, even if the result is wider than the screen"; it
+        # wrapped between 30 and 46 rem before) — class logline, style.css
+        else if (kind == "prose") cls = "logline"
         else if (kind == "clines" || kind == "clinks") cls = "lines"
         if (kind == "bar") {
             if (text ~ /^[0-9]+$/) { w = int((text + 2) / 5) * 5; if (w > 100) w = 100 }
@@ -558,6 +563,30 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         else if (slug != "")         text = "<a href=\"" dlink sd "/" slug ".html\">" text "</a>" extra
         else if (extra != "")        text = text extra
     }
+    # THE FILE-PAGE LINK (2026-09-30, user request: "for cells that show a
+    # CoreId, check if the file exists in /files/, if so link to it; if the
+    # same row has a cell with a file name, then also make that"): a cell whose
+    # value IS a CoreId with a published page (fp_has — _filepages.tsv) links
+    # docs/files/<id>.html, and so does the row's FILE-NAME cell (KIND file or
+    # a File / File name / Filename column) when the row names exactly ONE such
+    # CoreId (ROWFP1, set by the ROW branch). Not on TOTAL rows, not on a
+    # row-drill row (the row click drills), not in a facts table's Value
+    # column (the File page's own CoreId), never over an explicit link.
+    if (!total && !rowdrill && link == "" && rawhref == "" && CELLHEAD != "Value" && \
+        kind != "clines" && kind != "clinks" && kind != "bar" && alsd == "") {
+        if (rawtext ~ ("^" UUIDRE "$") && fp_has(rawtext)) {
+            text = "<a href=\"" FPRE rawtext ".html\">" text "</a>"; cls = (cls != "" ? cls " cl" : "cl")
+        } else if (ROWFP1 != "" && rawtext != "" && (kind == "file" || CELLHEAD == "File" || CELLHEAD == "File name" || CELLHEAD == "Filename")) {
+            text = "<a href=\"" FPRE ROWFP1 ".html\">" text "</a>"; cls = (cls != "" ? cls " cl" : "cl")
+        }
+    }
+    # a FILE-NAME column never wraps: a name that does not fit widens its cell
+    # (2026-09-30, user request) — KIND file carries td.file (monospace,
+    # nowrap); a text-KIND File / File name / Filename column gets class fn
+    if (!total && kind != "file" && (CELLHEAD == "File" || CELLHEAD == "File name" || CELLHEAD == "Filename")) cls = (cls != "" ? cls " fn" : "fn")
+    # a server-log MESSAGE column (the server reports' Message shape / Example
+    # message, the UC status + Polling What goes wrong) renders on one line
+    if (!total && kind != "prose" && kind != "file" && (CELLHEAD == "What goes wrong" || CELLHEAD == "Message" || CELLHEAD == "Message shape" || CELLHEAD == "Example message" || CELLHEAD == "Latest message")) cls = (cls != "" ? cls " logline" : "logline")
     # @{link=SUB/SLUG}: an explicit per-row detail-page link. Either way the
     # link wraps the WHOLE cell value, so class `cl` makes the entire cell the
     # click target (style.css moves the td padding onto the block-level <a>).
@@ -604,7 +633,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         # LOGCARD <date time> <message> — a card holding one raw log line (the
         # detail pages' server-log evidence)
         split_cells()
-        printf "<div class=\"logcard\"><span class=\"lc-when\">%s</span><span class=\"lc-msg\">%s</span></div>\n", \
+        printf "<div class=\"logcard\"><span class=\"lc-when\">%s</span><span class=\"lc-msg logline\">%s</span></div>\n", \
             html_esc(CELL[1]), html_esc(CELL[2])
     }
     else if (dir == "STAT") {
@@ -903,9 +932,18 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             rr = RESM[rk]
             if (rr == "orange") attrs = attrs " data-res=\"" rr "\""
         }
+        # the row's CoreIds with a published File page (the File-page link
+        # rule in cell()): ROWFP1 = the ONE such CoreId, "" for none or several
+        ROWFP1 = ""; nrfp = 0
+        if (!is_total) for (i = 1; i <= nreal; i++) {
+            rv = REAL[i]; if (substr(rv, 1, 2) == "@{") { p = index(rv, "}"); if (p > 0) rv = substr(rv, p + 1) }
+            if (rv ~ ("^" UUIDRE "$") && !(i <= nhead && HEADC[i] == "Value") && fp_has(rv) && rv != ROWFP1) { ROWFP1 = rv; nrfp++ }
+        }
+        if (nrfp != 1) ROWFP1 = ""
         rowcells = ""; nfc = 0; npc = 0
         for (i = 1; i <= nreal; i++) {
             gsephit = 0; if ((i - 1) in gsepset) gsephit = 1
+            CELLHEAD = (i <= nhead ? HEADC[i] : "")
             cell((i <= nkind && KINDS[i] != "" ? KINDS[i] : "text"),
                  (i <= nhead && HEADC[i] == "Direction" ? dirfold(REAL[i]) : REAL[i]), is_total)
             rowcells = rowcells CELLOUT

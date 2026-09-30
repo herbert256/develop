@@ -73,8 +73,7 @@ pool_run "$SCRIPT_DIR/reports/hourly.sh"
 pool_run "$SCRIPT_DIR/reports/weekday.sh"
 pool_run "$SCRIPT_DIR/reports/anomalies.sh"
 pool_run "$SCRIPT_DIR/reports/duration.sh"
-pool_run "$SCRIPT_DIR/reports/duration-longest.sh"        # the Top 50 longest Files (split off duration.sh 2026-09-03)
-pool_run "$SCRIPT_DIR/reports/duration-distribution.sh"   # the duration histogram (split off duration.sh 2026-09-03)
+pool_run "$SCRIPT_DIR/reports/duration-longest.sh"        # the Top 250 longest Files (at most 10 per subscription; the selection is bin/transfer/filepages.sh kind L)
 pool_run "$SCRIPT_DIR/reports/dwell-time.sh"
 pool_run "$SCRIPT_DIR/reports/top-transfers.sh"
 pool_run "$SCRIPT_DIR/reports/duplicate-files.sh"
@@ -107,7 +106,6 @@ pool_wait
 "$SCRIPT_DIR/reports/merge-went-quiet.sh"
 "$SCRIPT_DIR/reports/failed-files.sh"          # 2026-09-14: every failed File + its reason — reads the pool failed.sh's reasons sidecar, so after pool_wait
 "$SCRIPT_DIR/reports/unknown-transfers.sh"     # 2026-09-29: every File with subscription "Unknown" — links the File pages the pool wrote, so after pool_wait
-"$SCRIPT_DIR/reports/merge-duration-dwell.sh"   # 2026-09-05: duration-distribution + dwell-time on one page, histograms side by side
 fi
 
 if [ "$PHASE" != phase1 ]; then

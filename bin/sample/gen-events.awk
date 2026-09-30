@@ -581,7 +581,7 @@ function env_ambient(   ci, jd, base, i, n, k, sid, lst) {
             if (jd % 7 == 4) S(base + 39600555, "I", "TM", fixsid("465450", jd), "User with login name \"" AL_L[3] "\", associated with account \"" AL_A[3] "@" AL_L[3] "\", had initiated a connection over FTP. Remote address: " AL_IP[3] ".")
             if (jd % 11 == 5) S(base + 46800333, "I", "TM", fixsid("48545450", jd), "User with login name \"" AL_L[4] "\", associated with account \"" AL_A[4] "@" AL_L[4] "\", had initiated a connection over HTTP. Remote address: " AL_IP[4] ".")
         }
-        # the shared-certificate serial list (ssh-security's detector)
+        # the shared-certificate serial list (the SSH tables' detector)
         if (NAL >= 3) {
             lst = AL_A[1] "@" AL_L[1] ", " AL_A[2] "@" AL_L[2] ", " AL_A[3] "@" AL_L[3]
             for (i = 0; i < 1 + rint(3); i++)

@@ -11,6 +11,14 @@
 #     E   one of the subscription's THREE newest FAILED Files (by the start
 #         sortkey, col 6, newest first; Expired Files are pickup problems,
 #         never paged)
+#     L   one of the LONGEST FILES (2026-09-30, user request: "Show 250 and
+#         not 50 files, store all 250 files in /files/, show max 10 rows of
+#         the same subscription"): the LONGEST_N (250) longest DELIVERED
+#         Files (outcome Processed, dur_ms col 9 > 0) by wall-clock duration,
+#         at most LONGEST_PER_SUB (10) per subscription (col 12; an empty one
+#         is one group), ms descending, CoreId ascending on a tie — THE
+#         selection: bin/transfer/reports/duration-longest.sh lists exactly
+#         these rows, it does not select again
 #
 # per _files.tsv col 12 value ("Unknown" included). This is the ONE list of
 # the CoreIds that have a docs/files/<CoreId>.html page: bin/transfer/publish.sh
@@ -29,6 +37,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"
 OUT="$CACHE_DIR/_filepages.tsv"
+LONGEST_N=250 LONGEST_PER_SUB=10   # kind L — the Longest Files page (see the header)
 if [ ! -s "$FILES" ]; then : > "$OUT"; echo "filepages: no transfer cache — no File pages." >&2; exit 0; fi
 {
     # O: the newest Processed File per subscription (strictly newer END wins,
@@ -43,6 +52,12 @@ if [ ! -s "$FILES" ]; then : > "$OUT"; echo "filepages: no transfer cache — no
     LC_ALL=C awk -F'\t' -v OFS='\t' '$12 != "" && $2 == "Failed" { print $6, $1, $12 }' "$FILES" \
         | LC_ALL=C sort -r \
         | LC_ALL=C awk -F'\t' '++n[$3] <= 3 { print $2 "\tE\t" $3 }'
+    # L: the Longest Files (ms descending, CoreId ascending on a tie — the
+    # sort the page used; at most LONGEST_PER_SUB per subscription, the first
+    # LONGEST_N after that cap)
+    LC_ALL=C awk -F'\t' -v OFS='\t' '$2 == "Processed" && ($9 + 0) > 0 { print $9 + 0, $1, $12 }' "$FILES" \
+        | LC_ALL=C sort -t"$(printf '\t')" -k1,1nr -k2,2 \
+        | LC_ALL=C awk -F'\t' -v n="$LONGEST_N" -v per="$LONGEST_PER_SUB" 'k < n && ++c[$3] <= per { k++; print $2 "\tL\t" $3 }'
 } | LC_ALL=C sort -u > "$OUT.tmp"
 mv "$OUT.tmp" "$OUT"
-echo "filepages: $(awk -F'\t' '$2 == "O"' "$OUT" | wc -l | tr -d ' ') latest-OK + $(awk -F'\t' '$2 == "E"' "$OUT" | wc -l | tr -d ' ') error File page(s)." >&2
+echo "filepages: $(awk -F'\t' '$2 == "O"' "$OUT" | wc -l | tr -d ' ') latest-OK + $(awk -F'\t' '$2 == "E"' "$OUT" | wc -l | tr -d ' ') error + $(awk -F'\t' '$2 == "L"' "$OUT" | wc -l | tr -d ' ') longest File page(s)." >&2

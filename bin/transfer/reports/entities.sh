@@ -179,7 +179,8 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
         if (isin) addtop(key SUBSEP "fin", sk, disp, cid); if (isout) addtop(key SUBSEP "fout", sk, disp, cid)
         if (f) addtop(key SUBSEP "ferr", sk, disp, cid)
         if (ra) addtop(key SUBSEP "rauto", sk, disp, cid); if (rmo) addtop(key SUBSEP "rmok", sk, disp, cid); if (rme) addtop(key SUBSEP "rmerr", sk, disp, cid)
-        if (wt) addtop(key SUBSEP "wait", sk, disp, cid); if (ex) addtop(key SUBSEP "exp", sk, disp, cid)
+        # (the Waiting / Expired drill rings went 2026-09-30: those cells LINK
+        # transfer/waiting.html / expired.html now — their S| fields stay, empty)
         if (hasd) { dh[key SUBSEP q]++; dhd[key SUBSEP date SUBSEP q]++ }
     }
     function tot(t) {
@@ -293,7 +294,7 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
                 sra[key]+0, smo[key]+0, sme[key]+0, swt[key]+0, sex[key]+0, sv[key]+0, bk[key], \
                 buildlist(top[key SUBSEP "tok"]), buildlist(top[key SUBSEP "terr"]), buildlist(top[key SUBSEP "fin"]), buildlist(top[key SUBSEP "fout"]), \
                 buildlist(top[key SUBSEP "ferr"]), buildlist(top[key SUBSEP "rauto"]), buildlist(top[key SUBSEP "rmok"]), buildlist(top[key SUBSEP "rmerr"]), \
-                buildlist(top[key SUBSEP "wait"]), buildlist(top[key SUBSEP "exp"]), \
+                "", "", \
                 ((key in KP90) ? KP90[key] : ""), ((key in KP95) ? KP95[key] : ""), ((key in KP99) ? KP99[key] : ""), ((key in KP100) ? KP100[key] : ""), \
                 ((key in ddp) ? ddp[key] : ""), \
                 buildlist(top[key SUBSEP "d90"]), buildlist(top[key SUBSEP "d95"]), buildlist(top[key SUBSEP "d99"]), buildlist(top[key SUBSEP "d100"]), \
@@ -364,14 +365,31 @@ fmt_dim() {
     # p100) · Volume · Transfers · State · Dates — 22 cells, the Dates LAST
     # NOFERR: the Subscriptions view's Error cell links Failed files (its
     # drillcols leave ferr out), so its ferr list is not shipped (2026-09-29 audit)
-    rows=$({ grep "^S|$dim|" "$AGG.$dim" 2>/dev/null || true; } | LC_ALL=C sort -t'|' -k4,4nr -k3,3f -k3,3 | awk -F'|' -v NOFERR="$([ "$dim" = subscription ] && echo 1)" "$FMT_AWK"'
+    # THE WAITING / EXPIRED CELLS LINK (2026-09-30, user request: "clicking
+    # on a Expired or Waiting cell must go to /transfer/expired.html or
+    # /transfer/waiting.html with the row highlighted that is the right
+    # subscription (?axway_row=xxxx)"): a non-zero cell opens the page — on
+    # the SUBSCRIPTION pages with ?axway_row=<the subscription> (the first
+    # table of both pages is keyed by Subscription, the REAL name: the display
+    # renames touch no subscription); the other entities open the page itself
+    # (a name there is no row key, and a ?axway_search would stick as the
+    # remembered search). Their drill lists went (a linked cell never drills).
+    rows=$({ grep "^S|$dim|" "$AGG.$dim" 2>/dev/null || true; } | LC_ALL=C sort -t'|' -k4,4nr -k3,3f -k3,3 | awk -F'|' -v NOFERR="$([ "$dim" = subscription ] && echo 1)" -v ROWQ="$([ "$dim" = subscription ] && echo 1)" "$FMT_AWK"'
+        # a URL component: every byte outside [A-Za-z0-9_.~-] as %XX
+        function uenc(v,   o, i, c) { o = ""
+            for (i = 1; i <= length(v); i++) { c = substr(v, i, 1)
+                o = o (c ~ /[A-Za-z0-9_.~-]/ ? c : sprintf("%%%02X", HX[c])) }
+            return o }
+        function stcell(n, page, nm) { if (n + 0 <= 0) return n + 0
+            return "@{href=../" page ".html" (ROWQ ? "?axway_row=" uenc(nm) : "") "}" (n + 0) }
+        BEGIN { for (i = 1; i < 256; i++) HX[sprintf("%c", i)] = i }
         $3 == "" { next }
         { files = $4 + 0; tok = $8 + 0; ter = $9 + 0; fe = $12 + 0; bytes = $18 + 0
-          printf "ROW\t%s\t%s\t%s\t%d\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t%d\t%d\t%s\t%s\t%d\t@data:buckets=%s\t@data:coreids-tok=%s\t@data:coreids-terr=%s\t@data:coreids-fin=%s\t@data:coreids-fout=%s\t@data:coreids-ferr=%s\t@data:coreids-rauto=%s\t@data:coreids-rmok=%s\t@data:coreids-rmerr=%s\t@data:coreids-wait=%s\t@data:coreids-exp=%s\t@data:durdays=%s\t@data:coreids-d90=%s\t@data:coreids-d95=%s\t@data:coreids-d99=%s\t@data:coreids-d100=%s\n", \
+          printf "ROW\t%s\t%s\t%s\t%d\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d\t@data:buckets=%s\t@data:coreids-tok=%s\t@data:coreids-terr=%s\t@data:coreids-fin=%s\t@data:coreids-fout=%s\t@data:coreids-ferr=%s\t@data:coreids-rauto=%s\t@data:coreids-rmok=%s\t@data:coreids-rmerr=%s\t@data:durdays=%s\t@data:coreids-d90=%s\t@data:coreids-d95=%s\t@data:coreids-d99=%s\t@data:coreids-d100=%s\n", \
               $3, nz($10), nz($11), fe, pr(fe, files), $13, $14, $15, \
               dcell($30), dcell($31), dcell($32), dcell($33), hbytes0(bytes), hbytes0(files > 0 ? bytes / files : 0), \
-              tok, ter, pr(ter, tok + ter), $16, $17, $5, $6, $7, \
-              $19, $20, $21, $22, $23, (NOFERR ? "" : $24), $25, $26, $27, $28, $29, $34, $35, $36, $37, $38 }')
+              tok, ter, pr(ter, tok + ter), stcell($16, "waiting", $3), stcell($17, "expired", $3), $5, $6, $7, \
+              $19, $20, $21, $22, $23, (NOFERR ? "" : $24), $25, $26, $27, $34, $35, $36, $37, $38 }')
     tot_line=$(awk -F'|' "$FMT_AWK"'BEGIN { tc = ARGV[1]; ttok = ARGV[2]; tter = ARGV[3]; tfe = ARGV[4]; tv = ARGV[5]; tin = ARGV[6]; tout = ARGV[7]
         printf "%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\n", pr(tter, ttok + tter), pr(tfe, tc), hbytes0(tv), hbytes0(tc > 0 ? tv / tc : 0), nz(tin), nz(tout), dcell(ARGV[8]), dcell(ARGV[9]), dcell(ARGV[10]), dcell(ARGV[11]); exit }' \
         "$tc" "$ttok" "$tter" "$tfe" "$tv" "$tin" "$tout" "$tp90" "$tp95" "$tp99" "$tp100")
@@ -386,7 +404,7 @@ fmt_dim() {
         # it opens transfer/failed-files.html for that subscription and the active From/To (report.js
         # setupEntityErrorLinks, 2026-09-15 user request) — so its drill is left out there
         ferrdc="ferr:3:Files_Error,"; [ "$chead" = "Subscription" ] && ferrdc=""
-        printf 'TABLE\tSummary per %s\twide\tgsep=1,5,8,12,14,17,19\tnoagg=8,9,10,11,13,21\tpct=4:3:1+2;16:15:14+15\tautohide=Retry / Resubmit;State\tdrillcols=fin:1:Files_In,fout:2:Files_Out,%srauto:5:Retry,rmok:6:Resubmit_Ok,rmerr:7:Resubmit_Error,d90:8:Duration_p90,d95:9:Duration_p95,d99:10:Duration_p99,d100:11:Duration_p100,tok:14:Transfers_Ok,terr:15:Transfers_Error,wait:17:Waiting,exp:18:Expired\n' "$chead" "$ferrdc"
+        printf 'TABLE\tSummary per %s\twide\tgsep=1,5,8,12,14,17,19\tnoagg=8,9,10,11,13,21\tpct=4:3:1+2;16:15:14+15\tautohide=Retry / Resubmit;State\tdrillcols=fin:1:Files_In,fout:2:Files_Out,%srauto:5:Retry,rmok:6:Resubmit_Ok,rmerr:7:Resubmit_Error,d90:8:Duration_p90,d95:9:Duration_p95,d99:10:Duration_p99,d100:11:Duration_p100,tok:14:Transfers_Ok,terr:15:Transfers_Error\n' "$chead" "$ferrdc"
         printf 'GHEAD\t\t@{colspan=4,class=gband gsep}Files\t@{colspan=3,class=gband gsep}Retry / Resubmit\t@{colspan=4,class=gband gsep}Duration\t@{colspan=2,class=gband gsep}Volume\t@{colspan=3,class=gband gsep}Transfers\t@{colspan=2,class=gband gsep}State\t@{colspan=3,class=gband gsep}Dates\n'
         printf 'HEAD\t%s\tIn\tOut\tError\tError %%\tAuto\tOk\tError\tp90\tp95\tp99\tp100\tTotal\tAvg\tOk\tError\tError %%\tWaiting\tExpired\tFirst\tLast\tDays\n' "$chead"
         printf 'KIND\t%s\tnum\tnum\tnumfailed\tnum\tnumwarn\tnumwarn\tnumfailed\tnum\tnum\tnum\tnum\tnum\tnum\tnumok\tnumfailed\tnum\tnumwarn\tnumfailed\ttext\ttext\tnum\n' "$nkind"

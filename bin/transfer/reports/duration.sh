@@ -17,17 +17,20 @@
 #   - duration-all.rpt   All (renders beside duration.html, not as a separate
 #                        menu/index entry)
 #
-# Tables (per view, SIDE BY SIDE — 2026-09-13, user request; until then the
-# second one was a sibling page pair, duration-minmax / duration-all-minmax,
-# reached by a Percentage / Min/Avg/Max button pair):
-#   Duration per day — percentiles: p10 / p25 / p50 / p75 / p90 / p95 / p98 /
-#     p99 / p100 (p100 = the day's longest File, the Max of the other table —
-#     added 2026-09-06, user request). FIRST: the home per-day table reads its
-#     p50/p75/p90/p95/p99 by title + position (bin/build/publish.sh).
-#   Duration per day — min / avg / median / max.
-# (The Top 50 longest Files and the duration
-# distribution moved to their own pages 2026-09-03 — duration-longest.sh,
-# duration-distribution.sh; the slowest subscriptions by p95 went to
+# Tables (per view, SIDE BY SIDE):
+#   Duration per day — percentiles: Date · Files | Average · Median | p10 /
+#     p25 / p50 / p75 / p90 / p95 / p98 / p99 / p100 — the former "min / avg
+#     / median / max" table MERGED in (2026-09-30, user request: after Files
+#     some extra space, then Average and Median, then some extra space — the
+#     gsep= dividers; Min and Max went, Max = p100). FIRST: the home per-day
+#     table reads its p50/p75/p90/p95/p99 by title + position
+#     (bin/build/publish.sh: ROW fields 8/9/10/11/13).
+#   Duration distribution — the wall-clock bands of THIS view's Files (moved
+#     here from Distribution & Store-and-forward 2026-09-30, user request —
+#     duration-distribution.sh folded in; each scope page shows its own
+#     scope, so the Delivered / All switch went with it).
+# (The Top longest Files moved to their own page 2026-09-03 —
+# duration-longest.sh; the slowest subscriptions by p95 went to
 # duration-slowest.sh 2026-09-05, a page since retired.)
 #
 # The per-day stat columns are NOT additive across days, so they are marked
@@ -72,10 +75,11 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
     local OKONLY=$1 OUT=$2 NAVLINE=$3 SCOPE_DESC=$4
 
     # main pass: per-day stats. Tagged col 1: 1=per-day (min/avg/max and
-    # the percentiles on one line), O=overall. (S=subscription left
-    # 2026-09-05; the D=distribution lines went with the histogram, owned
-    # by duration-distribution.sh.) OKONLY drops non-Processed Files (the
-    # "Delivered Files" view).
+    # the percentiles on one line), O=overall, B=one duration band (the
+    # distribution table: label ⇥ Files ⇥ Share ⇥ @data:buckets — the bands
+    # of duration-distribution.sh, folded in 2026-09-30). (S=subscription
+    # left 2026-09-05.) OKONLY drops non-Processed Files (the "Delivered
+    # Files" view).
     local agg; agg=$(awk -F'\t' -v okonly="$OKONLY" "$AWKLIB"'
         # The per-day table spells its durations in WHOLE units — no milliseconds
         # and no decimals, so a 12-column wide table stays scannable. Sub-second
@@ -114,6 +118,16 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
             }
         }
         function pctl(P) { return T[int((TN - 1) * P / 100 + 0.5) + 1] }
+        # the distribution bands (duration-distribution.sh until 2026-09-30)
+        function bkt(ms) {
+            if (ms <=     100) return 0
+            if (ms <=    1000) return 1
+            if (ms <=   10000) return 2
+            if (ms <=   60000) return 3
+            if (ms <=  300000) return 4
+            if (ms <= 1800000) return 5
+            return 6
+        }
         function nrank(p, nn) { return int((nn - 1) * p / 100 + 0.5) + 1 }
         function dentry(t,   f) { split(t, f, "|"); return f[2] "  " f[3] "  (" hdurms(f[1] + 0) ")" }
         function celllist(r, desc, nn,   start, end, i, out) {
@@ -136,6 +150,7 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
             dc[d]++; dsum[d] += ms; if (dc[d] == 1 || ms < dmin[d]) dmin[d] = ms; if (ms > dmax[d]) dmax[d] = ms
             DV[d SUBSEP dc[d]] = ms
             DVc[d SUBSEP dc[d]] = $1; DVt[d SUBSEP dc[d]] = $4 " " $5
+            b = bkt(ms); bkc[b]++; bkd[b SUBSEP d]++
         }
         END {
             nd = 0; for (d in dc) days[++nd] = d
@@ -152,12 +167,22 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
                 # 12 stat cells (min avg median max p10 p25 p50 p75 p90 p95
                 # p98 p99), then their 13 drill lists (L first, for the
                 # Date and Files cells); the Max drill reuses L.
+                # (the Min cell and its drill list — fields 4 / 17 — stay
+                # EMPTY since the min / avg / median / max table merged into
+                # the percentiles one, 2026-09-30: no Min column)
                 printf "1\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s", \
-                    d, n, hdc(dmin[d]), hdc(av), hdc(pctl(50)), hdc(dmax[d]), hdc(pctl(10)), hdc(pctl(25)), hdc(pctl(50)), hdc(pctl(75)), hdc(pctl(90)), hdc(pctl(95)), hdc(pctl(98)), hdc(pctl(99))
+                    d, n, "", hdc(av), hdc(pctl(50)), hdc(dmax[d]), hdc(pctl(10)), hdc(pctl(25)), hdc(pctl(50)), hdc(pctl(75)), hdc(pctl(90)), hdc(pctl(95)), hdc(pctl(98)), hdc(pctl(99))
                 printf "\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
-                    L, celllist(1, 0, n), celllist(ak, 0, n), celllist(nrank(50, n), 0, n), L, celllist(nrank(10, n), 0, n), celllist(nrank(25, n), 0, n), celllist(nrank(50, n), 0, n), celllist(nrank(75, n), 0, n), celllist(nrank(90, n), 0, n), celllist(nrank(95, n), 0, n), celllist(nrank(98, n), 0, n), celllist(nrank(99, n), 0, n)
+                    L, "", celllist(ak, 0, n), celllist(nrank(50, n), 0, n), L, celllist(nrank(10, n), 0, n), celllist(nrank(25, n), 0, n), celllist(nrank(50, n), 0, n), celllist(nrank(75, n), 0, n), celllist(nrank(90, n), 0, n), celllist(nrank(95, n), 0, n), celllist(nrank(98, n), 0, n), celllist(nrank(99, n), 0, n)
             }
             if (GN == 0) exit
+            # the distribution: one B line per band, its per-day counts as
+            # @data:buckets over the SORTED days (never hash order)
+            split("<= 100 ms|100 ms - 1 s|1 s - 10 s|10 s - 1 min|1 - 5 min|5 - 30 min|> 30 min", BL, "|")
+            for (b = 0; b <= 6; b++) {
+                bs = ""; for (i = 1; i <= nd; i++) { d = days[i]; c = ((b SUBSEP d) in bkd) ? bkd[b SUBSEP d] : 0; if (c > 0) bs = bs (bs ? "," : "") d ":" c }
+                printf "B\t%s\t%d\t%.1f%%\t@data:buckets=%s\n", BL[b+1], bkc[b] + 0, 100 * bkc[b] / GN, bs
+            }
             TN = GN; for (k = 1; k <= GN; k++) T[k] = G[k]; qsort(T, 1, GN)
             # cols 2-13 the raw figures, then the spellings the INTRO (humandur)
             # and the per-day TOTAL row (hd) need, in the order they are printed.
@@ -197,24 +222,23 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
     # (min avg median max p10 p25 p50 p75 p90 p95 p98 p99), $16-$28
     # their drill lists (L first, shared by the Date and Files cells).
     # Each view picks its columns; drill-cell-N is the view's own cell index.
-    local perday_mm; perday_mm=$(printf '%s\n' "$agg" | awk -F'\t' 'BEGIN{OFS="\t"} $1=="1"{
-        print "ROW", $2, $3, $4, $5, $6, $7, \
-            "@data:drill-cell-0=" $16, "@data:drill-cell-1=" $16, "@data:drill-cell-2=" $17, \
-            "@data:drill-cell-3=" $18, "@data:drill-cell-4=" $19, "@data:drill-cell-5=" $20
-    }')
-    # p100 (2026-09-06, user request) is the day's longest File — the Max cell
-    # ($7) and its drill list ($20) reused, so the two views agree to the ms.
-    # LAST column: the home per-day table reads p50/p75/p90/p99 from this
-    # table by POSITION (bin/build/publish.sh, cols 6/7/8/11).
+    # THE MERGED ROW (2026-09-30): Date · Files · Average ($5) · Median ($6)
+    # · p10..p99 ($8..$15) · p100 — the day's longest File, the Max cell ($7)
+    # and its drill list ($20) reused, so p100 equals the former Max to the
+    # ms. The home per-day table reads p50/p75/p90/p95/p99 from this table by
+    # POSITION (bin/build/publish.sh, ROW fields 8/9/10/11/13).
     local perday_pp; perday_pp=$(printf '%s\n' "$agg" | awk -F'\t' 'BEGIN{OFS="\t"} $1=="1"{
-        row="ROW" OFS $2 OFS $3
+        row="ROW" OFS $2 OFS $3 OFS $5 OFS $6
         for(i=8;i<=15;i++) row=row OFS $i
         row=row OFS $7
         row=row OFS "@data:drill-cell-0=" $16 OFS "@data:drill-cell-1=" $16
-        for(i=2;i<=9;i++) row=row OFS "@data:drill-cell-" i "=" $(i+19)
-        row=row OFS "@data:drill-cell-10=" $20
+        row=row OFS "@data:drill-cell-2=" $18 OFS "@data:drill-cell-3=" $19
+        for(i=4;i<=11;i++) row=row OFS "@data:drill-cell-" i "=" $(i+17)
+        row=row OFS "@data:drill-cell-12=" $20
         print row
     }')
+    # the distribution rows (B lines) and the scope total
+    local dist_rows; dist_rows=$(printf '%s\n' "$agg" | awk -F'\t' 'BEGIN{OFS="\t"} $1=="B"{ $1 = "ROW"; print }')
 
 
 
@@ -222,29 +246,32 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
         local OUT=$1 NAVLINE=$2
     {
         printf 'TITLE\tDuration\n'
-        if [ "$OKONLY" = 1 ]; then printf 'DESC\tHow long transfers take — per-day percentiles and min / avg / median / max (the longest Files and the distribution have their own pages). %s\n' "$SCOPE_DESC"; fi   # the start page reads duration.rpt's DESC only
+        if [ "$OKONLY" = 1 ]; then printf 'DESC\tHow long transfers take — per-day average, median and percentiles beside the duration distribution (the longest Files have their own page). %s\n' "$SCOPE_DESC"; fi   # the start page reads duration.rpt's DESC only
         printf '%s\n' "$NAVLINE"
 
         # Files keeps an explicit @{class=num}; the duration cells arrive
         # from hdc() carrying their own dur-<unit> class, and the renderer adds
         # the num alignment to those itself.
-        # THE TWO PER-DAY TABLES SIDE BY SIDE (2026-09-13, user request — the
-        # Min/Avg/Max sibling pages are gone): the percentiles table FIRST
+        # TWO TABLES SIDE BY SIDE (2026-09-30, user request): the per-day
+        # table FIRST — Date · Files | Average · Median | p10 … p100, the
+        # gsep= dividers giving the extra space after Files and after Median
         # (the home per-day table reads its p50/p75/p90/p95/p99 by TITLE and
-        # position — bin/build/publish.sh — so its title and columns stay),
-        # then min / avg / median / max; both `sxs` in one flex row.
-        printf 'TABLE\tDuration per day — percentiles\twide\tsxs\ttotaltop\tnoagg=2,3,4,5,6,7,8,9,10\n'
-        printf 'HEAD\tDate\tFiles\tp10\tp25\tp50\tp75\tp90\tp95\tp98\tp99\tp100\n'
-        printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\n'
-        printf 'TOTAL\tOverall (%s days)\t@{class=num}%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-            "$g_days" "$g_n" "$h_p10" "$h_p25" "$h_p50" "$h_p75" "$h_p90" "$h_p95" "$h_p98" "$h_p99" "$h_max"
+        # position — bin/build/publish.sh — so the title stays) — then the
+        # duration distribution of this view's Files; both `sxs`.
+        printf 'TABLE\tDuration per day — percentiles\twide\tsxs\ttotaltop\tgsep=2,4\tnoagg=2,3,4,5,6,7,8,9,10,11,12\n'
+        printf 'HEAD\tDate\tFiles\tAverage\tMedian\tp10\tp25\tp50\tp75\tp90\tp95\tp98\tp99\tp100\n'
+        printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\n'
+        printf 'TOTAL\tOverall (%s days)\t@{class=num}%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$g_days" "$g_n" "$h_avg" "$h_p50" "$h_p10" "$h_p25" "$h_p50" "$h_p75" "$h_p90" "$h_p95" "$h_p98" "$h_p99" "$h_max"
         printf '%s\n' "$perday_pp"
-        printf 'TABLE\tDuration per day — min / avg / median / max\twide\tsxs\ttotaltop\tnoagg=2,3,4,5\n'
-        printf 'HEAD\tDate\tFiles\tMin\tAvg\tMedian\tMax\n'
-        printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\n'
-        printf 'TOTAL\tOverall (%s days)\t@{class=num}%s\t%s\t%s\t%s\t%s\n' \
-            "$g_days" "$g_n" "$h_min" "$h_avg" "$h_p50" "$h_max"
-        printf '%s\n' "$perday_mm"
+        # the distribution (duration-distribution.sh until 2026-09-30): each
+        # band's per-day counts re-aggregate for the From/To range
+        printf 'TABLE\tDuration distribution\twide\tsxs\n'
+        printf 'HEAD\tDuration bucket\tFiles\tShare\n'
+        printf 'KIND\ttext\tnum\tnum\n'
+        printf 'RECALC\t-\ts0\t%%0\n'
+        printf '%s\n' "$dist_rows"
+        printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}100.0%%\n' "$g_n"
 
 
         printf 'SUMMARY\tFiles: %s  |  Median: %s  |  p95: %s  |  p99: %s  |  Max: %s\n' \

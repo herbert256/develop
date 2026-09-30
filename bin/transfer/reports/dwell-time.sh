@@ -11,18 +11,23 @@
 # outbound not starting before the inbound finished. Date arithmetic uses a
 # Julian-day-number helper (no `date` command), like the rest of the repo.
 #
-# Reads data/_transfers.tsv. Writes data/dwell-time.rpt.
+# Reads data/_transfers.tsv. Writes the PAGE's .rpt itself since 2026-09-30,
+# data/transfer/reports/duration-dwell.rpt — "Store-and-forward" (user
+# request: the Duration distribution table moved to the Duration page, so
+# the merged "Distribution & Store-and-forward" page and its merge step,
+# merge-duration-dwell.sh, went; dwell-time.rpt was its component).
 #
 # Usage:
-#   ./dwell-time.sh    # reads input/*.csv (via the cache), writes data/dwell-time.rpt
+#   ./dwell-time.sh    # reads input/*.csv (via the cache), writes data/transfer/reports/duration-dwell.rpt
 #
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
-OUT="$REPORTS_DIR/dwell-time.rpt"
+OUT="$REPORTS_DIR/duration-dwell.rpt"   # the page (transfer/duration-dwell.html)
 TOP_N=100
+DESC_TEXT="How long a file waits inside SecureTransport between its inbound and its outbound leg (the store-and-forward dwell): the distribution, the dwell per subscription and the gap per day."
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
@@ -114,7 +119,8 @@ if [ "${n_meas:-0}" -eq 0 ]; then
     # No data (e.g. a minimal dataset) is not an error — write an empty-state
     # page and exit 0, so the build's report pool does not abort.
     {
-        printf 'TITLE\tStore-and-Forward\n'
+        printf 'TITLE\tStore-and-forward\n'   # = its Reports menu label (2026-09-30)
+        printf 'DESC\t%s\n' "$DESC_TEXT"
         printf 'TABLE\tStore-and-forward dwell\n'
         printf 'HEAD\tDwell\n'
         printf 'KIND\ttext\n'
@@ -147,7 +153,8 @@ site_rows=$(printf '%s\n' "$agg" | grep $'^P\t' | LC_ALL=C sort -t"$(printf '\t'
     | awk -F'\t' -v n="$TOP_N" 'NR<=n { printf "ROW\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids=%s\n", $2, $3, $8, $9, $6, $7 }')
 
 {
-    printf 'TITLE\tStore-and-Forward\n'
+    printf 'TITLE\tStore-and-forward\n'   # = its Reports menu label (2026-09-30)
+    printf 'DESC\t%s\n' "$DESC_TEXT"
 
     printf 'TABLE\tDwell-time distribution\n'
     printf 'HEAD\tDwell\tFiles\tShare\n'

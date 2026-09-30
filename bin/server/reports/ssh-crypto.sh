@@ -420,7 +420,8 @@ subj_rows() {
 
 # ---- the two 2026-08 tables: algorithm-negotiation failures + PeSIT TLS ----
 # Emitted UNCONDITIONALLY (placeholder row when the family is absent) so the
-# merged ssh-security report keeps a constant TABLE count across the envs.
+# SSH tables keep a constant TABLE count across the envs (they ride the
+# Security Parameters page since 2026-09-30, appended after its SUMMARY).
 IFS=$'\t' read -r _ an_inc an_rows_n an_nsw an_topsw an_topswn an_first an_last <<< "$(printf '%s\n' "$agg" | grep $'^ANT\t' || printf 'ANT\t0\t0\t0\t?\t0\t-\t-\n')"
 IFS=$'\t' read -r _ pt_tot pt_combos pt_first <<< "$(printf '%s\n' "$agg" | grep $'^PTT\t' || printf 'PTT\t0\t0\t\n')"
 an_lines_tot=$(printf '%s\n' "$agg" | awk -F'\t' '$1=="AN"{s+=$3} END{print s+0}')
@@ -454,11 +455,21 @@ pt_rows() {
     emit_algo_table M "MAC algorithms"         "MAC"              mac
     emit_algo_table U "Public-key algorithms"  "Public key"       pubkey
 
-    printf 'TABLE\tDeprecated-parameter warnings\twide\n'
+    # restint + @data:res = the SUBSCRIPTION's result colour (2026-09-30: the
+    # table rides the transfer Security Parameters page now, where the server
+    # publish's automatic subscription tint (render_rpt subtint) does not
+    # apply — the same rule: the name uppercased against base/_subscriptions.tsv
+    # col 3, an unconfigured name untinted)
+    printf 'TABLE\tDeprecated-parameter warnings\twide\trestint\n'
     printf 'HEAD\tParameter\tAccount\tSubscription\tRemote host\tWarnings\tFirst\tLast\n'
     printf 'KIND\tmono\tacct\tsite\thost\tnumwarn\ttext\ttext\n'
     printf 'RECALC\t-\t-\t-\t-\ts0\t-\t-\n'
-    dep_rows
+    dep_rows | awk -F'\t' -v OFS='\t' -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" '
+        BEGIN { while ((getline l < SUBRES) > 0) { n = split(l, a, "\t")
+                    if (n >= 3 && a[1] != "" && (a[3] == "green" || a[3] == "orange" || a[3] == "red")) R[toupper(a[1])] = a[3] }
+                close(SUBRES) }
+        { s = $4; sub(/^@\{[^}]*\}/, "", s); k = toupper(s)
+          if (s != "" && (k in R)) print $0, "@data:res=" R[k]; else print }'
     printf 'TOTAL\t@{colspan=4}Total (%s combination(s))\t@{class=num warn}%s\t\t\n' "$n_dep_rows" "$dep"
 
 

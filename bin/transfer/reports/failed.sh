@@ -165,9 +165,10 @@ ERRDIR="$REPORTS_DIR/errors"
 # bin/transfer/publish.sh). Since 2026-09-29 (user request: per subscription
 # only the newest OK File and the three newest Failed Files are published —
 # bin/transfer/filepages.sh, _filepages.tsv) the files/ set is the kind-O
-# CoreIds of that list alone: the patterns / Longest Files / drill-cell /
-# Expired / Waiting side lists that forced pages here went, their writers
-# link a File only when the published set holds it.
+# (and since 2026-09-30 the kind-L, the Longest Files page's rows) CoreIds of
+# that list: the patterns / drill-cell / Expired / Waiting side lists that
+# forced pages here went, their writers link a File only when the published
+# set holds it.
 FILEDIR="$REPORTS_DIR/files"
 FPF="$CACHE_DIR/_filepages.tsv"; [ -f "$FPF" ] || FPF=/dev/null
 # The server parse cache (the "What the server log said" sections); an env
@@ -262,7 +263,8 @@ rm -rf "$FILEDIR"; mkdir -p "$FILEDIR"
 : > "$TMP/filepages"; : > "$TMP/fileset"; : > "$TMP/overlap"
 # THE PUBLISHED SET GETS ITS PAGES (2026-09-29): every CoreId of
 # _filepages.tsv (bin/transfer/filepages.sh — per subscription the newest
-# DELIVERED File, kind O, and the three newest FAILED Files, kind E) has a
+# DELIVERED File, kind O, the three newest FAILED Files, kind E, and the
+# Longest Files, kind L — 2026-09-30) has a
 # page under docs/files/. An E File the evidence selection below already
 # pages (the leg selection, the window guarantee — errors/, the reasons read
 # them) keeps that drill page (the overlap step drops it here); every other
@@ -272,7 +274,7 @@ rm -rf "$FILEDIR"; mkdir -p "$FILEDIR"
 # (the 2026-09-28 rule). The O pages give the "Latest OK" row of
 # a detail page's Features table its target; no back link (the facts table
 # links the subscription the File belongs to).
-awk -F'\t' '$2 == "O" || $2 == "E" { print $1 "\t" $2 }' "$FPF" | LC_ALL=C sort > "$TMP/fileside"
+awk -F'\t' '$2 == "O" || $2 == "E" || $2 == "L" { print $1 "\t" $2 }' "$FPF" | LC_ALL=C sort > "$TMP/fileside"
 if [ -s "$TMP/fileside" ]; then
     LC_ALL=C awk -F'\t' -v OFS='\t' -v topf="$TMP/all" -v extraf="$TMP/extra" -v sidef="$TMP/fileside" \
         -v setf="$TMP/fileset" -v ovf="$TMP/overlap" '

@@ -191,7 +191,8 @@ daily_loglines_tsv() {   # $1 = the data root (data)
         # a duration cell "@{class=dur-s}3 s" -> its class / its text ("-" when absent)
         function dcls(v) { if (v !~ /^@\{class=/) return "-"; sub(/^@\{class=/, "", v); sub(/\}.*/, "", v); return v }
         function dtxt(v) { sub(/^@\{[^}]*\}/, "", v); return v == "" ? "-" : v }
-        # the Duration group: p50/p75/p90/p95/p99 (cols 6/7/8/9/11) of the
+        # the Duration group: p50/p75/p90/p95/p99 (ROW fields 8/9/10/11/13 — the
+        # Average / Median columns before the percentiles since 2026-09-30) of the
         # "Duration per day — percentiles" table (the FIRST of its two
         # side-by-side tables)
         FILENAME ~ /duration\.rpt$/ {
@@ -199,7 +200,7 @@ daily_loglines_tsv() {   # $1 = the data root (data)
             if (!intab || $1 != "ROW") next
             dd = $2; sub(/^@\{[^}]*\}/, "", dd)
             if (dd !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) next
-            for (p = 0; p < 5; p++) { c = (p == 4 ? 11 : 6 + p); dc[dd, p] = dcls($c); dv[dd, p] = dtxt($c) }
+            for (p = 0; p < 5; p++) { c = (p == 4 ? 13 : 8 + p); dc[dd, p] = dcls($c); dv[dd, p] = dtxt($c) }
             hasdur[dd] = 1
             next
         }

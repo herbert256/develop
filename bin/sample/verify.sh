@@ -831,7 +831,10 @@ done
 # the By protocol Transfers total = the caches' Processed legs
 n=$(awk -F'\t' '$1 == "HEAD" && (/\tOK\t|\tOK$|\tError\t|\tError$/) { n++ } END { print n + 0 }' data/transfer/reports/protocol.rpt data/transfer/reports/security-params.rpt data/transfer/reports/secparams/*.rpt 2>/dev/null)
 check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "protocol / security-params rpts still have $n table header(s) with an OK / Error column"
-n=$(grep -c 'class="num failed"\|class="num processed"' docs/transfer/protocol-*.html docs/transfer/security-params.html docs/transfer/secparams/*.html 2>/dev/null | awk -F: '{ s += $2 } END { print s + 0 }')
+# (security-params.html: its FIRST table only — the server log SSH tables
+# appended below it since 2026-09-30 carry red failure counts by design)
+n=$( { grep -c 'class="num failed"\|class="num processed"' docs/transfer/protocol-*.html docs/transfer/secparams/*.html 2>/dev/null | awk -F: '{ s += $2 } END { print s + 0 }'
+       awk '/<\/table>/ { exit } { n += gsub(/class="num failed"|class="num processed"/, "") } END { print n + 0 }' docs/transfer/security-params.html 2>/dev/null; } | awk '{ s += $1 } END { print s + 0 }')
 check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n green/red (OK/Error) cells left on the Protocol & Security group pages"
 want=$(awk -F'\t' '{ s = $3; sub(/ Subtransmission$/, "", s); if (s == "Processed") n++ } END { print n + 0 }' "$T" 2>/dev/null)
 got=$(awk -F'\t' '$1 == "TABLE" && $2 == "Protocol × direction" { p = 1 } p && $1 == "TOTAL" { v = $3; sub(/^@\{[^}]*\}/, "", v); print v + 0; exit }' data/transfer/reports/protocol.rpt 2>/dev/null)
@@ -839,12 +842,13 @@ check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "protocol Protocol �
 
 # the Duration report holds BOTH per-day tables side by side (2026-09-13,
 # user request): percentiles first (the home page reads it by title), then
-# min / avg / median / max; the Min/Avg/Max sibling pages are gone and the
+# the Duration distribution (2026-09-30: the min / avg / median / max table
+# merged into the percentiles table); the Min/Avg/Max sibling pages are gone and the
 # button row keeps only the OK / All pair — for both scopes
 for p in duration duration-all; do
     n=$(grep -c '<table' "docs/transfer/$p.html" 2>/dev/null)
     check $([ "${n:-0}" = 2 ] && echo 0 || echo 1) "transfer/$p.html has ${n:-0} table(s), expected the two side-by-side per-day tables"
-    check $([ "$(grep -c '<h2[^>]*>Duration per day — percentiles' "docs/transfer/$p.html" 2>/dev/null)" = 1 ] && [ "$(grep -c '<h2[^>]*>Duration per day — min / avg / median / max' "docs/transfer/$p.html" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "transfer/$p.html lacks one of the two per-day table headings"
+    check $([ "$(grep -c '<h2[^>]*>Duration per day — percentiles' "docs/transfer/$p.html" 2>/dev/null)" = 1 ] && [ "$(grep -c '<h2[^>]*>Duration distribution' "docs/transfer/$p.html" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "transfer/$p.html lacks one of the two per-day table headings"
     check $([ "$(grep -c 'class="sxs"' "docs/transfer/$p.html" 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "transfer/$p.html does not lay its tables out side by side (.sxs)"
     n=$(grep -o 'class="tab[^"]*"[^>]*>[^<]*<' "docs/transfer/$p.html" 2>/dev/null | grep -c 'Delivered Files\|All Files')
     check $([ "${n:-0}" = 2 ] && [ "$(grep -c 'Min/Avg/Max\|>Percentage<' "docs/transfer/$p.html" 2>/dev/null)" = 0 ] && echo 0 || echo 1) "transfer/$p.html button row: ${n:-0} scope buttons, and the Percentage / Min/Avg/Max pair must be gone"
@@ -1071,7 +1075,12 @@ check $([ -f docs/reports/index.html ] && [ ! -f docs/transfer/index.html ] && [
 # the FIRST ROW links across directories: the Overview group joins both Top
 # views, and every group member page carries exactly one group tag
 check $(grep -q '<a class="tab" href="../server/topview.html">Server top view</a>' docs/transfer/topview.html 2>/dev/null && grep -q '<a class="tab" href="../transfer/topview.html">Transfer top view</a>' docs/server/topview.html 2>/dev/null && echo 0 || echo 1) "the Overview first row does not join transfer/topview.html and server/topview.html"
-check $(grep -q '<a class="tab" href="../server/ssh-security.html">SSH security</a>' docs/transfer/av-scan-*.html 2>/dev/null; r1=$?; grep -q 'href="../transfer/protocol-' docs/server/ssh-security*.html 2>/dev/null; r2=$?; [ "$r1" = 0 ] && [ "$r2" = 0 ] && echo 0 || echo 1) "the Protocols & security first row does not join the transfer protocol pages and server SSH security"
+check $(grep -q '<a class="tab" href="security-params.html">Security Parameters</a>' docs/transfer/av-scan-*.html 2>/dev/null; r1=$?; grep -q 'href="protocol-' docs/transfer/security-params.html 2>/dev/null; r2=$?; [ "$r1" = 0 ] && [ "$r2" = 0 ] && echo 0 || echo 1) "the Protocols & security first row does not join the transfer protocol pages and Security Parameters"
+# SSH security MERGED into Security Parameters (2026-09-30, user request):
+# no server/ssh-security page, merge script or help page; the SSH tables
+# (Cipher suites … Session-lifecycle problems) sit on security-params.html
+n=$(ls docs/server/ssh-security*.html bin/server/reports/ssh-security.sh docs/help/server-ssh-crypto.html data/server/reports/ssh-security.rpt 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-0}" = 0 ] && grep -q '<h2>Cipher suites</h2>' docs/transfer/security-params.html 2>/dev/null && grep -q '<h2>Session-lifecycle problems</h2>' docs/transfer/security-params.html 2>/dev/null && ! grep -rqs 'server/ssh-security\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "SSH security is not merged into transfer/security-params.html (or an ssh-security page / link / help page is back)"
 bad=0; for f in docs/transfer/duration.html docs/transfer/duration-all.html docs/transfer/duration-longest.html docs/analyses/failed.html docs/analyses/failed-sub-all.html docs/analyses/xref/cross-account-subscriptions.html docs/transfer/entities/subscription-all.html docs/transfer/waiting.html; do
     [ "$(grep -o 'class="grouptag"' "$f" 2>/dev/null | wc -l | tr -d ' ')" = 1 ] || { bad=$((bad + 1)); echo "  no single group tag: $f" >&2; }
 done

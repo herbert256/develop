@@ -104,7 +104,13 @@ append_rpt_tables "$REPORTS_DIR/topview.rpt" "$REPORTS_DIR/errors-day.rpt"
 # EventQueue — was removed 2026-09-27, user request: its merges and the
 # cluster-health / stuck-events / scheduler-overruns / file-cleanup
 # components went; pesit.sh and event-queue.sh stay for the graph sidecars.)
-"$SCRIPT_DIR/reports/ssh-security.sh"
+# SSH security rides the transfer SECURITY PARAMETERS page since 2026-09-30
+# (user request: "Merge /transfer/security-params.html and
+# /server/ssh-security.html into 1 report"): the ssh-crypto + ssh-sessions
+# tables are appended to security-params.rpt (written by transfer phase 1,
+# final here) after its SUMMARY line; the SSH security merge and its page went.
+# A hand-run security-params.sh drops them until these server reports run again.
+append_rpt_tables -f "$TRANSFER_REPORTS/security-params.rpt" "$REPORTS_DIR/ssh-crypto.rpt" "$REPORTS_DIR/ssh-sessions.rpt"
 "$SCRIPT_DIR/../analyses/reports/uc3-polling.sh"   # the UC3 tab's polling tables: reads remote-poll.rpt + its sidecars — after the pool, before the uc-status merge (2026-09-05)
 "$SCRIPT_DIR/../analyses/reports/polling.sh"   # the flat Polling page (Analyses / Configuration): remote-poll.rpt + sidecars + the cron schedules in ONE table (2026-09-05)
 "$SCRIPT_DIR/../analyses/reports/uc2-visits.sh"   # formats uc2-status.sh's pickup sidecar — after the pool, before the uc-status merge (its table rides the UC2 tab, 2026-09-29)

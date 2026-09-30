@@ -63,10 +63,11 @@ awk -F'\t' "$AWKLIB"'
     function mx(a, b) { return a > b ? a : b }
     # The Typical cell shows the baseline the ratio was computed AGAINST: the
     # historical median, lifted to the floor of the rule when the median sits
-    # below it — then annotated, so Value / Typical always reproduces x typical
-    # (audit F07, 2026-09-05: the daily Duration row showed 25.3 s and 34.7x
-    # while the ratio used the 60 s floor).
-    function tyc(shown, raw, floor, fmt) { return shown ((raw < floor) ? " (floor; typical " fmt ")" : "") }
+    # below it, so Value / Typical always reproduces x typical (audit F07,
+    # 2026-09-05: the daily Duration row showed 25.3 s and 34.7x while the
+    # ratio used the 60 s floor). The "(floor; typical …)" note that named
+    # the lifted median went 2026-09-30 (user request) — the help page says it.
+    function tyc(shown, raw, floor, fmt) { return shown }
     {
         d = $4; if (d == "") next
         if (!(d in DSEEN)) { DSEEN[d] = 1; DL[++ND] = d }

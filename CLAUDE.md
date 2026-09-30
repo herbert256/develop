@@ -699,8 +699,8 @@ renders no From/To and neither restores nor persists the shared per-area range.
 **Column KINDs**: `text num numfailed numprocessed numok numerr numwarn bar file mono acct site
 login host lgc ptn app dom bl clines clinks pre prose` (`failed` / `processed` / `numsep` / `ip` / `lines` went
 2026-09-29 — no writer used them; `numok` / `numerr` TINT like numprocessed / numfailed without
-counting as the row's OK / Error cell for the drill binding; `prose` = a sentence cell that wraps
-between 30 and 46 rem — the detail Last server log Message).
+counting as the row's OK / Error cell for the drill binding; `prose` = a SERVER-LOG MESSAGE cell — since 2026-09-30 it never wraps, see "Server-log lines never
+wrap" below).
 Entity KINDs link to the detail page, the
 slug resolved through that dir's comprehensive `_slugmap.tsv` — no map entry, no link.
 `clines` collapsible (3+ lines fold behind `⋯`), `clinks` the same with every line a link
@@ -1389,7 +1389,8 @@ MIX areas by question: Overview (the two Top views — a top-bar link, not a men
 and Subscriptions in boxes went the same day) · Entities · Errors (Failures until 2026-09-29; + the server log errors: Errors, Per flow, IO
 errors, Routing errors — the separate "Server log errors" group was folded in 2026-09-29, user
 request; + Unknown transfers) · Use cases & delivery · Activity & volume · Performance
-· Flow patterns · Protocols & security (incl. the server SSH security) · Logons & connections ·
+· Flow patterns · Protocols & security (Security Parameters carries the SSH security tables since
+2026-09-30) · Logons & connections ·
 Partners · Configuration · Coverage — every published report is in exactly one (the
 former boxes-only reports included). (The **Cleanup** group — Cleanup backlog, Config hygiene,
 Whitelist audit, Account sharing, Twins — went 2026-09-29 with Sources and targets, File journey
@@ -1434,8 +1435,9 @@ list names them; `_merge_pad` pads a missing component with
 empty stubs — 0 for a component whose tables ride another one's tab via `tab=KEY`). The merge
 ends its component run with a `META merged` sentinel so the last component's trailing NOTE
 stays on its own tab instead of footering onto every tab (2026-09-05). **`append_rpt_tables
-TARGET COMP…`** (same file, 2026-09-29) is the lighter sibling: it inserts the components' TABLE
-blocks into an EXISTING report before its first SUMMARY/FOOT — the server Top view carries the
+[-f] TARGET COMP…`** (same file, 2026-09-29) is the lighter sibling: it inserts the components' TABLE
+blocks into an EXISTING report before its first SUMMARY/FOOT (with `-f`, 2026-09-30: before its FOOT,
+after its SUMMARY — how Security Parameters takes the ssh-crypto + ssh-sessions tables) — the server Top view carries the
 errors-day levels-per-component table that way. **The 2026-09-29 consolidation** ("too many
 reports", user request) folded pages into tabs and stacked tables (`tab=KEY`) instead of
 separate pages: Sizes (files + top-transfers + size-profile), File in - File out (+ UC4 to UC2),
@@ -1743,6 +1745,40 @@ front end) then four fix workers with disjoint files. The rules it left:
 - **Detail pages**: the Waiting/Expired summary is HELD and rendered after the Features block
   (`we_table`), so the section order does not depend on whether an entity has such Files.
 
+## Rules from the 2026-09-30 "few little things" batch (user request)
+
+- **Reports pulldown**: Performance is the FIRST group line (after the Start page); Overview,
+  Entities and Errors above it in `_report_groups` are top-bar links.
+- **Security Parameters = one report with the SSH security tables** (transfer/security-params.html):
+  `bin/server/reports.sh` runs `append_rpt_tables -f "$TRANSFER_REPORTS/security-params.rpt"
+  ssh-crypto.rpt ssh-sessions.rpt`; `ssh-security.sh`, `server/ssh-security.html` and
+  `help/server-ssh-crypto.html` are GONE (never restore). The Deprecated-parameter warnings rows
+  carry their own `@data:res` (the server publish's automatic subscription tint does not reach a
+  transfer page). A hand-run security-params.sh drops the SSH tables until the server reports run.
+- **Entities Waiting / Expired cells LINK** `transfer/waiting.html` / `expired.html` — on the
+  Subscriptions pages with `?axway_row=<subscription>` (the real name, URL-encoded), the other
+  entities the page itself; their `coreids-wait` / `coreids-exp` drills went (S| fields 28–29 stay,
+  empty). report.js `setCellVal` keeps a recalculated cell's ONE link (a 0 blanks the cell).
+- **Duration** = the per-day table Date · Files | Average · Median | p10…p100 (`gsep=2,4`; Min / Max
+  went — Max = p100; the home reads p50/p75/p90/p95/p99 by title from ROW fields 8/9/10/11/13) BESIDE
+  the Duration distribution of the same scope (duration-distribution.sh folded into duration.sh).
+  **Store-and-forward** (`duration-dwell.html`, "Distribution & Store-and-forward" until 2026-09-30)
+  is written by dwell-time.sh itself (merge-duration-dwell.sh went). Anomalies' Typical = the baseline
+  the ratio used; the "(floor; typical …)" note went.
+- **Longest Files**: 250 rows (the L set), columns Duration · Start · End · File · Subscription ·
+  CoreId, the WHOLE row opens the File page.
+- **Server-log lines never wrap**: ONE class `.logline` (`white-space:pre`) — render_rpt sets it on
+  KIND `prose` cells and the Message / Message shape / Example message / Latest message / What goes
+  wrong columns and the LOGCARD message; report.js on log-line drill entries. The page scrolls sideways.
+- **A CoreId links to its File page, site-wide** (render_rpt): a cell whose value is a CoreId in
+  `_filepages.tsv` links `files/<id>.html` (whole-cell `cl`; prefix `FPRE` from the page depth); the
+  row's file-name cell (KIND `file`, or a File / File name / Filename column) links the same page when
+  the row holds exactly ONE such CoreId (`ROWFP1`); not on TOTAL rows, row-drill rows, cells with an
+  explicit link or `Value` columns. report.js still adds the File Tracking ↗ after an id that is a
+  link. A writer needs no `@{href=../files/…}` of its own on a CoreId cell any more.
+- **File names never wrap or get cut**: `td.file` (KIND file) and `td.fn` (text-KIND File / File
+  name / Filename columns) are `nowrap`; the 480 px ellipsis went.
+
 ## Rules from the 2026-09-30 lean rounds (user request: "make this site mean and lean")
 
 - **Shared awk helpers**: a date, byte / duration formatter, `lit()`, HTML escape, slug or numeric
@@ -1847,7 +1883,9 @@ last 3 errors of a subscription … Move Overview to the top menu bar, just befo
 - **analyses/accounts.html** has no Breaking naming rules table; **Failed Subscriptions** ends
   with the CoreId / SessionId column.
 - **docs/files/** = the `_filepages.tsv` set (see `files/` above): per subscription the newest OK
-  and the three newest Error Files. A new writer that links a File page tests membership there
+  (O) and the three newest Error Files (E), plus the Longest Files page's rows (L, 2026-09-30: the
+  250 longest delivered Files, at most 10 per subscription — `bin/transfer/filepages.sh` makes the
+  selection, `duration-longest.sh` lists exactly those rows, each row opening its File page). A new writer that links a File page tests membership there
   (or, for a drill, lets render_rpt's `data-fp` decide).
 
 ## Rules from the external audit of 2026-09-29 (audit.html in develop/, 17 findings)

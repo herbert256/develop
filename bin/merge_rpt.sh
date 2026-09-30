@@ -25,14 +25,15 @@
 _merge_pad() {
     case $(basename "$1" .rpt) in
         hourly|legs-count) echo 2 ;;   # (protocol-journey 2->1: its last-leg table went 2026-09-29)   # (error-reasons stays 1: its 2026-09-28 second table, Reasons over time, rides its tab — tab=reasons)
-        resubmissions|auth-activity) echo 3 ;;   # resubmissions 2->3 (2026-08: + server-log outcomes); dwell-time merges in merge-duration-dwell.sh, not here
+        resubmissions|auth-activity) echo 3 ;;   # resubmissions 2->3 (2026-08: + server-log outcomes); dwell-time.sh writes duration-dwell.rpt itself (merge-duration-dwell.sh went 2026-09-30)
         size-profile) echo 2 ;;   # a Sizes component (the Trends components trend / duration-trend went with their page, 2026-09-29)
         # errors-day 2->1 and error-timing 3->1 (2026-09-28: the per-day table = the Top view; hour + weekday folded into the heatmap)
         attempts|logon) echo 4 ;;         # logon 2->4 (2026-08: + the door-knocker tables)
         size-dist) echo 2 ;;
         connection-diagnostics) echo 4 ;;   # connection-diagnostics 3->5 (2026-08), 5->4 (2026-09-28: Whitelist usage + Test outcomes gone)
         inbound-connections) echo 3 ;;      # 5->4 (2026-09-28), 4->3 (2026-09-29: Connections by protocol gone)
-        ssh-crypto) echo 10 ;;            # 8->10 (2026-08: + negotiation failures + PeSIT TLS); a PRESENT ssh-crypto has 8, or 10 when it logged hygiene signals (+ Hygiene signals + Certificate chain errors) — ssh-security has no report_tabs, its tables stack on one page, so the pad only sizes a missing component
+        # (ssh-crypto: merged no more since 2026-09-30 — its tables are
+        # APPENDED to Security Parameters, append_rpt_tables -f)
         uc3-polling|uc2-visits|pickups|no-remote-dir|no-remote-files) echo 0 ;;   # ride the UC2 / UC3 tabs (2026-09-29)            # RIDES the UC3 tab (its tables carry tab=uc3, 2026-09-05): a missing one contributes NO tab page
         *) echo 1 ;;
     esac
@@ -84,8 +85,13 @@ merge_rpt() {
 # is inserted before TARGET's first SUMMARY or FOOT line, so the tables render
 # below TARGET's own on the same page. A missing component is skipped; a
 # missing TARGET leaves nothing to do. The components stay on disk as
-# unpublished intermediates, like merge_rpt's.
+# unpublished intermediates, like merge_rpt's. With -f first (2026-09-30) the
+# tables go before TARGET's FOOT instead — AFTER its SUMMARY, which renders
+# where it stands and so stays under TARGET's own table (the Security
+# Parameters summary line above the appended SSH tables).
 append_rpt_tables() {
+    local atfoot=0
+    [ "${1:-}" = -f ] && { atfoot=1; shift; }
     local target=$1; shift
     [ -f "$target" ] || return 0
     local have=() c
@@ -99,8 +105,11 @@ append_rpt_tables() {
         $1 == "SUMMARY" || $1 == "FOOT" || $1 == "META" || $1 == "TITLE" || $1 == "DESC" || $1 == "KEYWORDS" || $1 == "NAV" { next }
         { print }
     ' "${have[@]}" > "$blk"
-    awk -v BLK="$blk" '
-        !done && (/^SUMMARY\t/ || /^FOOT\t/) { while ((getline l < BLK) > 0) print l; done = 1 }
+    awk -v BLK="$blk" -v ATFOOT="$atfoot" '
+        # (the default keeps its 2026-09-29 match — /^FOOT\t/ never meets the
+        # bare "FOOT" line, so a TARGET without SUMMARY gets the block at END;
+        # -f matches the bare FOOT itself)
+        !done && ((!ATFOOT && (/^SUMMARY\t/ || /^FOOT\t/)) || (ATFOOT && /^FOOT(\t|$)/)) { while ((getline l < BLK) > 0) print l; done = 1 }
         { print }
         END { if (!done) while ((getline l < BLK) > 0) print l }
     ' "$target" > "$target.tmp" && mv "$target.tmp" "$target"

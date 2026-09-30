@@ -378,7 +378,7 @@ emit_attr_rows() {   # $1 = attribute key
 
 {
     printf 'TITLE\tSecurity Parameters\n'   # = its Reports menu label (2026-09-29)
-    printf 'DESC\tEvery attribute parsed from the SecurityParameters column — TLS version, cipher, cipher suite, MAC, key exchange, public key — in one table.\n'
+    printf 'DESC\tThe cryptography in use: every SecurityParameters attribute of the transfer legs, then the server log SSH negotiations with weak algorithms flagged, deprecated-parameter warnings, PeSIT TLS and session problems.\n'   # (+ the SSH security tables since 2026-09-30, appended by bin/server/reports.sh)
     printf 'TABLE\t\tnoagg=2\n'
     printf 'HEAD\tAttribute\tValue\tOK transfers\n'
     printf 'KIND\ttext\ttext\tnum\n'

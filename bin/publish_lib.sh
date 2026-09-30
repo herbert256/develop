@@ -184,7 +184,7 @@ CUR_DATES=""
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
 transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out same-protocol activity cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage skipped not-in-flow-manager ranking files failed episodes failed-files unknown-transfers waiting expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell duration-all)
-server_order=(topview errors failure-flows io-errors routing-errors uc-status polling logons connections ssh-security missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab); site-failures one since 2026-09-28 (its rows = the Per flow connection-failure rows); routing-errors = the 2026-09-28 merge of could-not-send, publish-failed and post-client-action
+server_order=(topview errors failure-flows io-errors routing-errors uc-status polling logons connections missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab); site-failures one since 2026-09-28 (its rows = the Per flow connection-failure rows); routing-errors = the 2026-09-28 merge of could-not-send, publish-failed and post-client-action
 
 # ---- the analyses-housed area reports ---------------------------------------
 # The reports whose PAGES live in docs/analyses/ — whatever area their DATA
@@ -313,7 +313,7 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         app-partners) echo "Application dependencies" ;;
         partners-in) echo "Partners - Incoming" ;;
         errors) echo "Errors" ;; connections) echo "Connections" ;; logons) echo "Logons" ;;
-        ssh-security) echo "SSH security" ;; missing-entities) echo "Missing entities" ;;
+        missing-entities) echo "Missing entities" ;;   # (ssh-security: SSH security went 2026-09-30 — its tables ride Security Parameters)
         uc-status) echo "UC status" ;; polling) echo "Polling" ;;
         anomalies) echo "Anomalies" ;;
         account) echo "Accounts" ;; login) echo "Logins" ;; subscription) echo "Subscriptions" ;;
@@ -332,7 +332,7 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         protocol) echo "Protocol, Direction & Mode" ;;
         ranking) echo "Ranking" ;;
         duration|duration-all) echo "Duration" ;; duration-longest) echo "Longest Files" ;;
-        duration-dwell) echo "Distribution & Store-and-forward" ;;
+        duration-dwell) echo "Store-and-forward" ;;   # "Distribution & Store-and-forward" until 2026-09-30 (its Duration distribution table moved to Duration)
         security-params) echo "Security Parameters" ;; av-scan) echo "AV Scan" ;;
     esac
 }
@@ -895,7 +895,6 @@ help_slug_for() {   # $1 area (transfer|server)  $2 report basename
         errors)              echo "server-errors-day" ;;
         connections)         echo "server-inbound-connections" ;;
         logons)              echo "server-logon" ;;
-        ssh-security)        echo "server-ssh-crypto" ;;
         uc-status)           echo "server-uc1-status" ;;
         files)               echo "size-dist" ;;
         episodes)            echo "recovered" ;;   # 2026-09-29: its Episodes tab went — the report IS Recovered flows
@@ -2019,15 +2018,18 @@ render_month_stats() {   # $1 area
 # Failures was renamed ERRORS the same day (user request: "Rename Failures to
 # Errors") — out of the pulldown, a top-bar link of its own (assets/topbar.js).
 _report_groups() {
+    # Performance is the FIRST pulldown line (2026-09-30, user request "Have
+    # Performance as first row in the Reports pulldown"): Overview, Entities
+    # and Errors above it are top-bar links, not menu lines.
     printf '%s\n' \
         "Overview|transfer/topview=Transfer top view|server/topview=Server top view" \
         "Entities|transfer/entities/subscription=Subscriptions|transfer/entities/logical=Logical|transfer/entities/partner=Partners|transfer/entities/account=Accounts|transfer/entities/login=Logins|transfer/entities/remote-host=Hosts|transfer/entities/domain=Domains|transfer/entities/application=Applications|transfer/entities/bl=BL" \
         "Errors|analyses/failed=Failed Subscriptions|analyses/failing-reasons=Error reasons|transfer/failed-files=Failed files|transfer/unknown-transfers=Unknown transfers|transfer/pirates=One-legged|transfer/episodes=Recovered flows|transfer/retries=Retries & resubmissions|transfer/failure-heatmap=Failure heatmap|server/errors=Errors|server/failure-flows=Per flow|server/io-errors=IO errors|server/routing-errors=Routing errors" \
+        "Performance|transfer/duration=Duration|transfer/duration-longest=Longest Files|transfer/duration-dwell=Store-and-forward|transfer/anomalies=Anomalies" \
         "Use cases & delivery|analyses/use-cases=Use cases|analyses/uc-status=UC status|analyses/polling=Polling|transfer/waiting=Waiting|transfer/expired=Expired|transfer/went-quiet=Went quiet" \
         "Activity & volume|transfer/activity=Activity|transfer/ranking=Ranking|transfer/files=Sizes & types|transfer/month-stats/this=Month stats" \
-        "Performance|transfer/duration=Duration|transfer/duration-longest=Longest Files|transfer/duration-dwell=Distribution & Store-and-forward|transfer/anomalies=Anomalies" \
         "Flow patterns|transfer/file-journey=File journey|transfer/file-in-file-out=File in - File out|transfer/same-protocol=Inbound and Outbound same Protocol" \
-        "Protocols & security|transfer/protocol=Protocol, Direction & Mode|transfer/security-params=Security Parameters|transfer/security-outreach=Security outreach|transfer/av-scan=AV Scan|transfer/connection-efficiency=Connection efficiency|server/ssh-security=SSH security" \
+        "Protocols & security|transfer/protocol=Protocol, Direction & Mode|transfer/security-params=Security Parameters|transfer/security-outreach=Security outreach|transfer/av-scan=AV Scan|transfer/connection-efficiency=Connection efficiency" \
         "Logons & connections|server/logons=Logons|server/connections=Connections" \
         "Partners|analyses/partners-in=Partners - Incoming|analyses/partner-scorecard=Partner scorecard|analyses/blast-radius=Blast radius|analyses/app-partners=Application dependencies" \
         "Configuration|analyses/subscriptions=Configured subscriptions|analyses/accounts=Configured accounts|analyses/logical-detection=Logical detection|analyses/xref/cross=Cross References" \
