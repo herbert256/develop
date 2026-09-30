@@ -130,11 +130,13 @@ flag, UPPERCASE flag = the CoreId has a files/ page; each shard carries its own 
 dictionary, so an old day's shard is byte-identical build to build) + the manifest
 `search/all/index.js` (`window.AXWAY_AFX`: the subscription→slug dictionary and per day its count,
 subscriptions, shard cksum and a BLOOM FILTER — the name trigrams that hold a non-[0-9a-f-]
-character + "#"+8hex CoreId tokens, 8+ bits per item, three hashes; the engine derives its
+character + "#"+8hex tokens of the UUID runs in a NAME (the CoreId is NOT searched since 2026-09-30,
+user request: "please drop searching in coreid in the file search" — it stays a result column and files
+no token, one index entry per File less), 8+ bits per item, three hashes; the engine derives its
 filter items from the RAW query words, never the Unicode-lowercased ones — the generator folds in
 the C locale, and a lowercase like "İ" → "i" + U+0307 asked for a trigram no shard holds, 2026-09-28; KEEP THE GENERATOR AND
-`assets/all-files-search.js` IN STEP). The engine loads only the days that can hold a match (a
-pasted CoreId: ~its own day), newest first, 4 at a time, stops at the newest 500; the table is
+`assets/all-files-search.js` IN STEP). The engine loads only the days that can hold a match (the File field
+matches the file NAME only), newest first, 4 at a time, stops at the newest 500; the table is
 a `rangehook` table (From/To narrows the days; the page counts as a TRANSFER-area page in
 render_rpt). linkcheck models the shard links (section 3b), display-rename sweeps the shards,
 verify.sh checks that the shards hold every dated File),

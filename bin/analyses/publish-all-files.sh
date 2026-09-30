@@ -16,7 +16,7 @@
 #     from build to build (git and the outbox archive store it once).
 #   - A SMALL MANIFEST, docs/search/all/index.js (window.AXWAY_AFX): per day
 #     its File count, the subscriptions present, the shard's cksum (?v=) and a
-#     BLOOM FILTER of the day's file-name trigrams + CoreId tokens. The engine
+#     BLOOM FILTER of the day's file-name trigrams (+ UUID-run tokens). The engine
 #     (assets/all-files-search.js) loads only the days that CAN hold a match —
 #     the filter never rules out a day that has one — newest first, a few at a
 #     time, and stops once it has the newest 500 matches. The shared From/To
@@ -24,15 +24,16 @@
 #
 # THE FILTER (keep in step with the engine — the same normalisation and hash):
 #   text   = the file name, lowercased, every run of non-ASCII bytes -> "?"
-#   items  = its trigrams that contain a character outside [0-9a-f-] (an
-#            all-hex trigram can come from a CoreId anywhere, so the engine
-#            never prunes on one), plus "#" + the 8 hex of every
-#            /[0-9a-f]{8}-/ occurrence in the name AND in the dashed CoreId
-#            (a CoreId pasted from an error mail finds its day at once)
+#   items  = its trigrams that contain a character outside [0-9a-f-] (the
+#            all-hex ones — digit runs of every timestamp — are not filed, so
+#            the engine never prunes on one), plus "#" + the 8 hex of every
+#            /[0-9a-f]{8}-/ occurrence in the NAME (a UUID-bearing name). The
+#            CoreId is NOT searched since 2026-09-30 (user request) and files
+#            no token — the index shrank by one entry per File
 #   bits   = m = the smallest power of two >= max(1024, 8 x items); three
 #            hashes, h = (h * B + code) mod 2147483647 over the item's
 #            characters with B = 131, 257 and 521, bit = h mod m (about 3 %
-#            false positives per item: a pasted CoreId loads ~its own day)
+#            false positives per item)
 #   encode = 6 bits per character of the base64 alphabet, bit b of
 #            character j = bit 6j+b
 #
@@ -169,7 +170,8 @@ grp_par "$TMPD/rows" "$TMPD/pass2" "$_pj" env LC_ALL=C awk -F'\t' -v OUTD="$OUTD
         printf "%s%s\t%s\t%s\t%s\t%s\t%s", (nrow ? "\n" : ""), tl($3), $4, LSI[sb], $6, $7, $8 > sf
         nrow++
         items($3)
-        c = $7; items(substr(c, 1, 8) "-")          # the dashed CoreId starts with its only /[0-9a-f]{8}-/ run
+        # (the CoreId filed no "#" token since 2026-09-30, user request: "please drop
+        # searching in coreid in the file search" — the CoreId stays a column)
     }
     END {
         flush()
