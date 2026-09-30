@@ -22,9 +22,9 @@
 #                 the ROW fields by index: bin/build/publish.sh (home per-day
 #                 table + log-exports facts), bin/day/reports.sh.
 #
-# Each row is one calendar day (gaps filled, edge days flagged partial) with
-# the day's first and last transfer-log time; the total row is pinned to the
-# TOP. bin/day/reports.sh reads topview.rpt for its data-day list.
+# Each row is one calendar day (gaps filled) — the date only since
+# 2026-09-30 (user request: the First / Last time columns and the
+# "(partial …)" edge-day marks went); the total row is pinned to the TOP. bin/day/reports.sh reads topview.rpt for its data-day list.
 #
 # Usage:
 #   ./topview.sh    # reads the caches, writes data/transfer/reports/topview.rpt
@@ -100,10 +100,9 @@ agg=$(awk -F'\t' "$COREIDS_AWK$AWKLIB"'
             d=fromjdn(j)
             if(d in C){
                 ndays++
-                fi=FI[d]; sub(/\.[0-9]+$/,"",fi); la=LA[d]; sub(/\.[0-9]+$/,"",la)
-                mark=""
-                if((j==mn || !(fromjdn(j-1) in C)) && FI[d] > "02:00:00") mark=" (partial start)"
-                if((j==mx || !(fromjdn(j+1) in C)) && LA[d] < "22:00:00") mark=(mark==""?" (partial end)":" (partial)")
+                # only the date (2026-09-30, user request: no First / Last
+                # columns, no "(partial start)" / "(partial end)" marks — the
+                # From/To presets keep reading the partial days from day.rpt)
                 # the per-DAY Waiting / Expired cells carry no link (2026-09-30
                 # audit T-15: they opened the full-period Waiting / Expired
                 # pages, which have no date filter — a day of 5 opened 384);
@@ -112,15 +111,15 @@ agg=$(awk -F'\t' "$COREIDS_AWK$AWKLIB"'
                 wcell = (WW[d]+0>0 ? WW[d]+0 : "")
                 xcell = (WX[d]+0>0 ? WX[d]+0 : "0")
                 # the amber Recovered cells (Automatic / Manual) are blank on 0
-                printf "R1\tROW\t@{href=../day/%s.html}%s%s\t%s\t%s\t%d\t%d\t%d\t%s%%\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s%%\t%d\t%d\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
-                    d, d, mark, fi, la, \
+                printf "R1\tROW\t@{href=../day/%s.html}%s\t%d\t%d\t%d\t%s%%\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s%%\t%d\t%d\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
+                    d, d, \
                     C[d], P[d]+0, F[d]+0, pr(F[d]+0, C[d]), \
                     (RVA[d]+0>0 ? RVA[d]+0 : ""), (RVM[d]+0>0 ? RVM[d]+0 : ""), RSO[d]+0, RSF[d]+0, \
                     TC[d]+0, TP2[d]+0, TF2[d]+0, pr(TF2[d]+0, TC[d]+0), \
                     WP[d]+0, WF[d]+0, wcell, xcell, hb(VOL[d]), \
                     buildlist(top[d SUBSEP "F"]), buildlist(top[d SUBSEP "P"])
             } else {
-                printf "R1\tROW\t%s\t-\t-\t0\t0\t0\t0.0%%\t\t\t0\t0\t0\t0\t0\t0.0%%\t0\t0\t\t0\t\n", d   # empty Recovered / Waiting / Volume cells: blank
+                printf "R1\tROW\t%s\t0\t0\t0\t0.0%%\t\t\t0\t0\t0\t0\t0\t0.0%%\t0\t0\t\t0\t\n", d   # empty Recovered / Waiting / Volume cells: blank
             }
         }
         printf "TOT|%d|%d|%d|%d|%s|%d|%d|%d|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%s\n", \
@@ -144,27 +143,28 @@ IFS='|' read -r _ tC tP tRVF tF tfp tT tTP tTF ttp wP wF wW wX ndays tRVA tRVM t
 {
     printf 'TITLE\tTransfer top view\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tThe whole transfer log at a glance, per day: logical Files (per CoreId) with their Count / Ok / Error split and error rate, the physical Transfers (log rows) with the same Ok/Error split, the same Files by their final state — Processed, Failed, Waiting and Expired — and, per day, the Recovered Files (automatic or manual) and the resubmitted Files (Ok or Error).\n'
-    # 0-based columns (six groups, 2026-09-12): Date0 First1 Last2 | Files:
-    # Count3 Ok4 Error5 Error%6 | Recovered: Automatic7 Manual8 | Resubmit:
-    # Ok9 Failed10 | Transfers: Count11 Ok12 Error13 Error%14 | State:
-    # Processed15 Failed16 Waiting17 Expired18
+    # 0-based columns (six groups, 2026-09-12; the First / Last columns went
+    # 2026-09-30, user request): Date0 | Files: Count1 Ok2 Error3 Error%4 |
+    # Recovered: Automatic5 Manual6 | Resubmit: Ok7 Failed8 | Transfers:
+    # Count9 Ok10 Error11 Error%12 | State: Processed13 Failed14 Waiting15
+    # Expired16 | Volume17
     # VOLUME (2026-09-29): the last group — the per-day volume the Activity and
     # Volume "Per day" tabs carried (both went); LAST so the positional readers
     # of the ROW fields (the home log table, the day pages) are unchanged
-    printf 'TABLE\t\twide\ttotaltop\tdatereset\tpct=6:5:3;14:13:11\tgsep=3,7,9,11,15,19\n'
-    printf 'GHEAD\t@{colspan=3}\t@{colspan=4,class=gband gsep}Files\t@{colspan=2,class=gband gsep}Recovered\t@{colspan=2,class=gband gsep}Resubmit\t@{colspan=4,class=gband gsep}Transfers\t@{colspan=4,class=gband gsep}State\t@{class=gband gsep}\n'
-    printf 'HEAD\tDate\tFirst\tLast\tCount\tOk\tError\tError %%\tAutomatic\tManual\tOk\tError\tCount\tOk\tError\tError %%\tProcessed\tFailed\tWaiting\tExpired\tVolume\n'
+    printf 'TABLE\t\twide\ttotaltop\tdatereset\tpct=4:3:1;12:11:9\tgsep=1,5,7,9,13,17\n'
+    printf 'GHEAD\t\t@{colspan=4,class=gband gsep}Files\t@{colspan=2,class=gband gsep}Recovered\t@{colspan=2,class=gband gsep}Resubmit\t@{colspan=4,class=gband gsep}Transfers\t@{colspan=4,class=gband gsep}State\t@{class=gband gsep}\n'
+    printf 'HEAD\tDate\tCount\tOk\tError\tError %%\tAutomatic\tManual\tOk\tError\tCount\tOk\tError\tError %%\tProcessed\tFailed\tWaiting\tExpired\tVolume\n'
     # the Resubmit Ok / Error pair uses the TINT-ONLY kinds numok / numerr
     # (2026-09-29 audit): as numprocessed / numfailed they made a second OK /
     # Error cell on the row and report.js bound neither Files drill there
-    printf 'KIND\ttext\ttext\ttext\tnum\tnumprocessed\tnumfailed\tnum\tnumwarn\tnumwarn\tnumok\tnumerr\tnum\tnumok\tnumerr\tnum\tnumok\tnumerr\tnumwarn\tnumerr\tnum\n'
+    printf 'KIND\ttext\tnum\tnumprocessed\tnumfailed\tnum\tnumwarn\tnumwarn\tnumok\tnumerr\tnum\tnumok\tnumerr\tnum\tnumok\tnumerr\tnumwarn\tnumerr\tnum\n'
     # a nonzero Waiting / Expired total opens its report too (2026-08-31)
-    wW_cell="@{class=num warn}"; [ "${wW:-0}" -gt 0 ] && wW_cell="@{class=num warn,href=waiting.html}$wW"   # 0 -> blank (td.warn:empty drops the tint)
-    wX_cell="@{class=num errc}$wX"; [ "${wX:-0}" -gt 0 ] && wX_cell="@{class=num errc,href=expired.html}$wX"
+    wW_cell="@{class=num warn}"; [ "${wW:-0}" -gt 0 ] && wW_cell="@{class=num warn,href=waiting-expired.html}$wW"   # 0 -> blank (td.warn:empty drops the tint)
+    wX_cell="@{class=num errc}$wX"; [ "${wX:-0}" -gt 0 ] && wX_cell="@{class=num errc,href=waiting-expired.html}$wX"
     # the amber Recovered totals: 0 -> blank (td.warn:empty drops the tint)
     tRVA_cell="@{class=num warn}"; [ "${tRVA:-0}" -gt 0 ] && tRVA_cell="@{class=num warn}$tRVA"
     tRVM_cell="@{class=num warn}"; [ "${tRVM:-0}" -gt 0 ] && tRVM_cell="@{class=num warn}$tRVM"
-    printf 'TOTAL\t%s\t\t\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num}%s%%\t%s\t%s\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num okc}%s\t@{class=num errc}%s\t@{class=num}%s%%\t@{class=num okc}%s\t@{class=num errc}%s\t%s\t%s\t@{class=num}%s\n' \
+    printf 'TOTAL\t%s\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num}%s%%\t%s\t%s\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num okc}%s\t@{class=num errc}%s\t@{class=num}%s%%\t@{class=num okc}%s\t@{class=num errc}%s\t%s\t%s\t@{class=num}%s\n' \
         "$total_label" "$tC" "$tP" "$tF" "$tfp" "$tRVA_cell" "$tRVM_cell" "$tRSO" "$tRSF" "$tT" "$tTP" "$tTF" "$ttp" "$wP" "$wF" "$wW_cell" "$wX_cell" "$tVOL"
     printf '%s\n' "$rows"
     printf 'FOOT\n'

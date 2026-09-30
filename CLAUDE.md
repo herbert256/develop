@@ -78,12 +78,12 @@ home), `404.html` (self-contained; its home link = the path before the FIRST kno
 a trailing `acceptance/`|`production/` stripped for pre-split bookmarks), `assets/`, `help/`,
 `.nojekyll`, `transfer/` (+ `entities/`, `secparams/`, `expired/` — 2026-09-21, user
 request: one page per subscription with expired Files, Start · Expired · File name · CoreId, opened
-from the Expired cells of the Expired report's subscriptions table; `expired.sh` writes the
-`.rpt` set into `data/transfer/reports/expired/`; default sort = Expired descending, baked in that
+from the Expired cells of **Waiting & Expired**'s Subscriptions table; `waiting-expired.sh`
+(expired.sh until 2026-09-30) writes the `.rpt` set into `data/transfer/reports/expired/`; default sort = Expired descending, baked in that
 order (an Expired File never has a File page, so the CoreIds are plain — the first-5 links and
 their `_expired-files.tsv` list went 2026-09-29 with the File-page rule below); and its twin `waiting/` — the same
 day: the Files still staged, Start · Waiting for · File name · CoreId, opened from the Waiting
-Files cells of the Waiting report's first table, default sort = Waiting for descending via the
+cells of Waiting & Expired's Subscriptions table (waiting-expired.sh; waiting.sh until 2026-09-30), default sort = Waiting for descending via the
 cell's `sortval` (the wait in seconds — the humanized text does not sort); no File-page links
 either since 2026-09-29), `server/`, `analyses/`
 (+ `xref/`), `reports/` (the Reports start page, 2026-09-29), `dashboards/`, `day/`, `details/` (one subdir per entity type), `files/`
@@ -159,8 +159,10 @@ checkout with logs but no config export: it synthesizes the two JSONs from the t
   `docs/assets/topbar-data.js` (pure data, written by `ensure_assets`: the
   ONE menu string, `reports` (the Reports pulldown, 2026-09-29 — the transfer / server / analyses /
   goodies keys are gone), with its `@` placeholder (the `monitor:0|1` flag went 2026-09-30 with the Monitor dashboard),
-  `coreid:"<url>"`, `env:"<label>"`, `envkey:"<key>"`, `period:"yyyy-mm-dd / yyyy-mm-dd"` (the DATA PERIOD — the transfer day report’s META first/last days, shown second in the bar after the environment, before Entities; 2026-09-13, user request), `sites` (the four env URLs);
-  `?v=` stamp `TB_VER` folds the template, the label, the key and the site URLs).
+  `coreid:"<url>"`, `env:"<label>"`, `envkey:"<key>"`, `sites` (the four env URLs) — the DATA PERIOD `period` went 2026-09-30, user request (and
+  day.rpt's META first/last with it);
+  `?v=` stamp `TB_VER` folds the menu, the errors / overview hrefs, the template, the label, the key
+  and the site URLs).
 - report.js has no `pageEnv`/`setupEnvSwitch`; the sessionStorage keys carry no env prefix; the
   `report-area` meta is the area alone.
 
@@ -640,9 +642,9 @@ views, all chart type `slots`, drawn client-side by `docs/assets/slotchart.js`.
 hero → problem lists → facts → six Top-5 tables. Both run after the two areas' reports; the
 UC-status stacks and cumulative "seen" views carry strict invariants — see ARCHITECTURE.md before
 touching them. Consumers reading topview Date cells strip the `@{href=…}` cell attr first; the
-transfer `topview.rpt` per-day table has seven column groups (Files, Recovered =
-Automatic · Manual, Resubmit = Ok · Error, Transfers, State — ROW fields 5-20 in that order, since
-2026-09-12 — then Volume, field 21, since 2026-09-29), see ARCHITECTURE.md.
+transfer `topview.rpt` per-day table: Date, then the groups Files · Recovered (Automatic · Manual) ·
+Resubmit (Ok · Error) · Transfers · State as ROW fields 3-18, Volume field 19 (the First / Last
+columns and the partial-day marks went 2026-09-30, user request), see ARCHITECTURE.md.
 
 ## Architecture
 
@@ -1542,7 +1544,7 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
 ## Rules from the 2026-09-29 site audit (user request: "a very very deep analyse & audit … fix all")
 
 - **A report page's TITLE is its Reports-menu label** (`_report_groups`): "Transfer top view",
-  "Server top view", "One-legged", "Recovered flows", "Per flow", "Routing errors", "Waiting", "Activity",
+  "Server top view", "One-legged", "Recovered flows", "Per flow", "Routing errors", "Waiting & Expired", "Activity",
   "Sizes & types", "Duration", … — the start page reads the TITLE, the help `<h1>` repeats
   it. The Configuration pair is **Configured subscriptions** / **Configured accounts** (the Entities
   group keeps Subscriptions / Accounts). A new report: label and TITLE the same.
@@ -1573,7 +1575,7 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
 - **0 in a count cell is blank** in the UC status tables (UC1 / UC3 / UC4, rows + totals), Month
   stats, Expired, Connection efficiency and the UC3 polling tables; the "ok -> error" Status cell is
   red like its row. Activity (weekly / hourly / weekday) Volume = OK File bytes, the Protocol summary
-  reads "OK transfers | OK volume"; Expired › Collected counts delivered Files only (as Waiting).
+  reads "OK transfers | OK volume"; Waiting & Expired › Collected counts delivered Files only.
 - **A TOTAL row may ship its OWN `@data:buckets`** — the DISTINCT per-day totals of a table whose
   rows overlap (a File counts for every BL / partner / application: `entities.sh`; Recovered files
   per protocol): report.js `recalcTable` re-totals a narrowed range from them as long as only the
@@ -1748,6 +1750,21 @@ front end) then four fix workers with disjoint files. The rules it left:
 - **Detail pages**: the Waiting/Expired summary is HELD and rendered after the Features block
   (`we_table`), so the section order does not depend on whether an entity has such Files.
 
+## Rules from the second 2026-09-30 "few little things" batch (user request)
+
+- **Waiting & Expired** (`transfer/waiting-expired.html`, `bin/transfer/reports/waiting-expired.sh`)
+  REPLACES Waiting and Expired (never restore those pages, writers or help pages). Summary (Date ·
+  Waiting · Expired) = per START day, every dated Waiting / Expired File incl. Unknown, so its totals
+  equal `_files.tsv`; its counts drill to the day's 10 newest. Subscriptions (Waiting · Expired ·
+  Collected · Oldest Waiting · Last Expired) is `nofilter`, skips Unknown, tints by the subscription
+  colour; its Waiting / Expired cells open the `waiting/` / `expired/` File lists. The Entities
+  Waiting / Expired cells, the Top view TOTAL cells and the day-page lines link here.
+- **Top bar**: Overview · Errors · Duration (`transfer/duration.html`) · Waiting/Expired
+  (`transfer/waiting-expired.html`) · Entities · Files + the search icon; NO data period.
+- **Column groups**: the `gsep` gap is 30 px site-wide (= the home table's spacers).
+- **Activity › Per weekday**: Weekday · Days · Files · Avg/day · Volume · Load — Files = the OK
+  Files, no Error %. The Per week / Per hour tabs keep "OK Files".
+
 ## Rules from the 2026-09-30 "few little things" batch (user request)
 
 - **Reports pulldown**: Performance is the FIRST group line (after the Start page); Overview,
@@ -1758,7 +1775,8 @@ front end) then four fix workers with disjoint files. The rules it left:
   `help/server-ssh-crypto.html` are GONE (never restore). The Deprecated-parameter warnings rows
   carry their own `@data:res` (the server publish's automatic subscription tint does not reach a
   transfer page). A hand-run security-params.sh drops the SSH tables until the server reports run.
-- **Entities Waiting / Expired cells LINK** `transfer/waiting.html` / `expired.html` — on the
+- **Entities Waiting / Expired cells LINK** `transfer/waiting-expired.html` (waiting.html /
+  expired.html until the second batch the same day) — on the
   Subscriptions pages with `?axway_row=<subscription>` (the real name, URL-encoded), the other
   entities the page itself; their `coreids-wait` / `coreids-exp` drills went (S| fields 28–29 stay,
   empty). report.js `setCellVal` keeps a recalculated cell's ONE link (a 0 blanks the cell).
@@ -1833,8 +1851,8 @@ front end) then four fix workers with disjoint files. The rules it left:
 
 - **The Errors group** (Failures until 2026-09-29, "Rename Failures to Errors"): NOT on the
   Reports pulldown — its own top-bar link (`ERRORS_HREF`, the group's first page, Failed
-  Subscriptions; `errors` in topbar-data.js). The top bar's Overview · Entities · Errors · Files
-  are ONE cluster (`span.entgroup`, the entity-search icon after them; Overview joined later that
+  Subscriptions; `errors` in topbar-data.js). The top bar's Overview · Errors · Duration · Waiting/Expired · Entities ·
+  Files (2026-09-30 order, user request) are ONE cluster (`span.entgroup`, the entity-search icon after them; Overview joined later that
   day — `OVERVIEW_HREF` = transfer/topview.html, `overview` in topbar-data.js) in topbar.js buildTopbar.
 - **Sub-rows** (`_report_subrows`, publish_lib.sh): members of a group that collapse into ONE
   entry of the group's first row (its label, landing on the first of them) and get a SECOND row
@@ -1848,7 +1866,6 @@ front end) then four fix workers with disjoint files. The rules it left:
   the Entities Error view and reason-boxes.sh read); `went-kaput.rpt` and the day pages'
   "Trouble after success" line are gone (the .rpt had 0 rows on both runtimes). The colour never
   read it (result.sh `_build_kaputflip` is its own join). Never restore the .rpt or the line.
-- **transfer/expired.html**: the last two tables (sweep nights, staging weekday) side by side.
 - **Trends, Route throughput and Punctuality are GONE** (later the same day, user request "Remove
   the reports trends-*, route-throughput, punctuality-*"): trend.sh, duration-trend.sh,
   trends.sh, expected-arrival.sh, merge-punctuality.sh, route-throughput.sh and their help pages
@@ -1862,7 +1879,7 @@ front end) then four fix workers with disjoint files. The rules it left:
   subscription / entities / month-stats / cross-reference / details (+ details_lib stream) /
   failed / episodes / punctuality / red-run / recovered
   / retry / security-params / same-protocol / size-dist / size-profile /
-  went-quiet / waiting / expired / file-in-file-out / entity-search /
+  went-quiet / waiting-expired / file-in-file-out / entity-search /
   not-in-flow-manager / blast-radius / the boxes sidecar / the day and overview
   Top-5s); FILES tables (failed-files, File pages, incoming-connections, all-files, …) keep it as
   the Subscription value, unlinked. **A new subscription-keyed writer must skip it too** —

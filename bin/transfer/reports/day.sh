@@ -2,9 +2,10 @@
 #
 # day.sh — the transfer log's CALENDAR: one row per calendar day (gaps filled),
 # its newest record time, and the edge days flagged "(partial start)" /
-# "(partial end)"; plus the META first / last record lines. A PAGELESS data
-# producer: publish_lib.sh area_dates (the From/To date list), area_partial
-# (the partial-END days) and TB_PERIOD (the top bar's data period) read it.
+# "(partial end)". A PAGELESS data producer: publish_lib.sh area_dates (the
+# From/To date list) and area_partial (the partial-END days) read it. (The
+# META first / last lines went 2026-09-30 with their one reader, the top
+# bar's data period, TB_PERIOD.)
 # (2026-09-29 audit: since the Activity page dropped its per-day tab the Files,
 # Volume and First Time columns and the TOTAL had no reader — they went.)
 #
@@ -38,8 +39,6 @@ sorted_stats=$(awk -F'\t' '
 ' <(activity_stream) | sort -t'|' -k1,1)
 
 if [ -z "$sorted_stats" ]; then echo "No usable records found." >&2; exit 0; fi
-first_record=$(printf '%s\n' "$sorted_stats" | awk -F'|' 'NR == 1 { print $1 " " $2; exit }')
-last_record=$(printf '%s\n' "$sorted_stats" | awk -F'|' '{ l = $1 " " $3 } END { print l }')
 total_days=$(printf '%s\n' "$sorted_stats" | awk 'NF { n++ } END { print n + 0 }')
 
 rows=$(printf '%s\n' "$sorted_stats" | awk -F'|' "$AWKLIB"'
@@ -58,8 +57,6 @@ rows=$(printf '%s\n' "$sorted_stats" | awk -F'|' "$AWKLIB"'
 
 {
     printf 'TITLE\tPer Day\n'
-    printf 'META\tfirst\t%s\n' "$first_record"
-    printf 'META\tlast\t%s\n' "$last_record"
     printf 'TABLE\tPer day\n'
     printf 'HEAD\tDate\tLast Time\n'
     printf 'KIND\ttext\ttext\n'

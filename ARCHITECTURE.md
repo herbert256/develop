@@ -546,7 +546,8 @@ none). Both Top views link Date cells to day pages via the cell attr
 `@{href=URL}`; consumers of topview date cells strip it first (`sub(/^@\{[^}]*\}/,"",d)`:
 publish_lib's `area_dates`, `bin/build/publish.sh`, `bin/dashboards/lib.sh`,
 `bin/day/reports.sh`). The transfer `topview.rpt` per-day table has SIX column groups since
-2026-09-12 (seven with Volume, 2026-09-29) — Date · First · Last | Files (Count · Ok · Error · Error %) | **Recovered**
+2026-09-12 (seven with Volume, 2026-09-29) — Date (First · Last and the partial-day marks went
+2026-09-30: every ROW field below shifted by −2) | Files (Count · Ok · Error · Error %) | **Recovered**
 (Automatic · Manual: the OK Files that carried a failed leg, Manual when a leg carries
 `Resubmitted=true`, `_transfers.tsv` col 22) | **Resubmit** (Ok · Error: every File with a
 resubmitted leg, by outcome) | Transfers (Count · Ok · Error · Error %) | State (Processed ·

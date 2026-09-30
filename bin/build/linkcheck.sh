@@ -17,7 +17,9 @@
 #   - brand -> data-b + index.html
 #   - data-b + dashboards/index.html, search/search.html,
 #     search/all-files.html (the Files link, 2026-09-28),
-#     tools/sitemap.html, transfer/entities/subscription-all.html
+#     tools/sitemap.html, transfer/entities/subscription-all.html,
+#     transfer/duration.html + transfer/waiting-expired.html (the Duration and
+#     Waiting/Expired links, 2026-09-30)
 #   - the help icon  -> data-b + help/<data-help>.html
 # EVERY page carries the placeholder since 2026-09-30 — the help pages and the
 # build report too (their baked bar, render_shared_topbar, went with the one
@@ -149,6 +151,8 @@ awk -v DOCS="$DOCS" '
                     edge(page, b "search/all-files.html")   # the Files link (2026-09-28)
                     edge(page, b "tools/sitemap.html")
                     edge(page, b "transfer/entities/subscription-all.html")
+                    edge(page, b "transfer/duration.html")          # the Duration link (2026-09-30)
+                    edge(page, b "transfer/waiting-expired.html")   # the Waiting/Expired link (2026-09-30)
                     if (hlp != "") edge(page, b "help/" hlp ".html")
                 }
             }

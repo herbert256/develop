@@ -398,10 +398,35 @@ n=$(rpt_rows "data/transfer/reports/bl.rpt")
 check $([ "$n" -gt 0 ] && echo 0 || echo 1) "bl.rpt has 0 rows"
 
 # planted reports carry rows
-for rpt in expired waiting went-quiet duplicate-files; do
+for rpt in waiting-expired went-quiet duplicate-files; do
     n=$(rpt_rows "data/transfer/reports/$rpt.rpt")
     check $([ "$n" -gt 0 ] && echo 0 || echo 1) "$rpt.rpt has 0 rows"
 done
+# WAITING & EXPIRED (2026-09-30, user request — it replaces transfer/waiting.html
+# + expired.html): the Summary per START day totals every dated Waiting /
+# Expired File of _files.tsv (Unknown included), the Subscriptions table the
+# same Files minus Unknown / siteless; each Subscriptions row's File-list
+# pages exist; the old pages, writers and help pages are gone
+WE="data/transfer/reports/waiting-expired.rpt"
+read -r sw sx <<< "$(awk -F'\t' '$1 == "TABLE" { t++ } t == 1 && $1 == "TOTAL" { a = $3; b = $4; sub(/^@\{[^}]*\}/, "", a); sub(/^@\{[^}]*\}/, "", b); print a + 0, b + 0; exit }' "$WE" 2>/dev/null)"
+read -r tw tx <<< "$(awk -F'\t' '$1 == "TABLE" { t++ } t == 2 && $1 == "TOTAL" { a = $3; b = $4; sub(/^@\{[^}]*\}/, "", a); sub(/^@\{[^}]*\}/, "", b); print a + 0, b + 0; exit }' "$WE" 2>/dev/null)"
+read -r fw fx uw ux <<< "$(awk -F'\t' '$4 != "" && ($2 == "Waiting" || $2 == "Expired") { k = ($12 != "" && $12 != "Unknown"); if ($2 == "Waiting") { w++; uw += k } else { x++; ux += k } } END { print w + 0, x + 0, uw + 0, ux + 0 }' "$F" 2>/dev/null)"
+check $([ "${fw:-0}" -gt 0 ] && [ "${fx:-0}" -gt 0 ] && [ "${sw:-x}" = "$fw" ] && [ "${sx:-x}" = "$fx" ] && echo 0 || echo 1) "waiting-expired Summary totals Waiting/Expired = ${sw:-?}/${sx:-?}, the Files cache has ${fw:-?}/${fx:-?} dated (both must be > 0)"
+check $([ "${tw:-x}" = "${uw:-y}" ] && [ "${tx:-x}" = "${ux:-y}" ] && echo 0 || echo 1) "waiting-expired Subscriptions totals Waiting/Expired = ${tw:-?}/${tx:-?}, the Files cache has ${uw:-?}/${ux:-?} (dated, subscription not Unknown)"
+n=$(awk -F'\t' '$1 == "TABLE" { t++ } t == 2 && $1 == "ROW" { for (i = 3; i <= 4; i++) if (match($i, /href=[^,}]*/)) print substr($i, RSTART + 5, RLENGTH - 5) }' "$WE" 2>/dev/null | while read -r h; do [ -f "docs/transfer/$h" ] || echo "$h"; done | wc -l | tr -d ' ')
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "waiting-expired Subscriptions: ${n:-?} Waiting / Expired cell link(s) to a missing File-list page"
+n=$(ls docs/transfer/waiting.html docs/transfer/expired.html docs/help/waiting.html docs/help/expired.html bin/transfer/reports/waiting.sh bin/transfer/reports/expired.sh data/transfer/reports/waiting.rpt data/transfer/reports/expired.rpt 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-1}" = 0 ] && ! grep -rqsE '(["/])(waiting|expired)\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "the retired Waiting / Expired pages, writers or help pages are back (${n:-?} file(s)), or a page still links waiting.html / expired.html"
+# every Entities Waiting / Expired link lands on a row: ?axway_row=<name> on
+# the Subscriptions pages names a first cell of the report (report.js
+# markUrlRow matches the first cell's text)
+bad=$(cat docs/transfer/entities/subscription-*.html docs/transfer/entities/subscription-data.js 2>/dev/null | grep -o 'waiting-expired\.html?axway_row=[^"&]*' | sed 's/.*axway_row=//' | sort -u | awk -F'\t' '
+    function dec(s,   o, i, c) { o = ""; for (i = 1; i <= length(s); i++) { c = substr(s, i, 1); if (c == "%" ) { o = o sprintf("%c", index("0123456789ABCDEF", toupper(substr(s, i + 1, 1))) * 16 - 16 + index("0123456789ABCDEF", toupper(substr(s, i + 2, 1))) - 1); i += 2 } else if (c == "+") o = o " "; else o = o c } return o }
+    FNR == NR { if ($1 == "TABLE") t++; if (t == 2 && $1 == "ROW") { v = $2; sub(/^@\{[^}]*\}/, "", v); R[v] = 1 } next }
+    { if (!(dec($0) in R)) { b++; print "  no Waiting & Expired row for ?axway_row=" $0 > "/dev/stderr" } }
+    END { print b + 0 }' "$WE" -)
+m=$(cat docs/transfer/entities/subscription-*.html docs/transfer/entities/subscription-data.js 2>/dev/null | grep -c 'waiting-expired\.html?axway_row=' || true)
+check $([ "${bad:-1}" = 0 ] && [ "${m:-0}" -gt 0 ] && echo 0 || echo 1) "Entities Subscriptions: ${m:-0} Waiting / Expired link(s), ${bad:-?} whose ?axway_row names no Waiting & Expired row"
 n=$(rpt_rows "data/transfer/reports/missing-cronjobs.rpt"); en=$(exp nocron)
 [ "$en" -gt 0 ] && check $([ "$n" -ge "$en" ] && echo 0 || echo 1) "missing-cronjobs rows $n < planted $en"
 
@@ -495,12 +520,13 @@ check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n page(s) render an EMPTY group
 # a leg, Ok/Failed by outcome; every figure on the File's START day. The
 # totals must equal an independent recount of the two caches, all four new
 # columns must be exercised, and the home page's Cured (= Automatic +
-# Manual, ROW fields 9-10) must still equal the recovered total.
+# Manual, ROW fields 7-8 since the First / Last columns went, 2026-09-30)
+# must still equal the recovered total.
 TV="data/transfer/reports/topview.rpt"
 h=$(awk -F'\t' '$1 == "HEAD" { print; exit }' "$TV" 2>/dev/null)
-check $([ "$h" = $'HEAD\tDate\tFirst\tLast\tCount\tOk\tError\tError %\tAutomatic\tManual\tOk\tError\tCount\tOk\tError\tError %\tProcessed\tFailed\tWaiting\tExpired\tVolume' ] && echo 0 || echo 1) "topview.rpt HEAD is '$h' — expected the seven groups Date|Files|Recovered|Resubmit|Transfers|State|Volume"
+check $([ "$h" = $'HEAD\tDate\tCount\tOk\tError\tError %\tAutomatic\tManual\tOk\tError\tCount\tOk\tError\tError %\tProcessed\tFailed\tWaiting\tExpired\tVolume' ] && echo 0 || echo 1) "topview.rpt HEAD is '$h' — expected the seven groups Date|Files|Recovered|Resubmit|Transfers|State|Volume"
 # the TOTAL cells carry an @{class=…} prefix; a blank amber cell is 0
-read -r rva rvm rso rsf <<< "$(awk -F'\t' '$1 == "TOTAL" { a = $9; b = $10; c = $11; e = $12; sub(/^@\{[^}]*\}/, "", a); sub(/^@\{[^}]*\}/, "", b); sub(/^@\{[^}]*\}/, "", c); sub(/^@\{[^}]*\}/, "", e); print a + 0, b + 0, c + 0, e + 0; exit }' "$TV" 2>/dev/null)"
+read -r rva rvm rso rsf <<< "$(awk -F'\t' '$1 == "TOTAL" { a = $7; b = $8; c = $9; e = $10; sub(/^@\{[^}]*\}/, "", a); sub(/^@\{[^}]*\}/, "", b); sub(/^@\{[^}]*\}/, "", c); sub(/^@\{[^}]*\}/, "", e); print a + 0, b + 0, c + 0, e + 0; exit }' "$TV" 2>/dev/null)"
 # independent recounts (the topview rule: every File with a start day)
 read -r wrv wrm <<< "$(awk -F'\t' 'FNR == 1 { fno++ } fno == 1 { if ($3 != "Processed") fl[$1] = 1; if ($22 == "true") rs[$1] = 1; next } $4 != "" && $2 != "Failed" && $2 != "Expired" && ($1 in fl) { n++; if ($1 in rs) m++ } END { print n + 0, m + 0 }' "$T" "$F" 2>/dev/null)"
 read -r wro wrf <<< "$(awk -F'\t' 'FNR == 1 { fno++ } fno == 1 { if ($22 == "true") rs[$1] = 1; next } $4 != "" && ($1 in rs) { if ($2 == "Failed" || $2 == "Expired") f++; else o++ } END { print o + 0, f + 0 }' "$T" "$F" 2>/dev/null)"
@@ -512,7 +538,7 @@ check $([ "${rso:-0}" -gt 0 ] && [ "${rsf:-0}" -gt 0 ] && echo 0 || echo 1) "the
 # the home Cured cells cover the SHOWN days (the newest 14, no Total row since
 # 2026-09-29): their sum = the Top view's Automatic + Manual over those days
 hc=$(grep -o '<a href="transfer/retries-recovered-files.html?axway_date=[0-9-]*">[0-9.]*</a>' docs/index.html 2>/dev/null | sed 's/<[^>]*>//g; s/\.//g' | awk '{ s += $1 } END { print s + 0 }')
-w14=$(awk -F'\t' '$1 == "ROW" { d = $2; sub(/^@\{[^}]*\}/, "", d); d = substr(d, 1, 10); if (d ~ /^[0-9][0-9][0-9][0-9]-/) R[d] = ($9 + 0) + ($10 + 0) }
+w14=$(awk -F'\t' '$1 == "ROW" { d = $2; sub(/^@\{[^}]*\}/, "", d); d = substr(d, 1, 10); if (d ~ /^[0-9][0-9][0-9][0-9]-/) R[d] = ($7 + 0) + ($8 + 0) }
     END { n = 0; for (d in R) D[++n] = d; for (i = 1; i <= n; i++) for (j = i + 1; j <= n; j++) if (D[j] > D[i]) { t = D[i]; D[i] = D[j]; D[j] = t }
           for (i = 1; i <= n && i <= 14; i++) s += R[D[i]]; print s + 0 }' data/transfer/reports/topview.rpt 2>/dev/null)
 check $([ "${hc:-x}" = "${w14:-y}" ] && echo 0 || echo 1) "home Cured cells sum to '${hc:-absent}', expected the newest 14 days' recovered total ${w14:-?}"
@@ -534,7 +560,7 @@ check $([ "$(grep -c '>Automatic<\|>Manual<' "docs/transfer/retries-recovered-fi
 FF="data/transfer/reports/failed-files.rpt"
 n=$(rpt_rows "$FF"); wn=$(awk -F'\t' '$2 == "Failed" || $2 == "Expired" { n++ } END { print n + 0 }' data/transfer/cache/_files.tsv 2>/dev/null)
 check $([ "${n:-0}" -gt 0 ] && [ "$n" = "$wn" ] && echo 0 || echo 1) "failed-files.rpt has ${n:-0} row(s), the Files cache ${wn:-?} Failed/Expired File(s)"
-n=$(awk -F'\t' 'FNR == NR { if ($1 == "TABLE") t++; if (t == 1 && $1 == "ROW") { d = $2; sub(/^@\{[^}]*\}/, "", d); d = substr(d, 1, 10); if (d ~ /^[0-9][0-9][0-9][0-9]-/) T[d] = $7 + 0 } next }
+n=$(awk -F'\t' 'FNR == NR { if ($1 == "TABLE") t++; if (t == 1 && $1 == "ROW") { d = $2; sub(/^@\{[^}]*\}/, "", d); d = substr(d, 1, 10); if (d ~ /^[0-9][0-9][0-9][0-9]-/) T[d] = $5 + 0 } next }
     $1 == "ROW" { F[substr($3, 1, 10)]++ }
     END { for (d in T) if (T[d] != F[d] + 0) b++; for (d in F) if (!(d in T)) b++; print b + 0 }' data/transfer/reports/topview.rpt "$FF" 2>/dev/null || echo 1)
 check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "failed-files: $n day(s) whose row count differs from the Top view Files/Error"
@@ -669,9 +695,12 @@ check $(grep -q 'data-restint' docs/transfer/duration-longest.html 2>/dev/null &
 # group's first page, Failed Subscriptions), the search icon after them.
 # (checked in topbar.js, the ONE bar implementation since 2026-09-30: the
 # cluster's links in this order)
-n=$(awk '/<span class="entgroup">/ && !a { a = NR } />Overview<\/a>/ && !o { o = NR } />Entities<\/a>/ && !e { e = NR } />Errors<\/a>/ && !r { r = NR } />Files<\/a>/ && !f { f = NR } /search\/search.html" title="Search"/ && !s { s = NR }
-    END { print (a && a <= o && o < e && e < r && r < f && f <= s) ? 1 : 0 }' docs/assets/topbar.js 2>/dev/null)
-check $([ "${n:-0}" = 1 ] && grep -q 'subscription-all.html">Entities</a>' docs/assets/topbar.js && grep -q 'search/all-files.html">Files</a>' docs/assets/topbar.js && echo 0 || echo 1) "topbar.js lacks the Overview / Entities / Errors / Files cluster in that order (Files -> search/all-files.html)"
+# (2026-09-30, user request: Errors right after Overview, then Duration ->
+# transfer/duration.html and Waiting/Expired -> transfer/waiting-expired.html,
+# then Entities and Files)
+n=$(awk '/<span class="entgroup">/ && !a { a = NR } />Overview<\/a>/ && !o { o = NR } />Errors<\/a>/ && !r { r = NR } />Duration<\/a>/ && !d { d = NR } />Waiting\/Expired<\/a>/ && !w { w = NR } />Entities<\/a>/ && !e { e = NR } />Files<\/a>/ && !f { f = NR } /search\/search.html" title="Search"/ && !s { s = NR }
+    END { print (a && a <= o && o < r && r < d && d < w && w < e && e < f && f <= s) ? 1 : 0 }' docs/assets/topbar.js 2>/dev/null)
+check $([ "${n:-0}" = 1 ] && grep -q 'subscription-all.html">Entities</a>' docs/assets/topbar.js && grep -q 'search/all-files.html">Files</a>' docs/assets/topbar.js && grep -q "transfer/duration.html\">Duration</a>" docs/assets/topbar.js && grep -q "transfer/waiting-expired.html\">Waiting/Expired</a>" docs/assets/topbar.js && echo 0 || echo 1) "topbar.js lacks the Overview / Errors / Duration / Waiting/Expired / Entities / Files cluster in that order (Duration -> transfer/duration.html, Waiting/Expired -> transfer/waiting-expired.html, Files -> search/all-files.html)"
 # Errors is a top-bar link, not a Reports pulldown line
 check $(grep -oE 'reports:"([^"\\]|\\.)*"' docs/assets/topbar-data.js 2>/dev/null | grep -q 'analyses/failed.html' && echo 1 || echo 0) "the Reports pulldown still lists the Errors group"
 check $(grep -q 'errors:"analyses/failed.html"' docs/assets/topbar-data.js 2>/dev/null && echo 0 || echo 1) "topbar-data.js lacks errors:\"analyses/failed.html\" (the runtime bar's Errors link)"
@@ -710,9 +739,16 @@ check $([ "$(grep -cE 'href="\.\./assets/style\.css(\?v=[0-9]+)?"' docs/tools/bu
 check $([ "$(grep -cE 'href="\.\./docs/assets/style\.css(\?v=[0-9]+)?"' build/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "build/index.html (the local copy) does not load ../docs/assets/style.css"
 check $([ "$(grep -c 'tools/sitemap.html' docs/assets/topbar.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "topbar.js does not point the top bar at tools/sitemap.html"
 hdr=$(grep -o '<th[^>]*>[^<]*</th>' "docs/transfer/topview.html" 2>/dev/null | sed 's/<[^>]*>//g' | tr '\n' '|')
-check $([ "$hdr" = "|Files|Recovered|Resubmit|Transfers|State||Date|First|Last|Count|Ok|Error|Error %|Automatic|Manual|Ok|Error|Count|Ok|Error|Error %|Processed|Failed|Waiting|Expired|Volume|" ] && echo 0 || echo 1) "transfer/topview.html headers are '$hdr'"
+check $([ "$hdr" = "|Files|Recovered|Resubmit|Transfers|State||Date|Count|Ok|Error|Error %|Automatic|Manual|Ok|Error|Count|Ok|Error|Error %|Processed|Failed|Waiting|Expired|Volume|" ] && echo 0 || echo 1) "transfer/topview.html headers are '$hdr'"
 n=$(grep -c '<table' docs/transfer/topview.html 2>/dev/null || true)
 check $([ "${n:-0}" = 1 ] && echo 0 || echo 1) "transfer/topview.html has ${n:-0} table(s), expected exactly 1 (the six groups share one per-day table)"
+# the date only (2026-09-30, user request): no First / Last columns (the
+# header check above), no "(partial …)" marks on a Date cell
+check $(grep -q '(partial' docs/transfer/topview.html 2>/dev/null && echo 1 || echo 0) "transfer/topview.html still marks a (partial …) day"
+# Activity › Per weekday (2026-09-30, user request): no Error column, "OK
+# Files" reads "Files"
+hdr=$(grep -o '<th[^>]*>[^<]*' docs/transfer/activity-per-weekday.html 2>/dev/null | sed 's/<[^>]*>//' | tr '\n' '|')
+check $([ "$hdr" = "Weekday|Days|Files|Avg/day|Volume|Load|" ] && echo 0 || echo 1) "transfer/activity-per-weekday.html headers are '$hdr', expected Weekday|Days|Files|Avg/day|Volume|Load|"
 
 # the after-last-transfer banner with its log line (2026-09-12, user
 # request): the planted kaput flow (estate.awk UC1_DPL_LEDGER_DUNDER —
@@ -857,14 +893,10 @@ check $([ ! -e docs/transfer/duration-minmax.html ] && [ ! -e docs/transfer/dura
 dr=$(awk '/<table class="index fit dayrows/ { p = 1 } p && /<tr>/ && /<td/ { print; exit }' docs/index.html 2>/dev/null | grep -o 'data-href="transfer/duration.html?axway_row=[0-9-]*">[^<][^<]*<' | wc -l | tr -d ' ')
 check $([ "${dr:-0}" -ge 5 ] && echo 0 || echo 1) "the home page's newest day carries ${dr:-0} filled Duration cells (the extractor must still find the percentiles table)"
 
-# the DATA PERIOD in the top bar (2026-09-13, user request): "yyyy-mm-dd /
-# yyyy-mm-dd", the transfer data's first and last day (day.rpt META
-# first/last), second after the environment — in the bar data, and placed
-# right after the brand by topbar.js
-per=$(awk -F'\t' '$1 == "META" && ($2 == "first" || $2 == "last") { v[$2] = substr($3, 1, 10) } END { print v["first"] " / " v["last"] }' data/transfer/reports/day.rpt 2>/dev/null)
-check $([ "$per" != " / " ] && [ "$(grep -c "period:\"$per\"" docs/assets/topbar-data.js 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar-data.js does not carry period:\"$per\""
-n=$(awk '/brandHtml \+$/ && !b { b = NR } /M\.period \? .<span class="period"/ && !p { p = NR } /<span class="entgroup">/ && !g { g = NR } END { print (b && p == b + 1 && g > p) ? 1 : 0 }' docs/assets/topbar.js 2>/dev/null)
-check $([ "${n:-0}" = 1 ] && echo 0 || echo 1) "topbar.js does not place the period right after the brand, before the Entities cluster"
+# the DATA PERIOD went from the top bar (2026-09-30, user request: "remove
+# 2026-08-31 / 2026-09-30"): no period key, no period span, no CSS rule, no
+# META first / last in day.rpt (its one reader)
+check $(grep -q 'period:' docs/assets/topbar-data.js 2>/dev/null || grep -q 'M\.period\|class="period"' docs/assets/topbar.js 2>/dev/null || grep -q '\.topbar \.period' docs/assets/style.css 2>/dev/null || grep -q $'^META\tfirst' data/transfer/reports/day.rpt 2>/dev/null && echo 1 || echo 0) "the top bar's data period (topbar-data.js period / topbar.js span / style.css rule / day.rpt META first) is still there"
 
 # the fixed duration axis of the Overview / day-page Duration heroes
 # (2026-09-12, user request): the shipped slotchart.js carries the 19-tick
@@ -1081,7 +1113,7 @@ check $(grep -q '<a class="tab" href="security-params.html">Security Parameters<
 # (Cipher suites … Session-lifecycle problems) sit on security-params.html
 n=$(ls docs/server/ssh-security*.html bin/server/reports/ssh-security.sh docs/help/server-ssh-crypto.html data/server/reports/ssh-security.rpt 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${n:-0}" = 0 ] && grep -q '<h2>Cipher suites</h2>' docs/transfer/security-params.html 2>/dev/null && grep -q '<h2>Session-lifecycle problems</h2>' docs/transfer/security-params.html 2>/dev/null && ! grep -rqs 'server/ssh-security\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "SSH security is not merged into transfer/security-params.html (or an ssh-security page / link / help page is back)"
-bad=0; for f in docs/transfer/duration.html docs/transfer/duration-all.html docs/transfer/duration-longest.html docs/analyses/failed.html docs/analyses/failed-sub-all.html docs/analyses/xref/cross-account-subscriptions.html docs/transfer/entities/subscription-all.html docs/transfer/waiting.html; do
+bad=0; for f in docs/transfer/duration.html docs/transfer/duration-all.html docs/transfer/duration-longest.html docs/analyses/failed.html docs/analyses/failed-sub-all.html docs/analyses/xref/cross-account-subscriptions.html docs/transfer/entities/subscription-all.html docs/transfer/waiting-expired.html; do
     [ "$(grep -o 'class="grouptag"' "$f" 2>/dev/null | wc -l | tr -d ' ')" = 1 ] || { bad=$((bad + 1)); echo "  no single group tag: $f" >&2; }
 done
 check $([ "$bad" = 0 ] && echo 0 || echo 1) "$bad report page(s) without exactly one group tag"

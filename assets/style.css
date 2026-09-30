@@ -51,10 +51,6 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
 .topbar .envlink:hover { text-decoration:underline; }
 .topbar .envlink.envcur { color:#ffd400; font-weight:bold; }
 .topbar .envsep { color:#fff; opacity:0.7; }
-/* THE DATA PERIOD (2026-09-13, user request): "yyyy-mm-dd / yyyy-mm-dd", the
-   first and last day of the transfer data — second in the bar, after the
-   environment and before Entities (assets/topbar.js buildTopbar) */
-.topbar .period { color:#fff; font-size:0.9rem; white-space:nowrap; opacity:0.85; font-variant-numeric:tabular-nums; }
 .topbar .tright { color:#fff; font-size:0.95rem; white-space:nowrap; }
 /* hover dropdowns of report links (left-anchored: the menus live on the bar's left side) */
 .dd { position:relative; }
@@ -496,7 +492,7 @@ a.tab:hover { background:#e8f0fe; text-decoration:none; }
 /* the "gap": a thick left border in the PAGE background color visibly breaks
    the table's border grid before each section (plain padding only widens the
    cell — with full cell borders that never reads as space) */
-th.gsep, td.gsep { border-left:10px solid #f7f7f9; }
+th.gsep, td.gsep { border-left:30px solid #f7f7f9; }   /* 30 px = the home per-day table's spacer gap (2026-09-30, user request "more space between the sub tables" on the Top view; 10 px before) — every gsep= table alike */
 th.gband { text-align:center; }
 /* tint-only Error/OK columns (KIND numerr/numok — same colors as failed/
    processed, but without those class names so the drill binding stays on

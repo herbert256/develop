@@ -170,8 +170,8 @@ write_reports_index() {
 # "Remove the Transfers, UC2 state, First seen subtables, remove the columns
 # In & Out in the Files subtable … have only 14 days in the Date tables"):
 # the Files group from the transfer topview.rpt per-day table (ROW fields
-# 5-8; the Cured figure = its Recovered group's Automatic + Manual, fields
-# 9-10) and the Duration group from duration.rpt's "Duration per day —
+# 3-6; the Cured figure = its Recovered group's Automatic + Manual, fields
+# 7-8 — the First / Last columns went 2026-09-30) and the Duration group from duration.rpt's "Duration per day —
 # percentiles" table (Processed Files only). The transfer topview's days set
 # the rows — the newest HOME_DAYS of them, newest first (a server-only day,
 # the server export running a day ahead, would be a fully empty row). One
@@ -207,10 +207,10 @@ daily_loglines_tsv() {   # $1 = the data root (data)
         $1 != "ROW" { next }
         { dd = $2; sub(/^@\{[^}]*\}/, "", dd) }
         # the transfer topview ROW (bin/transfer/reports/topview.sh): the Files
-        # group (Count Ok Error Error%) cols 5-8, the Recovered group
-        # (Automatic Manual) cols 9-10 — Cured is their sum
+        # group (Count Ok Error Error%) fields 3-6, the Recovered group
+        # (Automatic Manual) fields 7-8 — Cured is their sum
         dd ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { d = substr(dd, 1, 10)
-            fc[d] = nz($5); fok[d] = nz($6); fer[d] = nz($7); fpc[d] = nz($8); frv[d] = ($9 + 0) + ($10 + 0); seen[d] = 1 }
+            fc[d] = nz($3); fok[d] = nz($4); fer[d] = nz($5); fpc[d] = nz($6); frv[d] = ($7 + 0) + ($8 + 0); seen[d] = 1 }
         END {
             n = 0; for (k in seen) a[n++] = k
             for (i = 0; i < n; i++) for (j = i + 1; j < n; j++) if (a[j] > a[i]) { t = a[i]; a[i] = a[j]; a[j] = t }   # newest first

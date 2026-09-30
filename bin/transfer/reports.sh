@@ -54,8 +54,7 @@ pool_run "$SCRIPT_DIR/reports/not-in-flow-manager.sh"
 pool_run "$SCRIPT_DIR/reports/day.sh"
 pool_run "$SCRIPT_DIR/reports/weekly.sh"
 pool_run "$SCRIPT_DIR/reports/red-run.sh"   # the red-run sidecar (from-green-to-red + only-red until 2026-09-30)
-pool_run "$SCRIPT_DIR/reports/waiting.sh"
-pool_run "$SCRIPT_DIR/reports/expired.sh"
+pool_run "$SCRIPT_DIR/reports/waiting-expired.sh"   # Waiting & Expired (waiting.sh + expired.sh until 2026-09-30) + the two File-list page sets
 pool_run "$SCRIPT_DIR/reports/missing-cronjobs.sh"
 pool_run "$SCRIPT_DIR/reports/punctuality.sh"   # pageless since 2026-09-29: the Polling pages' file-arrival slot
 pool_run "$SCRIPT_DIR/reports/failed.sh"

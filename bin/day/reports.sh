@@ -64,7 +64,7 @@ mkdir -p "$RPTDIR"
 
 TF="$DATA/transfer/cache/_files.tsv"       # 1 coreid 2 outcome 3 account 4 date 5 time 6 sortkey 8 size 9 dur 11 file 12 site
 TP="$DATA/transfer/cache/_transfers.tsv"   # 10 protocol 11 date 22 resubmitted 24 session_id
-TT="$DATA/transfer/reports/topview.rpt"    # per-day Files/Transfers counts (col 5 = Files, >0 on data days)
+TT="$DATA/transfer/reports/topview.rpt"    # per-day Files/Transfers counts (field 3 = Files, >0 on data days — field 5 until the First / Last columns went, 2026-09-30)
 SV="$DATA/server/reports/topview.rpt"      # per-day records/levels/components/first/last
 SP="$DATA/server/cache/_parse.tsv"         # 1 date 2 time 3 level 4 component 5 message
 NRD="$DATA/server/reports/no-remote-dir.rpt"   # table 2 ("Missing remote directories per day"): date, errors, subscriptions (per-day PROBLEM link)
@@ -119,7 +119,7 @@ anomc=$(anomcount "$ANOM")
 # get no page). The date cell may carry a leading @{href=...} attribute once
 # the topviews link here — strip it before reading the date.
 tdays=""
-[ -f "$TT" ] && tdays=$(awk -F'\t' '$1=="ROW" { d=$2; sub(/^@\{[^}]*\}/,"",d); if ($5+0 > 0) print substr(d,1,10) }' "$TT" | LC_ALL=C sort -u | tr '\n' ' ')
+[ -f "$TT" ] && tdays=$(awk -F'\t' '$1=="ROW" { d=$2; sub(/^@\{[^}]*\}/,"",d); if ($3+0 > 0) print substr(d,1,10) }' "$TT" | LC_ALL=C sort -u | tr '\n' ' ')
 sdays=""
 # per-DAY rows only: the server Top view also carries the levels-per-component
 # table since 2026-09-29 (append_rpt_tables) — its TM/PESITD/SSHD rows made
@@ -392,7 +392,9 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             # cell target (2026-09-30 audit D-05; the Top view before), the
             # empty ?axway_search= clearing a remembered search; "One-legged"
             # the per-day tab, whose rows ARE days (audit T-03: the Details
-            # tab kept a row per subscription at its full-period count)
+            # tab kept a row per subscription at its full-period count);
+            # Waiting / Expired the Waiting & Expired report narrowed to the
+            # day (its Summary rows are START days, 2026-09-30)
             if (F[d] + 0 > 0)
                 printf "PROBLEM\ttransfer\t../transfer/failed-files.html" q "&amp;axway_search=\tFiles in error\t**%d Error / %d OK** — **%.1f%%** error rate; the Error Files of the day\n", F[d], P[d]+0, erate >> out
             if (PIR[d] + 0 > 0)
@@ -402,9 +404,9 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             if (OREDC[d] + 0 > 0)
                 printf "PROBLEM\ttransfer\t../analyses/failed.html\tNever delivered\t**%d** subscription(s) failed for the first time this day and have never delivered an OK File (Failed Subscriptions, Last green day never)\n", OREDC[d] >> out
             if (WAI[d] + 0 > 0)
-                printf "PROBLEM\ttransfer\t../transfer/waiting.html\tWaiting for pickup\t**%d** File(s) staged this day are still waiting to be collected by the partner\n", WAI[d] >> out
+                printf "PROBLEM\ttransfer\t../transfer/waiting-expired.html" q "\tWaiting for pickup\t**%d** File(s) staged this day are still waiting to be collected by the partner\n", WAI[d] >> out
             if (XPD[d] + 0 > 0)
-                printf "PROBLEM\ttransfer\t../transfer/expired.html\tExpired before pickup\t**%d** File(s) staged this day were deleted by the retention sweep before the partner ever collected them\n", XPD[d] >> out
+                printf "PROBLEM\ttransfer\t../transfer/waiting-expired.html" q "\tExpired before pickup\t**%d** File(s) staged this day were deleted by the retention sweep before the partner ever collected them\n", XPD[d] >> out
             # only on days the scan flagged something — a clean day says so by
             # leaving the entry out, instead of offering a link to nothing
             if (ANOMC[d] + 0 > 0)

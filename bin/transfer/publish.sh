@@ -153,12 +153,12 @@ if [ ${#spv[@]} -gt 0 ]; then
     echo "Rendered docs/transfer/secparams/ (${#spv[@]} value page(s))." >&2
 fi
 
-# Expired SUBSCRIPTION pages (2026-09-21, user request): expired.sh wrote one
+# Expired SUBSCRIPTION pages (2026-09-21, user request): waiting-expired.sh (expired.sh until 2026-09-30) writes one
 # .rpt per subscription with expired Files into data/transfer/reports/expired/,
 # listing those Files; render each to docs/transfer/expired/<slug>.html
-# (2 levels deep -> ../../ css). The Expired cells of the Expired report's
-# subscriptions table link here via @{href=expired/...}. No date filter (the
-# Expired report is a current-state audit).
+# (2 levels deep -> ../../ css). The Expired cells of the Waiting & Expired
+# report's Subscriptions table link here via @{href=expired/...}. No date
+# filter (a current-state list).
 shopt -s nullglob
 expp=("$DATA"/transfer/reports/expired/*.rpt)
 shopt -u nullglob
@@ -170,7 +170,7 @@ if [ ${#expp[@]} -gt 0 ]; then
     for f in "${expp[@]}"; do
         b=${f##*/}; b=${b%.rpt}
         # one report key per subscription: a remembered search or sort belongs to THAT flow's page
-        pub_run render_rpt "$f" "$DOCS/transfer/expired/$b.html" "../../assets/style.css" "../../index.html" "TRANSFER - Expired" "" "expired" "expired-$b"
+        pub_run render_rpt "$f" "$DOCS/transfer/expired/$b.html" "../../assets/style.css" "../../index.html" "TRANSFER - Expired" "" "waiting-expired" "expired-$b"
     done
     pub_wait
     CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"
@@ -178,10 +178,10 @@ if [ ${#expp[@]} -gt 0 ]; then
 fi
 
 # Waiting SUBSCRIPTION pages (2026-09-21, user request — the Expired pages'
-# twin): waiting.sh wrote one .rpt per subscription with Files still staged into
+# twin): waiting-expired.sh (waiting.sh until 2026-09-30) writes one .rpt per subscription with Files still staged into
 # data/transfer/reports/waiting/; render each to docs/transfer/waiting/<slug>.html
-# (2 levels deep -> ../../ css). The Waiting Files cells of the Waiting report's
-# first table link here via @{href=waiting/...}. No date filter (Waiting is a
+# (2 levels deep -> ../../ css). The Waiting cells of the Waiting & Expired
+# report's Subscriptions table link here via @{href=waiting/...}. No date filter (Waiting is a
 # state at the dataset's end).
 shopt -s nullglob
 waip=("$DATA"/transfer/reports/waiting/*.rpt)
@@ -194,7 +194,7 @@ if [ ${#waip[@]} -gt 0 ]; then
     for f in "${waip[@]}"; do
         b=${f##*/}; b=${b%.rpt}
         # one report key per subscription: a remembered search or sort belongs to THAT flow's page
-        pub_run render_rpt "$f" "$DOCS/transfer/waiting/$b.html" "../../assets/style.css" "../../index.html" "TRANSFER - Waiting" "" "waiting" "waiting-$b"
+        pub_run render_rpt "$f" "$DOCS/transfer/waiting/$b.html" "../../assets/style.css" "../../index.html" "TRANSFER - Waiting" "" "waiting-expired" "waiting-$b"
     done
     pub_wait
     CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"

@@ -6,8 +6,8 @@
  * [data-help=…]></div>` and loads, in this order, assets/topbar-data.js
  * (window.AXWAY_TB — the data: the ONE Reports menu string with its "@"
  * docs-root placeholder, the Errors / Overview hrefs, the CoreId URL
- * template, the environment label + key, the data period and the four site
- * URLs of the environment switch; written by publish_lib ensure_assets) and
+ * template, the environment label + key and the four site URLs of the
+ * environment switch (the data period went 2026-09-30, user request); written by publish_lib ensure_assets) and
  * this file, before report.js — so the bar exists before report.js runs.
  * data-b = the page's prefix back to the docs root, data-help = its help
  * slug. No framework, ES5. */
@@ -47,9 +47,12 @@
   // 1 the brand — its TEXT is the environment label (input/environment.txt;
   // "Axway ST" without one), or on a runtime checkout the pair "Acceptance /
   // Production", the active one bold and yellow (.envcur) linking the home
-  // page · 2 the data period · 3 Overview · Entities · Errors · Files + the
-  // search icon (ONE cluster, 2026-09-29) · 4 the ONE Reports pulldown · 5
-  // the Dashboard link · 6 the site map and help icons.
+  // page · 2 Overview · Errors · Duration · Waiting/Expired · Entities · Files
+  // + the search icon (ONE cluster, 2026-09-29; since 2026-09-30, user
+  // request, Errors right after Overview, Duration -> transfer/duration.html
+  // and Waiting/Expired -> transfer/waiting-expired.html added, the data
+  // period between the brand and the cluster gone) · 3 the ONE Reports
+  // pulldown · 4 the Dashboard link · 5 the site map and help icons.
   function buildTopbar() {
     var tb = document.querySelector("div.topbar");
     if (!tb || tb.firstChild) return;
@@ -71,11 +74,12 @@
     } else brandHtml = '<a class="brand" href="' + b + 'index.html">' + esc(brand) + "</a>";
     tb.innerHTML =
       brandHtml +
-      (M.period ? '<span class="period" title="The data period: the first and last day of the transfer data">' + esc(M.period) + "</span>" : "") +
       '<span class="entgroup">' +
       (M.overview ? '<a class="entlabel" href="' + b + esc(M.overview) + '">Overview</a>' : "") +
-      '<a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
       (M.errors ? '<a class="entlabel" href="' + b + esc(M.errors) + '">Errors</a>' : "") +
+      '<a class="entlabel" href="' + b + 'transfer/duration.html">Duration</a>' +
+      '<a class="entlabel" href="' + b + 'transfer/waiting-expired.html">Waiting/Expired</a>' +
+      '<a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
       '<a class="entlabel" href="' + b + 'search/all-files.html">Files</a>' +
       '<a class="searchbtn" href="' + b + 'search/search.html" title="Search" aria-label="Search">🔍</a></span>' +
       '<nav class="nav">' +

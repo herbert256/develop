@@ -5,8 +5,7 @@
 </ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Date</strong> &mdash; opens the day page; <strong>(partial start)</strong> / <strong>(partial end)</strong> / <strong>(partial)</strong> marks an edge day the export did not cover fully (first time after 02:00, last before 22:00).</li>
-<li><strong>First</strong> / <strong>Last</strong> &mdash; the day&rsquo;s first and last transfer time.</li>
+<li><strong>Date</strong> &mdash; opens the day page.</li>
 <li><strong>Files</strong> &mdash; Count / Ok / Error / Error %: logical transfers (one per CoreId), each credited to its start day.</li>
 <li><strong>Recovered</strong> &mdash; Files with a failed leg that still ended OK: <strong>Automatic</strong> = the platform&rsquo;s retry delivered, <strong>Manual</strong> = a leg carries the Resubmitted flag.</li>
 <li><strong>Resubmit</strong> &mdash; every File with a resubmitted leg, <strong>Ok</strong> or <strong>Error</strong> by final outcome (Waiting = Ok, Expired = Error); a re-delivery without a failed leg counts here, not under Recovered.</li>
@@ -21,6 +20,6 @@
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>A Files Ok / Error cell drills to that day&rsquo;s 10 newest Files; the Total row&rsquo;s Waiting / Expired cell opens <a href="waiting.html">Waiting</a> / <a href="expired.html">Expired</a> (full period; per-day cells do not link).</li>
+<li>A Files Ok / Error cell drills to that day&rsquo;s 10 newest Files; the Total row&rsquo;s Waiting / Expired cell opens <a href="waiting-expired.html">Waiting &amp; Expired</a> (full period; per-day cells do not link).</li>
 <li><a href="recovered-files.html">Recovered files</a> splits Recovered per subscription, protocol and day.</li>
 </ul>

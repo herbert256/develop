@@ -180,7 +180,7 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
         if (f) addtop(key SUBSEP "ferr", sk, disp, cid)
         if (ra) addtop(key SUBSEP "rauto", sk, disp, cid); if (rmo) addtop(key SUBSEP "rmok", sk, disp, cid); if (rme) addtop(key SUBSEP "rmerr", sk, disp, cid)
         # (the Waiting / Expired drill rings went 2026-09-30: those cells LINK
-        # transfer/waiting.html / expired.html now — their S| fields stay, empty)
+        # transfer/waiting-expired.html now — their S| fields stay, empty)
         if (hasd) { dh[key SUBSEP q]++; dhd[key SUBSEP date SUBSEP q]++ }
     }
     function tot(t) {
@@ -369,8 +369,9 @@ fmt_dim() {
     # on a Expired or Waiting cell must go to /transfer/expired.html or
     # /transfer/waiting.html with the row highlighted that is the right
     # subscription (?axway_row=xxxx)"): a non-zero cell opens the page — on
-    # the SUBSCRIPTION pages with ?axway_row=<the subscription> (the first
-    # table of both pages is keyed by Subscription, the REAL name: the display
+    # the SUBSCRIPTION pages with ?axway_row=<the subscription> (ONE page since
+    # 2026-09-30, transfer/waiting-expired.html: its Subscriptions table is
+    # keyed by Subscription, the REAL name: the display
     # renames touch no subscription); the other entities open the page itself
     # (a name there is no row key, and a ?axway_search would stick as the
     # remembered search). Their drill lists went (a linked cell never drills).
@@ -388,7 +389,7 @@ fmt_dim() {
           printf "ROW\t%s\t%s\t%s\t%d\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d\t@data:buckets=%s\t@data:coreids-tok=%s\t@data:coreids-terr=%s\t@data:coreids-fin=%s\t@data:coreids-fout=%s\t@data:coreids-ferr=%s\t@data:coreids-rauto=%s\t@data:coreids-rmok=%s\t@data:coreids-rmerr=%s\t@data:durdays=%s\t@data:coreids-d90=%s\t@data:coreids-d95=%s\t@data:coreids-d99=%s\t@data:coreids-d100=%s\n", \
               $3, nz($10), nz($11), fe, pr(fe, files), $13, $14, $15, \
               dcell($30), dcell($31), dcell($32), dcell($33), hbytes0(bytes), hbytes0(files > 0 ? bytes / files : 0), \
-              tok, ter, pr(ter, tok + ter), stcell($16, "waiting", $3), stcell($17, "expired", $3), $5, $6, $7, \
+              tok, ter, pr(ter, tok + ter), stcell($16, "waiting-expired", $3), stcell($17, "waiting-expired", $3), $5, $6, $7, \
               $19, $20, $21, $22, $23, (NOFERR ? "" : $24), $25, $26, $27, $34, $35, $36, $37, $38 }')
     tot_line=$(awk -F'|' "$FMT_AWK"'BEGIN { tc = ARGV[1]; ttok = ARGV[2]; tter = ARGV[3]; tfe = ARGV[4]; tv = ARGV[5]; tin = ARGV[6]; tout = ARGV[7]
         printf "%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\n", pr(tter, ttok + tter), pr(tfe, tc), hbytes0(tv), hbytes0(tc > 0 ? tv / tc : 0), nz(tin), nz(tout), dcell(ARGV[8]), dcell(ARGV[9]), dcell(ARGV[10]), dcell(ARGV[11]); exit }' \

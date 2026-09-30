@@ -183,7 +183,7 @@ CUR_DATES=""
 
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
-transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out same-protocol activity cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage skipped not-in-flow-manager ranking files failed episodes failed-files unknown-transfers waiting expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell duration-all)
+transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out same-protocol activity cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage skipped not-in-flow-manager ranking files failed episodes failed-files unknown-transfers waiting-expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell duration-all)
 server_order=(topview errors failure-flows io-errors routing-errors uc-status polling logons connections missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab); site-failures one since 2026-09-28 (its rows = the Per flow connection-failure rows); routing-errors = the 2026-09-28 merge of could-not-send, publish-failed and post-client-action
 
 # ---- the analyses-housed area reports ---------------------------------------
@@ -206,7 +206,7 @@ is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
     return 1
 }
 
-# (The BOXES-ONLY reports — pirates, waiting, expired, went-quiet, went-kaput,
+# (The BOXES-ONLY reports — pirates, waiting, expired (one Waiting & Expired report since 2026-09-30), went-quiet, went-kaput,
 # 2026-07..09-29, reached only from the Boxes pages — are ordinary members of
 # their report groups since the one Reports pulldown, 2026-09-29.)
 
@@ -327,7 +327,7 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         cross-bl) echo "BL" ;;
         entity-coverage) echo "Entity coverage" ;; skipped) echo "Skipped" ;;
         files) echo "Sizes & types" ;;   # the MERGED report (size-dist + file-type + duplicate-files): its own group tab was an EMPTY span until 2026-09-13 (user report)
-        failed) echo "Failed Subscriptions" ;; failing-reasons) echo "Error reasons" ;; episodes) echo "Recovered flows" ;; expired) echo "Expired" ;; waiting) echo "Waiting" ;; pirates) echo "One-legged" ;; went-quiet) echo "Went quiet" ;; failure-heatmap) echo "Failure heatmap" ;; not-in-flow-manager) echo "Not in Flow Manager" ;;
+        failed) echo "Failed Subscriptions" ;; failing-reasons) echo "Error reasons" ;; episodes) echo "Recovered flows" ;; waiting-expired) echo "Waiting & Expired" ;; pirates) echo "One-legged" ;; went-quiet) echo "Went quiet" ;; failure-heatmap) echo "Failure heatmap" ;; not-in-flow-manager) echo "Not in Flow Manager" ;;
         file-in-file-out) echo "File in - File out" ;;
         protocol) echo "Protocol, Direction & Mode" ;;
         ranking) echo "Ranking" ;;
@@ -2026,7 +2026,7 @@ _report_groups() {
         "Entities|transfer/entities/subscription=Subscriptions|transfer/entities/logical=Logical|transfer/entities/partner=Partners|transfer/entities/account=Accounts|transfer/entities/login=Logins|transfer/entities/remote-host=Hosts|transfer/entities/domain=Domains|transfer/entities/application=Applications|transfer/entities/bl=BL" \
         "Errors|analyses/failed=Failed Subscriptions|analyses/failing-reasons=Error reasons|transfer/failed-files=Failed files|transfer/unknown-transfers=Unknown transfers|transfer/pirates=One-legged|transfer/episodes=Recovered flows|transfer/retries=Retries & resubmissions|transfer/failure-heatmap=Failure heatmap|server/errors=Errors|server/failure-flows=Per flow|server/io-errors=IO errors|server/routing-errors=Routing errors" \
         "Performance|transfer/duration=Duration|transfer/duration-longest=Longest Files|transfer/duration-dwell=Store-and-forward|transfer/anomalies=Anomalies" \
-        "Use cases & delivery|analyses/use-cases=Use cases|analyses/uc-status=UC status|analyses/polling=Polling|transfer/waiting=Waiting|transfer/expired=Expired|transfer/went-quiet=Went quiet" \
+        "Use cases & delivery|analyses/use-cases=Use cases|analyses/uc-status=UC status|analyses/polling=Polling|transfer/waiting-expired=Waiting & Expired|transfer/went-quiet=Went quiet" \
         "Activity & volume|transfer/activity=Activity|transfer/ranking=Ranking|transfer/files=Sizes & types|transfer/month-stats/this=Month stats" \
         "Flow patterns|transfer/file-journey=File journey|transfer/file-in-file-out=File in - File out|transfer/same-protocol=Inbound and Outbound same Protocol" \
         "Protocols & security|transfer/protocol=Protocol, Direction & Mode|transfer/security-params=Security Parameters|transfer/security-outreach=Security outreach|transfer/av-scan=AV Scan|transfer/connection-efficiency=Connection efficiency" \
@@ -2294,19 +2294,10 @@ TB_CID=$(_coreid_url input/coreid-url.txt)
 # shows — its link the home page (the page-relative index.html, which works
 # from disk too).
 ENV_SITES_JS='{local:{acceptance:"http://localhost/acceptance/",production:"http://localhost/production/"},remote:{acceptance:"https://probable-adventure-l6y6k83.pages.github.io/",production:"https://expert-adventure-9myme9m.pages.github.io/"}}'
-# THE DATA PERIOD in the top bar (2026-09-13, user request): "yyyy-mm-dd /
-# yyyy-mm-dd", the first and last day of the transfer data — the day report's
-# META first/last records (the same window the From/To selectors span) —
-# shown right after the environment and before Entities, on the runtime bar
-# (topbar-data.js `period`) and the baked one alike; empty on a checkout
-# without transfer data. Folded into TB_VER: it changes only when the data
-# window does, which re-renders the pages anyway.
-TB_PERIOD=""
-if [ -f "$DATA/transfer/reports/day.rpt" ]; then
-    TB_PERIOD=$(awk -F'\t' '$1 == "META" && ($2 == "first" || $2 == "last") && $3 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { v[$2] = substr($3, 1, 10) }
-        END { if (("first" in v) && ("last" in v)) print v["first"] " / " v["last"] }' "$DATA/transfer/reports/day.rpt")
-fi
-TB_VER=$(printf '%s' "$REPORTS_MENU$ERRORS_HREF$OVERVIEW_HREF$TB_CID${ENV_LABEL:-}${ENV_KEY:-}$ENV_SITES_JS$TB_PERIOD" | cksum | cut -d' ' -f1)
+# (THE DATA PERIOD in the top bar — "yyyy-mm-dd / yyyy-mm-dd" from the day
+# report's META first/last, topbar-data.js `period`, 2026-09-13 — went
+# 2026-09-30, user request: "remove 2026-08-31 / 2026-09-30".)
+TB_VER=$(printf '%s' "$REPORTS_MENU$ERRORS_HREF$OVERVIEW_HREF$TB_CID${ENV_LABEL:-}${ENV_KEY:-}$ENV_SITES_JS" | cksum | cut -d' ' -f1)
 
 # Copy the shared assets into docs/ and write .nojekyll. Idempotent, so each
 # publish script can call it and still produce a valid site when run on its own.
@@ -2352,11 +2343,9 @@ ensure_assets() {
     # + envkey (topbar.js renders the Acceptance / Production pair for the
     # two runtime keys) and the switch's four site URLs (`sites`,
     # ENV_SITES_JS — a JS object literal, baked verbatim)
-    # + the data period (TB_PERIOD, "yyyy-mm-dd / yyyy-mm-dd" — plain digits,
-    # slashes and spaces, nothing to escape)
     # + errors: the top bar's Errors link (ERRORS_HREF, docs-root-relative —
     # a plain page path, nothing to escape)
-    local _tb; printf -v _tb 'window.AXWAY_TB={reports:"%s",errors:"%s",overview:"%s",coreid:"%s",env:"%s",envkey:"%s",period:"%s",sites:%s};' "$r" "${ERRORS_HREF:-}" "${OVERVIEW_HREF:-}" "$c" "$e" "$k" "${TB_PERIOD:-}" "$ENV_SITES_JS"
+    local _tb; printf -v _tb 'window.AXWAY_TB={reports:"%s",errors:"%s",overview:"%s",coreid:"%s",env:"%s",envkey:"%s",sites:%s};' "$r" "${ERRORS_HREF:-}" "${OVERVIEW_HREF:-}" "$c" "$e" "$k" "$ENV_SITES_JS"
     _asset_put docs/assets/topbar-data.js "$_tb"
     [ -f docs/.nojekyll ] || : > docs/.nojekyll
 }
