@@ -13,6 +13,7 @@ ROOT="$(cd "$LIB_DIR/../.." && pwd)"
 cd "$ROOT"
 IP_DIR="$ROOT/input/ip"
 source "$ROOT/bin/ip.sh"         # IP_HOSTS_FILE (input/ip/ip-hosts.tsv) + ip_put
+source "$ROOT/bin/awklib.sh"     # $AWKLIB: the shared awk helpers (date.awk + fmt.awk)
 DATA="data"
 REPORTS_DIR="$DATA/analyses/reports"        # home.rpt (the status tables' SEEN counts) + first-seen*.rpt
 FSRPT_DIR="$DATA/first-seen"                # one .rpt per First-seen cell page

@@ -708,6 +708,12 @@ humanDur(sumN/sumM) · `xN` humanDur(max) · `tN.M` throughput · `bN` bar vs co
 of per-day average · `rN` POSITION by COLUMN N (not a bucket metric) descending, `rN.a` ascending,
 `rN.z` zeros last. Reports without a date dimension per row MUST use this; per-day tables just
 use a Date column; capped top-N tables re-aggregate over the shown rows only.
+**The shipped encoding is compact** (2026-09-30, the lean round): at render time `data-buckets` /
+`data-durdays` name the day by its 0-based index in the page's `report-dates` list (a date not in
+the list stays literal), a bucket value `0` ships empty and an originally empty one as `~`
+(render_rpt `benc`/`denc`, `-v rdates=$CUR_DATES`); report.js `expandPayload()` decodes them first
+in `init()`, so recalc, rank, heat and aggDurDays read the dated form unchanged. The WRITERS keep
+emitting the dated form.
 
 `rN` is the one CROSS-ROW token (`rankCols`, a second pass after the cells are rewritten): a
 position is a statement about the whole population, so the Ranking report renumbers it over the
@@ -728,7 +734,12 @@ scroll to that entity's row, and open at the FULL range without touching the sto
 detail pages' Ranking rows link this way).
 
 **Drill-down**: rows/cells carrying `data-coreids[-failed|-processed|-retry|-resubmit]` expand to the outcome's 10
-most-recent transfers, built by the shared `COREIDS_AWK` helper; the server reports use
+most-recent transfers (SHIPPED COMPACT since 2026-09-30: render_rpt ships a drill list that repeats
+an earlier one on the same row as `="<key>"` (`coreids-*`) or `="<n>"` (`drill-cell-*`), and a File
+drill list with undashed CoreIds and — on a row whose first cell is a date — entries without that
+date, marked `#` (`fenc`, which self-checks and keeps the original when the decode is not exact);
+report.js `expandPayload()` undoes both first in `init()`; a reader of drill attributes in `bin/`
+must allow `=` / `#` — verify.sh's rauto/rmok check does), built by the shared `COREIDS_AWK` helper; the server reports use
 `@data:loglines` (`LOGLINES_AWK`, a bounded insert by "date time" — the exports are newest-first
 within a file). **A drill entry links its File page only when the File HAS one** (2026-09-29 —
 the 2026-09-21 rule "the first File of a red / orange drill cell links its page", with
@@ -1263,7 +1274,13 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   takes the one its newest own Error/Warn line classifies to. The REASON is descriptive, not a
   verdict: the colour still never rests on a line attributed to no flow; Last file comes from `_files.tsv`.
 - **The Entities pages**: 9 entities x 6 views (All · Seen · Not seen · OK · Warning · Error —
-  `<entity>-<view>.html`, no scope pages since 2026-09-27) under `docs/transfer/entities/`,
+  `<entity>-<view>.html`, no scope pages since 2026-09-27) under `docs/transfer/entities/`. The six
+  views' ROW PAYLOAD (buckets, durdays, fp, the `coreids-*` drill lists) ships ONCE per entity in
+  `docs/transfer/entities/<entity>-data.js` (`window.AXWAY_EP`, publish_lib `entity_payload_split`,
+  run after the views render — 2026-09-30, the lean round: the views repeated it ~3x); page rows
+  carry `data-k` and report.js `attachEntityPayload()` puts the payload back FIRST in `init()`;
+  TOTAL rows keep their own buckets; linkcheck reads the fp edges from the `.js`. A new reader of
+  row attributes needs no change (the DOM is complete after init's first step). Pages
   assembled at publish time (`render_entity_report`) from
   `data/transfer/reports/entities/<name>.rpt` — ONE writer for the nine,
   `bin/transfer/reports/entities.sh` — plus the coverage TSVs and the base caches (the ghost
@@ -1695,6 +1712,27 @@ front end) then four fix workers with disjoint files. The rules it left:
 - **Detail pages**: the Waiting/Expired summary is HELD and rendered after the Features block
   (`we_table`), so the section order does not depend on whether an entity has such Files.
 
+## Rules from the 2026-09-30 lean rounds (user request: "make this site mean and lean")
+
+- **Shared awk helpers**: a date, byte / duration formatter, `lit()`, HTML escape, slug or numeric
+  quicksort comes from `bin/date.awk` / `bin/fmt.awk` through `"$AWKLIB"` (`awk … "$OTHER_AWK$AWKLIB"'program'`),
+  never a pasted copy. Pick the NAMED variant that gives the output you want; add a new named variant
+  rather than changing an existing one. A program that injects `$AWKLIB` must not define those names
+  itself (mawk rejects a function defined twice) nor use them as variables (`slug` is a variable in
+  many writers — hence `slugof`). The server reports build their `LINK_AWK` from the `SRV_*_AWK`
+  strings and `known_names` in `bin/server/lib.sh`. `details_writer.awk` runs as
+  `-f bin/fmt.awk -f details_writer.awk`. `hbytes2` / `hbytes0` are the awk twins of report.js
+  `humanBytes` / `humanBytesInt` — KEEP IN STEP. (Left in place: the copies inside publish_lib.sh's
+  entity_res_block and render_rpt.awk's `esc` / `slugify`.)
+- **Compact payloads** (see RECALC, Drill-down, the Entities pages): what the renderer SHIPS is
+  encoded; report.js decodes it first in `init()`. A static round-trip check (decode every shipped
+  attribute and compare with the writer's dated form) is the proof for any change there.
+- **One pass per publish**: no publish catch-up modes; the Reason catch-up (`failed.sh catchup`)
+  runs in the report stage. Keep it that way: a new cross-phase dependency goes BEFORE the publishes.
+- **Measured, not worth it** (do not retry): an `inbound` server subset, a `day` marker subset for
+  day_srv, sharing the three `_files.tsv` subscription sorts (<0.5 CPU-s), one shared SSH subset for
+  the logon family readers (breaks even), `grep -F` prefilters (slower than mawk).
+
 ## Rules from the 2026-09-29 Errors / Unknown change (user request)
 
 - **The Errors group** (Failures until 2026-09-29, "Rename Failures to Errors"): NOT on the
@@ -1887,6 +1925,10 @@ bin/check-syntax.sh     bash -n over every bin/**/*.sh (the build's and the sync
 bin/timing.sh           `timed` -> the TIME lines
 bin/logons.sh           ensure_logons -> the logon summary (_logons.tsv + _logons-hosts.tsv; logon.sh's twin)
 bin/ssh-family.awk      the [Ssh Default] logon-family classifier, ONE copy for logon.sh + logons.sh (2026-09-30)
+bin/awklib.sh           $AWKLIB (date.awk + fmt.awk) and $CADENCE_AWK — injected in front of an awk program's text
+bin/date.awk            jdn / fromjdn / minof            bin/cadence.awk  patron / regspread / label (the pickup-pattern vocabulary)
+bin/fmt.awk             hbytes2 / hbytes0 / hbytes1, hdurms, hdsecs, lit, html_esc, slugof, qsortn
+bin/pool.sh             pool_run / pool_wait (POOL_TIMED, POOL_WHAT) — the report runners and the server parse
 bin/flip-reason.awk     server-log line -> Reason      bin/subname.awk   which configured subscription a line names
 bin/cron-observed.awk   schedule vs observed firing    bin/subscription-active.jq  the Active codes
 bin/flow-manager.sh     config exports -> data/flow-manager/{base,xref}

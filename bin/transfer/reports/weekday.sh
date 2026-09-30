@@ -32,10 +32,7 @@ OUT="$REPORTS_DIR/weekday.rpt"
 
 # Bucket the normalized stream by weekday (jdn %% 7, 0=Mon). Same as before,
 # reading cols 1=date 2=jdn 3=time 4=proc 5=size 6=sortkey 7=id.
-agg=$(awk -F'\t' '
-    function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
-        while (v >= 1024 && i < 6) { v /= 1024; i++ }
-        return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
+agg=$(awk -F'\t' "$AWKLIB"'
     {
         iso = $1; size = $5; pf = ($4 == 0); w = ($2 + 0) % 7
         # VOLUME follows the Files column = the OK Files bytes (2026-09-29:
@@ -52,10 +49,10 @@ agg=$(awk -F'\t' '
             rec = wr[i] + 0; days = wdays[i] + 0
             avg = days > 0 ? sprintf("%d", (wp[i]+0) / days + 0.5) : "0"   # the OK count per observed day (Files = delivered since 2026-09-13); round HALF-UP, exactly report.js'\''s a-token (Math.round) — plain %d truncated and the value flicked by 1 after a date round-trip (audit C3)
             pct = rec > 0 ? sprintf("%.1f", (wf[i]+0) * 100 / rec) : "0.0"
-            printf "WD|%d|%d|%d|%s|%d|%d|%s|%d|%s|%s\n", i, days, rec, avg, wf[i]+0, wp[i]+0, pct, wb[i]+0, human(wb[i]+0), bk[i]
+            printf "WD|%d|%d|%d|%s|%d|%d|%s|%d|%s|%s\n", i, days, rec, avg, wf[i]+0, wp[i]+0, pct, wb[i]+0, hbytes2(wb[i]+0), bk[i]
         }
         tpct = trec > 0 ? sprintf("%.1f", (tf+0) * 100 / trec) : "0.0"
-        printf "TOT|%d|%d|%d|%s|%s\n", trec, tf+0, tp+0, tpct, human(tbytes)
+        printf "TOT|%d|%d|%d|%s|%s\n", trec, tf+0, tp+0, tpct, hbytes2(tbytes)
     }
 ' <(activity_stream))
 

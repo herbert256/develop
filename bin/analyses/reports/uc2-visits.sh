@@ -52,8 +52,7 @@ fi
 # most pickups; name breaks ties so the order never depends on input order.
 # The account's pickup/visit figures repeat on each of its UC2 subscriptions
 # (the logon evidence is account-level).
-rows=$(LC_ALL=C sort -t$'\t' -k16,16nr -k12,12nr -k5,5nr -k1,1f "$PICKUPS" | awk -F'\t' '
-    function sublink(s) { return (s != "") ? "@{alink=subscriptions/" s "}" : "" }
+rows=$(LC_ALL=C sort -t$'\t' -k16,16nr -k12,12nr -k5,5nr -k1,1f "$PICKUPS" | awk -F'\t' "$SRV_SUBLINK_AWK"'
     function nz(x) { return (x + 0 == 0) ? "" : x + 0 }   # a 0 count is BLANK, as on the sibling tabs (2026-09-29 audit)
     $10 + 0 > 0 {
         printf "ROW\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \

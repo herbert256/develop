@@ -15,6 +15,14 @@
 # application / logical / BL sets sources it. Inject as
 #   awk -F'\t' -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK"'...'
 source "$ROOT/bin/pda-union.sh"
+# qsort() — ONE copy for the two programs below (2026-09-30)
+DL_QSORT_AWK='function qsort(A, lo, hi,   i, j, p2, t) {
+    while (lo < hi) {
+        i = lo; j = hi; p2 = A[int((lo + hi) / 2)]
+        while (i <= j) { while (A[i] < p2) i++; while (A[j] > p2) j--; if (i <= j) { t = A[i]; A[i] = A[j]; A[j] = t; i++; j-- } }
+        if (j - lo < hi - i) { if (lo < j) qsort(A, lo, j); lo = i } else { if (i < hi) qsort(A, i, hi); hi = j }
+    }
+}'
 # ===== same-type RANKS (2026-09-27) ==========================================
 # The Ranking positions (aggregate_files: Files / Volume / Error rate;
 # compute_extras: Duration / Throughput) used to be counted by an all-pairs
@@ -95,17 +103,8 @@ direction_rows() {
 # Merged into the files stream. Perf is processed ROWS (as the "Processed
 # transfers" KPI reads).
 compute_extras() {
-  awk -F'\t' -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK$RANK_AWK"'
-    function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
-    function humandur(ms){ if(ms<1000) return sprintf("%d ms",ms); if(ms<60000) return sprintf("%.2f s",ms/1000); if(ms<3600000) return sprintf("%.1f min",ms/60000); return sprintf("%.2f h",ms/3600000) }
-    function thr(bytes,ms){ return ms>0 ? human(bytes*1000/ms) "/s" : "-" }
-    function qsort(A, lo, hi,   i, j, p2, t) {
-        while (lo < hi) {
-            i = lo; j = hi; p2 = A[int((lo + hi) / 2)]
-            while (i <= j) { while (A[i] < p2) i++; while (A[j] > p2) j--; if (i <= j) { t = A[i]; A[i] = A[j]; A[j] = t; i++; j-- } }
-            if (j - lo < hi - i) { if (lo < j) qsort(A, lo, j); lo = i } else { if (i < hi) qsort(A, i, hi); hi = j }
-        }
-    }
+  awk -F'\t' -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK$RANK_AWK$AWKLIB$DL_QSORT_AWK"'
+    function thr(bytes,ms){ return ms>0 ? hbytes2(bytes*1000/ms) "/s" : "-" }
     # the durations per entity as DISTINCT values + counts (PD/PC, 2026-09-28
     # speed round 14): END sorted every leg duration of every entity (each
     # leg once per entity type) for three percentiles; the sorted distinct
@@ -150,7 +149,7 @@ compute_extras() {
         c=0; p50=""; p95=""; p99=""
         for(i=1;i<=m;i++){ c+=PC[k, T[i]]; if(p50==""&&c>=r50)p50=T[i]; if(p95==""&&c>=r95)p95=T[i]; if(c>=r99){ p99=T[i]; break } }
         split(k,a,SUBSEP)
-        printf "%s\t%s\t0\t1\t%d|%s|%s|%s|%s|%s|%s|%s\n", a[1],a[2],n,humandur(pmn[k]+0),humandur(ps2[k]/n),humandur(p50),humandur(p95),humandur(p99),humandur(pmx[k]+0),thr(pby[k],ps2[k]) }
+        printf "%s\t%s\t0\t1\t%d|%s|%s|%s|%s|%s|%s|%s\n", a[1],a[2],n,hdurms(pmn[k]+0),hdurms(ps2[k]/n),hdurms(p50),hdurms(p95),hdurms(p99),hdurms(pmx[k]+0),thr(pby[k],ps2[k]) }
       # 0/7 = the per-day timed triple "date:files:ms:bytes|…" (see perf()).
       # Line ORDER is hash order here as it is above — the stream is sorted
       # before the writer reads it, so the output stays deterministic.
@@ -665,27 +664,17 @@ insert_config_rows() {
 # each group, so the groups' outputs together are the one pass's output (the
 # stream sort orders them).
 aggregate_files() {
-  awk -F'\t' -v ONLY="${AGG_ONLY:-}" -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK$COREIDS_AWK$RANK_AWK"'
-    function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
-    function humandur(ms){ if(ms<1000) return sprintf("%d ms",ms); if(ms<60000) return sprintf("%.2f s",ms/1000); if(ms<3600000) return sprintf("%.1f min",ms/60000); return sprintf("%.2f h",ms/3600000) }
+  awk -F'\t' -v ONLY="${AGG_ONLY:-}" -v SPMAP="$SP_MAP" -v APMAP="$AP_MAP" -v PLMAP="$PL_MAP" -v SLGMAP="$SLG_MAP" -v BLMAP="$BL_MAP" "$SP_AWK$COREIDS_AWK$RANK_AWK$AWKLIB$DL_QSORT_AWK"'
     function inv(c){ return sprintf("%012d", 1000000000 - c) }
-    function jdnum(y,m,dd,   a) { a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return dd+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     # epoch-second helpers for the store-and-forward dwell (dwell-time.sh twins)
     function secs5(t,  p5){ if (split(t, p5, ":") < 3) return -1; return p5[1]*3600 + p5[2]*60 + p5[3] }
     # (the day part memoized per date string, EPI/EPU — every leg of the walk
     # calls these, over a few dozen distinct dates; 2026-09-27)
-    function ep_iso(di, t,  p5, s5, j5){ if (di in EPI) j5=EPI[di]; else { j5=(split(di, p5, "-") < 3) ? -1 : jdnum(p5[1]+0,p5[2]+0,p5[3]+0)*86400; EPI[di]=j5 }
+    function ep_iso(di, t,  p5, s5, j5){ if (di in EPI) j5=EPI[di]; else { j5=(split(di, p5, "-") < 3) ? -1 : jdn(p5[1]+0,p5[2]+0,p5[3]+0)*86400; EPI[di]=j5 }
       if (j5<0) return -1; s5=secs5(t); if (s5<0) return -1; return j5 + s5 }
     function ep_us(x,  a5, dp5, s5, j5){ if (split(x, a5, " ") < 2) return -1
-      if (a5[1] in EPU) j5=EPU[a5[1]]; else { j5=(split(a5[1], dp5, "/") < 3) ? -1 : jdnum(dp5[3]+0,dp5[1]+0,dp5[2]+0)*86400; EPU[a5[1]]=j5 }
+      if (a5[1] in EPU) j5=EPU[a5[1]]; else { j5=(split(a5[1], dp5, "/") < 3) ? -1 : jdn(dp5[3]+0,dp5[1]+0,dp5[2]+0)*86400; EPU[a5[1]]=j5 }
       if (j5<0) return -1; s5=secs5(a5[2]); if (s5<0) return -1; return j5 + s5 }
-    function qsort(A, lo, hi,   i, j, p2, t) {
-        while (lo < hi) {
-            i = lo; j = hi; p2 = A[int((lo + hi) / 2)]
-            while (i <= j) { while (A[i] < p2) i++; while (A[j] > p2) j--; if (i <= j) { t = A[i]; A[i] = A[j]; A[j] = t; i++; j-- } }
-            if (j - lo < hi - i) { if (lo < j) qsort(A, lo, j); lo = i } else { if (i < hi) qsort(A, i, hi); hi = j }
-        }
-    }
     function perday(ty,ent,   k,kd,wk,wkd,hk,dk) { if(ent=="")return; k=ty SUBSEP ent; kd=k SUBSEP day; pdseen[kd]=1
       if(pr2){pdp[kd]++;ptp[k]++; if(gHADF)pdr[kd]++}else{pdf[kd]++;ptf[k]++}   # pdr = RECOVERED: an OK File that carried a failed leg
       pdb[kd]+=size; ptb[k]+=size; ptr[k]++; if(size>ptmx[k])ptmx[k]=size
@@ -884,8 +873,8 @@ aggregate_files() {
         pct=ptr[k]>0?sprintf("%.1f",ptf[k]*100/ptr[k]):"0.0"
         share=ttot[a[1]]>0?sprintf("%.1f",ptr[k]*100/ttot[a[1]]):"0.0"
         sshare=ttotb[a[1]]>0?sprintf("%.1f",ptb[k]*100/ttotb[a[1]]):"0.0"
-        avgsz=(ptr[k]>0?human(ptb[k]/ptr[k]):"-")
-        printf "%s\t%s\t0\t0\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t%s\n", a[1], a[2], ptr[k], ptf[k]+0, ptp[k]+0, human(ptb[k]), pfirst[k], plast[k], pct, share, rank, tcnt2[a[1]], nact[k]+0, "-", gmax-pmaxjd[k], ptD[k SUBSEP "fi"]+0, ptD[k SUBSEP "pi"]+0, ptD[k SUBSEP "fo"]+0, ptD[k SUBSEP "po"]+0, human(ptmx[k]+0), avgsz, srank, erank, (ptdn[k]>0?humandur(ptdur[k]/ptdn[k]):"-"), sshare, wecnt(k SUBSEP "Waiting"), wecnt(k SUBSEP "Expired"), ((k in pokend)?pokend[k]:"") }   # field 30 = the newest OK File END (the banner cut)
+        avgsz=(ptr[k]>0?hbytes2(ptb[k]/ptr[k]):"-")
+        printf "%s\t%s\t0\t0\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t%s\n", a[1], a[2], ptr[k], ptf[k]+0, ptp[k]+0, hbytes2(ptb[k]), pfirst[k], plast[k], pct, share, rank, tcnt2[a[1]], nact[k]+0, "-", gmax-pmaxjd[k], ptD[k SUBSEP "fi"]+0, ptD[k SUBSEP "pi"]+0, ptD[k SUBSEP "fo"]+0, ptD[k SUBSEP "po"]+0, hbytes2(ptmx[k]+0), avgsz, srank, erank, (ptdn[k]>0?hdurms(ptdur[k]/ptdn[k]):"-"), sshare, wecnt(k SUBSEP "Waiting"), wecnt(k SUBSEP "Expired"), ((k in pokend)?pokend[k]:"") }   # field 30 = the newest OK File END (the banner cut)
       # section 0.4 — the Last error(s) rows: one per connected SUBSCRIPTION
       # that has an error, carrying the newest error of that subscription. The SORTKEY
       # is the File sortkey, so the global sort hands them to the writer
@@ -898,18 +887,18 @@ aggregate_files() {
       # $8/$15 above cannot be re-summed): details_writer.awk folds them into
       # the Ranking sidecar @data:buckets payload so the Ranking report can
       # re-aggregate — and re-rank — for a From/To range.
-      for(kd in pdseen){ split(kd,a,SUBSEP); dc=pdf[kd]+pdp[kd]; printf "%s\t%s\t1\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%s\t%d\t%d\t%d\n", a[1], a[2], a[3], a[3], pdf[kd]+0, pdp[kd]+0, human(pdb[kd]), orlist(top[a[1] SUBSEP a[2] SUBSEP a[3] SUBSEP "F"]), orlist(top[a[1] SUBSEP a[2] SUBSEP a[3] SUBSEP "P"]), pdD[kd SUBSEP "fi"]+0, pdD[kd SUBSEP "pi"]+0, pdD[kd SUBSEP "fo"]+0, pdD[kd SUBSEP "po"]+0, (pddn[kd]>0?humandur(pddur[kd]/pddn[kd]):"-"), pdb[kd]+0, pddur[kd]+0, pdr[kd]+0 }
+      for(kd in pdseen){ split(kd,a,SUBSEP); dc=pdf[kd]+pdp[kd]; printf "%s\t%s\t1\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%s\t%d\t%d\t%d\n", a[1], a[2], a[3], a[3], pdf[kd]+0, pdp[kd]+0, hbytes2(pdb[kd]), orlist(top[a[1] SUBSEP a[2] SUBSEP a[3] SUBSEP "F"]), orlist(top[a[1] SUBSEP a[2] SUBSEP a[3] SUBSEP "P"]), pdD[kd SUBSEP "fi"]+0, pdD[kd SUBSEP "pi"]+0, pdD[kd SUBSEP "fo"]+0, pdD[kd SUBSEP "po"]+0, (pddn[kd]>0?hdurms(pddur[kd]/pddn[kd]):"-"), pdb[kd]+0, pddur[kd]+0, pdr[kd]+0 }
       # (the @data:buckets payload builders — bkH/bkD/bkB/dwbk over the
       # per-date twins — are GONE, 2026-07: the detail pages have no From/To
       # filter, so the re-aggregation payload had no consumer)
-      for(k in hl){ split(k,a,SUBSEP); printf "%s\t%s\t11\t%s\t%s:00\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\n", a[1], a[2], a[3], a[3], hl[k], hf[k]+0, hp[k]+0, human(hb[k]), hD[k SUBSEP "fi"]+0, hD[k SUBSEP "pi"]+0, hD[k SUBSEP "fo"]+0, hD[k SUBSEP "po"]+0 }
-      for(k in dl2){ split(k,a,SUBSEP); printf "%s\t%s\t10\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\n", a[1], a[2], a[3], a[3], dl2[k], df3[k]+0, dp3[k]+0, human(db2[k]), dD[k SUBSEP "fi"]+0, dD[k SUBSEP "pi"]+0, dD[k SUBSEP "fo"]+0, dD[k SUBSEP "po"]+0 }
+      for(k in hl){ split(k,a,SUBSEP); printf "%s\t%s\t11\t%s\t%s:00\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\n", a[1], a[2], a[3], a[3], hl[k], hf[k]+0, hp[k]+0, hbytes2(hb[k]), hD[k SUBSEP "fi"]+0, hD[k SUBSEP "pi"]+0, hD[k SUBSEP "fo"]+0, hD[k SUBSEP "po"]+0 }
+      for(k in dl2){ split(k,a,SUBSEP); printf "%s\t%s\t10\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\n", a[1], a[2], a[3], a[3], dl2[k], df3[k]+0, dp3[k]+0, hbytes2(db2[k]), dD[k SUBSEP "fi"]+0, dD[k SUBSEP "pi"]+0, dD[k SUBSEP "fo"]+0, dD[k SUBSEP "po"]+0 }
       # section 12.6 — the store-and-forward dwell distribution per entity:
       # bucket label, Files in the bucket, the entity total (for the Share column)
       for(k in dwc){ split(k,a,SUBSEP)
           printf "%s\t%s\t12.6\t%d\t%s\t%d\t%d\n", a[1], a[2], dwo2[a[3]], a[3], dwc[k], dwt[a[1] SUBSEP a[2]] }
       for(key in bc){ split(key,a,SUBSEP)
-        printf "%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%s\t%s\t%d\t%d\n", a[1], a[2], a[3], inv(bc[key]), a[4], bc[key], bf[key]+0, bp[key]+0, human(bv[key]+0), bD[key SUBSEP "fi"]+0, bD[key SUBSEP "pi"]+0, bD[key SUBSEP "fo"]+0, bD[key SUBSEP "po"]+0, orlist(top[key SUBSEP "F"]), orlist(top[key SUBSEP "P"]), bw[key]+0, be[key]+0 }
+        printf "%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%s\t%s\t%d\t%d\n", a[1], a[2], a[3], inv(bc[key]), a[4], bc[key], bf[key]+0, bp[key]+0, hbytes2(bv[key]+0), bD[key SUBSEP "fi"]+0, bD[key SUBSEP "pi"]+0, bD[key SUBSEP "fo"]+0, bD[key SUBSEP "po"]+0, orlist(top[key SUBSEP "F"]), orlist(top[key SUBSEP "P"]), bw[key]+0, be[key]+0 }
       for(k in wec){ split(k,a,SUBSEP)
         printf "%s\t%s\t0.9\t%d\t%s|%d|%s|%s\n", a[1], a[2], (a[3]=="Waiting"?0:1), a[3], wec[k], wef[k], wel[k] }
       # (section 9, the Latest 100 / Latest 1000 Files list per entity, went

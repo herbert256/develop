@@ -42,9 +42,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # buckets, example (the chronologically FIRST message by "date time" sortkey —
 # the cache is NOT in chronological order — truncated); W lines = bucket x ISO
 # week.
-agg=$(awk -F'\t' "$LOGLINES_AWK"'
-    function jdn(y, m, d,   a) { a = int((14-m)/12); y = y+4800-a; m = m+12*a-3
-        return d + int((153*m+2)/5) + 365*y + int(y/4) - int(y/100) + int(y/400) - 32045 }
+agg=$(awk -F'\t' "$LOGLINES_AWK$AWKLIB"'
     # ISO week label from an ISO date: the calendar week of that date Thursday
     # (jdn%7: 0 = Monday, so Thursday = week start + 3).
     function isoweek(ds,   y, j, tj, ty) {

@@ -116,11 +116,10 @@ LOGONS="$SCACHE/_logons.tsv"
 # streamed, then one "R" line per login and one "S" line of stat figures.
 # The "-" sentinel keeps empty middle fields from collapsing (a TAB is IFS
 # whitespace — the CLAUDE.md gotcha); the row writer swaps them back.
-awk -F'\t' -v LBASE="$LBASE" -v LSUB="$LSUB" -v UCDF="$UCDF" -v LOGONS="$LOGONS" -v OLD="$OLD" -v PICKUPS="$PICKUPS" '
+awk -F'\t' -v LBASE="$LBASE" -v LSUB="$LSUB" -v UCDF="$UCDF" -v LOGONS="$LOGONS" -v OLD="$OLD" -v PICKUPS="$PICKUPS" "$AWKLIB"'
     function ucof(s) { if (match(s, /^UC[0-9]+/)) return substr(s, 1, RLENGTH); if (toupper(s) in UCD) return UCD[toupper(s)]; return "" }
     function trim(s) { sub(/^[ \t\r]+/, "", s); sub(/[ \t\r]+$/, "", s); return s }
     function nz(s) { return (s == "" ? "-" : s) }
-    function jdn(y,m,d,  a9){ a9=int((14-m)/12); y=y+4800-a9; m=m+12*a9-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     function tsec(d,t,   p9){ split(d,p9,"-"); return jdn(p9[1]+0,p9[2]+0,p9[3]+0)*86400 + substr(t,1,2)*3600 + substr(t,4,2)*60 + substr(t,7,2) }
     # one unit, truncated, singular/plural: "5 days", "12 hours", "45 minutes", "10 seconds"
     function hage(s,   n9, u9) {

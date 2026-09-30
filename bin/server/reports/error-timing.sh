@@ -35,8 +35,7 @@ fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # One pass over E/W messages. Emits the heat ROW/TOTAL grid (TAB) and a TOT line.
-agg=$(awk -F'\t' "$LOGLINES_AWK"'
-    function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
+agg=$(awk -F'\t' "$LOGLINES_AWK$AWKLIB"'
     ($3 != "E" && $3 != "W") { next }
     $2 !~ /^[0-9][0-9]:/ { next }
     {

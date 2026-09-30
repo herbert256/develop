@@ -35,6 +35,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; html_head/esc/dotify/first_page/…
 source "$SCRIPT_DIR/../uc-cases.sh"      # uc_meta(): the shared UC<n> description (From/To/role/human)
+source "$SCRIPT_DIR/../awklib.sh"        # $AWKLIB: the shared awk helpers (html_esc, …)
 
 [ $# -eq 0 ] || { printf 'usage: bin/analyses/publish.sh (no arguments)\n' >&2; exit 2; }
 
@@ -85,17 +86,16 @@ _fs_cell() {   # $1 = the cell .rpt
         printf '<p class="range">Row colors: <strong>light green</strong> = last transfer OK &middot; <strong>light orange</strong> = configured but never seen &middot; <strong>light red</strong> = last transfer Error (or server-log errors after it).</p>\n'
         printf '<div class="tablewrap"><table class="index fit">\n'
         printf '<tr><th>%s</th><th>First transfer</th></tr>\n' "$nlabel"
-        printf '%s\n' "$rows" | awk -F'\t' -v resf="$resfile" '
-            function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
+        printf '%s\n' "$rows" | awk -F'\t' -v resf="$resfile" "$AWKLIB"'
             BEGIN { if (resf != "") { while ((getline line < resf) > 0) { split(line, a, "\t"); res[toupper(a[1])] = a[3] } close(resf) } }
             NF {
-                name = e($1)
+                name = html_esc($1)
                 if ($3 != "") name = "<a href=\"../details/" $3 ".html\">" name "</a>"
                 trattr = ""   # (no data-seen: nothing reads it on these pages — 2026-09-29 audit)
                 rr = res[toupper($1)]
                 if (rr == "green" || rr == "orange" || rr == "red") trattr = trattr " data-res=\"" rr "\""
                 nrows++; if ($2 == 1) nseen++
-                printf "<tr%s><td>%s</td><td>%s</td></tr>\n", trattr, name, e($4)
+                printf "<tr%s><td>%s</td><td>%s</td></tr>\n", trattr, name, html_esc($4)
             }
             END {
                 printf "<tr class=\"total\"><td>Total (%d)</td><td>%d seen</td></tr>\n", nrows+0, nseen+0
@@ -268,8 +268,7 @@ render_coverage_pages() {
                 -v amf="$amf" -v elf="$elf" -v ehf="$ehf" -v whf="$whf" -v smap="$smap" -v amap="$amap" \
                 -v lmap="$lmap" -v hmap="$hmap" -v resf="$resfile" -v grpf="$grpmapc" \
                 -v fdf="$DATA/flow-manager/xref/_subscriptions-flowdir.tsv" -v msub="$msubf" \
-                -v ucdf="$DATA/flow-manager/xref/_subscriptions-ucderived.tsv" '
-                function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
+                -v ucdf="$DATA/flow-manager/xref/_subscriptions-ucderived.tsv" "$AWKLIB"'
                 # one endpoint value -> a link to its login/host detail page
                 # (type t: "l" login, "h" host); no slugmap entry, no link
                 # connection side + the entity name -> "conn/movement", lowercase
@@ -282,15 +281,15 @@ render_coverage_pages() {
                 }
                 function eplink(p, t,   s) {
                     s = (t == "l") ? lslug[p] : hslug[tolower(p)]
-                    if (s == "") return e(p)
-                    return "<a href=\"../details/" ((t == "l") ? "logins/" : "hosts/") s ".html\">" e(p) "</a>"
+                    if (s == "") return html_esc(p)
+                    return "<a href=\"../details/" ((t == "l") ? "logins/" : "hosts/") s ".html\">" html_esc(p) "</a>"
                 }
                 function slink(v,   s) { s = sslug[v]
-                    if (s == "") return e(v)
-                    return "<a href=\"../details/subscriptions/" s ".html\">" e(v) "</a>" }
+                    if (s == "") return html_esc(v)
+                    return "<a href=\"../details/subscriptions/" s ".html\">" html_esc(v) "</a>" }
                 function alink2(v,   s) { s = aslug[v]
-                    if (s == "") return e(v)
-                    return "<a href=\"../details/accounts/" s ".html\">" e(v) "</a>" }
+                    if (s == "") return html_esc(v)
+                    return "<a href=\"../details/accounts/" s ".html\">" html_esc(v) "</a>" }
                 # a \x1f-joined raw list -> the collapsed linked cell (typ: s
                 # subscription, a account, e typed endpoint); CELLN carries
                 # the count out for the data-sortval and the footer sums
@@ -355,7 +354,7 @@ render_coverage_pages() {
                     if (resf != "") { while ((getline line < resf) > 0) { split(line, a, "\t"); res[toupper(a[1])] = a[3] } close(resf) }
                     if (grpf != "") { while ((getline line < grpf) > 0) { split(line, a, "\t"); grp[a[1]] = a[2] } close(grpf) } }
                 NF {
-                    name = e($1)
+                    name = html_esc($1)
                     seen = ($3 == 1) ? "yes" : "no"
                     nrows++                                       # footer figures
                     if ($3 == 1) nseen++
@@ -364,7 +363,7 @@ render_coverage_pages() {
                     # pages, where both are always blank) Seen instead; lc 2 =
                     # no trailing cell at all (the partners Configured page —
                     # the row tint already carries seen-ness)
-                    tail = (lc == 2) ? "" : ((lc == 1) ? "<td>" ((ipc == 1) ? substr($5, 1, 10) : e($5)) "</td>" : "<td>" seen "</td>")   # (the Result column is gone — the row tint carries the outcome)
+                    tail = (lc == 2) ? "" : ((lc == 1) ? "<td>" ((ipc == 1) ? substr($5, 1, 10) : html_esc($5)) "</td>" : "<td>" seen "</td>")   # (the Result column is gone — the row tint carries the outcome)
                     # every row is tinted by the entity result — green /
                     # orange / red from the base cache (data-res, style.css)
                     trattr = ""   # (no data-seen: nothing reads it here — 2026-09-29 audit)
@@ -372,7 +371,7 @@ render_coverage_pages() {
                     # base result carries the tint directly
                     if (rr == "green" || rr == "orange" || rr == "red") trattr = trattr " data-res=\"" rr "\""
                     if (wl == 1)
-                        printf "<tr%s><td><code>%s</code></td><td>%s</td>%s</tr>\n", trattr, name, e(acc[$1]), tail
+                        printf "<tr%s><td><code>%s</code></td><td>%s</td>%s</tr>\n", trattr, name, html_esc(acc[$1]), tail
                     else if (pt == 1) {
                         # ONE row shape for all five pages (2026-08-31, user
                         # request): Subscriptions / Accounts / Endpoints from
@@ -398,7 +397,7 @@ render_coverage_pages() {
                         else          { nip = wn2[ku2] + 0; ws = substr(wip[ku2], 2) }
                         nips += nip
                         gsub(US, ", ", ws)
-                        if (nip > 0) ws = "<details><summary>" nip " IP" (nip > 1 ? "s" : "") "</summary><code>" e(ws) "</code></details>"
+                        if (nip > 0) ws = "<details><summary>" nip " IP" (nip > 1 ? "s" : "") "</summary><code>" html_esc(ws) "</code></details>"
                         else ws = ""
                         wcell = "<td class=\"wrap\" data-sortval=\"" nip "\">" ws "</td>"
                         # UC1..UC4 cells; a use case the entity has no
@@ -679,17 +678,16 @@ write_use_cases_page() {
             printf '<h2>Templates</h2>\n'
             printf '<div class="tablewrap"><table class="index fit" data-nosearch="1">\n'
             printf '<tr><th>Template</th><th>Use Case</th><th>Route</th><th class="num">Subscriptions</th><th>Status</th><th>Last modified</th></tr>\n'
-            LC_ALL=C sort -t"$(printf '\t')" -k2,2 -k1,1 "$tmpl" | awk -F'\t' '
-                function e(s) { gsub(/&/,"\\&amp;",s); gsub(/</,"\\&lt;",s); gsub(/>/,"\\&gt;",s); gsub(/"/,"\\&quot;",s); return s }
+            LC_ALL=C sort -t"$(printf '\t')" -k2,2 -k1,1 "$tmpl" | awk -F'\t' "$AWKLIB"'
                 NR == FNR { if ($2 != "") cnt[$2]++; next }
                 $2 != "" {
                     n = cnt[$4] + 0; tot += n; nt++
-                    ucc = e($2)
+                    ucc = html_esc($2)
                     if ($2 ~ /^UC[0-9]+$/) ucc = "<a href=\"subscriptions.html?axway_search=%22" $2 "%22\">" ucc "</a>"
-                    nm = "<code>" e($1) "</code>"
-                    if ($5 != "") nm = nm " <a class=\"fmlink\" href=\"" e($5) "\" title=\"Open in FlowManager\" target=\"_blank\" rel=\"noopener\">&#128279;</a>"
+                    nm = "<code>" html_esc($1) "</code>"
+                    if ($5 != "") nm = nm " <a class=\"fmlink\" href=\"" html_esc($5) "\" title=\"Open in FlowManager\" target=\"_blank\" rel=\"noopener\">&#128279;</a>"
                     printf "<tr><td>%s</td><td>%s</td><td><code>%s</code></td><td class=\"num\">%s</td><td>%s</td><td>%s</td></tr>\n", \
-                           nm, ucc, e($4), (n > 0 ? n : ""), e($3), e($6)
+                           nm, ucc, html_esc($4), (n > 0 ? n : ""), html_esc($3), html_esc($6)
                 }
                 END { printf "<tr class=\"total\"><td>Total (%d templates)</td><td></td><td></td><td class=\"num\">%d</td><td></td><td></td></tr>\n", nt, tot }
             ' "$pmap" -
@@ -717,17 +715,16 @@ write_logical_detection_page() {
     [ -f "$lmap" ] || lmap=/dev/null
     [ -f "$lbase" ] || lbase=/dev/null
     local rows n
-    rows=$(LC_ALL=C awk -F'\t' -v LM="$lmap" -v LB="$lbase" '
-        function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
+    rows=$(LC_ALL=C awk -F'\t' -v LM="$lmap" -v LB="$lbase" "$AWKLIB"'
         BEGIN { while ((getline l < LM) > 0) { split(l, a, "\t"); if (a[1] != "") slug[toupper(a[1])] = a[2] } close(LM)
                 while ((getline l < LB) > 0) { n2 = split(l, a, "\t"); if (n2 >= 3 && a[1] != "") res[toupper(a[1])] = a[3] } close(LB) }
         NF >= 3 {
             k = toupper($2); tr = "<tr"
             r = res[k]
             if (r == "green" || r == "orange" || r == "red") tr = tr " data-res=\"" r "\""
-            lc = e($2)
+            lc = html_esc($2)
             if (k in slug) lc = "<a href=\"../details/logicals/" slug[k] ".html\">" lc "</a>"
-            print tr "><td><code>" e($1) "</code></td><td>" lc "</td><td class=\"wrap\">" e($3) "</td></tr>"
+            print tr "><td><code>" html_esc($1) "</code></td><td>" lc "</td><td class=\"wrap\">" html_esc($3) "</td></tr>"
         }' "$rules")
     n=$(printf '%s' "$rows" | grep -c '<tr' || true)
     {
@@ -854,8 +851,7 @@ write_subscriptions_page() {
     local drpts=("$DET/subscriptions"/*.rpt)
     shopt -u nullglob
     local all rows tots
-    all=$(LC_ALL=C awk -F'\t' -v CONF="$conf" '
-        function e(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
+    all=$(LC_ALL=C awk -F'\t' -v CONF="$conf" "$AWKLIB"'
         # per-subscription value sets, deduped per (map, sub, value)
         function addv(M, tag, s, v,   k2) {
             if (s == "" || v == "") return
@@ -866,8 +862,8 @@ write_subscriptions_page() {
         function lnk(sub2, nm,   k2) {
             k2 = toupper(nm)
             if (sub2 != "" && ((sub2 SUBSEP k2) in SLUG))
-                return "<a href=\"../details/" sub2 "/" SLUG[sub2 SUBSEP k2] ".html\">" e(nm) "</a>"
-            return e(nm)
+                return "<a href=\"../details/" sub2 "/" SLUG[sub2 SUBSEP k2] ".html\">" html_esc(nm) "</a>"
+            return html_esc(nm)
         }
         # "UC12" -> 12, so the baked order puts UC2 before UC10
         function ucnum(u,   t) { t = u; sub(/^UC/, "", t); return t + 0 }
@@ -900,12 +896,12 @@ write_subscriptions_page() {
         # green .mask suffix — the same markup here)
         function loccell(raw,   p, m) {
             if (index(raw, "@{mask=") == 1) { p = index(raw, "}"); m = substr(raw, 8, p - 8)
-                return e(substr(raw, p + 1)) "<span class=\"mask\">" e(m) "</span>" }
-            return e(raw)
+                return html_esc(substr(raw, p + 1)) "<span class=\"mask\">" html_esc(m) "</span>" }
+            return html_esc(raw)
         }
         # a cron cell: several expressions (one per line, \x1f-joined by
         # cron2human.awk) stack with <br>
-        function crcell(raw,   o) { o = e(raw); gsub(/\037/, "<br>", o); return "<code>" o "</code>" }
+        function crcell(raw,   o) { o = html_esc(raw); gsub(/\037/, "<br>", o); return "<code>" o "</code>" }
         # the Active cell (2026-09-14): Yes, or the codes ", "-joined with their
         # words as the hover title; blank when the JSON does not name it.
         # class="act" has no CSS: it is the MARKER bin/sample/verify.sh finds
@@ -918,15 +914,15 @@ write_subscriptions_page() {
             split("status Undeployed|status SAVED_NOT_DEPLOYED|schedule No|folder monitoring Inactive", W3, "|")
             n3 = split(c, A3, ","); o = ""; t = ""
             for (i3 = 1; i3 <= n3; i3++) { o = o (o == "" ? "" : ", ") A3[i3]; t = t (t == "" ? "" : "; ") A3[i3] " " W3[A3[i3] + 0] }
-            return "<td class=\"act\" title=\"" e(t) "\">" o "</td>"
+            return "<td class=\"act\" title=\"" html_esc(t) "\">" o "</td>"
         }
         # the Color cell (2026-09-15): the result as a word, white = none
         function colcell(r) { if (r != "green" && r != "orange" && r != "red") r = "white"; return "<td class=\"rescol\">" r "</td>" }
         # the Error reason cell (2026-09-15): the newest File in error, linking its error page
         function ercell(k) {
             if (!(k in ERR) || ERR[k] == "") return "<td class=\"wrap ereason\"></td>"
-            if (ERH[k] != "") return "<td class=\"wrap ereason\"><a href=\"" e(ERH[k]) "\">" e(ERR[k]) "</a></td>"
-            return "<td class=\"wrap ereason\">" e(ERR[k]) "</td>"
+            if (ERH[k] != "") return "<td class=\"wrap ereason\"><a href=\"" html_esc(ERH[k]) "\">" html_esc(ERR[k]) "</a></td>"
+            return "<td class=\"wrap ereason\">" html_esc(ERR[k]) "</td>"
         }
         # the Direction cell (2026-09-15, user request): connection / file movement,
         # the detail page title prefix lowercased; blank when both sides are unknown
@@ -1008,7 +1004,7 @@ write_subscriptions_page() {
                 # columns last; the Schedule cell never wraps
                 print ucsort "\t" k "\t" tr ">" \
                     "<td>" lnk("subscriptions", nm) "</td>" \
-                    "<td>" e(uc) "</td>" \
+                    "<td>" html_esc(uc) "</td>" \
                     actcell(k, ACT) colcell(res) dircell(k) \
                     "<td class=\"wrap\">" epc "</td>" \
                     "<td class=\"wrap\">" fr "</td>" \
@@ -1024,7 +1020,7 @@ write_subscriptions_page() {
                     "<td>" cell("applications", (k in APP) ? APP[k] : "") "</td>" \
                     "<td>" blcell(k, (k in BLE) ? BLE[k] : "") "</td>" \
                     "<td class=\"mono\">" ((k in CRX) ? crcell(CRX[k]) : "") "</td>" \
-                    "<td>" ((k in CRH) ? e(CRH[k]) : "") "</td></tr>"
+                    "<td>" ((k in CRH) ? html_esc(CRH[k]) : "") "</td></tr>"
             }
             # the SKIPPED subscriptions (2026-09-15, user request): n/a counts, white, no groups
             for (i = 1; i <= nsk; i++) { nm = SKN[i]; k = toupper(nm)
@@ -1037,13 +1033,13 @@ write_subscriptions_page() {
                 na = ""; for (ci = 1; ci <= 9; ci++) na = na "<td class=\"num na\">n/a</td>"
                 print ucsort "\t" k "\t<tr data-skipped=\"1\">" \
                     "<td>" lnk("subscriptions", nm) "</td>" \
-                    "<td>" e(uc) "</td>" \
+                    "<td>" html_esc(uc) "</td>" \
                     actcell(k, ACTR) colcell("") "<td class=\"dir\"></td>" \
                     "<td class=\"wrap\"></td><td class=\"wrap\"></td><td class=\"wrap\"></td>" \
                     na ercell(k) \
                     "<td></td><td class=\"wrap\"></td><td class=\"wrap\"></td><td></td><td></td><td></td>" \
                     "<td class=\"mono\">" ((k in CRXR) ? crcell(CRXR[k]) : "") "</td>" \
-                    "<td>" ((k in CRHR) ? e(CRHR[k]) : "") "</td></tr>"
+                    "<td>" ((k in CRHR) ? html_esc(CRHR[k]) : "") "</td></tr>"
             }
             # the column sums: sorted LAST ("~" > every UC key), split off below
             printf "~\t~"; for (ci = 1; ci <= 9; ci++) printf "\t%d", TOT[ci] + 0; printf "\n"

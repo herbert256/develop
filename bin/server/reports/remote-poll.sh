@@ -62,37 +62,10 @@ PF_OUT="$REPORTS_DIR/poll-failures.tsv"
 # page). Linking is skipped when the transfer report is absent.
 TDATA="$TRANSFER_REPORTS"
 TSITE="$TDATA/subscription.rpt"
-known_names() {   # $1 marker  $2 transfer .rpt — emits "marker<TAB>name" lines
-    [ -f "$2" ] || return 0
-    awk -F'\t' -v M="$1" '$1=="TABLE"{t++; if(t>1)exit} t==1&&$1=="ROW"{print M "\t" $2}' "$2"
-}
+# (known_names: bin/server/lib.sh since 2026-09-30)
 # LINK_AWK — sitelink() returns the @{alink=…} cell prefix
 # for a resolved subscription name, or "" when it stays unresolved.
-LINK_AWK='
-    # RENAMES (2026-08): a server line keeps the name that was current when it
-    # was written, so fold it to the CURRENT one before matching the roster —
-    # which carries current names, the transfer parse having folded them — and
-    # DISPLAY the folded name, so the page names the flow as the configuration
-    # does. rn_canon_pfx also covers the truncated old spelling the server
-    # writes, folding only when every completion agrees.
-    function sitecanon(t,   k, hits, full, c) {
-        c = rn_canon_pfx(t)
-        if (c in ksite) return c
-        hits = 0
-        for (k in ksite) if (index(k, c) == 1) { hits++; full = k; if (hits > 1) { hits = 0; break } }
-        return hits == 1 ? full : c
-    }
-    function sitelink(t,   k, hits, full) {
-        t = sitecanon(t)
-        if (t in ksite) return "@{alink=subscriptions/" t "}"
-        hits = 0
-        for (k in ksite) if (index(k, t) == 1) { hits++; full = k; if (hits > 1) { hits = 0; break } }
-        # unknown/ambiguous: still try the RAW name — alink resolves through
-        # the comprehensive slugmap at render time (a miss renders unlinked),
-        # so config-named polls link their page without a roster hit
-        return hits == 1 ? "@{alink=subscriptions/" full "}" : "@{alink=subscriptions/" t "}"
-    }
-'
+LINK_AWK="$SRV_SITECANON_AWK$SRV_SITELINK_AWK"   # bin/server/lib.sh (2026-09-30)
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)

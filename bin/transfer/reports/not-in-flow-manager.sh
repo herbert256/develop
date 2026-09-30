@@ -130,14 +130,7 @@ awk -F'\t' \
     }
 ' "$FILES" \
 | LC_ALL=C sort -t$'\t' -k1,1n -k2,2nr -k3,3 \
-| awk -F'\t' '
-    function human(b,   u, i, v) {
-        split("B KB MB GB TB PB", u, " ")
-        i = 1; v = b + 0
-        while (v >= 1024 && i < 6) { v /= 1024; i++ }
-        if (i == 1) return sprintf("%d %s", v, u[i])
-        return sprintf("%.2f %s", v, u[i])
-    }
+| awk -F'\t' "$AWKLIB"'
     BEGIN {
         split("Account|Subscription|Login|Host|Whitelist|Logical|Partner|Application|Domain|BL", TL, "|")
         split("accounts|subscriptions|logins|hosts||logicals|partners|applications|domains|bl", SD, "|")
@@ -152,12 +145,12 @@ awk -F'\t' \
         t = $1 + 0
         nm = $3
         cell = (SD[t] != "") ? "@{alink=" SD[t] "/" nm "}" nm : nm
-        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\n", TL[t], cell, $2, $4, $5, human($6), $7, $8, $9
+        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\n", TL[t], cell, $2, $4, $5, hbytes2($6), $7, $8, $9
         rows++; tf += $2; te += $4; to += $5; tb += $6
     }
     END {
-        printf "TOTAL\tTotal (%d rows)\t\t@{class=num}%d\t@{class=num failed}%d\t@{class=num processed}%d\t@{class=num}%s\t\t\n", rows+0, tf+0, te+0, to+0, human(tb+0)
-        printf "SUMMARY\tUnconfigured values: %d  |  Files touched: %d  |  Volume: %s\n", rows+0, tf+0, human(tb+0)
+        printf "TOTAL\tTotal (%d rows)\t\t@{class=num}%d\t@{class=num failed}%d\t@{class=num processed}%d\t@{class=num}%s\t\t\n", rows+0, tf+0, te+0, to+0, hbytes2(tb+0)
+        printf "SUMMARY\tUnconfigured values: %d  |  Files touched: %d  |  Volume: %s\n", rows+0, tf+0, hbytes2(tb+0)
         printf "FOOT\n"
     }
 ' > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

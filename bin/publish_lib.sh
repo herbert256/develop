@@ -691,6 +691,7 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 (unused)  $5 (unused)  [
             -v slugmaps="$SLUGMAP_FILES" -v resmaps="${RESMAP_FILES:-}" \
             -v subtint="${RPT_SUBTINT:-}" \
             -v grpicons="${GRPICON_MAP:-}" -v dropbuckets="$dropbuckets" \
+            -v rdates="$CUR_DATES" \
             -v noprose="${RPT_NOPROSE:-0}" -v fpages="$FILEPAGES_F" \
             -f "$RENDER_AWK" "$rpt"
         printf '</body>\n</html>\n'
@@ -1595,8 +1596,68 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
         if [ "${#_evp[@]}" -ge 4 ]; then wait "${_evp[0]}"; _evp=("${_evp[@]:1}"); fi
     done
     for _ev in ${_evp[@]+"${_evp[@]}"}; do wait "$_ev"; done
+    entity_payload_split "$DOCS/$area/entities" "$name" "${fil[@]}"
     DLINK_BASE=$saved_dl
     [ -n "$grpmapf" ] && rm -f "$grpmapf"
+    return 0
+}
+
+# THE ENTITIES ROW PAYLOAD, ONCE PER ENTITY (2026-09-30, the lean round —
+# the six views of an entity repeated the same per-row data about three
+# times over, ~17 MB of the sample site): every data ROW's payload
+# attributes — data-buckets, data-durdays, data-fp and the data-coreids-*
+# drill lists — move out of the six rendered view pages into ONE
+# <entity>-data.js (window.AXWAY_EP: a template string of
+# `<tr data-k="N" …payload…></tr>` lines, each distinct payload once, the
+# All view's rows first); each page row keeps its other attributes
+# (data-res: the home consistency gate counts it) plus data-k="N", and the
+# page loads the .js before report.js, whose attachEntityPayload() puts
+# the attributes back on the rows FIRST in init() — every later reader
+# (recalc, drills, totals, the seen / date filters) sees the page as it was.
+# The TOTAL row keeps its own buckets (they differ per view). linkcheck
+# reads the data-fp edges from the .js. $1 dir  $2 entity  $3.. the view
+# page basenames, All first.
+entity_payload_split() {
+    local dir=$1 name=$2; shift 2
+    local js="$dir/$name-data.js" f ck files=()
+    for f in "$@"; do [ -f "$dir/$f" ] && files+=("$dir/$f"); done
+    [ ${#files[@]} -gt 0 ] || return 0
+    LC_ALL=C awk -v JS="$js.tmp" -v JSNAME="$name-data.js" '
+        BEGIN { printf "window.AXWAY_EP=`" > JS; n = 0 }
+        FNR == 1 { if (out != "") close(out); out = FILENAME ".ep" }
+        # the data.js script goes in right before report.js (deferred
+        # scripts run in document order, so it has run when init() does)
+        index($0, "<script src=\"") == 1 && index($0, "assets/report.js") > 0 {
+            print "<script src=\"" JSNAME "?v=@EPV@\" defer></script>" > out
+            print > out; next
+        }
+        /^<tr [^>]*data-(buckets|durdays|fp|coreids-[a-z0-9]+)="/ && index($0, "<tr class=\"total\"") != 1 {
+            rest = substr($0, 4); blob = ""; kept = ""
+            # walk the tag attribute by attribute (values never hold a raw
+            # quote: the renderer escapes them)
+            while (match(rest, /^ [A-Za-z0-9-]+="[^"]*"/)) {
+                at = substr(rest, 1, RLENGTH); rest = substr(rest, RLENGTH + 1)
+                if (at ~ /^ data-(buckets|durdays|fp|coreids-[a-z0-9]+)="/) blob = blob at
+                else kept = kept at
+            }
+            if (blob == "") { print > out; next }
+            if (!(blob in IDX)) {
+                IDX[blob] = n
+                b = blob; gsub(/\\/, "\\\\", b); gsub(/`/, "\\`", b); gsub(/\$\{/, "\\${", b)
+                printf "%s<tr data-k=\"%d\"%s></tr>", (n ? "\n" : ""), n, b > JS
+                n++
+            }
+            print "<tr data-k=\"" IDX[blob] "\"" kept rest > out
+            next
+        }
+        { print > out }
+        END { printf "`;\n" > JS; close(JS); if (out != "") close(out) }
+    ' "${files[@]}" || return 1
+    ck=$(cksum < "$js.tmp" | awk '{ print $1 }')
+    mv "$js.tmp" "$js"
+    for f in "${files[@]}"; do
+        LC_ALL=C awk -v ck="$ck" '{ i = index($0, "?v=@EPV@"); if (i) $0 = substr($0, 1, i + 2) ck substr($0, i + 8); print }' "$f.ep" > "$f" && rm -f "$f.ep"
+    done
     return 0
 }
 

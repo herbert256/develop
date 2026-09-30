@@ -40,6 +40,7 @@ DATA="$ROOT/data"
 INPUT_DIR="$ROOT/input/$AREA"
 IP_DIR="$ROOT/input/ip"
 source "$ROOT/bin/ip.sh"         # IP_HOSTS_FILE (input/ip/ip-hosts.tsv) + ip_put
+source "$ROOT/bin/awklib.sh"     # $AWKLIB: the shared awk helpers (date.awk + fmt.awk)
 FM_INPUT_DIR="$ROOT/input/flow-manager"
 # When bin/flow-manager.sh has written SKIP-filtered copies (input/skip.txt),
 # every raw-JSON reader prefers them so the skipped accounts/subscriptions are
@@ -69,6 +70,61 @@ PARSED="$CACHE_DIR/_parse.tsv"
 # build msg as lvlname($3) " " compname($4) "  " substr($5, 1, 200) so every
 # entry reads "date time  Level Component  message" with the LONG level and
 # component names (the cache stores one-letter codes).
+# ---- the server reports' shared LINK helpers (2026-09-30, the lean round:
+# known_names was pasted into 8 reports, these awk helpers into 4-6 each). A
+# report composes its LINK_AWK from the strings it needs; the variants that
+# differ stay in their report (routing-errors' known_names, connection-
+# diagnostics' case-folding hostlink, ssh-crypto's strict sitelink).
+known_names() {   # $1 marker  $2 transfer .rpt — emits "marker<TAB>name" lines
+    [ -f "$2" ] || return 0
+    awk -F'\t' -v M="$1" '$1=="TABLE"{t++; if(t>1)exit} t==1&&$1=="ROW"{print M "\t" $2}' "$2"
+}
+# acctlink(): the account's detail link — exact, else the @endpoint-stripped name
+SRV_ACCTLINK_AWK='
+    function acctlink(t,   s) {
+        if (t in kacct) return "@{alink=accounts/" t "}"
+        s = t; sub(/@.*$/, "", s)
+        if (s in kacct) return "@{alink=accounts/" s "}"
+        return ""
+    }
+'
+# hostlink(): the host's detail link, exact match
+SRV_HOSTLINK_AWK='
+    function hostlink(t) { return (t in khost) ? "@{alink=hosts/" t "}" : "" }
+'
+# sitecanon(): RENAMES (2026-08) — a server line keeps the name that was
+# current when it was written, so fold it to the CURRENT one before matching
+# the roster (the transfer parse folded the roster) and DISPLAY the folded
+# name; rn_canon_pfx also covers the truncated old spelling, folding only when
+# every completion agrees; else the unique roster prefix. Memoised per name.
+SRV_SITECANON_AWK='
+    function sitecanon(t,   k, hits, full, c, t0) {
+        if (t in SCMEMO) return SCMEMO[t]
+        t0 = t
+        c = rn_canon_pfx(t)
+        if (c in ksite) return (SCMEMO[t0] = c)
+        hits = 0
+        for (k in ksite) if (index(k, c) == 1) { hits++; full = k; if (hits > 1) { hits = 0; break } }
+        return (SCMEMO[t0] = (hits == 1 ? full : c))
+    }
+'
+# sitelink(): the subscription link of a (canonicalised) name; unknown or
+# ambiguous still tries the RAW name — alink resolves through the slugmap at
+# render time (a miss renders unlinked)
+SRV_SITELINK_AWK='
+    function sitelink(t,   k, hits, full) {
+        t = sitecanon(t)
+        if (t in ksite) return "@{alink=subscriptions/" t "}"
+        hits = 0
+        for (k in ksite) if (index(k, t) == 1) { hits++; full = k; if (hits > 1) { hits = 0; break } }
+        return hits == 1 ? "@{alink=subscriptions/" full "}" : "@{alink=subscriptions/" t "}"
+    }
+'
+# sublink(): a known subscription name's link ("" stays "")
+SRV_SUBLINK_AWK='
+    function sublink(s) { return (s != "") ? "@{alink=subscriptions/" s "}" : "" }
+'
+
 LOGLINES_AWK='
     BEGIN { _US = sprintf("%c", 31) }
     function lvlname(x) {

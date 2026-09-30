@@ -57,9 +57,7 @@ OUT="$REPORTS_DIR/topview.rpt"
 # END classifies the recovered Files Automatic/Manual and the resubmitted
 # Files Ok/Failed, then walks the Julian-day range so calendar gaps become
 # explicit "0" rows.
-agg=$(awk -F'\t' "$COREIDS_AWK"'
-    function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
-    function fromjdn(j,  a,b,c,dd,e,mm,day,mon,yr){ a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d",yr,mon,day) }
+agg=$(awk -F'\t' "$COREIDS_AWK$AWKLIB"'
     function pr(x, c){ if (c > 0) return sprintf("%.1f", x*100/c); return "0.0" }
     function hb(b){ b+=0; if(b>=1073741824) return sprintf("%.2f GB",b/1073741824); if(b>=1048576) return sprintf("%.2f MB",b/1048576); if(b>=1024) return sprintf("%.2f KB",b/1024); return (b>0) ? sprintf("%d B",b) : "" }
     FNR==1 { fno++ }

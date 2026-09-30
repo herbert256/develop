@@ -45,18 +45,12 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # top_list — the TOP_N longest DELIVERED Files (outcome Processed), ms-descending:
 #   ms ⇥ coreid ⇥ "date time" ⇥ subscription ⇥ end ⇥ file ⇥ humandur
 top_list() {
-    awk -F'\t' '
+    awk -F'\t' "$AWKLIB"'
         function clean(s){ gsub(/[\t\r]/, " ", s); return s }
-        function humandur(ms) {
-            if (ms < 1000)    return sprintf("%d ms", ms)
-            if (ms < 60000)   return sprintf("%.2f s", ms/1000)
-            if (ms < 3600000) return sprintf("%.1f min", ms/60000)
-            return sprintf("%.2f h", ms/3600000)
-        }
         $2 != "Processed" { next }   # delivered Files only: no Failed, no Expired, no Waiting
         { ms = $9 + 0; if (ms <= 0) next
           s = clean($12); if (s == "") s = "(no subscription)"
-          printf "%d\t%s\t%s %s\t%s\t%s\t%s\t%s\t%s\n", ms, $1, $4, $5, s, clean($24), clean($11), humandur(ms), $25 }   # 9 = the File colour (col 25)
+          printf "%d\t%s\t%s %s\t%s\t%s\t%s\t%s\t%s\n", ms, $1, $4, $5, s, clean($24), clean($11), hdurms(ms), $25 }   # 9 = the File colour (col 25)
     ' "$FILES" | LC_ALL=C sort -t$'\t' -k1,1nr | awk -v n="$TOP_N" 'NR<=n'
 }
 # the scope total (delivered Files with a duration), for the TOTAL row
@@ -70,10 +64,9 @@ shown_ok=$(printf '%s\n' "$slow_ok" | awk 'length($0) { n++ } END { print n+0 }'
 # Subscription ⇥ File; the Duration, Start Time, End Time and CoreId cells
 # open the File page
 rows_of() {   # $1 the list
-    printf '%s\n' "$1" | awk -F'\t' -v FPF="$FPF" '
+    printf '%s\n' "$1" | awk -F'\t' -v FPF="$FPF" "$AWKLIB"'
     BEGIN { while ((getline l < FPF) > 0) { split(l, a9, "\t"); if (a9[1] != "") FP[a9[1]] = 1 } close(FPF) }
-    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
-    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
+    # (lit() — a raw name kept literal, audit 2026-09-29 F07 — comes from bin/fmt.awk via $AWKLIB)
     length($0) {
         h = ($2 in FP) ? "href=../files/" $2 ".html," : ""   # a published File page only (2026-09-29)
         printf "ROW\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t%s\t%s%s\n", h, $1, $7, h, $1, $3, h, $1, $5, h, $1, $2, $4, lit($6), ($8 ~ /^(green|orange|red)$/ ? "\t@data:res=" $8 : "") }'

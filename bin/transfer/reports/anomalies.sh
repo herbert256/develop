@@ -52,9 +52,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # odd", ~40 rows), the hourly episodes below it paged, since they run into the
 # hundreds and would otherwise bury the daily table under a screen of scrolling.
 # _files.tsv: 2=outcome, 4=date, 5=time, 8=size, 9=dur_ms.
-awk -F'\t' '
-    function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
-    function fromjdn(j,   a,b,c,dd,e,mm,day,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
+awk -F'\t' "$AWKLIB"'
     function jofd(d,   dp) { split(d, dp, "-"); return jdn(dp[1]+0, dp[2]+0, dp[3]+0) }
     function median(A, key, n,   i, j, t, v, m) {
         if (n == 0) return 0
@@ -168,7 +166,7 @@ awk -F'\t' '
                     else if (m == 2) printf "1\t%s\t%02d\tDuration\t%s\t%s\t%s\t%.1f\t%d\t%d\tDuration\t%s\n",               d, hs, win, hdur(pk), tyc(hdur(mx(DB[k], 30000)), DB[k], 30000, hdur(DB[k])), pkr, wf, wff, (pkr >= 10 ? "red" : "orange")
                     else if (m == 3) printf "1\t%s\t%02d\tFiles spike\t%s\t%d OK Files\t%s\t%.1f\t%d\t%d\tOK%%20Files\t%s\n", d, hs, win, pk, tyc(sprintf("%d", mx(OB[k], 5) + 0.5), OB[k], 5, sprintf("%d", OB[k] + 0.5)), pkr, wf, wff, (pkr >= 10 ? "red" : "orange")
                     else if (m == 4) printf "1\t%s\t%02d\tSilence\t%s\t0 Files\t%d\t\t0\t0\tOK%%20Files\tred\n",           d, hs, win, FB[k] + 0.5
-                    else             printf "1\t%s\t%02d\tVolume\t%s\t%s\t%s\t%.1f\t%d\t%d\tVolume\t%s\n",                   d, hs, win, hbytes(pk), tyc(hbytes(mx(VBASE[k], 10000000)), VBASE[k], 10000000, hbytes(VBASE[k])), pkr, wf, wff, (pkr >= 10 ? "red" : "orange")
+                    else             printf "1\t%s\t%02d\tVolume\t%s\t%s\t%s\t%.1f\t%d\t%d\tVolume\t%s\n",                   d, hs, win, hbytes2(pk), tyc(hbytes2(mx(VBASE[k], 10000000)), VBASE[k], 10000000, hbytes2(VBASE[k])), pkr, wf, wff, (pkr >= 10 ? "red" : "orange")
                 }
             }
         }
@@ -211,7 +209,7 @@ awk -F'\t' '
             else if (ODB[cl] >= 100 && fo <= ODB[cl] / 4 && !((d == FD0 && PF0) || (d == LD0 && PL0)))
                 printf "2\t%s\t00\tFiles drop\t\t%d OK Files\t%d\t%.2f\t%d\t%d\tOK%%20Files\t%s\n", d, fo, ODB[cl] + 0.5, fo / ODB[cl], f, ff, (fo <= ODB[cl] / 10 ? "red" : "orange")
             if (v >= 200000000 && v >= 2 * mx(VDB[cl], 50000000)) { r = v / mx(VDB[cl], 50000000)
-                printf "2\t%s\t00\tVolume\t\t%s\t%s\t%.1f\t%d\t%d\tVolume\t%s\n", d, hbytes(v), tyc(hbytes(mx(VDB[cl], 50000000)), VDB[cl], 50000000, hbytes(VDB[cl])), r, f, ff, (r >= 10 ? "red" : "orange") }
+                printf "2\t%s\t00\tVolume\t\t%s\t%s\t%.1f\t%d\t%d\tVolume\t%s\n", d, hbytes2(v), tyc(hbytes2(mx(VDB[cl], 50000000)), VDB[cl], 50000000, hbytes2(VDB[cl])), r, f, ff, (r >= 10 ? "red" : "orange") }
         }
     }
     function hdur(ms) {
@@ -220,13 +218,6 @@ awk -F'\t' '
         if (ms < 60000)   return sprintf("%.1f s", ms/1000)
         if (ms < 3600000) return sprintf("%.1f min", ms/60000)
         return sprintf("%.2f h", ms/3600000)
-    }
-    function hbytes(b,   u, i, v) {
-        split("B KB MB GB TB PB", u, " ")
-        i = 1; v = b + 0
-        while (v >= 1024 && i < 6) { v /= 1024; i++ }
-        if (i == 1) return sprintf("%d %s", v, u[i])
-        return sprintf("%.2f %s", v, u[i])
     }
 ' "$FILES" \
 | LC_ALL=C sort -t$'\t' -k1,1r -k2,2r -k3,3 -k4,4 \

@@ -23,27 +23,8 @@ rm -f "$REPORTS_DIR"/*.rpt.tmp   # orphaned atomic-write temps from a killed run
 NJOBS=${AXWAY_NJOBS:-$( (command -v nproc >/dev/null 2>&1 && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 4 )}   # AXWAY_NJOBS: an optional override of the pool size (nothing sets it; default = the core count)
 case $NJOBS in ''|*[!0-9]*) NJOBS=4 ;; esac
 
-POOL_PIDS=()
-pool_run() {   # run "$@" as a background job, at most NJOBS at once
-    while [ "$(jobs -rp | wc -l | tr -d ' ')" -ge "$NJOBS" ]; do sleep 0.1; done
-    timed "$@" &
-    POOL_PIDS+=("$!")
-}
-pool_wait() {  # reap every pooled job; abort the run if any report failed
-    local p st rc=0
-    [ "${#POOL_PIDS[@]}" -eq 0 ] && return 0
-    for p in "${POOL_PIDS[@]}"; do
-        st=0
-        wait "$p" || st=$?
-        [ "$st" -ne 0 ] && rc=$st
-    done
-    POOL_PIDS=()
-    if [ "$rc" -ne 0 ]; then
-        echo "ERROR: a report failed (exit $rc) — aborting." >&2
-        exit "$rc"
-    fi
-    return 0
-}
+POOL_TIMED=1; POOL_WHAT="a report"
+source "$SCRIPT_DIR/../pool.sh"   # pool_run / pool_wait — the one job pool (2026-09-30)
 
 # OPTIONAL ARGUMENT (2026-07): "phase1" or "phase2" runs only that half, so
 # bin/build.sh can overlap phase 1 with the details.sh step (phase 2 reads

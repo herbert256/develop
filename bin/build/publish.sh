@@ -27,6 +27,7 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; defines html_head / _report_groups / …
+source "$SCRIPT_DIR/../awklib.sh"       # $AWKLIB: the shared awk helpers (html_esc, …)
 
 ensure_assets   # topbar-data.js (the menus' data file)
 
@@ -511,13 +512,12 @@ write_home_errors() {
             if (res != "red") next   # the RED rows only (2026-09-29, user request: "show only the Errors (red) and not the warnings (orange)")
             print $3 "\t" nm "\t" href "\t" $4 "\t" res }' "$rpt" \
     | LC_ALL=C sort -t$'\t' -k1,1r -k2,2 \
-    | awk -F'\t' '
-        function esc(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
-        { c = ($3 != "") ? "<a href=\"" esc($3) "\">" esc($2) "</a>" : esc($2)
+    | awk -F'\t' "$AWKLIB"'
+        { c = ($3 != "") ? "<a href=\"" html_esc($3) "\">" html_esc($2) "</a>" : html_esc($2)
           # Date/time to the minute (2026-09-29, user request: "only hh:mm,
           # no ss.mmm") — the rows still sort on the full stamp above
           t = $1; if (t ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]/) t = substr(t, 1, 16)
-          printf "<tr%s><td>%s</td><td>%s</td><td>%s</td></tr>\n", ($5 ~ /^(green|orange|red)$/ ? " data-res=\"" $5 "\"" : ""), c, esc(t), esc($4) }'
+          printf "<tr%s><td>%s</td><td>%s</td><td>%s</td></tr>\n", ($5 ~ /^(green|orange|red)$/ ? " data-res=\"" $5 "\"" : ""), c, html_esc(t), html_esc($4) }'
     printf '</table></div>\n'
 }
 

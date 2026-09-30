@@ -68,10 +68,7 @@ OUT="$REPORTS_DIR/logon.rpt"
 TDATA="$TRANSFER_REPORTS"
 TACCT="$TDATA/account.rpt"
 THOST="$TDATA/remote-host.rpt"
-known_names() {   # $1 marker  $2 transfer .rpt — emits "marker<TAB>name" lines
-    [ -f "$2" ] || return 0
-    awk -F'\t' -v M="$1" '$1=="TABLE"{t++; if(t>1)exit} t==1&&$1=="ROW"{print M "\t" $2}' "$2"
-}
+# (known_names: bin/server/lib.sh since 2026-09-30)
 # The configured logins (flow-manager base cache, written in build stage 1):
 # the Door-knockers near-miss table checks each FE-namespace knocker name
 # against this list — the striking rows are the ones that ARE configured in
@@ -81,15 +78,7 @@ base_logins() {
     [ -f "$LBASE" ] || return 0
     awk -F'\t' '$1 != "" { print "KL\t" $1 }' "$LBASE"
 }
-LINK_AWK='
-    function acctlink(t,   s) {
-        if (t in kacct) return "@{alink=accounts/" t "}"
-        s = t; sub(/@.*$/, "", s)
-        if (s in kacct) return "@{alink=accounts/" s "}"
-        return ""
-    }
-    function hostlink(t) { return (t in khost) ? "@{alink=hosts/" t "}" : "" }
-'
+LINK_AWK="$SRV_ACCTLINK_AWK$SRV_HOSTLINK_AWK"   # bin/server/lib.sh (2026-09-30)
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)

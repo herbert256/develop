@@ -29,14 +29,7 @@ fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Read the shared parse cache (3=status, 8=file, 9=size).
-agg=$(awk -F'\t' "$COREIDS_AWK"'
-    function human(b,   u, i, v) {
-        split("B KB MB GB TB PB", u, " ")
-        i = 1; v = b + 0
-        while (v >= 1024 && i < 6) { v /= 1024; i++ }
-        if (i == 1) return sprintf("%d %s", v, u[i])
-        return sprintf("%.2f %s", v, u[i])
-    }
+agg=$(awk -F'\t' "$COREIDS_AWK$AWKLIB"'
     {
         status = $3; sub(/ Subtransmission$/, "", status); pf = (status != "Processed")
         file = $8
@@ -57,8 +50,8 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
     function rshare(x) { return trec > 0 ? sprintf("%.1f", x * 100 / trec) : "0.0" }
     END {
         for (k in edl) { split(k, a, SUBSEP); bk[a[1]] = bk[a[1]] (bk[a[1]] ? "," : "") a[2] ":" edl[k] ":" (edf[k]+0) ":" (edp[k]+0) ":" edb[k] }
-        for (k in er) printf "EXT|%s|%d|%d|%d|%d|%s|%s|%s|%s|%s\n", k, er[k], ef[k]+0, ep[k]+0, eb[k], human(eb[k]), rshare(er[k]), bk[k], buildlist(top["E" SUBSEP k SUBSEP "F"]), buildlist(top["E" SUBSEP k SUBSEP "P"])
-        printf "TOT|%d|%d|%d|%d|%s|%d\n", trec, tf+0, tp+0, tbytes, human(tbytes), ec+0
+        for (k in er) printf "EXT|%s|%d|%d|%d|%d|%s|%s|%s|%s|%s\n", k, er[k], ef[k]+0, ep[k]+0, eb[k], hbytes2(eb[k]), rshare(er[k]), bk[k], buildlist(top["E" SUBSEP k SUBSEP "F"]), buildlist(top["E" SUBSEP k SUBSEP "P"])
+        printf "TOT|%d|%d|%d|%d|%s|%d\n", trec, tf+0, tp+0, tbytes, hbytes2(tbytes), ec+0
     }
 ' "$PARSED")
 

@@ -126,9 +126,8 @@ nline=$(wc -l < "$TMP" | tr -d ' ')
 #   DAY <date> ROW <the day row>
 #   TOT <n> <folders> <accounts> <files> <err> <ok> <nl> <days> <first> <last>
 agg=$(awk -F'\t' -v IOF="$TMP" -v FILES="$FILES" -v TRANSFERS="$TRANSFERS" \
-        -v ACCB="$ACCB" -v LOGB="$LOGB" -v FPF="$FPF" "$LOGLINES_AWK"'
-    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
-    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
+        -v ACCB="$ACCB" -v LOGB="$LOGB" -v FPF="$FPF" "$LOGLINES_AWK$AWKLIB"'
+    # (lit() — a raw name kept literal, audit 2026-09-29 F07 — comes from bin/fmt.awk via $AWKLIB)
     function canon(map, v) { return (toupper(v) in map) ? map[toupper(v)] : v }
     BEGIN {
         while ((getline l < FPF) > 0) { split(l, a, "\t"); if (a[1] != "") FP[a[1]] = 1 } close(FPF)

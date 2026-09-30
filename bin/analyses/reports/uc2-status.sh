@@ -121,9 +121,7 @@ TTRANS="$TRANSFER_CACHE/_transfers.tsv"   # collect-leg timestamps (Outbound row
 # it has no page. So every configured subscription links to its detail page,
 # including one whose UC2 account has no transfer activity (which used to be
 # gated out because it is absent from the transfer account.rpt roster).
-LINK_AWK='
-    function sublink(s) { return (s != "") ? "@{alink=subscriptions/" s "}" : "" }
-'
+LINK_AWK="$SRV_SUBLINK_AWK"   # bin/server/lib.sh (2026-09-30)
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
@@ -144,7 +142,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # (the account rides along as the row KEY — the guard below tests it — but it is
 # not rendered; only the subscription cell reaches the table)
 #   TOT <TAB> nnever <TAB> ncollects <TAB> total-expired <TAB> total-expired-never
-agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -v slf="$SLF" -v alf="$ALF" -v SL="$SLOTS_OUT" -v PKF="$PICKUPS_OUT" "$LOGLINES_AWK$LINK_AWK"'
+agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -v slf="$SLF" -v alf="$ALF" -v SL="$SLOTS_OUT" -v PKF="$PICKUPS_OUT" "$LOGLINES_AWK$LINK_AWK$AWKLIB$CADENCE_AWK"'
     BEGIN { while ((getline ucl < ucdf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[2] == "UC2") ucd[toupper(uca[1])] = 1 } close(ucdf)
             # MULTI-FE ACCOUNTS (2026-08-31, user report: new in production —
             # one account carries SEVERAL FE logins, each serving its own
@@ -228,24 +226,15 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
             }
         }
     }
-    function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
-    function fromjdn(j,   a,b,c,dd,e,mm,day,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
     function span(h) { if (hmin == "" || h < hmin) hmin = h; if (h > hmax) hmax = h }
     # minute-of-era from "YYYY-MM-DD" + "HH:MM…" (the pickup cadence + the
     # logon/collect session matching both work at minute resolution)
-    function minof(d, t) { return jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 1440 + substr(t,1,2) * 60 + substr(t,4,2) + 0 }
     # the cadence label from the MEDIAN gap between logon minutes
     # IRREGULAR (2026-09-03, user request): a median hides the spread. The
     # cadence label stands only when the gaps behind it have a rhythm — at
     # least six of ten within half and double the median; otherwise the
     # spacing has no clear pattern and the label says so. A "Rarely" verdict
     # (a median beyond 15 days) is kept as is: sparse is its own pattern.
-    function regspread(A, ng, med,   g9, w9) {
-        w9 = 0; for (g9 in A) if (g9 + 0 >= med / 2 && g9 + 0 <= med * 2) w9 += A[g9]
-        return (ng > 0 && w9 * 10 >= ng * 6) }
-    function label(med, A, ng,   l9) {
-        l9 = patron(med); if (l9 != "Rarely" && !regspread(A, ng, med)) return "Irregular"
-        return l9 }
     # THE MINUTE LISTS (2026-09-28, speed round 21): every minute set below
     # (logons, deliveries, collects; per account, per login group, per
     # subscription) also keeps its DISTINCT minutes per key in insertion order
@@ -256,13 +245,6 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
     # (minof), so the sorted list is exactly what the walk produced.
     # medpick(): the median loops walked every gap value from lo up to the
     # largest one; the same pick over the sorted DISTINCT values.
-    function qsortn(A, lo, hi,   i, j, p, t) {
-        while (lo < hi) {
-            i = lo; j = hi; p = A[int((lo + hi) / 2)]
-            while (i <= j) { while (A[i] < p) i++; while (A[j] > p) j--; if (i <= j) { t = A[i]; A[i] = A[j]; A[j] = t; i++; j-- } }
-            if (j - lo < hi - i) { if (lo < j) qsortn(A, lo, j); lo = i } else { if (i < hi) qsortn(A, i, hi); hi = j }
-        }
-    }
     function sortmins(N, V, key, OUT,   n, i) { n = (key in N) ? N[key] + 0 : 0; for (i = 1; i <= n; i++) OUT[i] = V[key, i]; if (n > 1) qsortn(OUT, 1, n); return n }
     # the smallest key >= lo of histogram H whose cumulative count reaches
     # half ("" when none does — the caller keeps its value then, as before)
@@ -270,18 +252,6 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
         if (n > 1) qsortn(KS, 1, n); c = 0
         for (j = 1; j <= n; j++) { c += H[KS[j]]; if (c >= half) return KS[j] }
         return "" }
-    function patron(m,   n) {
-        if (m <= 0)   return "Rarely"   # never an em dash (2026-09-03, user request)
-        if (m <= 2)   return "Continuous"
-        if (m < 58)   { n = int((m + 2.5) / 5) * 5; if (n < 5) n = 5; return "Every " n " minutes" }
-        if (m <= 75)  return "Hourly"
-        if (m < 1320) { n = int((m + 30) / 60); return (n <= 1) ? "Hourly" : "Every " n " hours" }
-        n = int((m + 720) / 1440)
-        if (n <= 1)   return "Daily"
-        if (n >= 6 && n <= 8) return "Weekly"
-        if (n <= 15)  return "Every " n " days"
-        return "Rarely"
-    }
     FILENAME == xf {                                         # account -> its UC2 (collect-from-us) subscription
         if ($2 ~ /^UC2/ || (toupper($2) in ucd)) { if (!($1 in pickupacct)) A[++na] = $1   # ordered roster for the visit classification
                            pickupacct[$1] = 1

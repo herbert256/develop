@@ -51,9 +51,8 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # pipe-separated (the late / missed drill went with the page, 2026-09-29):
 #   P|clsord|spread|site|days|typical|window|class
 #   TOT|sites|clock|reg|loose|irreg
-agg=$(awk -F'\t' -v MINDAYS="$MIN_DAYS" '
+agg=$(awk -F'\t' -v MINDAYS="$MIN_DAYS" "$AWKLIB"'
     BEGIN { PI2 = 8 * atan2(1, 1) }
-    function fromjdn(j,  a,b,c,dd,e,mm,day,mon,yr){ a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d",yr,mon,day) }
     function hhmm(m) { m = int(m) % 1440; if (m < 0) m += 1440; return sprintf("%02d:%02d", int(m / 60), m % 60) }
     # the minute m moved by whole days to within 12 hours of the centre c
     function unwrap(m, c) { while (m - c > 720) m -= 1440; while (c - m >= 720) m += 1440; return m }

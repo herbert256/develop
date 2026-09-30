@@ -31,18 +31,10 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # the published File pages (bin/transfer/filepages.sh): a Most-legs CoreId
 # links its page when it has one (2026-09-30 audit T-08, like Longest Files)
 FPF="$CACHE_DIR/_filepages.tsv"; [ -f "$FPF" ] || FPF=/dev/null
-agg=$(awk -F'\t' -v FPF="$FPF" '
+agg=$(awk -F'\t' -v FPF="$FPF" "$AWKLIB"'
     BEGIN { while ((getline l < FPF) > 0) { split(l, a9, "\t"); if (a9[1] != "") FP[a9[1]] = 1 } close(FPF) }
-    function human(b,   u, i, v) {
-        split("B KB MB GB TB PB", u, " ")
-        i = 1; v = b + 0
-        while (v >= 1024 && i < 6) { v /= 1024; i++ }
-        if (i == 1) return sprintf("%d %s", v, u[i])
-        return sprintf("%.2f %s", v, u[i])
-    }
     function bucket(n) { if (n <= 10) return n; if (n <= 100) return 11; return 12 }
-    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
-    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
+    # (lit() — a raw name kept literal, audit 2026-09-29 F07 — comes from bin/fmt.awk via $AWKLIB)
     {
         legs = $10 + 0; d = $4; size = $8 + 0
         pf = ($2 == "Failed" || $2 == "Expired")
@@ -76,12 +68,12 @@ agg=$(awk -F'\t' -v FPF="$FPF" '
             w = int((bp[i]+0) * 100 / maxpr)
             # (the per-bucket Error / OK drill lists went 2026-09-30: no row
             # has shipped them since the one Files column, 2026-09-13)
-            printf "BKT|%s|%d|%d|%d|%d|%s|%s|%d|%s\n", lab[i], br[i]+0, bf[i]+0, bp[i]+0, bb[i]+0, human(bb[i]+0), sh, w, bk[i]
+            printf "BKT|%s|%d|%d|%d|%d|%s|%s|%d|%s\n", lab[i], br[i]+0, bf[i]+0, bp[i]+0, bb[i]+0, hbytes2(bb[i]+0), sh, w, bk[i]
         }
         # top-25, most legs first (selection sort on the padded keys)
         for (z = 1; z <= tn; z++) for (y = z + 1; y <= tn; y++) if (TK[y] > TK[z]) { t2 = TK[z]; TK[z] = TK[y]; TK[y] = t2; t2 = TV[z]; TV[z] = TV[y]; TV[y] = t2 }
         for (z = 1; z <= tn; z++) printf "TOP|%s\n", TV[z]
-        printf "TOT|%d|%d|%d|%s\n", trec, tfl+0, tpr+0, human(tpb+0)
+        printf "TOT|%d|%d|%d|%s\n", trec, tfl+0, tpr+0, hbytes2(tpb+0)
     }
 ' "$FILES")
 

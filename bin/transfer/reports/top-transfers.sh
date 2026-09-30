@@ -30,15 +30,8 @@ trap 'rm -f "$tmp"' EXIT
 # 2=outcome, 3=account, 4=date, 5=time, 8=size (the file), 9=dur_ms (wall-clock span),
 # 11=file, 12=dest_site. Emit one typed row per transfer (not per cache row):
 #   S|size_bytes|size_human|datetime|account|dest_site|outcome|file|thr
-awk -F'\t' '
-    function human(b,   u, i, v) {
-        split("B KB MB GB TB PB", u, " ")
-        i = 1; v = b + 0
-        while (v >= 1024 && i < 6) { v /= 1024; i++ }
-        if (i == 1) return sprintf("%d %s", v, u[i])
-        return sprintf("%.2f %s", v, u[i])
-    }
-    function thr(bytes, ms) { return ms > 0 ? human(bytes * 1000 / ms) "/s" : "-" }
+awk -F'\t' "$AWKLIB"'
+    function thr(bytes, ms) { return ms > 0 ? hbytes2(bytes * 1000 / ms) "/s" : "-" }
     function clean(s) { gsub(/\|/, "/", s); gsub(/[\t\r]/, " ", s); return s }   # keep | out of the S| delimiter stream
     {
         outcome = ($2 != "Failed" && $2 != "Expired" ? "OK" : "Error"); account = clean($3); dsite = clean($12)
@@ -49,7 +42,7 @@ awk -F'\t' '
         d = $9 + 0                                   # transfer duration in ms (wall-clock span)
         tp = thr(size, d)                            # throughput (bytes/s), "-" if no duration
         clr = ($25 ~ /^(green|orange|red)$/) ? $25 : ""     # the File colour (col 25, 2026-09-29)
-        printf "S|%d|%s|%s|%s|%s|%s|%s|%s|%s\n", size, human(size), ts, account, dsite, outcome, file, tp, clr
+        printf "S|%d|%s|%s|%s|%s|%s|%s|%s|%s\n", size, hbytes2(size), ts, account, dsite, outcome, file, tp, clr
     }
 ' "$FILES" > "$tmp"
 

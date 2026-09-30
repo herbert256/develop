@@ -55,10 +55,10 @@ fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Every duration cell is spelled out by the awk that computes it —
-# humandur() and hd()/hdc() in the main pass — and travels to bash as an extra
+# hdurms() and hd()/hdc() in the main pass — and travels to bash as an extra
 # field on the 1 and O lines. There are no
 # bash formatting helpers: they forked an awk per cell, ~350 execs per view.
-# humandur() is the site-wide spelling (report.js humanDur matches it exactly);
+# hdurms() is the site-wide spelling (report.js humanDur matches it exactly);
 # hd() is the per-day table's WHOLE-UNIT spelling, deliberately coarser.
 
 # ---- build one scope (one output, two tables side by side) -------------------
@@ -73,13 +73,7 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
     # 2026-09-05; the D=distribution lines went with the histogram, owned
     # by duration-distribution.sh.) OKONLY drops non-Processed Files (the
     # "Delivered Files" view).
-    local agg; agg=$(awk -F'\t' -v okonly="$OKONLY" '
-        function humandur(ms) {
-            if (ms < 1000)    return sprintf("%d ms", ms)
-            if (ms < 60000)   return sprintf("%.2f s", ms/1000)
-            if (ms < 3600000) return sprintf("%.1f min", ms/60000)
-            return sprintf("%.2f h", ms/3600000)
-        }
+    local agg; agg=$(awk -F'\t' -v okonly="$OKONLY" "$AWKLIB"'
         # The per-day table spells its durations in WHOLE units — no milliseconds
         # and no decimals, so a 12-column wide table stays scannable. Sub-second
         # values render "<1 s" rather than "0 s", which would read as no duration
@@ -118,7 +112,7 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
         }
         function pctl(P) { return T[int((TN - 1) * P / 100 + 0.5) + 1] }
         function nrank(p, nn) { return int((nn - 1) * p / 100 + 0.5) + 1 }
-        function dentry(t,   f) { split(t, f, "|"); return f[2] "  " f[3] "  (" humandur(f[1] + 0) ")" }
+        function dentry(t,   f) { split(t, f, "|"); return f[2] "  " f[3] "  (" hdurms(f[1] + 0) ")" }
         function celllist(r, desc, nn,   start, end, i, out) {
             start = r - 2; if (start < 1) start = 1
             if (start > nn - 4) start = (nn - 4 < 1) ? 1 : nn - 4
@@ -168,7 +162,7 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
             # reads in one unit from top to bottom.
             printf "O\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
                 GN, gmin, int(gsum/GN + 0.5), gmax, pctl(10), pctl(25), pctl(50), pctl(75), pctl(90), pctl(95), pctl(99), nd, \
-                humandur(gmin), humandur(pctl(50)), humandur(pctl(95)), humandur(pctl(99)), humandur(gmax), \
+                hdurms(gmin), hdurms(pctl(50)), hdurms(pctl(95)), hdurms(pctl(99)), hdurms(gmax), \
                 hdc(gmin), hdc(pctl(50)), hdc(gmax), hdc(pctl(10)), hdc(pctl(25)), hdc(pctl(75)), hdc(pctl(90)), hdc(pctl(95)), hdc(pctl(99)), \
                 hdc(int(gsum/GN + 0.5)), hdc(pctl(98))
         }

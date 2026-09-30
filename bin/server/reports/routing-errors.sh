@@ -64,7 +64,7 @@ known_names() {
 # bash read over TAB fields would collapse empty ones):
 #   LIN <TAB> sortkey <TAB> family|entity <TAB> ROW …
 #   FAM <TAB> family <TAB> lines        TOT <TAB> lines <TAB> entities <TAB> days
-agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
+agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK$AWKLIB"'
     # RENAMES: a server line keeps the name that was current when it was
     # written, so fold it to the CURRENT one before matching the roster
     # (which carries current names) and DISPLAY the folded name
@@ -85,8 +85,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$RENAMES_AWK"'
         B2 = substr(r, 1, q - 1); BODY = substr(r, q + 1); sub(/^ */, "", BODY)
         return 1 }
     function ar_brace(s) { if (!match(s, /\{[^}]*\}/)) return ""; return substr(s, RSTART + 1, RLENGTH - 2) }
-    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
-    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
+    # (lit() — a raw name kept literal, audit 2026-09-29 F07 — comes from bin/fmt.awk via $AWKLIB)
     function basename(p,   n, P) { n = split(p, P, "/"); return (P[n] != "" ? P[n] : p) }
     BEGIN { rn_load(RNF) }
     $1 == "KS" { ksite[$2] = 1; next }                       # the known-subscription list (first input)

@@ -148,14 +148,8 @@ awk -F'|' '{ print $1"|"$2 }' "$subfile" | LC_ALL=C sort -u > "$pairfile"
 # The sidecar is written in awk hash order — C-sort it so the row iteration
 # below (partner-union first sightings, the Partner display cells) is
 # deterministic across awks and runs.
-LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap="$smap" '
-    # slug = lowercase, runs of non-alnum -> "-", trimmed (the site-wide slugify)
-    function slugify(s,   t) {
-        t = tolower(s)
-        gsub(/[^a-z0-9]+/, "-", t)
-        sub(/^-+/, "", t); sub(/-+$/, "", t)
-        return t
-    }
+LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap="$smap" "$AWKLIB"'
+    # slug = lowercase, runs of non-alnum -> "-", trimmed: slugof() of bin/fmt.awk (the site-wide slugify)
     # roll one subscription row up under a partner of page pi (first sighting
     # remembers the partner, so the emit order below never depends on hash order)
     # NOTE the increments are their own statements: `x SUBSEP ++A[i]` parses as
@@ -187,8 +181,8 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
         for (i = 1; i <= NK; i++) {
             d = KD[i]; v = KV[i]
             if (d == "Protocol") { label = "TLS version"; pfx = "tls-version" }
-            else                 { label = d;             pfx = slugify(d) }
-            base = pfx "-" slugify(v); if (base == pfx "-") base = pfx "-x"
+            else                 { label = d;             pfx = slugof(d) }
+            base = pfx "-" slugof(v); if (base == pfx "-") base = pfx "-x"
             slug = base; nn = 1
             while (slug in used) { nn++; slug = base "-" nn }
             used[slug] = 1

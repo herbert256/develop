@@ -45,10 +45,7 @@ OUT="$REPORTS_DIR/no-remote-dir.rpt"
 TDATA="$TRANSFER_REPORTS"
 TSITE="$TDATA/subscription.rpt"
 FILESC="$TRANSFER_CACHE/_files.tsv"
-known_names() {   # $1 marker  $2 transfer .rpt — emits "marker<TAB>name" lines
-    [ -f "$2" ] || return 0
-    awk -F'\t' -v M="$1" '$1=="TABLE"{t++; if(t>1)exit} t==1&&$1=="ROW"{print M "\t" $2}' "$2"
-}
+# (known_names: bin/server/lib.sh since 2026-09-30)
 # The RESOLVED filter: per subscription, the END of its LAST OK File
 # (_files.tsv col 12 = subscription, 24 = the File end "YYYY-MM-DD hh:mm:ss.mmm"
 # put in the col 6 sortkey shape "YYYYMMDDhh:mm:ss.mmm" — the start when the
@@ -69,30 +66,7 @@ last_ok_files() {   # emits "KF<TAB>subscription<TAB>sortkey" lines
 # fails has no transfer data to appear in the roster, yet it has a detail page
 # from the config (alink resolves through the comprehensive slugmap at render
 # time, so a genuine miss simply renders unlinked).
-LINK_AWK='
-    # RENAMES (2026-08): a server line keeps the name that was current when it
-    # was written, so fold it to the CURRENT one before matching the roster —
-    # which carries current names, the transfer parse having folded them — and
-    # DISPLAY the folded name, so the page names the flow as the configuration
-    # does. rn_canon_pfx also covers the truncated old spelling the server
-    # writes, folding only when every completion agrees.
-    function sitecanon(t,   k, hits, full, c, t0) {
-        if (t in SCMEMO) return SCMEMO[t]   # memo (2026-09-29): rows are keyed on it now, per line
-        t0 = t
-        c = rn_canon_pfx(t)
-        if (c in ksite) return (SCMEMO[t0] = c)
-        hits = 0
-        for (k in ksite) if (index(k, c) == 1) { hits++; full = k; if (hits > 1) { hits = 0; break } }
-        return (SCMEMO[t0] = (hits == 1 ? full : c))
-    }
-    function sitelink(t,   k, hits, full) {
-        t = sitecanon(t)
-        if (t in ksite) return "@{alink=subscriptions/" t "}"
-        hits = 0
-        for (k in ksite) if (index(k, t) == 1) { hits++; full = k; if (hits > 1) { hits = 0; break } }
-        return hits == 1 ? "@{alink=subscriptions/" full "}" : "@{alink=subscriptions/" t "}"
-    }
-'
+LINK_AWK="$SRV_SITECANON_AWK$SRV_SITELINK_AWK"   # bin/server/lib.sh (2026-09-30)
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)

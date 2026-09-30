@@ -59,13 +59,11 @@ fi
 # (Waiting desc) with Array.prototype.sort, which is STABLE — "ties keep DOM
 # order" — so equal Waiting values stay in the order baked here. Change this
 # order and you silently change the page's secondary sort.
-rows=$(LC_ALL=C sort -t$'\t' -k5,5nr -k1,1f "$PICKUPS" | awk -F'\t' -v SL="$SL" -v TF="$TF" -v OLD="$OLD" '
-    function sublink(s) { return (s != "") ? "@{alink=subscriptions/" s "}" : "" }
+rows=$(LC_ALL=C sort -t$'\t' -k5,5nr -k1,1f "$PICKUPS" | awk -F'\t' -v SL="$SL" -v TF="$TF" -v OLD="$OLD" "$AWKLIB$SRV_SUBLINK_AWK"'
     # date + hh:mm (2026-09-02, user request — the gateway stamp precision)
     function stamp(s) { return (s == "" || s == "-") ? "\342\200\224" : substr(s, 1, 16) }
     function trim(s) { sub(/^[ \t\r]+/, "", s); sub(/[ \t\r]+$/, "", s); return s }
     function z(v) { return (v + 0 == 0) ? "" : v }   # a 0 count shows empty (2026-09-02, user request); the outcome columns z-blank themselves
-    function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     function tsec(d,t){ split(d,p,"-"); return jdn(p[1]+0,p[2]+0,p[3]+0)*86400 + substr(t,1,2)*3600 + substr(t,4,2)*60 + substr(t,7,2) }
     # one unit, truncated, singular/plural: "5 days", "12 hours", "45 minutes", "10 seconds"
     function hage(s,   n, u) {

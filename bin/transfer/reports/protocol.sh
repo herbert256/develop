@@ -38,14 +38,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 #   PROTO|  by protocol          AB|    by action by
 #   DIR|    by direction         X|     direction x action by
 #   PXD|    protocol x direction MODE|  BINARY/ASCII
-agg=$(awk -F'\t' '
-    function human(b,   u, i, v) {
-        split("B KB MB GB TB PB", u, " ")
-        i = 1; v = b + 0
-        while (v >= 1024 && i < 6) { v /= 1024; i++ }
-        if (i == 1) return sprintf("%d %s", v, u[i])
-        return sprintf("%.2f %s", v, u[i])
-    }
+agg=$(awk -F'\t' "$AWKLIB"'
     {
         status = $3; sub(/ Subtransmission$/, "", status); f = (status != "Processed")
         dir = $2; proto = $10; size = $9; d = $11; ab = $7; mode = $20
@@ -85,13 +78,13 @@ agg=$(awk -F'\t' '
         for (k in adl) { split(k, a, SUBSEP); abk[a[1]] = abk[a[1]] (abk[a[1]] ? "," : "") a[2] ":" adl[k] ":" (adf[k]+0) ":" (adp[k]+0) }
         for (k in ydl) { split(k, a, SUBSEP); kk2 = a[1] SUBSEP a[2]; ybk[kk2] = ybk[kk2] (ybk[kk2] ? "," : "") a[3] ":" ydl[k] ":" (ydf[k]+0) ":" (ydp[k]+0) }
         for (k in mdl) { split(k, a, SUBSEP); mbk[a[1]] = mbk[a[1]] (mbk[a[1]] ? "," : "") a[2] ":" mdl[k] ":" (mdf[k]+0) ":" (mdp[k]+0) }
-        for (k in pr) printf "PROTO|%s|%d|%d|%d|%d|%s|%s|%s\n", k, pr[k], pf[k]+0, pp[k]+0, pb[k], human(pb[k]), rshare(pp[k]+0), pbk[k]
-        for (k in dr) printf "DIR|%s|%d|%d|%d|%d|%s|%s|%s\n",   k, dr[k], dff[k]+0, dpp[k]+0, db[k], human(db[k]), rshare(dpp[k]+0), dbk[k]
-        for (k in xr) printf "PXD|%s|%s|%d|%d|%d|%d|%s|%s|%s\n", xp[k], xd[k], xr[k], xff[k]+0, xpp[k]+0, xb[k], human(xb[k]), rshare(xpp[k]+0), xbk[k]
+        for (k in pr) printf "PROTO|%s|%d|%d|%d|%d|%s|%s|%s\n", k, pr[k], pf[k]+0, pp[k]+0, pb[k], hbytes2(pb[k]), rshare(pp[k]+0), pbk[k]
+        for (k in dr) printf "DIR|%s|%d|%d|%d|%d|%s|%s|%s\n",   k, dr[k], dff[k]+0, dpp[k]+0, db[k], hbytes2(db[k]), rshare(dpp[k]+0), dbk[k]
+        for (k in xr) printf "PXD|%s|%s|%d|%d|%d|%d|%s|%s|%s\n", xp[k], xd[k], xr[k], xff[k]+0, xpp[k]+0, xb[k], hbytes2(xb[k]), rshare(xpp[k]+0), xbk[k]
         for (k in ar) printf "AB|%s|%d|%d|%d|%s\n", k, ar[k], afl[k]+0, app[k]+0, abk[k]
         for (k in yr) printf "X|%s|%s|%d|%d|%d|%s\n", yd[k], ya[k], yr[k], yff[k]+0, ypp[k]+0, ybk[k]
         for (k in mr) printf "MODE|%s|%d|%d|%d|%s\n", k, mr[k], mf[k]+0, mp[k]+0, mbk[k]
-        printf "TOT|%d|%d|%d|%d|%s\n", tr2, tf+0, tp+0, tb, human(tb)
+        printf "TOT|%d|%d|%d|%d|%s\n", tr2, tf+0, tp+0, tb, hbytes2(tb)
     }
 ' "$PARSED")
 

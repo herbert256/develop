@@ -196,7 +196,7 @@ echo "Parsing ${#src_files[@]} file(s) into $PARSED0 ..." >&2
 # the tokenizer over the argument files -> stdout (a function since
 # 2026-09-27: the parse runs it on several file groups in parallel)
 tok_files() {
-awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CFGC="$CFG_CONF" "$BLACKLIST_AWK$RENAMES_AWK"'
+awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CFGC="$CFG_CONF" "$BLACKLIST_AWK$RENAMES_AWK$AWKLIB"'
     BEGIN { bl_load(BLF); rn_load(RNF, RNP)
             # the configured subscription names, case-folded -> the configured
             # SPELLING: a logged site naming one is kept whatever its shape
@@ -292,7 +292,6 @@ awk -v BLF="$BLACKLIST_FILE" -v RNF="$RENAMES_FILE" -v RNP="$RENAMES_PROF" -v CF
         }
         return j
     }
-    function jdn(y,m,d,   a) { a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     function bucket(s) {
         if (s == "" || s == "UNKNOWN")           return "Unknown"
         if (s ~ /Scanning was not performed/)    return "Not performed"
@@ -1399,9 +1398,8 @@ ttmp="$FILES.tmp.$$"
 flowmap="$CFG_FLOW"; [ -f "$flowmap" ] || flowmap=/dev/null
 # (the program is RUN further down, in one pipeline with the config join and
 # the still-under-way filter — see "ONE PIPELINE PER SLICE" there)
-COLLAPSE_AWK='
+COLLAPSE_AWK="$AWKLIB"'
     function hms_ms(t,   a) { if (t == "") return 0; split(t, a, "[:.]"); return ((a[1]*3600) + (a[2]*60) + a[3]) * 1000 + a[4] }
-    function fromjdn(j,   a,b,c,dd,e2,mm,day2,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e2=c-int(1461*dd/4); mm=int((5*e2+2)/153); day2=e2-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day2) }
     # an epoch-ms value (jdn * 86400000 + ms of day) -> "ccyy-mm-dd hh:mm:ss.mmm", the col 4/5 format
     function stamp_ms(ms,   j, r, h, m, s) { j = int(ms / 86400000); r = ms - j * 86400000; h = int(r / 3600000); r -= h * 3600000; m = int(r / 60000); r -= m * 60000; s = int(r / 1000); return fromjdn(j) " " sprintf("%02d:%02d:%02d.%03d", h, m, s, r - s * 1000) }
     function flush(   t1, t2, arr_end, pick_start, oc, wait, mv, endst) {

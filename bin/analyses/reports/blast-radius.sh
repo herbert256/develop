@@ -144,20 +144,17 @@ n_shared=$(sv shared); n_ptn=$(sv ptn)
     # base/_hosts.tsv, like every entity row — and the sole-endpoint risk
     # colours its own cell; the partner lists link every name, @{alist=})
     printf 'KIND\thost\tnum\tnum\tnum\tnum\tnum\tnum\ttext\ttext\n'
-    LC_ALL=C sort -t$'\t' -k1,1 -k2,2f "$TMPD/t1.pre" | awk -F'\t' -v HB="$DATA/flow-manager/base/_hosts.tsv" '
-        function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
-            while (v >= 1024 && i < 6) { v /= 1024; i++ }
-            return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
+    LC_ALL=C sort -t$'\t' -k1,1 -k2,2f "$TMPD/t1.pre" | awk -F'\t' -v HB="$DATA/flow-manager/base/_hosts.tsv" "$AWKLIB"'
         function plist(l) { gsub("\037", ", ", l); return l }
         BEGIN { while ((getline l < HB) > 0) { split(l, a, "\t"); if (a[1] != "") R[toupper(a[1])] = a[3] } close(HB) }
         {
             n++; f += $3; b += $4
             res = R[toupper($2)]
             printf "ROW\t%s\t%d\t%s\t%d\t%d\t%d\t%d\t%s\t%s%s\n", \
-                $2, $3, human($4), $5, $6, $7, $8, ($9 == "-" ? "-" : "@{alist=partners}" plist($9)), \
+                $2, $3, hbytes2($4), $5, $6, $7, $8, ($9 == "-" ? "-" : "@{alist=partners}" plist($9)), \
                 ($10 + 0 > 0 ? "@{alist=partners,class=failed}" plist($11) : "-"), (res != "" ? "\t@data:res=" res : "")
         }
-        END { printf "TOTAL\tTotal (%d host(s))\t@{class=num}%d\t@{class=num}%s\t\t\t\t\t\t\n", n + 0, f + 0, human(b) }'
+        END { printf "TOTAL\tTotal (%d host(s))\t@{class=num}%d\t@{class=num}%s\t\t\t\t\t\t\n", n + 0, f + 0, hbytes2(b) }'
 
     printf 'TABLE\tShared endpoints\tnofilter\tnosearch\n'
     printf 'HEAD\tHost\tPartners\tPartner(s)\tFiles\n'

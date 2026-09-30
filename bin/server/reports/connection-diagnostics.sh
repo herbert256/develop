@@ -46,10 +46,7 @@ OUT="$REPORTS_DIR/connection-diagnostics.rpt"
 # page degrades to plain text; the cell keeps the logged spelling.
 THOST="$TRANSFER_REPORTS/remote-host.rpt"
 HBASE="$DATA/flow-manager/base/_hosts.tsv"
-known_names() {   # $1 marker  $2 transfer .rpt — emits "marker<TAB>name" lines
-    [ -f "$2" ] || return 0
-    awk -F'\t' -v M="$1" '$1=="TABLE"{t++; if(t>1)exit} t==1&&$1=="ROW"{print M "\t" $2}' "$2"
-}
+# (known_names: bin/server/lib.sh since 2026-09-30)
 base_names() {     # $1 base cache — every configured host
     [ -f "$1" ] || return 0
     awk -F'\t' '$1 != "" { print "KH\t" $1 }' "$1"

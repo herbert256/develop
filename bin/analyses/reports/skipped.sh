@@ -140,9 +140,8 @@ rows_tmp="$REPORTS_DIR/skipped.rows.tmp.$$"
 # them)
 trap 'rm -f "$rows_tmp" "$REPORTS_DIR"/skipped.rpt.tmp*' EXIT
 if [ -f "$RAW_SKIP" ] && [ -s "$RAW_SKIP" ]; then
-    awk '
-        # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
-        function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
+    awk "$AWKLIB"'
+        # (lit() — a raw name kept literal, audit 2026-09-29 F07 — comes from bin/fmt.awk via $AWKLIB)
         function f(line, want,    n, i, c, q, cur) {
             n = 0; cur = ""; q = 0
             for (i = 1; i <= length(line); i++) {

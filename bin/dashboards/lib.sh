@@ -12,6 +12,7 @@ LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$LIB_DIR/../.." && pwd)"
 cd "$ROOT"
 source "$ROOT/bin/fastawk.sh"    # route unqualified `awk` to mawk when installed (4-9x faster)
+source "$ROOT/bin/awklib.sh"     # $AWKLIB: the shared awk helpers (date.awk + fmt.awk)
 DATA="data"
 REPORTS_DIR="$DATA/dashboards/reports"     # one .rpt (page spec) per dashboard page
 mkdir -p "$REPORTS_DIR"

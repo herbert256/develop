@@ -59,9 +59,8 @@ args+=( f=files "$FILES" )
 # after every page .rpt exists — a killed run leaves no slugmap rather than a
 # partial one.
 npages=$(LC_ALL=C awk -F'\t' \
-    -v outdir="$OUTDIR" -v slugmap="$SLUGMAP.tmp" '
-    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
-    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
+    -v outdir="$OUTDIR" -v slugmap="$SLUGMAP.tmp" "$AWKLIB"'
+    # (lit() — a raw name kept literal, audit 2026-09-29 F07 — comes from bin/fmt.awk via $AWKLIB)
     function hb(b) { if (b >= 1073741824) return sprintf("%.1f GB", b/1073741824)
                      if (b >= 1048576)    return sprintf("%.1f MB", b/1048576)
                      if (b >= 1024)       return sprintf("%.1f KB", b/1024)

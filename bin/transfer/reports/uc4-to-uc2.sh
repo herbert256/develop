@@ -68,10 +68,7 @@ LC_ALL=C awk -F'\t' -v OFS='\t' '
     }' "$TMP/legs" > "$TMP/pairs"
 np=$(wc -l < "$TMP/pairs" | tr -d ' ')
 
-HD='function hd(s) { if (s < 90) return sprintf("%d s", s)
-                    if (s < 5400) return sprintf("%.0f min", s / 60)
-                    if (s < 172800) return sprintf("%.1f h", s / 3600)
-                    return sprintf("%.1f d", s / 86400) }'
+# (the gap formatter hd() is fmt.awk hdsecs() since 2026-09-30 — $AWKLIB)
 
 {
     printf 'TITLE\tUC4 to UC2\n'
@@ -80,9 +77,9 @@ HD='function hd(s) { if (s < 90) return sprintf("%d s", s)
     printf 'HEAD\tUC4 subscription\tUC2 subscription\tLogin\tFiles\tFastest\tMedian\tSlowest\tFirst\tLast\n'
     printf 'KIND\tsite\tsite\tlogin\tnum\ttext\ttext\ttext\ttext\ttext\n'
     # grouped by pair + login, gaps ascending so the median is the middle row
-    LC_ALL=C sort -t"$TAB" -k1,1 -k2,2 -k3,3 -k9,9n "$TMP/pairs" | awk -F'\t' "$HD"'
+    LC_ALL=C sort -t"$TAB" -k1,1 -k2,2 -k3,3 -k9,9n "$TMP/pairs" | awk -F'\t' "$AWKLIB"'
         function flush() { if (n == 0) return
-            printf "%d\tROW\t%s\t%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\n", n, a, b, l, n, hd(g[1]), hd(g[int((n + 1) / 2)]), hd(g[n]), first, last }
+            printf "%d\tROW\t%s\t%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\n", n, a, b, l, n, hdsecs(g[1]), hdsecs(g[int((n + 1) / 2)]), hdsecs(g[n]), first, last }
         { k = $1 SUBSEP $2 SUBSEP $3 }
         k != cur { flush(); cur = k; a = $1; b = $2; l = $3; n = 0; delete g; first = ""; last = "" }
         { n++; g[n] = $9; c = $7 " " substr($8, 1, 8)
@@ -92,8 +89,8 @@ HD='function hd(s) { if (s < 90) return sprintf("%d s", s)
     printf 'TABLE\tFiles\twide\tpager=500\ttab=uc4uc2\n'
     printf 'HEAD\tFile\tLogin\tUC4 subscription\tUC4 date/time\tUC2 subscription\tUC2 date/time\tGap\tUC4 CoreId\tUC2 CoreId\n'
     printf 'KIND\tfile\tlogin\tsite\ttext\tsite\ttext\ttext\ttext\ttext\n'
-    LC_ALL=C sort -t"$TAB" -k12,12r "$TMP/pairs" | awk -F'\t' "$HD"'
-        { printf "ROW\t%s\t%s\t%s\t%s %s\t%s\t%s %s\t%s\t@{class=mono}%s\t@{class=mono}%s\n", $4, $3, $1, $5, $6, $2, $7, $8, hd($9), $10, $11 }'
+    LC_ALL=C sort -t"$TAB" -k12,12r "$TMP/pairs" | awk -F'\t' "$AWKLIB"'
+        { printf "ROW\t%s\t%s\t%s\t%s %s\t%s\t%s %s\t%s\t@{class=mono}%s\t@{class=mono}%s\n", $4, $3, $1, $5, $6, $2, $7, $8, hdsecs($9), $10, $11 }'
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

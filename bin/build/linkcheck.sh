@@ -182,6 +182,23 @@ awk -v DOCS="$DOCS" '
             }
             close(DOCS "/" f)
         }
+        # 3a. THE ENTITIES ROW PAYLOAD (2026-09-30): the Entities views ship
+        # the data-fp lists of their rows in transfer/entities/<entity>-data.js
+        # (report.js attachEntityPayload puts them back on the rows, and
+        # bindDrill links them like 2b) — strict edges of the entity All
+        # view, whose data-b is ../../
+        for (f in FILE) if (f ~ /^transfer\/entities\/[a-z-]+-data\.js$/) {
+            src = f; sub(/-data\.js$/, "-all.html", src)
+            while ((getline l < (DOCS "/" f)) > 0) {
+                s = l
+                while (match(s, /data-fp="[^"]*"/)) {
+                    a9 = substr(s, RSTART + 9, RLENGTH - 10); s = substr(s, RSTART + RLENGTH)
+                    n9 = split(a9, F9, " ")
+                    for (i9 = 1; i9 <= n9; i9++) if (F9[i9] != "") edge(src, "../../files/" F9[i9] ".html")
+                }
+            }
+            close(DOCS "/" f)
+        }
         # 3b. THE ALL FILES SEARCH (2026-09-27): search/all/index.js (the
         # subscription -> detail slug dictionary) and the day shards
         # search/all/d-<date>.js, whose links assets/all-files-search.js

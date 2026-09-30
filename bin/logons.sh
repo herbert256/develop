@@ -94,6 +94,7 @@ _LOGONS_SH="${BASH_SOURCE[0]}"
 # a report join and the detail pages, and the blacklist's contract is that
 # no report or page ever counts them
 source "$(dirname "$_LOGONS_SH")/blacklist.sh"
+source "$(dirname "$_LOGONS_SH")/awklib.sh"   # $AWKLIB: the shared awk helpers (date.awk + fmt.awk)
 
 # the [Ssh Default] family classifier — ONE copy with logon.sh (2026-09-30)
 _LG_SSHFAM="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/ssh-family.awk"
@@ -108,7 +109,7 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
     : > "$_lg_tmp"; : > "$_lg_htmp"
     if [ -s "$_lg_parse" ]; then
         # qtok() + ssh_family(): bin/ssh-family.awk, shared with logon.sh
-        awk -F'\t' -v BLF="$BLACKLIST_FILE" -v HOUT="$_lg_htmp" "$BLACKLIST_AWK$(cat "$_LG_SSHFAM")"'
+        awk -F'\t' -v BLF="$BLACKLIST_FILE" -v HOUT="$_lg_htmp" "$BLACKLIST_AWK$(cat "$_LG_SSHFAM")$AWKLIB$CADENCE_AWK"'
             BEGIN { bl_load(BLF) }
             # one screening line, booked in the per-ADDRESS host file
             function host_screen(s9, ha9, ts9h) {
@@ -126,23 +127,9 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
                 sub(/[.,;]$/, "", a9)
                 return a9
             }
-            function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
-            function minof(d, t) { return jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 1440 + substr(t,1,2) * 60 + substr(t,4,2) + 0 }
             # second-of-era with the millisecond fraction (the anon-failure
             # window is sub-second work; a double carries this exactly)
             function secof(d, t) { return jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 86400 + substr(t,1,2) * 3600 + substr(t,4,2) * 60 + substr(t,7) + 0 }
-            function patron(m,   n) {
-                if (m <= 0)   return "Rarely"
-                if (m <= 2)   return "Continuous"
-                if (m < 58)   { n = int((m + 2.5) / 5) * 5; if (n < 5) n = 5; return "Every " n " minutes" }
-                if (m <= 75)  return "Hourly"
-                if (m < 1320) { n = int((m + 30) / 60); return (n <= 1) ? "Hourly" : "Every " n " hours" }
-                n = int((m + 720) / 1440)
-                if (n <= 1)   return "Daily"
-                if (n >= 6 && n <= 8) return "Weekly"
-                if (n <= 15)  return "Every " n " days"
-                return "Rarely"
-            }
             $5 ~ /User with login name "/ && $5 ~ /successfully authenticated/ {
                 if (!match($5, /login name "[^"]*"/)) next
                 u = substr($5, RSTART + 12, RLENGTH - 13)
@@ -467,12 +454,6 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
             # least six of ten within half and double the median; otherwise the
             # spacing has no clear pattern and the label says so. A "Rarely" verdict
             # (a median beyond 15 days) is kept as is: sparse is its own pattern.
-            function regspread(A, ng, med,   g9, w9) {
-                w9 = 0; for (g9 in A) if (g9 + 0 >= med / 2 && g9 + 0 <= med * 2) w9 += A[g9]
-                return (ng > 0 && w9 * 10 >= ng * 6) }
-            function label(med, A, ng,   l9) {
-                l9 = patron(med); if (l9 != "Rarely" && !regspread(A, ng, med)) return "Irregular"
-                return l9 }
             # (2026-09-28, speed round 21: the minutes come from the per-key
             # DISTINCT list the main pass keeps, sorted once; the old walk
             # visited every minute between the first and the last logon, ~36k
@@ -480,13 +461,6 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
             # largest gap. Both now step over the sorted DISTINCT values, with
             # the same picks: a median is the smallest value whose cumulative
             # count reaches half. It was 3 of the 4 s of the summary at scale.)
-            function qsortn(A, lo, hi,   i, j, p, t) {
-                while (lo < hi) {
-                    i = lo; j = hi; p = A[int((lo + hi) / 2)]
-                    while (i <= j) { while (A[i] < p) i++; while (A[j] > p) j--; if (i <= j) { t = A[i]; A[i] = A[j]; A[j] = t; i++; j-- } }
-                    if (j - lo < hi - i) { if (lo < j) qsortn(A, lo, j); lo = i } else { if (i < hi) qsortn(A, i, hi); hi = j }
-                }
-            }
             function cadence(LN, LV, key,   LG2, gh2, SS2, SE2, dh2, GD, DD, nl, li, m, g, maxg, ng, half, c2, med, ns, maxd, meddur, ngd, ndd, j) {
                 nl = (key in LN) ? LN[key] + 0 : 0
                 for (li = 1; li <= nl; li++) LG2[li] = LV[key, li]

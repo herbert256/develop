@@ -141,12 +141,8 @@ sort_flag_ok() { printf 'a\n' | sort "$1" >/dev/null 2>&1; }
 SORT_CHUNK_FLAGS=""
 if sort_flag_ok -S1M; then SORT_CHUNK_FLAGS="-S256M"; fi
 
-POOL_PIDS=()
-pool_run() {   # run "$@" as a background job, at most NJOBS at once
-    while [ "$(jobs -rp | wc -l | tr -d ' ')" -ge "$NJOBS" ]; do sleep 0.1; done
-    "$@" &
-    POOL_PIDS+=("$!")
-}
+POOL_WHAT="a parallel parse job"
+source "$SCRIPT_DIR/../pool.sh"   # pool_run / pool_wait — the one job pool (2026-09-30)
 # LONGEST-PROCESSING-TIME-FIRST dispatch. Every phase here partitions work by a
 # naturally SKEWED key and used to dispatch in canonical order, so the biggest
 # unit tended to start last and drain alone while the other cores idled. Profiled
@@ -165,21 +161,6 @@ lpt_order() {   # args = paths in canonical index order
         i=$((i + 1))
         printf '%s\t%s\t%s\n' "$(wc -c < "$f" 2>/dev/null || echo 0)" "$i" "$f"
     done | LC_ALL=C sort -k1,1rn -k2,2n | cut -f2-
-}
-pool_wait() {  # reap every pooled job; abort the parse if any failed
-    local p st rc=0
-    [ "${#POOL_PIDS[@]}" -eq 0 ] && return 0
-    for p in "${POOL_PIDS[@]}"; do
-        st=0
-        wait "$p" || st=$?
-        [ "$st" -ne 0 ] && rc=$st
-    done
-    POOL_PIDS=()
-    if [ "$rc" -ne 0 ]; then
-        echo "ERROR: a parallel parse job failed (exit $rc) — aborting." >&2
-        exit "$rc"
-    fi
-    return 0
 }
 
 # Both scratch dirs live in CACHE_DIR (same filesystem as the outputs) and are

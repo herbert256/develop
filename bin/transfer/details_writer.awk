@@ -32,8 +32,8 @@
 # ===== small helpers =========================================================
 # The page buffer
 function emitl(s) { PG[++npg] = s }
-# lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
-function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
+# (lit() — a raw name starting with @ kept literal, audit 2026-09-29 F07 —
+# comes from bin/fmt.awk, loaded before this file: awk -f bin/fmt.awk -f …)
 
 function wdname(d) {
     if (d == 0) return "Monday";   if (d == 1) return "Tuesday"

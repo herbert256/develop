@@ -54,13 +54,8 @@ trap 'rm -rf "$TMPD"' EXIT
 # last seen), then the PARSED legs for the security share. END writes the
 # sortable scorecard rows and
 # the STAT figures (all explicitly ordered/sorted — no hash-order output).
-awk -F'\t' -v ROWS="$TMPD/score.pre" -v STATS="$TMPD/stats.tsv" -v SPMAP="$SP_MAP" "$SP_AWK"'
-    function jdn(y, m, d,   a2, y2, m2) { a2 = int((14 - m) / 12); y2 = y + 4800 - a2; m2 = m + 12 * a2 - 3
-        return d + int((153 * m2 + 2) / 5) + 365 * y2 + int(y2 / 4) - int(y2 / 100) + int(y2 / 400) - 32045 }
+awk -F'\t' -v ROWS="$TMPD/score.pre" -v STATS="$TMPD/stats.tsv" -v SPMAP="$SP_MAP" "$SP_AWK$AWKLIB"'
     function djdn(s) { return jdn(substr(s,1,4)+0, substr(s,6,2)+0, substr(s,9,2)+0) }
-    function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
-        while (v >= 1024 && i < 6) { v /= 1024; i++ }
-        return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
     FILENAME ~ /_files\.tsv$/ {
         set = sp_union($20, $12)   # the partner UNION set (bin/pda-union.sh)
         if (set == "") next
@@ -129,7 +124,7 @@ awk -F'\t' -v ROWS="$TMPD/score.pre" -v STATS="$TMPD/stats.tsv" -v SPMAP="$SP_MA
             dir = (DI[p] && DO[p]) ? "both" : (DO[p] ? "out" : (DI[p] ? "in" : "-"))   # "both" like the rest of the site (two-way until 2026-09-30)
             if (F[p] >= 100) { nsc++
                 printf "%03d\t%s\t%d\t%d\t%.1f%%\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\n", \
-                    sc, p, sc, F[p], errpct, trend, human(B[p]), wait, weak, hosts, dir, L[p], B[p] > ROWS
+                    sc, p, sc, F[p], errpct, trend, hbytes2(B[p]), wait, weak, hosts, dir, L[p], B[p] > ROWS
             }
         }
         close(ROWS)

@@ -31,10 +31,7 @@ OUT="$REPORTS_DIR/auth-activity.rpt"
 # the transfer report is absent.
 TDATA="$TRANSFER_REPORTS"
 TACCT="$TDATA/account.rpt"
-known_names() {   # $1 marker  $2 transfer .rpt — emits "marker<TAB>name" lines
-    [ -f "$2" ] || return 0
-    awk -F'\t' -v M="$1" '$1=="TABLE"{t++; if(t>1)exit} t==1&&$1=="ROW"{print M "\t" $2}' "$2"
-}
+# (known_names: bin/server/lib.sh since 2026-09-30)
 # + every CONFIGURED account (2026-09-30 audit S-01: an account with a detail
 # page but no transfer is absent from account.rpt and stayed unlinked)
 base_names() {   # $1 marker  $2 base cache — emits "marker<TAB>name" lines
@@ -43,14 +40,7 @@ base_names() {   # $1 marker  $2 base cache — emits "marker<TAB>name" lines
 }
 # LINK_AWK — acctlink() returns the @{alink=…} cell prefix (resolved through
 # the slugmap at render time) for a known account (exact, also @endpoint-stripped), or "" when unresolved.
-LINK_AWK='
-    function acctlink(t,   s) {
-        if (t in kacct) return "@{alink=accounts/" t "}"
-        s = t; sub(/@.*$/, "", s)
-        if (s in kacct) return "@{alink=accounts/" s "}"
-        return ""
-    }
-'
+LINK_AWK="$SRV_ACCTLINK_AWK"   # bin/server/lib.sh (2026-09-30)
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)

@@ -23,7 +23,7 @@ CH_BLUE="#3b82c4"; CH_GREEN="#3f9d52"; CH_RED="#df5a4c"; CH_AMBER="#e8a13a"
 CH_PURPLE="#7d63c6"; CH_TEAL="#2ba397"; CH_INK="#33475b"; CH_MUTE="#8a97a4"
 CH_GRID="#e9edf2"; CH_TRACK="#eef1f5"
 
-# humannum — 1234567 -> 1.2M etc, COUNTS ONLY (byte values use hb()). hn takes an
+# humannum — 1234567 -> 1.2M etc, COUNTS ONLY (byte values use hbytes2()). hn takes an
 # optional unit suffix (e.g. " GB") and keeps one decimal for non-integer values
 # < 100, so a gridline over fractional data reads "3.7 GB", not "3".
 # hb — human bytes, 1024-based with %.2f like the report tables' humanbytes.
@@ -32,9 +32,9 @@ CH_GRID="#e9edf2"; CH_TRACK="#eef1f5"
 # publish render_card exports; see the header comment).
 # dto/dth/dtd/dtc — the chart-data <details> table: open, header cell, data
 # cell (num = right-aligned), close.
-CH_AWK_HELPERS='
+source "$(dirname "${BASH_SOURCE[0]}")/../awklib.sh"   # $AWKLIB (hbytes2 …) — CH_AWK_HELPERS starts with it
+CH_AWK_HELPERS="$AWKLIB"'
     function hn(t, u){ t=t+0; if(t>=1e9)return sprintf("%.1fB%s",t/1e9,u); if(t>=1e6)return sprintf("%.1fM%s",t/1e6,u); if(t>=1e3)return sprintf("%.1fk%s",t/1e3,u); if(t!=int(t)&&t<100)return sprintf("%.1f%s",t,u); return sprintf("%d%s",t,u) }
-    function hb(b,  hbu,hbi,hbv){ split("B KB MB GB TB PB",hbu," "); hbi=1; hbv=b+0; while(hbv>=1024&&hbi<6){hbv/=1024;hbi++} return (hbi==1)?sprintf("%d %s",hbv,hbu[hbi]):sprintf("%.2f %s",hbv,hbu[hbi]) }
     function xesc(s){ gsub(/&/,"\\&amp;",s); gsub(/</,"\\&lt;",s); gsub(/>/,"\\&gt;",s); return s }
     function svgo(vb, cls, par){
         printf "<svg viewBox=\"%s\" class=\"svg %s\" preserveAspectRatio=\"%s\" role=\"img\" aria-labelledby=\"%s-t %s-d\">", vb, cls, par, cid, cid
@@ -76,7 +76,7 @@ card_end() { printf '</div></section>'; }
 svg_vbar() {   # $1 data  $2 color  $3 unit (optional y/hover suffix, e.g. " s" / "%"; the word "bytes" = humanize as byte sizes)
     awk -v data="$1" -v col="${2:-$CH_BLUE}" -v unit="${3:-}" -v track="$CH_TRACK" -v grid="$CH_GRID" -v ink="$CH_INK" -v mute="$CH_MUTE" \
         -v cid="${CH_ID:-ch}" -v ctitle="${CH_TITLE:-Chart}" "$CH_AWK_HELPERS"'
-    function fv(x){ return unit=="bytes" ? hb(x) : hn(x, unit) }
+    function fv(x){ return unit=="bytes" ? hbytes2(x) : hn(x, unit) }
     BEGIN{
         n=split(data,seg,"|"); mx=1; tot=0; hi=1
         for(i=1;i<=n;i++){ split(seg[i],p,":"); lab[i]=p[1]; v[i]=p[2]+0; tot+=v[i]; if(v[i]>mx)mx=v[i]; if(v[i]>v[hi])hi=i }

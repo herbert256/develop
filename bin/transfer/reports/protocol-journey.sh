@@ -27,14 +27,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Pass 1 = $FILES (outcome/date/size per CoreId), pass 2 = $PARSED sorted
 # chronologically (coreid, sortkey): build each group's collapsed chain.
-agg=$( { cat "$FILES"; printf '###SPLIT###\n'; LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k13,13 "$PARSED"; } | awk -F'\t' "$COREIDS_AWK"'
-    function human(b,   u, i, v) {
-        split("B KB MB GB TB PB", u, " ")
-        i = 1; v = b + 0
-        while (v >= 1024 && i < 6) { v /= 1024; i++ }
-        if (i == 1) return sprintf("%d %s", v, u[i])
-        return sprintf("%.2f %s", v, u[i])
-    }
+agg=$( { cat "$FILES"; printf '###SPLIT###\n'; LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k13,13 "$PARSED"; } | awk -F'\t' "$COREIDS_AWK$AWKLIB"'
     function flush(   ch, pf, k, st) {
         if (cur == "") return
         if (run > 1) chain = chain "+"
@@ -75,9 +68,9 @@ agg=$( { cat "$FILES"; printf '###SPLIT###\n'; LC_ALL=C sort -t"$(printf '\t')" 
             if (cp[ch] + 0 == 0) continue   # no OK File: nothing this table counts (2026-09-29)
             sh = tpr > 0 ? sprintf("%.1f", (cp[ch]+0) * 100 / tpr) : "0.0"
             w = int((cp[ch]+0) * 100 / maxpr)
-            printf "CHN|%s|%d|%d|%d|%s|%s|%d|%s|%s|%s\n", ch, cr[ch], cf[ch]+0, cp[ch]+0, human(cb[ch]+0), sh, w, bk[ch], buildlist(top["J" SUBSEP ch SUBSEP "F"]), buildlist(top["J" SUBSEP ch SUBSEP "P"])
+            printf "CHN|%s|%d|%d|%d|%s|%s|%d|%s|%s|%s\n", ch, cr[ch], cf[ch]+0, cp[ch]+0, hbytes2(cb[ch]+0), sh, w, bk[ch], buildlist(top["J" SUBSEP ch SUBSEP "F"]), buildlist(top["J" SUBSEP ch SUBSEP "P"])
         }
-        printf "TOT|%d|%d|%d|%s\n", trec, tfl+0, tpr+0, human(tpb+0)
+        printf "TOT|%d|%d|%d|%s\n", trec, tfl+0, tpr+0, hbytes2(tpb+0)
     }
 ')
 

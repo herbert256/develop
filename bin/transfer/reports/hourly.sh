@@ -32,10 +32,7 @@ OUT="$REPORTS_DIR/hourly.rpt"
 HEAT=$(mktemp "${TMPDIR:-/tmp}/hourly.XXXXXX")
 trap 'rm -f "$HEAT"' EXIT
 
-agg=$(activity_stream | awk -F'\t' -v heat="$HEAT" '
-    function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
-        while (v >= 1024 && i < 6) { v /= 1024; i++ }
-        return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
+agg=$(activity_stream | awk -F'\t' -v heat="$HEAT" "$AWKLIB"'
     {
         size = $5; t = $3; d = $1; pf = ($4 == 0)
         if (t !~ /^[0-9][0-9]:/) next
@@ -60,9 +57,9 @@ agg=$(activity_stream | awk -F'\t' -v heat="$HEAT" '
         for (k in hdr) { split(k, a, SUBSEP); bk[a[1]] = bk[a[1]] (bk[a[1]] ? "," : "") a[2] ":" hdr[k] ":" (hdf[k]+0) ":" (hdp[k]+0) ":" hdb[k] }
         for (i = 0; i < 24; i++) {
             hh = sprintf("%02d", i)
-            printf "HOUR|%s|%d|%d|%d|%d|%s|%s\n", hh, hrec[hh]+0, hfail[hh]+0, hproc[hh]+0, hbytes[hh]+0, human(hbytes[hh]+0), bk[hh]
+            printf "HOUR|%s|%d|%d|%d|%d|%s|%s\n", hh, hrec[hh]+0, hfail[hh]+0, hproc[hh]+0, hbytes[hh]+0, hbytes2(hbytes[hh]+0), bk[hh]
         }
-        printf "TOT|%d|%d|%d|%s\n", trec, tfail+0, tproc+0, human(tbytes)
+        printf "TOT|%d|%d|%d|%s\n", trec, tfail+0, tproc+0, hbytes2(tbytes)
         # The heatmap rows, written as finished .rpt lines. Each cell carries
         # its own per-date bucket (@data:h<weekday>=date:count,…) so the
         # recalcHeat pass in report.js can re-sum every cell for the selected

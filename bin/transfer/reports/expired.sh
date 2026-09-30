@@ -59,8 +59,7 @@ trap 'rm -rf "$TMPD"' EXIT
 # Expired = col 2; Collected = a staged file that WAS picked up and delivered
 # (col 21 set, Processed);
 # Waiting = still staged. Ages are calendar days, staging date -> deletion date.
-awk -F'\t' -v D="$TMPD" '
-    function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
+awk -F'\t' -v D="$TMPD" "$AWKLIB"'
     function j(ds,  p){ split(ds,p,"-"); return jdn(p[1]+0,p[2]+0,p[3]+0) }
     # keyed on the SUBSCRIPTION (col 12) since 2026-09-19 (user request — the
     # table was per ACCOUNT before): an account can serve several UC2 flows,
@@ -111,10 +110,8 @@ IFS=$'\t' read -r nexp bexp agesum ncoll nwait < "$TMPD/x_stats"
 # main .rpt lands.
 [ -f "$TMPD/x_sub" ] || : > "$TMPD/x_sub"
 [ -f "$TMPD/x_files" ] || : > "$TMPD/x_files"
-cut -f1 "$TMPD/x_sub" | LC_ALL=C sort | awk '
-    function slugify(s,   t) { t = tolower(s); gsub(/[^a-z0-9]+/, "-", t)
-        sub(/^-+/, "", t); sub(/-+$/, "", t); return t }
-    { base = slugify($0); if (base == "") base = "subscription"
+cut -f1 "$TMPD/x_sub" | LC_ALL=C sort | awk "$AWKLIB"'
+    { base = slugof($0); if (base == "") base = "subscription"
       slug = base; n = 1
       while (slug in used) { n++; slug = base "-" n }
       used[slug] = 1
@@ -130,10 +127,9 @@ rm -rf "$SUBDIR.new"; mkdir -p "$SUBDIR.new"
 # File.)
 LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k3,3r -k2,2r -k5,5 "$TMPD/x_files" | awk -F'\t' \
     -v slugs="$TMPD/x_slugs" -v dir="$SUBDIR.new" \
-    '
+    "$AWKLIB"'
     BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
-    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
-    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
+    # (lit() — a raw name kept literal, audit 2026-09-29 F07 — comes from bin/fmt.awk via $AWKLIB)
     function finish() {
         if (out == "") return
         printf "FOOT\n" > out
@@ -182,11 +178,7 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
     printf 'HEAD\tSubscription\tPartner\tExpired\tCollected\tWaiting\tPickup rate\tAvg age\tVolume\tFirst staged\tLast staged\tLast deletion\n'
     printf 'KIND\tsite\tptn\tnumfailed\tnumprocessed\tnumwarn\tnum\tnum\tnum\ttext\ttext\ttext\n'
     if [ -s "$TMPD/x_sub" ]; then
-        LC_ALL=C sort -t"$(printf '\t')" -k9,9r -k1,1 "$TMPD/x_sub" | awk -F'\t' -v slugs="$TMPD/x_slugs" '
-            function hsz(b) { if (b >= 1073741824) return sprintf("%.1f GB", b/1073741824)
-                if (b >= 1048576) return sprintf("%.1f MB", b/1048576)
-                if (b >= 1024)    return sprintf("%.1f KB", b/1024)
-                return b " B" }
+        LC_ALL=C sort -t"$(printf '\t')" -k9,9r -k1,1 "$TMPD/x_sub" | awk -F'\t' -v slugs="$TMPD/x_slugs" "$AWKLIB"'
             BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
             function z(v) { return (v + 0 == 0) ? "" : v + 0 }   # a count cell shows blank, never 0
             {
@@ -197,13 +189,13 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
                 # never collected once = a dead pickup flow (red); collects some
                 # and lets the rest expire = orange
                 printf "ROW\t%s\t%s\t%s%d\t%s\t%s\t%.0f%%\t%.1f d\t%s\t%s\t%s\t%s\t@data:res=%s\n", \
-                    $1, $10, lk, $2, z($3), z($4), rate, $6 / $2, hsz($5), $7, $8, substr($9, 1, 19), \
+                    $1, $10, lk, $2, z($3), z($4), rate, $6 / $2, hbytes1($5), $7, $8, substr($9, 1, 19), \
                     ($3 == 0 ? "red" : "orange")
                 te += $2; tc += $3; tw += $4; tv += $5
             }
             END { trate = (te + tc) ? tc * 100 / (te + tc) : 0
                   printf "TOTAL\tTotal (%d subscription(s))\t\t@{class=num failed}%d\t@{class=num processed}%s\t@{class=num warn}%s\t@{class=num}%.0f%%\t\t@{class=num}%s\t\t\t\n", \
-                      NR, te, z(tc), z(tw), trate, hsz(tv) }'
+                      NR, te, z(tc), z(tw), trate, hbytes1(tv) }'
     else
         printf 'ROW\t@{colspan=11}No expired Files in this data window.\n'
         printf 'TOTAL\tTotal (0 subscriptions)\t\t\t\t\t\t\t\t\t\t\n'
@@ -217,13 +209,10 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
     printf 'HEAD\tDeletion night\tFiles expired\tVolume\tSubscriptions\n'
     printf 'KIND\ttext\tnum\tnum\tnum\n'
     if [ -s "$TMPD/x_night" ]; then
-        LC_ALL=C sort -t"$(printf '\t')" -k1,1 "$TMPD/x_night" | awk -F'\t' '
-            function hsz(b) { if (b >= 1048576) return sprintf("%.1f MB", b/1048576)
-                if (b >= 1024) return sprintf("%.1f KB", b/1024)
-                return b " B" }
-            { printf "ROW\t%s\t%d\t%s\t%d\n", $1, $2, hsz($3), $4
+        LC_ALL=C sort -t"$(printf '\t')" -k1,1 "$TMPD/x_night" | awk -F'\t' "$AWKLIB"'
+            { printf "ROW\t%s\t%d\t%s\t%d\n", $1, $2, hbytes1($3), $4
               tn += $2; tv += $3 }
-            END { printf "TOTAL\tTotal (%d night(s))\t@{class=num failed}%d\t@{class=num}%s\t\n", NR, tn, hsz(tv) }'
+            END { printf "TOTAL\tTotal (%d night(s))\t@{class=num failed}%d\t@{class=num}%s\t\n", NR, tn, hbytes1(tv) }'
     else
         printf 'ROW\t@{colspan=4}No expired Files in this data window.\n'
         printf 'TOTAL\tTotal (0 nights)\t\t\t\n'

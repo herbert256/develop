@@ -86,9 +86,7 @@ ALF="$CONFIG_XREF/_accounts-logins.tsv";      [ -f "$ALF" ] || ALF=/dev/null
 # sublink() prefixes an @{alink=subscriptions/<name>} UNCONDITIONALLY — the
 # renderer resolves it through the details slugmap and drops the link when the
 # name has no page, so a never-seen subscription still links.
-LINK_AWK='
-    function sublink(s) { return (s != "") ? "@{alink=subscriptions/" s "}" : "" }
-'
+LINK_AWK="$SRV_SUBLINK_AWK"   # bin/server/lib.sh (2026-09-30)
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
@@ -105,7 +103,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 #   A <TAB> stc <TAB> <sub cell> <TAB> files <TAB> ok <TAB> err <TAB> last-file
 #           <TAB> logons <TAB> arrivals <TAB> problems <TAB> last-log <TAB> loglines
 #   TOT <TAB> n0..n6 <TAB> files <TAB> ok <TAB> err <TAB> logons <TAB> arrivals <TAB> problems
-agg=$(awk -F'\t' -v sb="$SUBB" -v xf="$XREF" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -v slf="$SLF" -v alf="$ALF" -v SL="$SLOTS_OUT" "$LOGLINES_AWK$LINK_AWK"'
+agg=$(awk -F'\t' -v sb="$SUBB" -v xf="$XREF" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -v slf="$SLF" -v alf="$ALF" -v SL="$SLOTS_OUT" "$LOGLINES_AWK$LINK_AWK$AWKLIB"'
     BEGIN { while ((getline ucl < ucdf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[2] == "UC4") ucd[toupper(uca[1])] = 1 } close(ucdf)
             # MULTI-FE ACCOUNTS (2026-08-31, user report): when the account
             # carries SEVERAL configured logins, a logon or refusal that NAMES
@@ -115,8 +113,6 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v xf="$XREF" -v tf="$FILESC" -v rfv="$RFLIP" -v 
             # lines naming no login keep the account-wide union.
             while ((getline ucl < slf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[1] != "" && uca[2] != "") SUBL[toupper(uca[1])] = SUBL[toupper(uca[1])] SUBSEP toupper(uca[2]) } close(slf)
             while ((getline ucl < alf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[1] != "") aln[uca[1]]++ } close(alf) }
-    function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
-    function fromjdn(j,   a,b,c,dd,e,mm,day,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
     function span(h) { if (hmin == "" || h < hmin) hmin = h; if (h > hmax) hmax = h }
     function acctof(m,   a) { a=""; if (match(m, /[A-Za-z0-9_.-]+@FE[0-9]+/)) { a=substr(m,RSTART,RLENGTH); sub(/@.*/,"",a) } return a }
     # the row drill: its refusals (E) newest first, then its other lines (L:

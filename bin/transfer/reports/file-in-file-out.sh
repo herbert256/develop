@@ -138,16 +138,12 @@ fi
 # in-awk sort: a route can hold 30,000 gaps and an insertion sort would crawl).
 # the DIRECTION is part of the route key (2026-09-19): the same two flows can
 # in principle hand over both ways, and those are two different routes.
-route_rows=$(LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k15,15 -k3,3n "$TMP.pairs" | awk -F'\t' '
-    function hd(s) { if (s < 90) return sprintf("%d s", s)
-                     if (s < 5400) return sprintf("%.0f min", s/60)
-                     if (s < 172800) return sprintf("%.1f h", s/3600)
-                     return sprintf("%.1f d", s/86400) }
+route_rows=$(LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k15,15 -k3,3n "$TMP.pairs" | awk -F'\t' "$AWKLIB"'
     function flush(   med, samesz, i) {
         if (n == 0) return
         med = g[int((n + 1) / 2)]
         printf "R\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\n", \
-               ink, outk, n, nf, hd(gmin), hd(med), hd(gmax), inp, outp, same, n - same, dirlbl
+               ink, outk, n, nf, hdsecs(gmin), hdsecs(med), hdsecs(gmax), inp, outp, same, n - same, dirlbl
     }
     { k = $1 SUBSEP $2 SUBSEP $15 }
     k != cur { flush(); cur = k; ink = $1; outk = $2; n = 0; nf = 0; same = 0
@@ -197,20 +193,12 @@ IFS=' ' read -r nroutes ncross <<< "$(printf '%s\n' "$route_rows" | awk -F'\t' '
     printf 'KIND\tfile\ttext\tsite\ttext\tsite\ttext\ttext\tnum\tnum\n'
     # one sort of the pairs, newest first: the same awk emits the rows and the
     # TOTAL it sums on the way through
-    LC_ALL=C sort -t"$(printf '\t')" -k9,9r -k10,10r "$TMP.pairs" | awk -F'\t' -v n="$LATEST_N" '
-        function hd(s) { if (s < 90) return sprintf("%d s", s)
-                         if (s < 5400) return sprintf("%.0f min", s/60)
-                         if (s < 172800) return sprintf("%.1f h", s/3600)
-                         return sprintf("%.1f d", s/86400) }
+    LC_ALL=C sort -t"$(printf '\t')" -k9,9r -k10,10r "$TMP.pairs" | awk -F'\t' -v n="$LATEST_N" "$AWKLIB"'
         # sizes read like every other size cell ("16 B", "1.2 MB" — raw
         # bytes until 2026-09-30); report.js parses them back for its totals
-        function hsz(v) { if (v >= 1073741824) return sprintf("%.1f GB", v/1073741824)
-                          if (v >= 1048576) return sprintf("%.1f MB", v/1048576)
-                          if (v >= 1024)    return sprintf("%.1f KB", v/1024)
-                          return v " B" }
-        NR <= n { printf "ROW\t%s\t%s %s\t%s\t%s %s\t%s\t%s\t%s\t%s\t%s\n", $8, $9, $10, $1, $11, $12, $2, ($15 == "out" ? "out → in" : "in → out"), hd($3), hsz($4 + 0), hsz($5 + 0)
+        NR <= n { printf "ROW\t%s\t%s %s\t%s\t%s %s\t%s\t%s\t%s\t%s\t%s\n", $8, $9, $10, $1, $11, $12, $2, ($15 == "out" ? "out → in" : "in → out"), hdsecs($3), hbytes1($4 + 0), hbytes1($5 + 0)
                   c++; a += $4; b += $5 }
-        END { printf "TOTAL\tTotal (%d row(s))\t\t\t\t\t\t\t@{class=num}%s\t@{class=num}%s\n", c+0, hsz(a+0), hsz(b+0) }'
+        END { printf "TOTAL\tTotal (%d row(s))\t\t\t\t\t\t\t@{class=num}%s\t@{class=num}%s\n", c+0, hbytes1(a+0), hbytes1(b+0) }'
 
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

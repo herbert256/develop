@@ -51,6 +51,7 @@ cd "$ROOT"
 source bin/fastawk.sh   # route unqualified `awk` to mawk when installed
 source bin/ranges.sh    # rng_feed / rng_off: the byte-range split of the parallel server pass (2026-09-27)
 source bin/pda-union.sh # SP_MAP + SP_AWK: the File attribution UNION (sp_union) — the Top-5 partner tables
+source bin/awklib.sh    # $AWKLIB: the shared awk helpers (date.awk + fmt.awk)
 DATA="data"
 
 RPTDIR="$DATA/day/reports"
@@ -140,10 +141,8 @@ _dylap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  day reports: %s\n' "$(
 _dylap "setup (the per-day counts)"
 if [ -f "$TF" ] && [ -n "$tdays" ]; then
 awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v udays="$udays" -v PS="$PSLOTS" -v EQF="$EQSLOTS" \
-    -v gtrc="$gtrc" -v oredc="$oredc" -v anomc="$anomc" -v SLGP="$SLGP" -v SLGS="$SLGS" -v SPMAP="$SP_MAP" "$SP_AWK"'
-    function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
+    -v gtrc="$gtrc" -v oredc="$oredc" -v anomc="$anomc" -v SLGP="$SLGP" -v SLGS="$SLGS" -v SPMAP="$SP_MAP" "$SP_AWK$AWKLIB"'
     function humandur(ms,   s,m,h){ ms+=0; if(ms<1000)return int(ms) "ms"; s=int(ms/1000); if(s<60)return s "s"; m=int(s/60); s=s%60; if(m<60)return m "m " s "s"; h=int(m/60); m=m%60; return h "h " m "m" }
-    function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     function wdname(d,   p){ split(d,p,"-"); return WD[jdn(p[1]+0,p[2]+0,p[3]+0) % 7] }
     function pctd(v, avg,   p) { if (avg <= 0) return ""; p = (v - avg) * 100 / avg; if (p > -0.5 && p < 0.5) return "0%"; return sprintf("%+.0f%%", p) }
     # unpack a "date:count …" string (daycount) into a per-day array
@@ -151,13 +150,6 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
     # aggregated from the raw Files, never re-bucketed from each other:
     # percentiles do not merge (a median of medians is not a median) and the
     # error rate is a ratio, not a sum. Fields are the current record.
-    function qsortn(A, lo, hi,   i, j, p, t) {
-        while (lo < hi) {
-            i = lo; j = hi; p = A[int((lo + hi) / 2)]
-            while (i <= j) { while (A[i] < p) i++; while (A[j] > p) j--; if (i <= j) { t = A[i]; A[i] = A[j]; A[j] = t; i++; j-- } }
-            if (j - lo < hi - i) { if (lo < j) qsortn(A, lo, j); lo = i } else { if (i < hi) qsortn(A, i, hi); hi = j }
-        }
-    }
     function slotbump(r, d, s,   k) { k = r SUBSEP d SUBSEP s
         SC[k]++                                         # all Files (the rate denominator)
         if ($2 == "Failed" || $2 == "Expired") SF[k]++  # Error Files
@@ -198,7 +190,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
     function top5b(A, kind, d,   raw, nn, Z, i, s) {
         raw = top5(A, kind, d); if (raw == "") return ""
         nn = split(raw, Z, US); s = ""
-        for (i = 1; i <= nn; i += 2) s = s (s == "" ? "" : US) Z[i] US human(Z[i+1])
+        for (i = 1; i <= nn; i += 2) s = s (s == "" ? "" : US) Z[i] US hbytes2(Z[i+1])
         return s }
     # the detail-page slugs of a Top-5 row list ("name US value US …"),
     # aligned US-separated, "" for a name with no page (the TOP line field 7)
@@ -339,7 +331,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             if (rank == nd && nd > 1)
                 printf "FACT\tThe **quietest day** of the window.\n" >> out
             if (vrank == 1 && nd > 1 && avgV > 0 && V[d] >= 1.5 * avgV)
-                printf "FACT\tThe **heaviest day** by volume — **%s** moved, %.1f× the daily average.\n", human(V[d]), V[d]/avgV >> out
+                printf "FACT\tThe **heaviest day** by volume — **%s** moved, %.1f× the daily average.\n", hbytes2(V[d]), V[d]/avgV >> out
             if (C[d] >= 20 && prate > 0 && erate >= 2 * prate && F[d] >= 10)
                 printf "FACT\tError rate **%.1f%%** — %.1f× the period average of %.1f%%.\n", erate, erate/prate, prate >> out
             if (F[d] == 0 && C[d] > 0)
@@ -363,7 +355,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             if (MAXR[d] + 0 >= 15)
                 printf "FACT\tOne transfer logged **%d** legs — repeated retries of %s (account %s).\n", MAXR[d], MAXRF[d], MAXRA[d] >> out
             if (bfnm[d] != "")
-                printf "FACT\tLargest file: **%s** (**%s**, account %s).\n", bfnm[d], human(bfsz[d]), bfac[d] >> out
+                printf "FACT\tLargest file: **%s** (**%s**, account %s).\n", bfnm[d], hbytes2(bfsz[d]), bfac[d] >> out
             nnew = pickacc(d, amin, L6)
             if (nnew > 0 && d != D[1])
                 printf "FACT\t**%d account(s) first seen** on this day: %s%s.\n", nnew, joins(L6, nnew), (nnew > 6 ? ", …" : "") >> out
@@ -384,7 +376,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             # opened Activity per day, which counts the delivered Files only)
             printf "KPI\t%d\tFiles\tlogical transfers%s\tblue\t../transfer/topview.html" q "\t%s\n", C[d], cov, pctd(C[d], wdc[wd] ? aFiles[wd]/wdc[wd] : 0) >> out
             printf "KPI\t%.1f%%\tFile error rate\t%d Error / %d OK\tred\t../transfer/topview.html" q "\t%s\n", erate, F[d]+0, P[d]+0, pctd(erate, aFiles[wd] ? aErrF[wd]*100/aFiles[wd] : 0) >> out
-            printf "KPI\t%s\tVolume\taverage %s per File\tgreen\t../transfer/topview.html" q "\t%s\n", human(V[d]), human(C[d] ? V[d]/C[d] : 0), pctd(V[d], wdc[wd] ? aVol[wd]/wdc[wd] : 0) >> out
+            printf "KPI\t%s\tVolume\taverage %s per File\tgreen\t../transfer/topview.html" q "\t%s\n", hbytes2(V[d]), hbytes2(C[d] ? V[d]/C[d] : 0), pctd(V[d], wdc[wd] ? aVol[wd]/wdc[wd] : 0) >> out
             # ---- problem links ---------------------------------------------
             # PROBLEM<TAB>side<TAB>href<TAB>headline<TAB>desc — side (transfer|
             # server) picks the list on the combined day page, so both passes
@@ -572,7 +564,7 @@ if [ -f "$SV" ] && [ -f "$SP" ] && [ -n "$sdays" ]; then
 # writes the day facts exactly as the single pass did. day_srv is that one
 # program; the mode comes in through the environment (DAYSRV_*).
 day_srv() {
-awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v udays="$udays" -v nrdc="$nrdc" -v nrfc="$nrfc" -v anomc="$anomc" '
+awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v udays="$udays" -v nrdc="$nrdc" -v nrfc="$nrfc" -v anomc="$anomc" "$AWKLIB"'
     BEGIN { PART = ENVIRON["DAYSRV_PART"] + 0; REDUCE = ENVIRON["DAYSRV_REDUCE"] + 0; SVF = ENVIRON["DAYSRV_SVF"]
             RANGEF = ENVIRON["DAYSRV_RANGEF"]; RLO = ENVIRON["DAYSRV_LO"] + 0; RHI = ENVIRON["DAYSRV_HI"] + 0; ROFF = ENVIRON["DAYSRV_ROFF"] + 0 }
     BEGIN { na = split(anomc, _aa, " "); for (i = 1; i <= na; i++) { if (_aa[i] == "") continue; p = index(_aa[i], ":"); if (p > 1) ANOMC[substr(_aa[i], 1, p - 1)] = substr(_aa[i], p + 1) }
@@ -581,7 +573,6 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             if (split(_na[i], _nb, ":") == 3) { NRDE[_nb[1]] = _nb[2] + 0; NRDS[_nb[1]] = _nb[3] + 0 } }
         nf = split(nrfc, _fa, " "); for (i = 1; i <= nf; i++) { if (_fa[i] == "") continue
             if (split(_fa[i], _fb, ":") == 3) { NRFP[_fb[1]] = _fb[2] + 0; NRFS[_fb[1]] = _fb[3] + 0 } } }
-    function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     function wdname(d,   p){ split(d,p,"-"); return WD[jdn(p[1]+0,p[2]+0,p[3]+0) % 7] }
     function pctd(v, avg,   p) { if (avg <= 0) return ""; p = (v - avg) * 100 / avg; if (p > -0.5 && p < 0.5) return "0%"; return sprintf("%+.0f%%", p) }
     FNR == 1 { fno++ }

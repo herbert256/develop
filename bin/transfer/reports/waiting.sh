@@ -49,6 +49,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # because it reads the transfer caches (its page, if any, is placed by the one
 # Reports menu — _report_groups). bin/transfer/reports.sh still runs it.
 source "$SCRIPT_DIR/../lib.sh"
+# hdur() — ONE copy for the two programs below (2026-09-30): a wait in seconds as d h / h m / min / s
+WT_HDUR_AWK='function hdur(s){ s=int(s); if (s<0) s=0
+    if (s>=86400) return int(s/86400) "d " int(s%86400/3600) "h"
+    if (s>=3600)  return int(s/3600) "h " int(s%3600/60) "m"
+    if (s>=60)    return int(s/60) " min"
+    return s " s" }'
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/waiting.rpt"
 
@@ -79,14 +85,8 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 #   F|stagesec|staged_dt|site|acct|bytes|size|wait_for|wait_sec|coreid|file
 # (wait_sec = the Waiting for cell's SORT KEY: the humanized text does not sort)
 #   TOT|wsites|wtot|csites|ctot|xsites|xtot|oldest_dt|oldest_site|last_dt
-agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COREIDS_AWK"'
-    function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
+agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' "$COREIDS_AWK$AWKLIB$WT_HDUR_AWK"'
     function tsec(d,t){ split(d,p,"-"); return jdn(p[1]+0,p[2]+0,p[3]+0)*86400 + substr(t,1,2)*3600 + substr(t,4,2)*60 + substr(t,7,2) }
-    function hdur(s){ s=int(s); if (s<0) s=0
-        if (s>=86400) return int(s/86400) "d " int(s%86400/3600) "h"
-        if (s>=3600)  return int(s/3600) "h " int(s%3600/60) "m"
-        if (s>=60)    return int(s/60) " min"
-        return s " s" }
     function hsize(b){ if (b>=1073741824) return sprintf("%.1f GB", b/1073741824)
         if (b>=1048576) return sprintf("%.1f MB", b/1048576)
         if (b>=1024)    return sprintf("%.1f KB", b/1024)
@@ -183,21 +183,18 @@ IFS='|' read -r _ n_wsites n_wait n_csites n_coll n_xsites n_exp oldest_dt oldes
 # ---------------------------------------------------------------------------
 rm -rf "$SUBDIR.new"; mkdir -p "$SUBDIR.new"
 SLUGS="$SUBDIR.new/_slugmap.tsv"
-printf '%s\n' "$agg" | awk -F'|' '$1 == "W" && $3 != "" { print $3 }' | LC_ALL=C sort -u | awk '
-    function slugify(s,   t) { t = tolower(s); gsub(/[^a-z0-9]+/, "-", t)
-        sub(/^-+/, "", t); sub(/-+$/, "", t); return t }
-    { base = slugify($0); if (base == "") base = "subscription"
+printf '%s\n' "$agg" | awk -F'|' '$1 == "W" && $3 != "" { print $3 }' | LC_ALL=C sort -u | awk "$AWKLIB"'
+    { base = slugof($0); if (base == "") base = "subscription"
       slug = base; n = 1
       while (slug in used) { n++; slug = base "-" n }
       used[slug] = 1
       printf "%s\t%s\n", $0, slug }' > "$SLUGS"
 printf '%s\n' "$agg" | awk -F'|' '$1 == "F"' | LC_ALL=C sort -t'|' -k4,4 -k2,2n -k10,10 | awk -F'|' \
     -v slugs="$SLUGS" -v dir="$SUBDIR.new" \
-    -v lastdt="$last_dt" '
+    -v lastdt="$last_dt" "$AWKLIB"'
     BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
     function clean(s) { gsub(/[\t\r]/, " ", s); return s }
-    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
-    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
+    # (lit() — a raw name kept literal, audit 2026-09-29 F07 — comes from bin/fmt.awk via $AWKLIB)
     function finish() {
         if (out == "") return
         printf "FOOT\n" > out
@@ -237,17 +234,11 @@ SLUGS="$SUBDIR/_slugmap.tsv"
 #   E|nfiles|site|oldest_dt|age|drill      Waiting aged >= 9 days
 #   Q|files|partner|median|p95|max|nearmiss   collected, UNION attribution
 #   K|rank|site|weekdate|files|median|avg     top-10 subs by collected Files
-agg2=$(awk -F'\t' -v spx="$SPX" "$COREIDS_AWK"'
-    function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
+agg2=$(awk -F'\t' -v spx="$SPX" "$COREIDS_AWK$AWKLIB$WT_HDUR_AWK"'
     function jd2date(j,  a,b,c,d,e,m,y,day,mon){ a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4)
         d=int((4*c+3)/1461); e=c-int(1461*d/4); m=int((5*e+2)/153)
         day=e-int((153*m+2)/5)+1; mon=m+3-12*int(m/10); y=100*b+d-4800+int(m/10)
         return sprintf("%04d-%02d-%02d", y, mon, day) }
-    function hdur(s){ s=int(s); if (s<0) s=0
-        if (s>=86400) return int(s/86400) "d " int(s%86400/3600) "h"
-        if (s>=3600)  return int(s/3600) "h " int(s%3600/60) "m"
-        if (s>=60)    return int(s/60) " min"
-        return s " s" }
     function hsize(b){ if (b>=1073741824) return sprintf("%.1f GB", b/1073741824)
         if (b>=1048576) return sprintf("%.1f MB", b/1048576)
         if (b>=1024)    return sprintf("%.1f KB", b/1024)

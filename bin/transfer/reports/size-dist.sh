@@ -28,14 +28,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Read the logical-transfer cache (data/_files.tsv): 2=outcome, 8=size (the
 # file, counted once per transfer). Distribution is over logical transfers.
-agg=$(awk -F'\t' "$COREIDS_AWK"'
-    function human(b,   u, i, v) {
-        split("B KB MB GB TB PB", u, " ")
-        i = 1; v = b + 0
-        while (v >= 1024 && i < 6) { v /= 1024; i++ }
-        if (i == 1) return sprintf("%d %s", v, u[i])
-        return sprintf("%.2f %s", v, u[i])
-    }
+agg=$(awk -F'\t' "$COREIDS_AWK$AWKLIB"'
     function bucket(b) {
         if (b == 0)            return 0
         if (b < 1024)          return 1
@@ -74,7 +67,7 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         for (i = 0; i <= 8; i++) {
             sh = trec > 0 ? sprintf("%.1f", (br[i]+0) * 100 / trec) : "0.0"
             w = int((br[i]+0) * 100 / maxrec)
-            printf "BKT|%s|%d|%d|%d|%d|%s|%s|%d|%s|%s|%s\n", lab[i+1], br[i]+0, bf[i]+0, bp[i]+0, bb[i]+0, human(bb[i]+0), sh, w, bk[i], buildlist(top["Z" SUBSEP i SUBSEP "F"]), buildlist(top["Z" SUBSEP i SUBSEP "P"])
+            printf "BKT|%s|%d|%d|%d|%d|%s|%s|%d|%s|%s|%s\n", lab[i+1], br[i]+0, bf[i]+0, bp[i]+0, bb[i]+0, hbytes2(bb[i]+0), sh, w, bk[i], buildlist(top["Z" SUBSEP i SUBSEP "F"]), buildlist(top["Z" SUBSEP i SUBSEP "P"])
         }
         esub = 0
         for (s in es) { esub++
@@ -82,7 +75,7 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
             for (i2 = 1; i2 <= m2; i2++) { dd2 = dz[i2]; ebk = ebk (ebk ? "," : "") dd2 ":" edd[s SUBSEP dd2] }
             printf "EMP|%08d|%s|%s|%s|%s|%s\n", es[s], s, ef[s], el[s], ebk, buildlist(top["E" SUBSEP s])
         }
-        printf "TOT|%d|%d|%d|%d|%s|%d|%d\n", trec, tfl+0, tpr+0, tbytes, human(tbytes), etot+0, esub
+        printf "TOT|%d|%d|%d|%d|%s|%d|%d\n", trec, tfl+0, tpr+0, tbytes, hbytes2(tbytes), etot+0, esub
     }
 ' "$FILES")
 

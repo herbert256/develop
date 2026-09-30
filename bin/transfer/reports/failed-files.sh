@@ -57,9 +57,8 @@ pages=$(mktemp "${TMPDIR:-/tmp}/ffpages.XXXXXX")
 [ -f "$SUBRES" ] || SUBRES=/dev/null
 
 # one "sortkey TAB ROW..." line per failed File, plus the "~N TAB count" line
-agg=$(LC_ALL=C awk -F'\t' -v REAS="$REAS" -v PAGES="$pages" -v SUBRES="$SUBRES" '
-    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
-    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
+agg=$(LC_ALL=C awk -F'\t' -v REAS="$REAS" -v PAGES="$pages" -v SUBRES="$SUBRES" "$AWKLIB"'
+    # (lit() — a raw name kept literal, audit 2026-09-29 F07 — comes from bin/fmt.awk via $AWKLIB)
     BEGIN {
         while ((getline l < SUBRES) > 0) { n9 = split(l, a9, "\t"); if (n9 >= 3 && a9[1] != "") SRES[toupper(a9[1])] = a9[3] }
         close(SUBRES)

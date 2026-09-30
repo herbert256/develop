@@ -116,7 +116,7 @@ AGG="$OUTDIR/.agg.tmp"
 # ---------------------------------------------------------------------------
 agg_run() {   # $1 = the space-separated types this run computes
 awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
-    "${SP_AWK_V[@]}" "$SP_AWK$COREIDS_AWK"'
+    "${SP_AWK_V[@]}" "$SP_AWK$COREIDS_AWK$AWKLIB"'
     function addset(s, v) { return index("\037" s "\037", "\037" v "\037") ? s : (s == "" ? v : s "\037" v) }   # a distinct-value set as a \037 string (tests emptiness, never membership — the mawk LHS trap)
     function addnames(t, s,   n2, z, i2) { if (s == "") return; n2 = split(s, z, "\037"); for (i2 = 1; i2 <= n2; i2++) NS[t SUBSEP z[i2]] = 1 }
     # THE DURATION GROUP (p90 · p95 · p99): the wall-clock span (_files col 9)
@@ -150,13 +150,6 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
     # hold DISTINCT values (histogram keys), so the order is fully defined;
     # an insertion sort here ran 34M inner steps on the sample alone (the
     # per-type lists hold thousands of grid values) — speed round 5.
-    function qsortn(A, lo, hi,   i, j, p, t) {
-        while (lo < hi) {
-            i = lo; j = hi; p = A[int((lo + hi) / 2)]
-            while (i <= j) { while (A[i] < p) i++; while (A[j] > p) j--; if (i <= j) { t = A[i]; A[i] = A[j]; A[j] = t; i++; j-- } }
-            if (j - lo < hi - i) { if (lo < j) qsortn(A, lo, j); lo = i } else { if (i < hi) qsortn(A, i, hi); hi = j }
-        }
-    }
     function pctls(list,   n2, z, i2, p2, N, Q, C, CM, out) {
         P90 = ""; P95 = ""; P99 = ""; P100 = ""; HIST = ""; if (list == "") return
         n2 = split(list, z, "|"); N = 0
@@ -335,10 +328,7 @@ unset _g _p
 # The red tint is the `failed` class, not `errc`: the row tints of the
 # views (seenrows / restint) paint over every cell except .failed /
 # .processed, so an errc cell reads green inside a green row.
-FMT_AWK='
-    function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
-        while (v >= 1024 && i < 6) { v /= 1024; i++ }
-        return sprintf("%.0f %s", v, u[i]) }
+FMT_AWK="$AWKLIB"'
     function pr(x, c) { if (x + 0 == 0 || c + 0 == 0) return ""; return sprintf("%.1f%%", x * 100 / c) }
     function nz(x) { return (x + 0 == 0) ? "" : x + 0 }
     function hshort(ms,   v) { v = ms / 1000; if (v < 59.5) return sprintf("%.0f s", v)
@@ -375,11 +365,11 @@ fmt_dim() {
         { files = $4 + 0; tok = $8 + 0; ter = $9 + 0; fe = $12 + 0; bytes = $18 + 0
           printf "ROW\t%s\t%s\t%s\t%d\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t%d\t%d\t%s\t%s\t%d\t@data:buckets=%s\t@data:coreids-tok=%s\t@data:coreids-terr=%s\t@data:coreids-fin=%s\t@data:coreids-fout=%s\t@data:coreids-ferr=%s\t@data:coreids-rauto=%s\t@data:coreids-rmok=%s\t@data:coreids-rmerr=%s\t@data:coreids-wait=%s\t@data:coreids-exp=%s\t@data:durdays=%s\t@data:coreids-d90=%s\t@data:coreids-d95=%s\t@data:coreids-d99=%s\t@data:coreids-d100=%s\n", \
               $3, nz($10), nz($11), fe, pr(fe, files), $13, $14, $15, \
-              dcell($30), dcell($31), dcell($32), dcell($33), human(bytes), human(files > 0 ? bytes / files : 0), \
+              dcell($30), dcell($31), dcell($32), dcell($33), hbytes0(bytes), hbytes0(files > 0 ? bytes / files : 0), \
               tok, ter, pr(ter, tok + ter), $16, $17, $5, $6, $7, \
               $19, $20, $21, $22, $23, (NOFERR ? "" : $24), $25, $26, $27, $28, $29, $34, $35, $36, $37, $38 }')
     tot_line=$(awk -F'|' "$FMT_AWK"'BEGIN { tc = ARGV[1]; ttok = ARGV[2]; tter = ARGV[3]; tfe = ARGV[4]; tv = ARGV[5]; tin = ARGV[6]; tout = ARGV[7]
-        printf "%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\n", pr(tter, ttok + tter), pr(tfe, tc), human(tv), human(tc > 0 ? tv / tc : 0), nz(tin), nz(tout), dcell(ARGV[8]), dcell(ARGV[9]), dcell(ARGV[10]), dcell(ARGV[11]); exit }' \
+        printf "%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\n", pr(tter, ttok + tter), pr(tfe, tc), hbytes0(tv), hbytes0(tc > 0 ? tv / tc : 0), nz(tin), nz(tout), dcell(ARGV[8]), dcell(ARGV[9]), dcell(ARGV[10]), dcell(ARGV[11]); exit }' \
         "$tc" "$ttok" "$tter" "$tfe" "$tv" "$tin" "$tout" "$tp90" "$tp95" "$tp99" "$tp100")
     # \037, NOT a TAB: TAB is IFS whitespace, so an EMPTY cell (nz/dcell of a
     # zero — no errors, no In, no Out) collapsed and shifted every later

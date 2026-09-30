@@ -56,30 +56,14 @@ TDATA="$TRANSFER_REPORTS"
 TACCT="$TDATA/account.rpt"
 TSITE="$TDATA/subscription.rpt"
 THOST="$TDATA/remote-host.rpt"
-known_names() {   # $1 marker  $2 transfer .rpt — emits "marker<TAB>name" lines
-    [ -f "$2" ] || return 0
-    awk -F'\t' -v M="$1" '$1=="TABLE"{t++; if(t>1)exit} t==1&&$1=="ROW"{print M "\t" $2}' "$2"
-}
+# (known_names: bin/server/lib.sh since 2026-09-30)
 # LINK_AWK — the @{alink=…} cell prefixes. sitelink(): exact match or unique prefix of one
 # known subscription (the server truncates long names; same rule as
 # site-failures.sh); acctlink(): exact match, also @endpoint-stripped;
 # hostlink(): exact match.
-LINK_AWK='
-    # RENAMES (2026-08): a server line keeps the name that was current when it
-    # was written, so fold it to the CURRENT one before matching the roster —
-    # which carries current names, the transfer parse having folded them — and
-    # DISPLAY the folded name, so the page names the flow as the configuration
-    # does. rn_canon_pfx also covers the truncated old spelling the server
-    # writes, folding only when every completion agrees.
-    function sitecanon(t,   k, hits, full, c, t0) {
-        if (t in SCMEMO) return SCMEMO[t]   # memo (2026-09-29): rows are keyed on it now, per line
-        t0 = t
-        c = rn_canon_pfx(t)
-        if (c in ksite) return (SCMEMO[t0] = c)
-        hits = 0
-        for (k in ksite) if (index(k, c) == 1) { hits++; full = k; if (hits > 1) { hits = 0; break } }
-        return (SCMEMO[t0] = (hits == 1 ? full : c))
-    }
+LINK_AWK="$SRV_SITECANON_AWK$SRV_ACCTLINK_AWK$SRV_HOSTLINK_AWK"'   # the shared helpers (bin/server/lib.sh, 2026-09-30) + the STRICT sitelink below
+    # sitelink(): exact or the UNIQUE roster prefix; an unknown / ambiguous name
+    # gets NO link (the other reports link the raw name — SRV_SITELINK_AWK)
     function sitelink(t,   k, hits, full) {
         t = sitecanon(t)
         if (t in ksite) return "@{alink=subscriptions/" t "}"
@@ -87,13 +71,6 @@ LINK_AWK='
         for (k in ksite) if (index(k, t) == 1) { hits++; full = k; if (hits > 1) return "" }
         return hits == 1 ? "@{alink=subscriptions/" full "}" : ""
     }
-    function acctlink(t,   s) {
-        if (t in kacct) return "@{alink=accounts/" t "}"
-        s = t; sub(/@.*$/, "", s)
-        if (s in kacct) return "@{alink=accounts/" s "}"
-        return ""
-    }
-    function hostlink(t) { return (t in khost) ? "@{alink=hosts/" t "}" : "" }
 '
 
 shopt -s nullglob
@@ -124,12 +101,10 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 #   PT <TAB> suite <TAB> version <TAB> count <TAB> first <TAB> last <TAB> weeks(clines) <TAB> buckets <TAB> loglines  (PeSIT TLS)
 #   PTT <TAB> total <TAB> ncombos <TAB> first TLS date
 #   TOT <TAB> negotiations <TAB> deprecated
-agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK"'
+agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK$AWKLIB"'
     BEGIN { rn_load(RNF) }
     # Julian-day helpers (same as bin/day) for the PeSIT-TLS per-week fold —
     # weeks bucket on their MONDAY date, computed from the JDN, never `date`
-    function jdn(y,m2,dd,  a){ a=int((14-m2)/12); y=y+4800-a; m2=m2+12*a-3; return dd+int((153*m2+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
-    function fromjdn(j,  a,b,c,dd,e,mm,day,mon,yr){ a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d",yr,mon,day) }
     function bump(cat, lv,   d) {
         cat_cnt[cat]++; cat_lv[cat]=lv; htot++
         d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) d = ""

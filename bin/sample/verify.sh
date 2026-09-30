@@ -470,7 +470,9 @@ read -r dr1 dr2 dr3 <<< "$(awk -F'\t' '$1 == "ROW" {
 check $([ "${dr1:-1}" = 0 ] && echo 0 || echo 1) "entities/subscription.rpt: ${dr1:-?} row(s) whose Auto / Resubmit count and drill list disagree"
 check $([ "${dr2:-1}" = 0 ] && echo 0 || echo 1) "entities/subscription.rpt: ${dr2:-?} Auto / Resubmit drill list(s) longer than 10"
 check $([ "${dr3:-0}" = 1 ] && echo 0 || echo 1) "the sample subscription table has no Auto drill or no Resubmit Ok drill — one of the two is never exercised"
-check $([ "$(grep -c 'data-coreids-rauto="[0-9]' docs/transfer/entities/subscription-all.html 2>/dev/null)" -ge 1 ] && [ "$(grep -c 'data-coreids-rmok="[0-9]' docs/transfer/entities/subscription-all.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "entities/subscription-all.html ships no Retry / Resubmit drill lists"
+# (the Entities rows' payload ships in <entity>-data.js since 2026-09-30 —
+# publish_lib entity_payload_split; report.js puts it back on the rows)
+check $([ "$(grep -c 'data-coreids-rauto="[0-9=#]' docs/transfer/entities/subscription-data.js 2>/dev/null)" -ge 1 ] && [ "$(grep -c 'data-coreids-rmok="[0-9=#]' docs/transfer/entities/subscription-data.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "entities/subscription-data.js ships no Retry / Resubmit drill lists"
 # (the report.js binding of data-coreids-retry / -resubmit went 2026-09-29:
 # no page ships those lists — the Entities pages drill rauto / rmok / rmerr)
 

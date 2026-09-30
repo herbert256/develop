@@ -940,7 +940,7 @@ for _ty in ACC SITE LOGIN HOST LGC PTN APP DOM BL; do
         -v SRV="$SERVER_CACHE" -v FWD="$IP_HOSTS_FILE" \
         -v UCF="$UCMETA" -v UCDF="$UCDER" -v UNCF="$_pdir/uncollected" -v OKF="$OKTF" \
         -v SSF="$SRVSUBSF" -v LGF="$LOGONSF" -v LGHF="$SERVER_CACHE/_logons-hosts.tsv" \
-        -f "$SCRIPT_DIR/../details_writer.awk" "$STREAMDIR/s.$_ty" > "$STREAMDIR/log.$_ty" 2>&1 || _wrc=$?
+        -f "$ROOT/bin/fmt.awk" -f "$SCRIPT_DIR/../details_writer.awk" "$STREAMDIR/s.$_ty" > "$STREAMDIR/log.$_ty" 2>&1 || _wrc=$?
     printf 'TIME %5ds  details: writer %s\n' "$(( $(date +%s) - _w0 ))" "$_ty" >> "$STREAMDIR/log.$_ty"
     exit "$_wrc" ) &
     wpids+=("$!"); wtypes+=("$_ty")

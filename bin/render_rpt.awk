@@ -25,6 +25,11 @@
 BEGIN {
     FS = "\t"
     US = "\037"                       # \x1f: the lines/clines separator
+    # the page date list -> day index (the compact date payloads, benc / denc)
+    nrdi = 0
+    HX = "[0-9a-f]"; H4 = HX HX HX HX; H8 = H4 H4; H12 = H8 H4
+    UUIDRE = H8 "-" H4 "-" H4 "-" H4 "-" H12; H32RE = H8 H8 H8 H8
+    if (rdates != "") { nrd = split(rdates, RDA, ","); for (i = 1; i <= nrd; i++) if (!(RDA[i] in RDI)) { RDI[RDA[i]] = i - 1; nrdi++ } }
     n = split(slugmaps, smf, " ")
     for (i = 1; i <= n; i++) {
         eq = index(smf[i], "=")
@@ -138,6 +143,73 @@ function ok_href(s) {
     if (s ~ /[\001-\037\177]/) return 0
     if (s ~ /^https?:\/\/[A-Za-z0-9]/) return 1
     return s ~ /^[A-Za-z0-9._?#]/ && s !~ /^[A-Za-z][A-Za-z0-9+.\-]*:/
+}
+# THE COMPACT DATE PAYLOADS (2026-09-30, the lean round): data-buckets and
+# data-durdays name their day by its INDEX in the page date list (rdates =
+# CUR_DATES, the report-dates meta, 0-based) instead of the date — a date
+# the list lacks stays literal — and a bucket metric of exactly "0" ships
+# EMPTY (an originally empty metric as "~"). report.js expandPayload decodes
+# both before anything reads them; the writers are untouched.
+function benc(v,   n, I, i, m, P, j, it, o) {
+    n = split(v, I, ","); o = ""
+    for (i = 1; i <= n; i++) {
+        m = split(I[i], P, ":")
+        it = (m > 0 && (P[1] in RDI)) ? RDI[P[1]] : P[1]
+        for (j = 2; j <= m; j++) it = it ":" (P[j] == "0" ? "" : (P[j] == "" ? "~" : P[j]))
+        o = o (i > 1 ? "," : "") it
+    }
+    return o
+}
+function denc(v,   n, I, i, p, d, o) {
+    n = split(v, I, ","); o = ""
+    for (i = 1; i <= n; i++) {
+        p = index(I[i], ":")
+        if (p > 0) { d = substr(I[i], 1, p - 1); if (d in RDI) I[i] = RDI[d] substr(I[i], p) }
+        o = o (i > 1 ? "," : "") I[i]
+    }
+    return o
+}
+# THE COMPACT FILE DRILL LISTS (2026-09-30, the lean round): a File drill
+# list (coreids / coreids-* / drill-cell-*) ships its CoreIds WITHOUT their
+# four dashes, and on a row whose first cell is a DATE its entries drop that
+# date where they start with it — marked by a leading "#", which report.js
+# expandPayload undoes (the date back from the row's first cell, the dashes
+# on every 32-hex run). fenc DECODES its own result and ships the original
+# whenever that does not give the value back exactly (a log line holding a
+# bare 32-hex id, an entry that starts with a time), so no list can change.
+function undash(v,   o, t) {
+    o = ""
+    while (match(v, UUIDRE)) { t = substr(v, RSTART, RLENGTH); gsub(/-/, "", t); o = o substr(v, 1, RSTART - 1) t; v = substr(v, RSTART + RLENGTH) }
+    return o v
+}
+function redash(v,   o, t, pre, post) {
+    o = ""
+    while (match(v, H32RE)) {
+        pre = (RSTART > 1) ? substr(v, RSTART - 1, 1) : substr(o, length(o), 1)
+        post = substr(v, RSTART + 32, 1); t = substr(v, RSTART, 32)
+        if (pre !~ /[0-9a-f]/ && post !~ /[0-9a-f]/) t = substr(t, 1, 8) "-" substr(t, 9, 4) "-" substr(t, 13, 4) "-" substr(t, 17, 4) "-" substr(t, 21, 12)
+        o = o substr(v, 1, RSTART - 1) t; v = substr(v, RSTART + 32)
+    }
+    return o v
+}
+function dsplit(v, rd, add,   o, p, seg, L) {   # add=0 strips "rd " from each entry, add=1 puts it back before an entry starting with a time
+    o = ""; L = length(rd) + 1
+    while (1) {
+        p = match(v, /[,\037]/)
+        seg = p ? substr(v, 1, p - 1) : v
+        if (!add && substr(seg, 1, L) == rd " ") seg = substr(seg, L + 1)
+        else if (add && seg ~ /^[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/) seg = rd " " seg
+        o = o seg
+        if (!p) break
+        o = o substr(v, p, 1); v = substr(v, p + 1)
+    }
+    return o
+}
+function fenc(v, rd,   e, d) {
+    e = undash(v); if (rd != "") e = dsplit(e, rd, 0)
+    if (e == v) return v
+    d = e; if (rd != "") d = dsplit(d, rd, 1); d = redash(d)
+    return (d == v) ? "#" e : v
 }
 function ok_dname(s)   { return s ~ /^[A-Za-z0-9_-]+$/ }
 # THE PUBLISHED FILE PAGES (2026-09-29, user request: per subscription only the
@@ -735,6 +807,15 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         # @data:NAME=VALUE cells become data-NAME attrs on the <tr>; the rest
         # are the real cells, matched against KINDS by position
         attrs = ""; nreal = 0; split("", REAL); rowdrill = 0; fattr = ""; pattr = ""; rowfp = ""; ffp = ""; pfp = ""
+        split("", DRV)   # this row's drill lists by value (the reference dedupe below)
+        # the row's DATE (its first real cell, when that is a date) — the
+        # compact File drill lists drop it from their entries (fenc)
+        rowdate = ""
+        for (i = 1; i <= NCELL; i++) if (substr(CELL[i], 1, 6) != "@data:") {
+            rowdate = CELL[i]; sub(/^@\{[^}]*\}/, "", rowdate)
+            if (rowdate !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) rowdate = ""
+            break
+        }
         for (i = 1; i <= NCELL; i++) {
             c = CELL[i]
             if (substr(c, 1, 6) == "@data:") {
@@ -754,6 +835,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
                 # so no report-dates meta) has no consumer for the buckets
                 # re-aggregation payload — drop it instead of shipping it
                 if (dropbuckets && nm == "buckets") continue
+                if (nrdi > 0 && vv != "") { if (nm == "buckets") vv = benc(vv); else if (nm == "durdays") vv = denc(vv) }
                 # an EMPTY drill payload (2026-09-29: the server Top view's
                 # SSHD row, no Error/Warning line to show) is no drill — the
                 # row looked clickable and expanded nothing
@@ -774,7 +856,9 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
                 # is the writers' own marker (the Entities views, the cross
                 # references — 2026-09-29 audit: ~7,700 unread attributes)
                 if (nm == "seen" && index(tattr, "data-seenrows=") == 0) continue
-                ad = " data-" nm "=\"" esc(vv) "\""
+                ev = vv
+                if (tunit_file && !is_total && (nm == "coreids" || index(nm, "coreids-") == 1 || index(nm, "drill-cell-") == 1)) ev = fenc(vv, rowdate)
+                ad = " data-" nm "=\"" esc(ev) "\""
                 # coreids-failed / -processed bind only when the row has ONE
                 # such cell (report.js setupExpandable) — held apart until the
                 # cells are rendered, their page-bearing Files with them
@@ -782,6 +866,19 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
                 if (nm == "coreids-processed") { pattr = ad; attrs = attrs "\001P"; if (tunit_file) pfp = fp_add(vv, ""); continue }
                 # a shipped File drill list: its Files that have a page
                 if (tunit_file && (nm == "coreids" || index(nm, "coreids-") == 1 || index(nm, "drill-cell-") == 1)) rowfp = fp_add(vv, rowfp)
+                # THE SAME LIST TWICE ON ONE ROW (2026-09-30, the lean round:
+                # the Entities Transfers Error = Files Error list, Duration
+                # cell 0 = cell 1, …): the later one ships as a REFERENCE,
+                # data-coreids-<key>="=<first key>" / data-drill-cell-<n>="=<m>",
+                # which report.js expandPayload resolves before any drill
+                # binds. Only between lists that always ship (never the held
+                # coreids-failed / -processed ones), and within one family.
+                if (index(nm, "coreids-") == 1 || index(nm, "drill-cell-") == 1) {
+                    dfam = (index(nm, "coreids-") == 1) ? "c" : "d"
+                    dkey = (dfam == "c") ? substr(nm, 9) : substr(nm, 12)
+                    if (((dfam SUBSEP vv) in DRV) && length(vv) > length(DRV[dfam, vv]) + 1) ad = " data-" nm "=\"=" DRV[dfam, vv] "\""
+                    else if (!((dfam SUBSEP vv) in DRV)) DRV[dfam, vv] = dkey
+                }
                 attrs = attrs ad
                 # a ROW-LEVEL drill (the whole row is click-to-expand): an
                 # entity cell in it renders as plain name + a detail-page

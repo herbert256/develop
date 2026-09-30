@@ -118,10 +118,9 @@ nall=0
         case $ty in
             SITE|ACC|LOGIN)
                 if [ -s "$f" ]; then
-                    IFS=$'\t' read -r tf tv <<< "$(awk -F'\t' '
-                        function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
+                    IFS=$'\t' read -r tf tv <<< "$(awk -F'\t' "$AWKLIB"'
                         { tf += $3; n = split($13, D, ","); for (i = 1; i <= n; i++) { split(D[i], x, ":"); tb += x[4] } }
-                        END { printf "@{class=num}%d\t@{class=num}%s\n", tf, human(tb) }' "$f")"
+                        END { printf "@{class=num}%d\t@{class=num}%s\n", tf, hbytes2(tb) }' "$f")"
                 fi ;;
         esac
         printf 'TOTAL\tTotal (%s %s(s))\t\t%s\t\t%s\t\t\t\t\t\t\n' "$n" "$noun" "$tf" "$tv"

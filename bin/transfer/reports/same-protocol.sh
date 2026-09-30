@@ -55,9 +55,8 @@ TAB=$(printf '\t')
 # ONE awk: the legs (first inbound / last outbound per CoreId), then the Files
 # (outcome, subscription, name, start) — emits the File rows and the
 # per-subscription figures, each behind a sort prefix
-LC_ALL=C awk -F'\t' -v UCDF="$UCDF" -v SUBRES="$SUBRES" -v FPF="$FPF" -v LEGS="$PARSED" -v FILEROWS="$TMP/files" -v SUBROWS="$TMP/subs" '
-    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
-    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
+LC_ALL=C awk -F'\t' -v UCDF="$UCDF" -v SUBRES="$SUBRES" -v FPF="$FPF" -v LEGS="$PARSED" -v FILEROWS="$TMP/files" -v SUBROWS="$TMP/subs" "$AWKLIB"'
+    # (lit() — a raw name kept literal, audit 2026-09-29 F07 — comes from bin/fmt.awk via $AWKLIB)
     BEGIN {
         while ((getline l < UCDF) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "" && a[2] != "") UCD[toupper(a[1])] = toupper(a[2]) }
         close(UCDF)

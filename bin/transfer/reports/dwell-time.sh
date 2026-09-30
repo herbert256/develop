@@ -47,14 +47,13 @@ humandur() { awk -v ms="$1" 'BEGIN{
 # dwell already run through humandur) as trailing fields, so the row builders below
 # are one awk each instead of a fork per bucket and three per subscription. The
 # fields ahead of them — including the sort keys — are unchanged.
-agg=$(awk -F'\t' "$COREIDS_AWK"'
+agg=$(awk -F'\t' "$COREIDS_AWK$AWKLIB"'
     function humandur(ms) {
         if (ms < 1000)    return sprintf("%d ms", int(ms + 0.5))
         if (ms < 60000)   return sprintf("%.2f s", ms/1000)
         if (ms < 3600000) return sprintf("%.1f min", ms/60000)
         return sprintf("%.2f h", ms/3600000)
     }
-    function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
     function secs(t,  p){ if (split(t, p, ":") < 3) return -1; return p[1]*3600 + p[2]*60 + p[3] }
     function ep_iso(di, t,  p, s){ if (split(di, p, "-") < 3) return -1; s=secs(t); if (s<0) return -1; return jdn(p[1]+0,p[2]+0,p[3]+0)*86400 + s }
     function ep_us(x,  a, dp, s){ if (split(x, a, " ") < 2) return -1; if (split(a[1], dp, "/") < 3) return -1; s=secs(a[2]); if (s<0) return -1; return jdn(dp[3]+0,dp[1]+0,dp[2]+0)*86400 + s }

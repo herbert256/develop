@@ -4144,7 +4144,111 @@
   // shipped as DATA — went 2026-09-29 with the pages: a subscription page's
   // Files table is built by assets/sub-files.js.)
 
+  // THE ENTITIES ROW PAYLOAD (2026-09-30, publish_lib entity_payload_split):
+  // an Entities view page ships its rows' data-buckets / data-durdays /
+  // data-fp / data-coreids-* ONCE per entity in <entity>-data.js
+  // (window.AXWAY_EP, `<tr data-k="N" …></tr>` lines); each page row carries
+  // data-k="N". Parsed by the browser's own HTML parser (a <template>), so the
+  // attribute values decode exactly as they did inline, and copied back onto
+  // the rows — FIRST in init(), before anything reads them.
+  function attachEntityPayload() {
+    var src = window.AXWAY_EP;
+    if (typeof src !== "string" || !src) return;
+    var rows = document.querySelectorAll("tr[data-k]");
+    if (!rows.length) return;
+    var tpl = document.createElement("template");
+    tpl.innerHTML = "<table><tbody>" + src + "</tbody></table>";
+    var map = {}, prs = tpl.content.querySelectorAll("tr[data-k]"), i, j;
+    for (i = 0; i < prs.length; i++) map[prs[i].getAttribute("data-k")] = prs[i];
+    for (i = 0; i < rows.length; i++) {
+      var tr = rows[i], p = map[tr.getAttribute("data-k")];
+      tr.removeAttribute("data-k");
+      if (!p) continue;
+      for (j = 0; j < p.attributes.length; j++) {
+        var at = p.attributes[j];
+        if (at.name !== "data-k") tr.setAttribute(at.name, at.value);
+      }
+    }
+    window.AXWAY_EP = null;
+  }
+
+  // THE COMPACT ROW PAYLOAD (2026-09-30, the lean round): render_rpt ships a
+  // drill list that repeats an earlier one of the SAME row as a reference —
+  // data-coreids-<key>="=<first key>", data-drill-cell-<n>="=<m>". Expanded
+  // here, right after attachEntityPayload, so every reader sees the full
+  // lists exactly as they were rendered before.
+  // …and data-buckets / data-durdays name their day by its INDEX in the
+  // page's report-dates list (a date the list lacks stays literal), a bucket
+  // metric of "0" ships empty and an originally empty one as "~"
+  // (render_rpt benc / denc) — decoded back to the dated form here.
+  function expandDays(v, rd, isBuckets) {
+    if (!v) return v;
+    var it = v.split(","), i, f, j;
+    for (i = 0; i < it.length; i++) {
+      f = it[i].split(":");
+      if (/^\d+$/.test(f[0]) && rd[+f[0]] !== undefined) f[0] = rd[+f[0]];
+      if (isBuckets) for (j = 1; j < f.length; j++) f[j] = f[j] === "" ? "0" : (f[j] === "~" ? "" : f[j]);
+      it[i] = f.join(":");
+    }
+    return it.join(",");
+  }
+  // …and a File drill list marked "#" ships its CoreIds without dashes and,
+  // on a row whose first cell is a date, its entries without that date
+  // (render_rpt fenc) — the mirror of render_rpt's dsplit + redash: the
+  // date back before an entry that starts with a time, the dashes on every
+  // 32-hex run with no hex character on either side.
+  function expandFileList(v, rowDate) {
+    v = v.slice(1);
+    if (rowDate) {
+      var segs = v.split(/([,\x1f])/), k;
+      for (k = 0; k < segs.length; k += 2) if (/^\d\d:\d\d:\d\d/.test(segs[k])) segs[k] = rowDate + " " + segs[k];
+      v = segs.join("");
+    }
+    var out = "", re = /[0-9a-f]{32}/g, m, last = 0, pre, post, t;
+    while ((m = re.exec(v)) !== null) {
+      pre = m.index > 0 ? v.charAt(m.index - 1) : "";
+      post = v.charAt(m.index + 32);
+      t = m[0];
+      if (!/[0-9a-f]/.test(pre) && !/[0-9a-f]/.test(post))
+        t = t.slice(0, 8) + "-" + t.slice(8, 12) + "-" + t.slice(12, 16) + "-" + t.slice(16, 20) + "-" + t.slice(20);
+      out += v.slice(last, m.index) + t; last = m.index + 32;
+    }
+    return out + v.slice(last);
+  }
+  function expandPayload() {
+    var trs = document.getElementsByTagName("tr"), i, j, tr, at, v, nm, ref, fixes;
+    var dm = document.querySelector('meta[name="report-dates"]'), rd = dm ? (dm.getAttribute("content") || "").split(",") : [];
+    for (i = 0; i < trs.length; i++) {
+      tr = trs[i]; fixes = null;
+      if (dm) {   // encoded only on a page WITH a date list (render_rpt rdates)
+        v = tr.getAttribute("data-buckets"); if (v) tr.setAttribute("data-buckets", expandDays(v, rd, true));
+        v = tr.getAttribute("data-durdays"); if (v) tr.setAttribute("data-durdays", expandDays(v, rd, false));
+      }
+      var rowDate = null;
+      for (j = 0; j < tr.attributes.length; j++) {
+        at = tr.attributes[j]; v = at.value;
+        if (v.charAt(0) === "#" && (at.name === "data-coreids" || at.name.indexOf("data-coreids-") === 0 || at.name.indexOf("data-drill-cell-") === 0)) {
+          if (rowDate === null) {
+            rowDate = tr.cells.length ? (tr.cells[0].textContent || "") : "";
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(rowDate)) rowDate = "";
+          }
+          at.value = expandFileList(v, rowDate);
+          continue;
+        }
+        if (v.charAt(0) !== "=") continue;
+        nm = at.name;
+        if (nm.indexOf("data-coreids-") === 0) ref = "data-coreids-" + v.slice(1);
+        else if (nm.indexOf("data-drill-cell-") === 0) ref = "data-drill-cell-" + v.slice(1);
+        else continue;
+        (fixes || (fixes = [])).push([nm, ref]);
+      }
+      if (fixes) for (j = 0; j < fixes.length; j++) tr.setAttribute(fixes[j][0], tr.getAttribute(fixes[j][1]) || "");
+    }
+  }
+
   function init() {
+    attachEntityPayload();  // FIRST of all: the Entities rows get their payload back (see above)
+    expandPayload();        // … and every compact attribute its full value
     buildTopbar();          // FIRST: later setups bind into the bar
     fitTopbar();            // the body clears the bar at its real (wrapped) height
     setupRelDates();        // "3 days ago" tooltips on date cells, lazily

@@ -35,6 +35,7 @@ DATA="$ROOT/data"
 INPUT_DIR="$ROOT/input/$AREA"
 IP_DIR="$ROOT/input/ip"
 source "$ROOT/bin/ip.sh"         # IP_HOSTS_FILE (input/ip/ip-hosts.tsv) + ip_put
+source "$ROOT/bin/awklib.sh"     # $AWKLIB: the shared awk helpers (date.awk + fmt.awk)
 FM_INPUT_DIR="$ROOT/input/flow-manager"
 # When bin/flow-manager.sh has written SKIP-filtered copies (input/skip.txt),
 # every raw-JSON reader prefers them so the skipped accounts/subscriptions are

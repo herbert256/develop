@@ -303,7 +303,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" \
     -v TOPF="$TMP/all" -v EXTRAF="$TMP/extra" -v LASTF="$TMP/lastst" -v PAGEDF="$TMP/paged" \
     -v IDS="$TMP/ids" -v META="$TMP/meta" -v SESS="$TMP/sess" -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" -v ACCRES="$CONFIG_BASE/_accounts.tsv" -v HSTRES="$CONFIG_BASE/_hosts.tsv" \
     -v LGNRES="$CONFIG_BASE/_logins.tsv" -v PTNRES="$CONFIG_BASE/_partners.tsv" -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" \
-    -v FILESF="$TMP/filepages" -v FILEDIR="$FILEDIR" '
+    -v FILESF="$TMP/filepages" -v FILEDIR="$FILEDIR" "$AWKLIB"'
     # The SUBSCRIPTION result colour (bin/build/result.sh fills the third
     # column of the base cache), so a row carries the state of the flow it
     # belongs to: red = still failing, green = it has delivered OK since,
@@ -370,8 +370,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" \
     # plain. Any other value is an endpoint name: the hosts entity cell.
     function isip4(v) { return v ~ /^[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+$/ }
     function hostcell(nm) { return isip4(nm) ? "@{alink=incoming_connections/" nm "}" nm : entcell(HRES, "hosts", nm) }
-    # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
-    function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
+    # (lit() — a raw name kept literal, audit 2026-09-29 F07 — comes from bin/fmt.awk via $AWKLIB)
 
     # FILENAME dispatch, not an FNR==1 counter: the extras file is legitimately
     # EMPTY when every window error made the list, and an empty file never
@@ -548,9 +547,7 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v OKF="$TMP/lastok" -v MJF="$TMP/maxjd" '$12 !=
 LC_ALL=C awk -F'\t' -v OUTS="$TMP/srvsubs" \
     -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" \
     -v RF="$RFLIP" -v KAP="$KAPUT" -v BOX="$BOXES" -v LFF="$TMP/lastfile" -v ALLFF="$TMP/all" \
-    "$(cat "$LIB_DIR/../flip-reason.awk")"'
-    function slug9(n,   s) { s = tolower(n); gsub(/[^a-z0-9]+/, "-", s)
-        sub(/^-+/, "", s); sub(/-+$/, "", s); return s }
+    "$(cat "$LIB_DIR/../flip-reason.awk")$AWKLIB"'
     BEGIN {
         # the red names in FILE ORDER (never a hash walk — CLAUDE.md rule)
         while ((getline l < SUBRES) > 0) { n = split(l, a, "\t")
@@ -577,7 +574,7 @@ LC_ALL=C awk -F'\t' -v OUTS="$TMP/srvsubs" \
             nm = RN[j]; k = toupper(nm)
             if ((k in SEEN) && !(k in RFS)) continue   # table-1 flow: its story IS its file pages
             kind = (k in SEEN) ? "P" : "R"
-            sl = slug9(nm); if (sl == "") sl = "server-failing-" j
+            sl = slugof(nm); if (sl == "") sl = "server-failing-" j
             while ((sl in USED)) sl = sl "-2"       # a separator twin took the name
             USED[sl] = 1
             st = (k in RFS) ? RFS[k] : ((k in KTS) ? KTS[k] : ((k in LFD) ? LFD[k] : ""))
@@ -1262,7 +1259,7 @@ _flap "server-failing pages + the reasons"
 LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" \
     -v REAS="$TMP/reasons" -v FPF="$FPF" -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" \
     -v SRVS="$TMP/srvsubs" -v SESSF="$TMP/srvsess2" -v RF="$RFLIP" -v LOKF="$TMP/lastok" -v MJF="$TMP/maxjd" \
-    -v RRUN="$REPORTS_DIR/_red-run.tsv" '
+    -v RRUN="$REPORTS_DIR/_red-run.tsv" "$AWKLIB"'
     function rescol(nm,   r) { r = (toupper(nm) in SRES) ? SRES[toupper(nm)] : ""
         return (r == "green" || r == "orange" || r == "red") ? r : "" }
     # the RED-RUN columns (2026-09-29: the From green to red and Only red
@@ -1272,8 +1269,6 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" \
     function redcols(nm,   k) { k = toupper(nm)
         if (k in RLG) return "\t" RLG[k] "\t" RDR[k] "\t" RCF[k]
         return "\t\t\t" }
-    function jdn(y, m, d,   a) { a = int((14 - m) / 12); y = y + 4800 - a; m = m + 12 * a - 3
-        return d + int((153 * m + 2) / 5) + 365 * y + int(y / 4) - int(y / 100) + int(y / 400) - 32045 }
     # ... and a SERVER row\047s (2026-09-29 audit — they read blank): Last green
     # day = its newest OK File\047s day ("never"), Days red = from the flip\047s
     # SINCE (_redflip.tsv col 3, when it went red — not its newest evidence)

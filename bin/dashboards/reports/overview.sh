@@ -74,8 +74,7 @@ dur24=""; cnt24=""; rate24=""; vol24=""; err24=""; thr24=""; con24=""
 ser_pid=""
 if [ -f "$TR" ]; then
     RWSRC="$RW"; [ -f "$RWSRC" ] || RWSRC=/dev/null
-    awk -F'\t' '
-        function fromjdn(j,   a,b,c,dd,e,mm,day,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
+    awk -F'\t' "$AWKLIB"'
         # O(n log n) — a daily bucket holds thousands of durations, where the
         # insertion sort this replaced would be O(n^2). Tail-recursion on the
         # larger half keeps the depth logarithmic.
@@ -256,9 +255,7 @@ if [ -f "$TR" ]; then
                -v HPF="$XR/_hosts-partners.tsv" \
                -v SUBBF="$DATA/flow-manager/base/_subscriptions.tsv" \
                -v ACCBF="$DATA/flow-manager/base/_accounts.tsv" \
-               -v RFF="$DATA/colour/_redflip.tsv" '
-        function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
-        function fromjdn(j,   a,b,c,dd,e,mm,day,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
+               -v RFF="$DATA/colour/_redflip.tsv" "$AWKLIB"'
         # a missing file makes getline return -1, so an absent map is simply empty
         function load_pairs(f, M,   l, z, n) {
             while ((getline l < f) > 0) { n = split(l, z, "\t")
@@ -479,9 +476,7 @@ for u in 1 2 3 4; do
     eval "uc${u}s1=''; uc${u}s2=''; uc${u}s4=''; uc${u}s6=''; uc${u}s12=''; uc${u}s24=''"
     US="$DATA/server/reports/uc$u-slots.tsv"
     [ -s "$US" ] || continue
-    userr=$(awk -F'\t' '
-        function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
-        function fromjdn(j,   a,b,c,dd,e,mm,day,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
+    userr=$(awk -F'\t' "$AWKLIB"'
         $1 ~ /^[0-9][0-9][0-9][0-9]-/ {
             k = jdn(substr($1,1,4)+0, substr($1,6,2)+0, substr($1,9,2)+0) * 24 + ($2+0)
             v = ""; for (i = 3; i <= NF; i++) v = v ":" $i
@@ -518,9 +513,7 @@ done
 pes1=""; pes2=""; pes4=""; pes6=""; pes12=""; pes24=""
 PS="$DATA/server/reports/pesit-slots.tsv"
 if [ -s "$PS" ]; then
-    pser=$(awk -F'\t' '
-        function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
-        function fromjdn(j,   a,b,c,dd,e,mm,day,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
+    pser=$(awk -F'\t' "$AWKLIB"'
         function bump(r, t,   k) { k = r SUBSEP t
             if (!(r in tmin) || t < tmin[r]) tmin[r] = t
             if (!(r in tmax) || t > tmax[r]) tmax[r] = t
@@ -556,9 +549,7 @@ fi
 eq1=""; eq2=""; eq4=""; eq6=""; eq12=""; eq24=""
 EQS="$DATA/server/reports/event-queue-slots.tsv"
 if [ -s "$EQS" ]; then
-    eqser=$(awk -F'\t' '
-        function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
-        function fromjdn(j,   a,b,c,dd,e,mm,day,mon,yr) { a=j+32044; b=int((4*a+3)/146097); c=a-int(146097*b/4); dd=int((4*c+3)/1461); e=c-int(1461*dd/4); mm=int((5*e+2)/153); day=e-int((153*mm+2)/5)+1; mon=mm+3-12*int(mm/10); yr=100*b+dd-4800+int(mm/10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
+    eqser=$(awk -F'\t' "$AWKLIB"'
         function bump(r, t,   k) { k = r SUBSEP t
             if (!(r in tmin) || t < tmin[r]) tmin[r] = t
             if (!(r in tmax) || t > tmax[r]) tmax[r] = t
@@ -633,8 +624,7 @@ tops=""
 SLGP="$DATA/transfer/reports/details/partners/_slugmap.tsv"
 SLGS="$DATA/transfer/reports/details/subscriptions/_slugmap.tsv"
 if [ -f "$TR" ]; then
-    tops=$(awk -F'\t' -v SPMAP="$SP_MAP" -v SLGP="$SLGP" -v SLGS="$SLGS" "$SP_AWK"'
-        function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
+    tops=$(awk -F'\t' -v SPMAP="$SP_MAP" -v SLGP="$SLGP" -v SLGS="$SLGS" "$SP_AWK$AWKLIB"'
         function tally(kind, nm,   k, kd, e9) {
             if (nm == "") return
             e9 = ($2 == "Failed" || $2 == "Expired") ? 1 : 0
@@ -674,7 +664,7 @@ if [ -f "$TR" ]; then
         function top5b(A, kind,   raw, nn, Z, i, s) {
             raw = top5(A, kind); if (raw == "") return ""
             nn = split(raw, Z, US); s = ""
-            for (i = 1; i <= nn; i += 2) s = s (s == "" ? "" : US) Z[i] US human(Z[i+1])
+            for (i = 1; i <= nn; i += 2) s = s (s == "" ? "" : US) Z[i] US hbytes2(Z[i+1])
             return s }
         function tslugs(rows, kind,   nn, Z, i, s) {
             nn = split(rows, Z, US); s = ""
