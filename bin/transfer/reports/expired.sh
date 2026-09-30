@@ -143,11 +143,11 @@ LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k3,3r -k2,2r -k5,5 "$TMPD/x_files" | awk
         finish(); cur = $1; out = ""
         if (!($1 in SL)) next
         out = dir "/" SL[$1] ".rpt"
-        printf "TITLE\tExpired files: %s\n", $1 > out
+        printf "TITLE\tExpired Files: %s\n", $1 > out   # "Files", the site counting unit (2026-09-30)
         printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] that the nightly File Maintenance retention sweep deleted before the partner collected them — never delivered. Last expired first.\n", $1 > out
         # every row RED (2026-09-29, user request): an Expired File\047s colour,
         # _files.tsv col 25
-        printf "TABLE\tExpired files\twide\tnofilter\tsort=1:-1\tpager=25\trestint\n" > out
+        printf "TABLE\tExpired Files\twide\tnofilter\tsort=1:-1\tpager=25\trestint\n" > out
         printf "HEAD\tStart\tExpired\tFile name\tCoreId\n" > out
         printf "KIND\ttext\ttext\tmono\tmono\n" > out
     }

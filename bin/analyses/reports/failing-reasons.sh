@@ -97,7 +97,7 @@ LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" '
             if (CN[r] + 0 == 0) continue
             nz++
             sl = (r == "(none)") ? "../transfer/failed-files.html" : srch(r)
-            printf "ROW\t@{href=%s}%s\t@{href=%s,class=num}%d\t%s\t@data:href=%s\n", \
+            printf "ROW\t@{href=%s}%s\t@{href=%s}%d\t%s\t@data:href=%s\n", \
                    sl, r, sl, CN[r], LS[r], sl > f
         }
         printf "TOTAL\tTotal (%d reasons)\t%d\t\n", nz, tot + 0 > f

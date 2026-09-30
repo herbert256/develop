@@ -68,7 +68,9 @@ agg=$(awk -F'\t' "$LOGLINES_AWK"'
                 if (v==0) cell=""
                 else { r=v/cmax; tt=(r<=0.25)?1:(r<=0.5)?2:(r<=0.75)?3:4; cell="@{class=heat" tt "}" v }
                 linexx = linexx "\t" cell }
-            linexx = linexx "\t@{class=num failed}" he[hh]+0 "\t@{class=num warn}" hw[hh]+0 "\t@{class=num}" ht[hh]+0
+            # (plain values: the column KINDs numfailed / numwarn / num give
+            # the classes — an explicit copy doubled them, 2026-09-30 audit S-09)
+            linexx = linexx "\t" he[hh]+0 "\t" hw[hh]+0 "\t" ht[hh]+0
             for (w=0;w<=6;w++){ bk=""; nn=split(cord[hh SUBSEP w],dz,","); for(qq=1;qq<=nn;qq++){ dd=dz[qq]; bk=bk (bk?",":"") dd ":" cd[hh SUBSEP w SUBSEP dd] }
                 linexx = linexx "\t@data:h" w "=" bk }
             linexx = linexx "\t@data:buckets=" hbk[hh] "\t@data:loglines=" lastlines("H" SUBSEP hh)

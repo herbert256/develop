@@ -207,11 +207,11 @@ printf '%s\n' "$agg" | awk -F'|' '$1 == "F"' | LC_ALL=C sort -t'|' -k4,4 -k2,2n 
         finish(); cur = $4; out = ""
         if (!($4 in SL)) next
         out = dir "/" SL[$4] ".rpt"
-        printf "TITLE\tWaiting files: %s\n", $4 > out
+        printf "TITLE\tWaiting Files: %s\n", $4 > out   # "Files", the site counting unit (2026-09-30)
         printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] the partner has not collected yet — still collectable until the nightly File Maintenance retention sweep (~11 days) deletes them. **Waiting for** counts from the staging moment to the last record of the data (%s). Longest waiting first.\n", $4, lastdt > out
         # every row ORANGE (2026-09-29, user request): a Waiting File\047s
         # colour, _files.tsv col 25
-        printf "TABLE\tWaiting files\twide\tnofilter\tsort=1:-1\tpager=25\trestint\n" > out
+        printf "TABLE\tWaiting Files\twide\tnofilter\tsort=1:-1\tpager=25\trestint\n" > out
         printf "HEAD\tStart\tWaiting for\tFile name\tCoreId\n" > out
         printf "KIND\ttext\ttext\tmono\tmono\n" > out
     }
@@ -388,7 +388,9 @@ oldest_cell="-"
     # (waiting/<slug>.html, written above) — the slug is joined on as field 2.
     printf 'TABLE\tWaiting now — per subscription\twide\tnofilter\tsort=3:-1\n'
     printf 'HEAD\tSubscription\tWaiting Files\tOldest staged\tWaiting for\tNewest staged\tCollected\n'
-    printf 'KIND\tsite\tnumwarn\ttext\ttext\ttext\tnum\n'
+    # Collected is green (numprocessed) wherever it shows — the Expired page's
+    # rule (2026-09-30 audit T-09: plain here, green there)
+    printf 'KIND\tsite\tnumwarn\ttext\ttext\ttext\tnumprocessed\n'
     # W fields: 2=slug 3=oldsec 4=site 5=nwait 6=oldest_dt 7=wait_for 8=wait_sec 9=newest_dt 10=ncoll 11=drill
     while IFS='|' read -r _ slug oldsec site nw olddt wf wsec newdt nc drill; do
         [ -z "$site" ] && continue
@@ -401,13 +403,13 @@ oldest_cell="-"
     if [ "$n_wrows" -eq 0 ]; then
         printf 'ROW\t@{colspan=6}No Waiting Files — every staged UC2 File in this data window was collected.\n'
     fi
-    printf 'TOTAL\tTotal (%s subscriptions)\t@{class=num warn}%s\t%s\t\t\t@{class=num}%s\n' "$n_wsites" "$n_wait" "$oldest_dt" "$sum_nc"
+    printf 'TOTAL\tTotal (%s subscriptions)\t@{class=num warn}%s\t%s\t\t\t@{class=num processed}%s\n' "$n_wsites" "$n_wait" "$oldest_dt" "$sum_nc"
 
     # the same default sort here: Waiting for descending (sort=5:-1 on the
     # sortval) — without it the Staged date column opened the table NEWEST first
     printf 'TABLE\tFiles waiting the longest\twide\tnofilter\tsort=5:-1\trestint\n'   # the rows ORANGE: a Waiting File's colour (_files.tsv col 25, 2026-09-29)
     printf 'HEAD\tStaged\tSubscription\tAccount\tFile\tSize\tWaiting for\n'
-    printf 'KIND\ttext\tsite\tacct\tfile\ttext\ttext\n'
+    printf 'KIND\ttext\tsite\tacct\tfile\tnum\ttext\n'   # Size right-aligned like every size cell (2026-09-30)
     # F fields: 2=stagesec 3=staged_dt 4=site 5=acct 6=bytes 7=size 8=wait_for 9=wait_sec 10=coreid 11..=file
     while IFS='|' read -r _ s dt site acct bytes size wf wsec _ fname; do
         [ -z "$site" ] && continue
@@ -422,14 +424,14 @@ oldest_cell="-"
         else if (b>=1048576) printf "%.1f MB", b/1048576
         else if (b>=1024)    printf "%.1f KB", b/1024
         else                 printf "%d B", b }')
-    printf 'TOTAL\tTotal (%s of %s waiting Files shown)\t\t\t\t%s\t\n' "$n_shown" "$n_wait" "$sum_size"
+    printf 'TOTAL\tTotal (%s of %s waiting Files shown)\t\t\t\t@{class=num}%s\t\n' "$n_shown" "$n_wait" "$sum_size"
 
     # (the "Expired — deleted before pickup, per subscription" table went
     # 2026-09-29: the Expired page carries the same rows with more columns)
 
-    printf 'TABLE\tPickup wait — collected files, per subscription\twide\tnofilter\n'
+    printf 'TABLE\tPickup wait — collected Files, per subscription\twide\tnofilter\n'
     printf 'HEAD\tSubscription\tCollected\tMedian wait\tAverage wait\tMax wait\tWithin 1 h\t1 - 24 h\tOver 24 h\n'
-    printf 'KIND\tsite\tnum\ttext\ttext\ttext\tnumprocessed\tnum\tnumwarn\n'
+    printf 'KIND\tsite\tnumprocessed\ttext\ttext\ttext\tnumprocessed\tnum\tnumwarn\n'
     # P fields: 2=site 3=ncoll 4=median 5=avg 6=max 7=b1h 8=b24 9=bgt
     while IFS='|' read -r _ site nc med avg mx b1h b24 bgt; do
         [ -z "$site" ] && continue
@@ -441,14 +443,14 @@ oldest_cell="-"
     if [ "$n_prows" -eq 0 ]; then
         printf 'ROW\t@{colspan=8}No collected UC2 pickups in this data window.\n'
     fi
-    printf 'TOTAL\tTotal (%s subscriptions)\t@{class=num}%s\t\t\t\t@{class=num processed}%s\t@{class=num}%s\t@{class=num warn}%s\n' \
+    printf 'TOTAL\tTotal (%s subscriptions)\t@{class=num processed}%s\t\t\t\t@{class=num processed}%s\t@{class=num}%s\t@{class=num warn}%s\n' \
         "$n_csites" "$n_coll" "$b1h_sum" "$b24_sum" "$bgt_sum"
 
     # ---- the four second-pass tables --------------------------------------
 
     printf 'TABLE\tStaged backlog over time\tnofilter\tnosearch\n'
     printf 'HEAD\tDate\tStaged Files in inventory\tStaged volume\n'
-    printf 'KIND\ttext\tnum\ttext\n'
+    printf 'KIND\ttext\tnum\tnum\n'   # Staged volume right-aligned (2026-09-30)
     n_brows=0
     # B fields: 2=date 3=files 4=volume
     while IFS='|' read -r _ bdt bcnt bvol; do
@@ -464,7 +466,7 @@ oldest_cell="-"
     n_erows=0; e_files_sum=0
     printf 'TABLE\tWill expire next\twide\tnofilter\trestint\n'
     printf 'HEAD\tSubscription\tFiles at risk\tOldest staged\tAge\n'
-    printf 'KIND\tsite\tnum\ttext\ttext\n'
+    printf 'KIND\tsite\tnumwarn\ttext\ttext\n'   # orange like its TOTAL and the row (2026-09-30)
     # E fields: 2=nfiles 3=site 4=oldest_dt 5=age 6=drill
     while IFS='|' read -r _ ecnt esite eold eage edrill; do
         [ -z "$esite" ] && continue
@@ -479,7 +481,7 @@ oldest_cell="-"
     n_qrows=0; q_files_sum=0; q_nm_sum=0
     printf 'TABLE\tPickup wait percentiles per partner\twide\tnofilter\n'
     printf 'HEAD\tPartner\tCollected Files\tMedian wait\tp95 wait\tMax wait\tWaited over 8 days\n'
-    printf 'KIND\tptn\tnum\ttext\ttext\ttext\tnumwarn\n'
+    printf 'KIND\tptn\tnumprocessed\ttext\ttext\ttext\tnumwarn\n'
     # Q fields: 2=files 3=partner 4=median 5=p95 6=max 7=nearmiss
     while IFS='|' read -r _ qn qptn qmed qp95 qmax qnm; do
         [ -z "$qptn" ] && continue
@@ -490,12 +492,12 @@ oldest_cell="-"
     if [ "$n_qrows" -eq 0 ]; then
         printf 'ROW\t@{colspan=6}No collected UC2 pickups in this data window.\n'
     fi
-    printf 'TOTAL\tTotal (%s partners)\t@{class=num}%s\t\t\t\t@{class=num warn}%s\n' "$n_qrows" "$q_files_sum" "$q_nm_sum"
+    printf 'TOTAL\tTotal (%s partners)\t@{class=num processed}%s\t\t\t\t@{class=num warn}%s\n' "$n_qrows" "$q_files_sum" "$q_nm_sum"
 
     n_krows=0; k_files_sum=0
     printf 'TABLE\tPickup wait per week — busiest subscriptions\twide\tnofilter\n'
     printf 'HEAD\tSubscription\tWeek of\tCollected Files\tMedian wait\tAverage wait\n'
-    printf 'KIND\tsite\ttext\tnum\ttext\ttext\n'
+    printf 'KIND\tsite\ttext\tnumprocessed\ttext\ttext\n'
     # K fields: 2=rank 3=site 4=weekdate 5=files 6=median 7=avg
     while IFS='|' read -r _ _krank ksite kweek kn kmed kavg; do
         [ -z "$ksite" ] && continue
@@ -505,7 +507,7 @@ oldest_cell="-"
     if [ "$n_krows" -eq 0 ]; then
         printf 'ROW\t@{colspan=5}No collected UC2 pickups in this data window.\n'
     fi
-    printf 'TOTAL\tTotal (%s subscription-weeks)\t\t@{class=num}%s\t\t\n' "$n_krows" "$k_files_sum"
+    printf 'TOTAL\tTotal (%s subscription-weeks)\t\t@{class=num processed}%s\t\t\n' "$n_krows" "$k_files_sum"
 
     printf 'SUMMARY\tWaiting Files: %s across %s subscription(s)  |  Expired (deleted before pickup): %s  |  Oldest staged: %s  |  Collected pickups: %s  |  Peak backlog: %s  |  Expiring next: %s File(s) in %s subscription(s)  |  Waited over 8 days: %s  |  Dataset end: %s\n' \
         "$n_wait" "$n_wsites" "$n_exp" "${oldest_dt:--}" "$n_coll" "$bk_peak" "$e_files_sum" "$n_erows" "$q_nm_sum" "$last_dt"

@@ -39,12 +39,12 @@ key=configured
 for member in logicals partners applications domains bl; do
     tsv="$COVSRC/$member.tsv"
     [ -f "$tsv" ] || continue
+    # the page label = the home Entity label that opens it (2026-09-30 audit
+    # L-08: "Logical flows" / "External Partners" / "Internal Applications" /
+    # "Internal Domains" before)
     mlabel="$(printf '%s' "${member:0:1}" | tr '[:lower:]' '[:upper:]')${member:1}"
-    [ "$member" = logicals ] && mlabel="Logical flows"
+    [ "$member" = logicals ] && mlabel="Logical"
     [ "$member" = bl ] && mlabel="BL"
-    [ "$member" = partners ] && mlabel="External Partners"
-    [ "$member" = applications ] && mlabel="Internal Applications"
-    [ "$member" = domains ] && mlabel="Internal Domains"
     # Every member lives in ONE name space, so the Configured cell counts
     # UNIQUE names: the In and Out rows merge per name (direction "In + Out"
     # = B, Seen = either side, Result = the latest transaction of both sides).

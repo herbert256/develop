@@ -21,8 +21,10 @@
 #      subscriptions.json exports); shown with 0 counts. Plus an IP alias row
 #      per cached remote host.
 #   3. WHITELISTED IPs (type "Whitelist", data/flow-manager/xref/_accounts-white.tsv):
-#      one row per (allowing account, IP), linked to that ACCOUNT's detail
-#      page — a whitelisted IP never gets a page of its own.
+#      one row per (allowing account, IP), linked to the address's own
+#      incoming-connection page when it has one (details/incoming_connections/,
+#      2026-09-30 — it lists the account under "Whitelisted by"), else to
+#      that ACCOUNT's detail page.
 #
 # A TRANSFER-data report housed with the ANALYSES scripts (like
 # cross-reference.sh): it sources the transfer lib and
@@ -192,8 +194,8 @@ fi
 # ---- (4) whitelisted IPs -----------------------------------------------------
 # Every (account, allowed IP) pair from bin/flow-manager.sh's _accounts-white.tsv
 # (the partner AllowIP whitelist, expanded): searchable by IP, type
-# "Whitelist", LINKED to the ALLOWING account's detail page — a whitelisted IP
-# has no page of its own. seen=0 (configuration, not log activity), so the
+# "Whitelist", LINKED to the address's incoming-connection page when it has
+# one (see INCSM below), else to the ALLOWING account's detail page. seen=0 (configuration, not log activity), so the
 # rows live on the All / Not Seen views; an IP allowed by several accounts
 # gets one row per account. The account slug comes from that account's detail
 # page (collect() above), so slug collisions resolve exactly like its own row;
@@ -204,6 +206,11 @@ whitelist_ips=$( { printf '%s\n' "$seen_rows" | awk -F'\t' '$2=="Account" { prin
     $1=="S" { aslug[toupper($2)]=$3; next }
     { k=toupper($2); s=(k in aslug)?aslug[k]:""
       print $3 "\tWhitelist\t" (s==""?"":"accounts") "\t" s "\t0" }')
+# the incoming-connection pages (bin/transfer/reports/incoming-connections.sh,
+# transfer phase 1 — done before this analyses step): ip ⇥ slug. A Whitelist
+# row whose address has a page LINKS it (the counts, tint and direction stay
+# the allowing account's, as above)
+INCSM="$REPORTS_DIR/details/incoming_connections/_slugmap.tsv"
 
 # ---- merge, sort by TYPE then name (case-folded) -----------------------------
 # Row order: Logical, Partner, Account, Login, Host, IP (Remote Host (IP) +
@@ -350,8 +357,10 @@ tuples=$( {
     count_lookup                  | awk 'NF{print "C\t" $0}'
     cov_lookup                    | awk 'NF{print "V\t" $0}'
     seen_lookup                   | awk 'NF{print "S\t" $0}'
+    [ ! -f "$INCSM" ] || awk 'NF{print "I\t" $0}' "$INCSM"
     printf '%s\n' "$rows"         | awk 'NF{print "R\t" $0}'
 } | awk -F'\t' '
+    $1=="I" { incsl[$2] = $3; next }                  # ip -> its incoming-connection page slug
     $1=="B" { res[$2 SUBSEP toupper($3)] = $4; next }
     $1=="P" { pmap[$2 SUBSEP $3] = $4; next }          # (details sub-dir, slug) -> the XXX/YYY pair of that page
     $1=="U" { useed[$2 SUBSEP toupper($3)] = 1; next }
@@ -409,7 +418,8 @@ tuples=$( {
         # rows with a page link to it: seen entities to their own detail
         # page, Whitelist rows to the ALLOWING account page — other not-seen
         # rows carry no sd/slug. The row tint is @data:res, not seen-ness.
-        if (sd!="" && slug!="") nc="@{link=" sd "/" slug "}" name
+        if (type=="Whitelist" && (name in incsl)) nc="@{link=incoming_connections/" incsl[name] "}" name
+        else if (sd!="" && slug!="") nc="@{link=" sd "/" slug "}" name
         else                    nc=name
         # FIN = a final tuple (10 fields: namecell, type, seen, files, err, ok,
         # res, subrows, direction, last seen); non-location rows carry an

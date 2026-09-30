@@ -17,20 +17,20 @@
 <h1>Configured accounts</h1>
 <h2>What it shows</h2>
 <ul>
-<li>A configuration audit of the accounts, their logins and their communication profiles (one per endpoint), from the FlowManager export alone. Each check heading carries its count; 0 = nothing to fix.</li>
+<li>A configuration audit of the accounts, logins and communication profiles (one per endpoint) in the FlowManager export. Each check heading carries its count; 0 = nothing to fix.</li>
 <li><strong>Connection type</strong> / <strong>Protocol</strong> &mdash; profiles per type and per protocol.</li>
-<li><strong>Type &mdash; the name prefix</strong> / <strong>Authentication &mdash; the name suffix</strong> &mdash; profiles per prefix and suffix against the configured <code>type</code> and <code>clientAuthentication</code>.</li>
+<li><strong>Type &mdash; the name prefix</strong> / <strong>Authentication &mdash; the name suffix</strong> &mdash; profiles per prefix and suffix with their <strong>Meaning</strong>, against the configured <code>type</code> and <code>clientAuthentication</code> (<strong>Match auth</strong> / <strong>Mismatch</strong>).</li>
 <li><strong>Naming inconsistencies</strong> &mdash; a suffix contradicting the real authentication.</li>
 <li><strong>Not clear domain-application-partner</strong> &mdash; accounts whose logical flow lacks a part (Missing, Why); they drop out of that entity&rsquo;s figures.</li>
 <li><strong>FTP endpoints &mdash; insecure</strong> &mdash; clear-text profiles.</li>
-<li><strong>Incoming partners without IP whitelisting</strong> &mdash; CLIENT profiles with no <code>AllowIP</code> list.</li>
-<li><strong>Remote hosts with conflicting setup</strong> / <strong>Whitelisted IPs with conflicting incoming setup</strong> &mdash; one table per attribute that differs across one host&rsquo;s profiles, or one IP&rsquo;s partners.</li>
+<li><strong>Incoming partners without IP whitelisting</strong> &mdash; accounts with a CLIENT profile and no <code>AllowIP</code> list; <strong>Status</strong> = seen (last OK / Error) or never seen.</li>
+<li><strong>Remote hosts with conflicting setup</strong> / <strong>Whitelisted IPs with conflicting incoming setup</strong> &mdash; one table per attribute (each <strong>Value</strong>) that differs across one host&rsquo;s profiles, or one IP&rsquo;s accounts.</li>
 <li><strong>Account &amp; login checks</strong> &mdash; non-<code>FE&lt;digits&gt;</code> logins, a login on several accounts, a profile with several hosts, password profiles without a stored password, accounts with several profiles, <code>login</code> &ne; <code>loginName</code>.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
 <li>Profile names read <code>&lt;TYPE&gt;_&lt;partner&gt;_&lt;AUTH&gt;</code>: <code>SCP</code>/<code>SSCP</code> = server (ST connects out), <code>CCP</code> = client (the partner connects in); <code>PWD</code> = password, <code>KEY</code> = public key.</li>
-<li>Incoming account names separate parts with <code>-</code>, outgoing with <code>_</code>.</li>
+<li>Incoming account names separate parts with <code>-</code>, outgoing with <code>_</code>. Account, login and host names link their detail pages.</li>
 </ul>
 <h2>Tips</h2>
 <ul>

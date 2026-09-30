@@ -8,7 +8,7 @@
 # unselected KPIs). Every directive in the .rpt lands on the page.
 #
 # Page layout: h1 → nav row (prev/next day) → ONE KPI card row (the five
-# headline cards: Files / File error rate / Volume / Server lines
+# headline cards: Files / File error rate / Volume / Server records
 # / Server error rate) → the hero chart (the SIX shared 30-minute slot views:
 # Duration hero + OK Files/Error % Files/Volume/PeSIT — same labels as the
 # dashboards overview, so the picked view carries between the pages) → the two
@@ -142,7 +142,7 @@ CIDN=0
 
 # The ONE KPI row above the hero graph — every KPI line of the day .rpt, in
 # file order: Files / File error rate / Volume (the transfer
-# pass) then Server lines / Server error rate (the server pass). The .rpt
+# pass) then Server records / Server error rate (the server pass). The .rpt
 # carries exactly these five, under the labels shown, so nothing is selected
 # here. A KPI line's optional 7th field is the same-weekday delta (e.g. +30% /
 # -10%), rendered as a small span tucked behind the value.
@@ -239,11 +239,11 @@ problems_html() {   # $1 day rpt
 # Transfer > Entities view, narrowed to this day and sorted descending on the
 # same column.
 tops_html() {   # $1 day rpt
-    local rpt=$1 kind title unit href rows tbl cards="" out=""
+    local rpt=$1 kind title unit href rows slugs tbl cards="" out=""
     if [ -f "$rpt" ]; then
-        while IFS=$'\t' read -r _ kind title unit href rows; do
+        while IFS=$'\t' read -r _ kind title unit href rows slugs; do
             [ -n "$rows" ] || continue
-            tbl=$(top_table "$kind" "$title" "$unit" "$href" "$rows") || continue
+            tbl=$(top_table "$kind" "$title" "$unit" "$href" "$rows" "$slugs") || continue
             cards+="$tbl"
         done < <(grep '^TOP'$'\t' "$rpt" || true)
     fi

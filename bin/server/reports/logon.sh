@@ -574,7 +574,7 @@ out_rows() {
 
     printf 'TABLE\tOutgoing\twide\tdrill=log line\n'
     printf 'HEAD\tRemote host\tUser\tFailures\tPassword\tKey\tCertificate\tOther\tReason (last seen)\tFirst\tLast\n'
-    printf 'KIND\tmono\tmono\tnumfailed\tnumfailed\tnumfailed\tnumfailed\tnumfailed\ttext\ttext\ttext\n'
+    printf 'KIND\thost\tmono\tnumfailed\tnumfailed\tnumfailed\tnumfailed\tnumfailed\ttext\ttext\ttext\n'
     printf 'RECALC\t-\t-\ts0\ts1\ts2\ts3\ts4\t-\t-\t-\n'
     out_rows
     printf 'TOTAL\t@{colspan=2}Total (%s pair(s))\t@{class=num failed}%s\t@{class=num failed}%s\t@{class=num failed}%s\t@{class=num failed}%s\t@{class=num failed}%s\t\t\t\n' "$n_pairs" "$ototal" "$opwt" "$okyt" "$ocrt" "$oott"

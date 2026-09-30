@@ -46,6 +46,12 @@ known_names() {   # $1 marker  $2 transfer .rpt — emits "marker<TAB>name" line
     [ -f "$2" ] || return 0
     awk -F'\t' -v M="$1" '$1=="TABLE"{t++; if(t>1)exit} t==1&&$1=="ROW"{print M "\t" $2}' "$2"
 }
+# + every CONFIGURED account (2026-09-30 audit S-01: an account with a detail
+# page but no transfer is absent from account.rpt and stayed unlinked)
+base_names() {   # $1 marker  $2 base cache — emits "marker<TAB>name" lines
+    [ -f "$2" ] || return 0
+    awk -F'\t' -v M="$1" '$1 != "" { print M "\t" $1 }' "$2"
+}
 LINK_AWK='
     function acctlink(t,   s) {
         if (t in kacct) return "@{alink=accounts/" t "}"
@@ -146,7 +152,7 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
             printf "Y\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", d, yi[d]+0, yx[d]+0, ys[d]+0, yp[d]+0, yf[d]+0, yo[d]+0, yt[d]+0 }
         printf "TOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", conns+0, np+0, na, ns, ndays, cin_t+0, cout_t+0, ts_t+0, tp_t+0, tf_t+0, to_t+0
     }
-' <(known_names KA "$TACCT") "$PARSED")
+' <(known_names KA "$TACCT"; base_names KA "$CONFIG_BASE/_accounts.tsv") "$PARSED")
 
 IFS=$'\t' read -r _ t_conn n_proto n_acct n_addr n_days t_in t_out t_ssh t_pesit t_ftp t_other <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 
@@ -216,7 +222,7 @@ addr_rows() {
 
     printf 'TABLE\tBy account\twide\n'
     printf 'HEAD\tAccount\tIn\tOut\tConnections\tProtocols\tAddresses\tFirst\tLast\n'
-    printf 'KIND\tmono\tnum\tnum\tnum\ttext\tnum\ttext\ttext\n'
+    printf 'KIND\tacct\tnum\tnum\tnum\ttext\tnum\ttext\ttext\n'
     printf 'RECALC\t-\ts1\ts2\ts0\t-\t-\t-\t-\n'
     acct_rows
     printf 'TOTAL\tTotal (%s account(s))\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t\t\t\t\n' "$n_acct" "$(nz "${t_in:-0}")" "$(nz "${t_out:-0}")" "$t_conn"

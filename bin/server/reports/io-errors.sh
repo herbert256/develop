@@ -145,8 +145,8 @@ agg=$(awk -F'\t' -v IOF="$TMP" -v FILES="$FILES" -v TRANSFERS="$TRANSFERS" \
     }
     FILENAME == FILES {
         if (!($11 in wantbase)) next
-        # sortkey SUBSEP coreid SUBSEP outcome SUBSEP site SUBSEP account SUBSEP login SUBSEP "date time"
-        FC[$11] = FC[$11] _US $6 SUBSEP $1 SUBSEP $2 SUBSEP $12 SUBSEP $3 SUBSEP $14 SUBSEP $4 " " $5
+        # sortkey SUBSEP coreid SUBSEP outcome SUBSEP site SUBSEP account SUBSEP login SUBSEP "date time" SUBSEP File colour (col 25)
+        FC[$11] = FC[$11] _US $6 SUBSEP $1 SUBSEP $2 SUBSEP $12 SUBSEP $3 SUBSEP $14 SUBSEP $4 " " $5 SUBSEP $25
         next
     }
     FILENAME == TRANSFERS {
@@ -159,13 +159,13 @@ agg=$(awk -F'\t' -v IOF="$TMP" -v FILES="$FILES" -v TRANSFERS="$TRANSFERS" \
         for (i = 1; i <= N; i++) {
             # the File in flight: the newest one starting at or before the
             # error, else the first one after it
-            cid = ""; oc = ""; site = ""; tdate = ""; bestb = ""; besta = ""
+            cid = ""; oc = ""; site = ""; tdate = ""; fcol = ""; bestb = ""; besta = ""
             if (L_base[i] in FC) {
                 n = split(substr(FC[L_base[i]], 2), C, _US)
                 for (j = 1; j <= n; j++) { split(C[j], f, SUBSEP)
                     if (f[1] <= L_sk[i]) { if (bestb == "" || f[1] > bestb) { bestb = f[1]; pick = C[j] } }
                     else if (bestb == "" && (besta == "" || f[1] < besta)) { besta = f[1]; pick = C[j] } }
-                split(pick, f, SUBSEP); cid = f[2]; oc = f[3]; site = f[4]; tdate = f[7]
+                split(pick, f, SUBSEP); cid = f[2]; oc = f[3]; site = f[4]; tdate = f[7]; fcol = f[8]
                 if (L_acct[i] == "" && f[5] != "") L_acct[i] = f[5]     # a path outside FlowManager: the File names the account
                 if (L_login[i] == "" && f[6] != "") L_login[i] = f[6]
             }
@@ -198,19 +198,29 @@ agg=$(awk -F'\t' -v IOF="$TMP" -v FILES="$FILES" -v TRANSFERS="$TRANSFERS" \
             fpre = ""
             if (cid != "" && (cid in FP)) fpre = "@{href=../files/" cid ".html}"   # a published File page only
             fcell = (fpre != "") ? fpre fcell : lit(fcell)
-            if (oc == "Failed" || oc == "Expired") scell = "@{class=failed}" oc
-            else if (oc != "") scell = "@{class=processed}" oc
+            # the outcome in the site words (2026-09-30 audit S-08): Error /
+            # OK, Waiting and Expired verbatim
+            if (oc == "Failed" || oc == "Expired") scell = "@{class=failed}" (oc == "Failed" ? "Error" : oc)
+            else if (oc != "") scell = "@{class=processed}" (oc == "Processed" ? "OK" : oc)
             else scell = "not logged"
-            printf "LIN\t%s\tROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:loglines=%s\n", L_sk[i], d, L_t[i], acct, login, site, fcell, \
+            # a line joined to a File tints by the FILE colour (the rule for
+            # every table of single Files, 2026-09-30 audit J-01 — the
+            # automatic server-page subscription tint read a failed File green);
+            # a line with no File keeps that subscription tint
+            rescell = (fcol ~ /^(green|orange|red)$/) ? "\t@data:res=" fcol : ""
+            printf "LIN\t%s\tROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:loglines=%s%s\n", L_sk[i], d, L_t[i], acct, login, site, fcell, \
                 (L_op[i] != "" ? L_op[i] : "-"), scell, (tdate != "" ? tdate : "-"), \
-                d " " L_t[i] "  " lvlname(L_lv[i]) " " compname(L_cp[i]) "  " L_msg[i]
+                d " " L_t[i] "  " lvlname(L_lv[i]) " " compname(L_cp[i]) "  " L_msg[i], rescell
         }
         for (k in F_n) { split(k, a, SUBSEP)
+            # the subscriptions: one link per name (@{alist=}, 2026-09-30
+            # audit S-07 — a plain clines list before)
+            sj = F_subs[k]; gsub(_US, ", ", sj); if (sj != "") sj = "@{alist=subscriptions}" sj
             bk = ""
             for (x in b_n) { split(x, y, SUBSEP); if (y[1] != a[1] || y[2] != a[2]) continue
                 bk = bk (bk == "" ? "" : ",") y[3] ":" b_n[x] ":" (b_err[x] + 0) ":" (b_ok[x] + 0) ":" (b_nl[x] + 0) }
             printf "FLD\t%s\t%d\t%s\tROW\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n", \
-                F_lsk[k], F_n[k], a[1], F_last[k], a[1], a[2], F_subs[k], \
+                F_lsk[k], F_n[k], a[1], F_last[k], a[1], a[2], sj, \
                 F_n[k], F_files[k] + 0, F_err[k] + 0, F_ok[k] + 0, F_nl[k] + 0, F_days[k], F_first[k], F_fold[k], bk, lastlines("F" SUBSEP k)
         }
         for (d in D_n) { ND++; printf "DAY\t%s\tROW\t%s\t%d\t%d\t%d\n", d, d, D_n[d], D_f[d], D_b[d] + 0 }
@@ -235,7 +245,7 @@ day_rows() { printf '%s\n' "$agg" | grep $'^DAY\t' | sort -t"$TAB" -k2,2 | cut -
 
     printf 'TABLE\tIO errors per folder\twide\n'
     printf 'HEAD\tLast\tAccount\tLogin\tSubscriptions\tIO errors\tFiles\tError\tOK\tNot logged\tDays\tFirst\tFolder\n'
-    printf 'KIND\ttext\tacct\tlogin\tclines\tnumfailed\tnum\tnumfailed\tnumprocessed\tnum\tnum\ttext\tmono\n'
+    printf 'KIND\ttext\tacct\tlogin\ttext\tnumfailed\tnum\tnumfailed\tnumprocessed\tnum\tnum\ttext\tmono\n'
     printf 'RECALC\t-\t-\t-\t-\ts0\tk\ts1\ts2\ts3\tc\t-\t-\n'
     [ "${n_lines:-0}" -gt 0 ] && fld_rows
     printf 'TOTAL\t@{colspan=4}Total (%s folder(s))\t@{class=num failed}%s\t%s\t@{class=num failed}%s\t@{class=num processed}%s\t%s\t%s\t\t\n' \

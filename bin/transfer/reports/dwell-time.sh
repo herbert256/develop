@@ -173,6 +173,10 @@ site_rows=$(printf '%s\n' "$agg" | grep $'^P\t' | LC_ALL=C sort -t"$(printf '\t'
 # ---- Inbound / Outbound gap per day (formerly inout-gap.sh, absorbed 2026-07):
 # gap = outbound start - (inbound start + inbound duration), single-leg-each
 # delivered Files only — the same wait measured per DAY with percentiles.
+# DELIVERED = the File outcome Processed from _files.tsv (2026-09-30 audit
+# T-02: two Processed legs alone let 124 Unknown Files in — Failed, they have
+# no movement — so this table counted 26921 against the 26808 of the dwell
+# tables above). The duplicate P50 column (= Median) went the same day.
 (
 
 awk -F'\t' '
@@ -193,11 +197,11 @@ awk -F'\t' '
             if (j - lo < hi - i) { if (lo < j) qsort(A, lo, j); lo = i }
             else                 { if (i < hi) qsort(A, i, hi); hi = j } } }
     function pct(A, n, P) { return A[int((n - 1) * P / 100 + 0.5) + 1] }   # nearest-rank over A[1..n]
-    # a CoreId group closes: keep it only when it is exactly 1 Inbound + 1
-    # Outbound, both Processed and both dated, then bank its gap under the
-    # inbound date.
+    # a CoreId group closes: keep it only when the File was DELIVERED and is
+    # exactly 1 Inbound + 1 Outbound, both Processed and both dated, then bank
+    # its gap under the inbound date.
     function flush(   istart, iend, ostart, gap, d) {
-        if (prev == "") return
+        if (prev == "" || !(prev in PROC)) return
         if (ni == 1 && no == 1 && ist == "Processed" && ost == "Processed" && ijdn != "" && ojdn != "") {
             istart = ijdn * 86400000 + hms(itm)
             iend   = istart + (idur + 0 > 0 ? idur + 0 : 0)
@@ -207,6 +211,8 @@ awk -F'\t' '
             if (d ~ /^[0-9][0-9][0-9][0-9]-/) { dc[d]++; DV[d SUBSEP dc[d]] = gap; ALL[++AN] = gap }
         }
     }
+    FNR == 1 { fno++ }
+    fno == 1 { if ($2 == "Processed") PROC[$1] = 1; next }   # _files.tsv: the delivered Files
     {
         if ($1 != prev) { flush(); prev = $1; ni = 0; no = 0; ist = ""; ost = ""; ijdn = ""; ojdn = "" }
         if ($2 == "Inbound")       { ni++; ijdn = $14; itm = $12; idur = $15; ist = $3; idate = $11 }
@@ -219,20 +225,22 @@ awk -F'\t' '
 
         if (AN > 0) { for (k = 1; k <= AN; k++) O[k] = ALL[k]; qsort(O, 1, AN)
             gmin = hd(O[1]); gmed = hd(pct(O,AN,50)); gmax = hd(O[AN])
-            g25 = hd(pct(O,AN,25)); g50 = hd(pct(O,AN,50)); g75 = hd(pct(O,AN,75)); g95 = hd(pct(O,AN,95)); g99 = hd(pct(O,AN,99)) }
-        else { gmin = gmed = gmax = g25 = g50 = g75 = g95 = g99 = "-" }
+            g25 = hd(pct(O,AN,25)); g75 = hd(pct(O,AN,75)); g95 = hd(pct(O,AN,95)); g99 = hd(pct(O,AN,99)) }
+        else { gmin = gmed = gmax = g25 = g75 = g95 = g99 = "-" }
 
 
-        print "TABLE\tGap per day\twide\ttotaltop\tnoagg=2,3,4,5,6,7,8,9"
-        print "HEAD\tDate\tFiles\tMin\tMedian\tMax\tP25\tP50\tP75\tP95\tP99"
-        print "KIND\ttext\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum"
-        printf "TOTAL\tOverall (%d days)\t@{class=num}%d\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\n", nd, AN, gmin, gmed, gmax, g25, g50, g75, g95, g99
+        # noagg = every duration column (0-based; P99 was left out until
+        # 2026-09-30, so a searched total summed it)
+        print "TABLE\tGap per day\twide\ttotaltop\tnoagg=2,3,4,5,6,7,8"
+        print "HEAD\tDate\tFiles\tMin\tMedian\tMax\tP25\tP75\tP95\tP99"
+        print "KIND\ttext\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum"
+        printf "TOTAL\tOverall (%d days)\t@{class=num}%d\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\n", nd, AN, gmin, gmed, gmax, g25, g75, g95, g99
         for (i = 1; i <= nd; i++) { d = days[i]; n = dc[d]
             for (k = 1; k <= n; k++) T[k] = DV[d SUBSEP k]; qsort(T, 1, n)
-            printf "ROW\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", d, n, hd(T[1]), hd(pct(T,n,50)), hd(T[n]), hd(pct(T,n,25)), hd(pct(T,n,50)), hd(pct(T,n,75)), hd(pct(T,n,95)), hd(pct(T,n,99)) }
+            printf "ROW\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", d, n, hd(T[1]), hd(pct(T,n,50)), hd(T[n]), hd(pct(T,n,25)), hd(pct(T,n,75)), hd(pct(T,n,95)), hd(pct(T,n,99)) }
 
     }
-' "$PARSED" >> "$OUT.tmp"
+' "$FILES" "$PARSED" >> "$OUT.tmp"
 
 )
 

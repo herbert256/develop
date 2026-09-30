@@ -47,12 +47,9 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # One pass over _files.tsv per subscription. A single OK File (Processed or
 # Waiting) disqualifies the subscription. Emits pipe-separated lines (the
 # drill lists carry no pipes):
-#   S|site|files|failed|expired|first|firstjd|last|lastjd|bytes|faildrill
+#   S|site|files|first|firstjd|lastjd
 #   TOT|sites|onlyred|maxdate|maxjd
 agg=$(awk -F'\t' '
-    function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
-        while (v >= 1024 && i < 6) { v /= 1024; i++ }
-        return (i == 1) ? sprintf("%d %s", v, u[i]) : sprintf("%.2f %s", v, u[i]) }
     $12 == "" || $12 == "Unknown" || $4 == "" { next }   # "Unknown" = no subscription (2026-09-29)
     {
         s = $12
@@ -60,10 +57,8 @@ agg=$(awk -F'\t' '
         cnt[s]++
         if ($7 + 0 > maxjd) { maxjd = $7 + 0; maxdate = $4 }
         if ($2 == "Failed" || $2 == "Expired") {
-            if ($2 == "Failed") nf[s]++; else nx[s]++
-            by[s] += $8
             if (fk[s] == "" || $6 < fk[s]) { fk[s] = $6; fd[s] = $4 " " substr($5, 1, 8); fj[s] = $7 + 0 }
-            if ($6 > lk[s])                { lk[s] = $6; ld[s] = $4 " " substr($5, 1, 8); lj[s] = $7 + 0 }
+            if ($6 > lk[s])                { lk[s] = $6; lj[s] = $7 + 0 }
         } else {
             okc[s]++
         }
@@ -72,8 +67,11 @@ agg=$(awk -F'\t' '
         for (i = 1; i <= ns; i++) { s = ord[i]
             if (okc[s] + 0 > 0) continue
             nor++
-            printf "S|%s|%d|%d|%d|%s|%d|%s|%d|%s\n", s, cnt[s], nf[s] + 0, nx[s] + 0, \
-                fd[s], fj[s], ld[s], lj[s], human(by[s] + 0)   # (its Error drill list went 2026-09-29 with the page)
+            # (its Error drill list went 2026-09-29 with the page; the Failed /
+            # Expired / Last failure / Volume columns 2026-09-30 — no reader:
+            # failed.sh takes Files + Days failing, the day pages the First
+            # failure, the box-reason producer the name)
+            printf "S|%s|%d|%s|%d|%d\n", s, cnt[s], fd[s], fj[s], lj[s]
         }
         printf "TOT|%d|%d|%s|%d\n", ns + 0, nor + 0, maxdate, maxjd
     }
@@ -91,27 +89,27 @@ n_rows=0
 {
     printf 'TITLE\tOnly red\n'
     printf 'TABLE\tSubscriptions with only Error Files\twide\tnofilter\n'
-    printf 'HEAD\tSubscription\tFiles\tFailed\tExpired\tFirst failure\tLast failure\tDays failing\tVolume\n'
-    printf 'KIND\tsite\tnumfailed\tnum\tnum\ttext\ttext\tnum\tnum\n'
+    printf 'HEAD\tSubscription\tFiles\tFirst failure\tDays failing\n'
+    printf 'KIND\tsite\tnumfailed\ttext\tnum\n'
     # Most recent failure first — the still-actively-failing flows top the list.
     # Printed straight into the report, no per-row command substitution.
-    while IFS='|' read -r _ site fcnt nfail nexp first firstjd last lastjd vol; do
+    while IFS='|' read -r _ site fcnt first firstjd lastjd; do
         [ -z "$site" ] && continue
         # to the last day, exclusive — the From green to red "Days red" and
         # the Triage / Open incidents rule (2026-09-29 fix: this page counted
         # both ends and read one day more for the same run)
         days=$(( max_jd - firstjd ))
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-            "$site" "$fcnt" "$nfail" "$nexp" "$first" "$last" "$days" "$vol"
+        printf 'ROW\t%s\t%s\t%s\t%s\n' \
+            "$site" "$fcnt" "$first" "$days"
         n_rows=$((n_rows + 1))
-    done <<< "$(printf '%s\n' "$agg" | grep '^S|' | LC_ALL=C sort -t'|' -k9,9nr -k2,2)"
+    done <<< "$(printf '%s\n' "$agg" | grep '^S|' | LC_ALL=C sort -t'|' -k6,6nr -k2,2)"
     # the empty-state row ends its line like every other (2026-09-28 fix: it
     # used to run into the next NOTE/TOTAL line, rendering that text as a cell)
     if [ "$n_rows" -eq 0 ]; then
-        printf 'ROW\t@{colspan=8}No subscription is only-red — every subscription with Files delivered at least one OK File in this window.\n'
+        printf 'ROW\t@{colspan=4}No subscription is only-red — every subscription with Files delivered at least one OK File in this window.\n'
     fi
     if [ "$n_onlyred" -gt 0 ]; then
-        printf 'TOTAL\tTotal (%s subscriptions)\t\t\t\t\t\t\t\n' "$n_onlyred"
+        printf 'TOTAL\tTotal (%s subscriptions)\t\t\t\n' "$n_onlyred"
     fi
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

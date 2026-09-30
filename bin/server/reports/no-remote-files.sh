@@ -194,7 +194,7 @@ day_rows() {
     sub_rows
     printf 'TOTAL\t@{colspan=2}Total (%s subscription(s))\t@{class=num warn}%s\t\t\n' "$n_sub" "$tot_polls"
 
-    printf 'TABLE\tPolls that found no file, per day\ttab=uc3\n'   # its own heading on the shared UC3 tab (2026-09-29: two tables read "Per day")
+    printf 'TABLE\tNever find a file — polls per day\ttab=uc3\n'   # its own heading on the shared UC3 tab (2026-09-29: two tables read "Per day"; "Polls that found no file, per day" until 2026-09-30 — it counts only the never-find-a-file flows, not every empty poll)
     printf 'HEAD\tDate\tPolls\tSubscriptions\n'
     printf 'KIND\ttext\tnumwarn\tnum\n'
     day_rows

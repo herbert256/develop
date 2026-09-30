@@ -36,7 +36,7 @@ done
 unset _u
 
 # ---- the per-subscription VERDICT fragments ---------------------------------
-# Every subscription detail page opens with the verdict its UCx status report
+# Every subscription detail page opens with the verdict its UC status tab
 # gives that flow, in prose. The status reports are the single source — this
 # only turns a row into a sentence — so a page and its report cannot disagree.
 # They are SERVER reports, produced in the report stage; this publish runs after
@@ -61,7 +61,7 @@ if [ ${#UCRPT[@]} -gt 0 ] && [ -s "$_vsm" ]; then
         case $_vuc in UC[1-4]) continue ;; UC[0-9]*) ;; *) continue ;; esac   # UC1-4 have status verdicts; the relay text would contradict itself
         _vh=$(uc_meta "$_vuc" | cut -f5)
         [ -n "$_vh" ] || continue
-        printf 'INTRO\t**%s** — %s. This is a RELAY use case, which the four **UCx status** reports do not cover (they classify UC1-UC4), so there is no one-word verdict for it: the tables below are the whole picture.\n' \
+        printf 'INTRO\t**%s** — %s. This is a RELAY use case, which the **UC status** report does not cover (its tabs classify UC1–UC4), so there is no one-word verdict for it: the tables below are the whole picture.\n' \
             "$_vuc" "$_vh" > "$VERDICT_DIR/$_vs.txt"
     done < "$_vsm"
     unset _vn _vs _vuc _vh
@@ -104,7 +104,7 @@ render_details() {   # $1 subdir (accounts|subscriptions)  $2 index title
         f=${_files[$i]}
         [ -e "$f" ] || continue
         base=${f##*/}; base=${base%.rpt}
-        # Subscriptions open with their UCx status verdict, spliced in right
+        # Subscriptions open with their UC status verdict, spliced in right
         # after TITLE so it renders under the <h1>, above every table — the same
         # slot the errors-after-last-transfer banner uses.
         vf=""; [ "$sub" = subscriptions ] && [ -n "$VERDICT_DIR" ] && vf="$VERDICT_DIR/$base.txt"

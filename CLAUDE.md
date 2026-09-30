@@ -1204,9 +1204,12 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
 ### The page families (details in ARCHITECTURE.md)
 
 - **The home page** (`bin/build/publish.sh`): the two status tables — every cell opens the
-  Entities view whose row count IS that figure (Entity · Total · Seen · OK · Error · Warning ·
-  Ok; no scope switch since 2026-09-27); `check_status_consistency`
-  verifies each figure; the SEEN figures come from `home.rpt`. The per-day figures are ONE
+  Entities view whose row count IS that figure (Entity · Total · Seen % · OK % · Error · Warning ·
+  Ok; the percentages tight "71%" since 2026-09-30; no scope switch since 2026-09-27) — EXCEPT
+  the Logical / Partners / Domains / Applications / BL rows' Entity LABEL, which opens the
+  configured list `coverage/<member>-configured.html` (2026-09-30, user request: Entity and
+  Total switched — Total opens `<e>-all` like every row); `check_status_consistency`
+  verifies each figure and pairs each label-linked coverage page with its row's Total; the SEEN figures come from `home.rpt`. The per-day figures are ONE
   "Per day" table (`write_home_block`; 2026-08-31, user request — the 2026-08 five-table flex
   row is retired): a `gband` banner over a shared Date column (its cells link the day page), then
   two groups separated by SPACER columns (`th/td.spc`; report.js `syncGroups` keeps the spacers
@@ -1640,6 +1643,46 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   PRNG draw (gen-events.awk), so Resubmission outcomes and Test connections have rows; verify.sh
   asserts both.
 - The home per-day table's thousands DOT (`dotify_v`) is house style, on purpose.
+
+## Rules from the 2026-09-30 audit (user request: "extreme deep analyse & audit … every .rpt file and every field … rows colored the right way … cells linked the right way")
+
+Six read-only auditors (rpt/field usage, transfer, server + analyses, detail/day/home, layout,
+front end) then four fix workers with disjoint files. The rules it left:
+
+- **Pageless producers write only what their readers take** (again): `from-green-to-red.rpt` =
+  Subscription · Last green day · Went red on · Days red · Consecutive failures; `only-red.rpt` =
+  Subscription · Files · First failure · Days failing (failed.sh reads 2/3/5, day pages 4);
+  `went-kaput.rpt` = Subscription · Latest error (day pages read field 3). A reader that takes a
+  field by NUMBER names the column in a comment — a column change silently drops a link.
+- **Every row tints by the ENTITY's result colour** (Partner scorecard, Blast radius, Application
+  dependencies included — their metric colours its own CELL: Score, Sole endpoint for, Pairs at
+  100% Error). A Files table keeps the File colour.
+- **Every entity name links its detail page** wherever it appears — Top-5 cards (day pages +
+  Overview; TOP field 7 / TOPDATA field 4 carry the slug, report.js keeps the links on a From/To
+  change), server By-account / Remote-host columns (KIND `acct` / `host`, the known set includes
+  `base/_accounts.tsv`), Configured accounts (`_acc_links` pass), name lists (`@{alist=SUB}`),
+  File-page IPv4 hosts (`incoming_connections/<ip>`), Entity Search Whitelist rows (the address
+  page when it exists).
+- **Labels**: "OK transfers" where a Transfers count is OK legs only (Protocol, Security
+  Parameters); Month stats / Subscriptions page "Files · Error · Resubmit Ok"; KPI labels
+  "Files / File error rate / Volume / Server records / Server error rate" on BOTH dashboards
+  (report.js `kmap` in step); Direction values lowercase with "→" ("in → out"); "both", never
+  "two-way"; percentages "12.3%" with the sign; the Cross References tabs and titles use the
+  Entities labels (Accounts, Logins, …); coverage page titles the home Entity labels; File pages
+  of a CoreId are titled "File: <name>" with a Reason row (only the subscription-named pages keep
+  "Failed subscription: …" — the evidence pass reads the facts-table Subscription row, never the
+  TITLE); incoming-connection pages "Incoming connection: <ip>".
+- **Durations / counts follow scope**: the dwell Gap per day = Processed Files only; Hour ×
+  weekday and the anomaly Files spike / drop count OK Files; Application dependencies totals are
+  DISTINCT (noagg); Security Parameters value counts skip Unknown legs so a value equals its
+  value page's Total; Recovered files / Retries / One-legged per-subscription tables skip Unknown.
+- **A per-DAY cell never links a full-period page** (Top view Waiting / Expired day cells are
+  plain; the TOTAL keeps the link); a day-page line links a page that can narrow to that day
+  (Files in error → failed-files with `axway_date`, One-legged → `pirates-per-day`).
+- **No one-tab tab rows** (episodes renders as `transfer/episodes.html`); no report-page prose —
+  the Monitor INTRO went (help page); help pages load style.css with `?v=`.
+- **Detail pages**: the Waiting/Expired summary is HELD and rendered after the Features block
+  (`we_table`), so the section order does not depend on whether an entity has such Files.
 
 ## Rules from the 2026-09-29 Errors / Unknown change (user request)
 

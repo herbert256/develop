@@ -57,7 +57,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 ENTS="acct login site host lgc ptn app dom bl"
 
 ent_rpt()   { case $1 in acct) echo cross-account;; login) echo cross-login;; site) echo cross-subscription;; host) echo cross-host;; lgc) echo cross-logical;; ptn) echo cross-partner;; app) echo cross-application;; dom) echo cross-domain;; bl) echo cross-bl;; esac }
-ent_tab()   { case $1 in acct) echo "Account";; login) echo "Login";; site) echo "Subscriptions";; host) echo "Hosts";; lgc) echo "Logical";; ptn) echo "Partners";; app) echo "Applications";; dom) echo "Domains";; bl) echo "BL";; esac }
+ent_tab()   { case $1 in acct) echo "Accounts";; login) echo "Logins";; site) echo "Subscriptions";; host) echo "Hosts";; lgc) echo "Logical";; ptn) echo "Partners";; app) echo "Applications";; dom) echo "Domains";; bl) echo "BL";; esac }
 ent_col()   { case $1 in acct) echo "Account";; login) echo "Login";; site) echo "Subscription";; host) echo "Remote Host";; lgc) echo "Logical";; ptn) echo "Partner";; app) echo "Application";; dom) echo "Domain";; bl) echo "BL";; esac }
 ent_kind()  { case $1 in acct) echo acct;; login) echo login;; site) echo site;; host) echo host;; lgc) echo lgc;; ptn) echo ptn;; app) echo app;; dom) echo dom;; bl) echo bl;; esac }   # every entity type links to its detail pages
 ent_xref()  { case $1 in acct) echo accounts;; login) echo logins;; site) echo subscriptions;; host) echo hosts;; lgc) echo logicals;; ptn) echo partners;; app) echo apps;; dom) echo domains;; bl) echo bl;; esac }   # data/flow-manager/xref item names
@@ -128,11 +128,11 @@ agg=$(awk -F'\t' "${SP_AWK_V[@]}" "$SP_AWK"'
 # functions above stay as the single source of the per-entity attributes;
 # they are called ONCE per entity here, hoisted into the parallel tables the
 # bash assembly loop and the awk passes below receive.
-RPT_ARR=(); COL_ARR=()
+RPT_ARR=()
 XREFS=""; KINDS=""; BASES=""; TABS=""; COLS=""; UNKS=""
 for e in $ENTS; do
     c=$(ent_col "$e")
-    RPT_ARR+=("$(ent_rpt "$e")"); COL_ARR+=("$c")
+    RPT_ARR+=("$(ent_rpt "$e")")
     XREFS="$XREFS $(ent_xref "$e")"; KINDS="$KINDS $(ent_kind "$e")"
     BASES="$BASES $(ent_base "$e")"
     TABS="$TABS|$(ent_tab "$e")"; COLS="$COLS|$c"; UNKS="$UNKS|$(ent_unk "$e")"
@@ -220,7 +220,7 @@ printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' -v XD="$CONFIG_XREF" -v XREFS="$XR
     function tint(e, v,   r, k) { k = toupper(v); r = ((e, k) in R) ? R[e, k] : ""
         if (r == "" && ((e, k) in U)) r = "red"
         return pfx(r) }
-    NF { n = ++cnt[$1, $2]; rows[$1, $2, n] = "ROW\t" tint($1, $4) $4 "\t" tint($2, $5) $5 "\t@data:seen=" $3 }
+    NF { n = ++cnt[$1, $2]; rows[$1, $2, n] = "ROW\t" tint($1, $4) $4 "\t" tint($2, $5) $5 }   # (the @data:seen flag went 2026-09-30: the cross tables are not seenrows, the renderer dropped it)
     END {   # fixed ENTS-order iteration — never awk hash order
         for (x = 1; x <= ne; x++) {
             out = TMP "/tables-" E[x]
@@ -241,9 +241,9 @@ printf '%s\n' "$agg" | awk -F'\t' -v OFS='\t' -v XD="$CONFIG_XREF" -v XREFS="$XR
 count=0
 for x in $ENTS; do
     OUT="$REPORTS_DIR/${RPT_ARR[$count]}.rpt"
-    xcol=${COL_ARR[$count]}
+    xtab=$(ent_tab "$x")   # the Entities label (2026-09-30: the column header "Remote Host" before)
     {
-        printf 'TITLE\tCross Reference: %s\n' "$xcol"
+        printf 'TITLE\tCross Reference: %s\n' "$xtab"
         cat "$TMP/tables-$x"
         printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

@@ -21,7 +21,9 @@
 # Rows tint by the SUBSCRIPTION's result colour (2026-09-14, user request: the
 # standard subscription colours) — restint + @data:res from base/
 # _subscriptions.tsv col 3 (green / orange / red), the failed.sh rule;
-# a name the configuration lacks stays untinted.
+# a File with no subscription colour (the "Unknown" subscription, a name the
+# configuration lacks) takes its OWN colour, _files.tsv col 25 (2026-09-30
+# audit: those rows were the only untinted ones).
 #
 # Runs after the transfer pool (bin/transfer/reports.sh, serial tail — the
 # pool's failed.sh has finished) and again in bin/build.sh right after the
@@ -71,6 +73,7 @@ agg=$(LC_ALL=C awk -F'\t' -v REAS="$REAS" -v PAGES="$pages" -v SUBRES="$SUBRES" 
         if (r == "") r = "-"
         if (cid in PG) r = "@{href=../files/" cid ".html}" r
         res = SRES[toupper($12)]
+        if (res != "green" && res != "orange" && res != "red") res = $25
         tint = (res == "green" || res == "orange" || res == "red") ? "\t@data:res=" res : ""
         printf "%s\tROW\t%s\t%s %s\t%s\t@{class=mono}%s\t%s%s\n", $6, $12, $4, $5, r, cid, lit($11), tint
         n++

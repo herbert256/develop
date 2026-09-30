@@ -47,12 +47,13 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # A day "ends green" when its last File that day is OK; the day-end states are
 # recorded when the date changes, so the final (red) day never registers as a
 # green day. Emits pipe-separated (drill lists carry no pipes):
-#   S|site|greenday|flipmoment|daysred|run|ok|fails|files|faildrill|okdrill
+#   S|site|greenday|flipmoment|daysred|run
 #   TOT|sites|red|flipped|maxdate
 agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' '
     # (the Error / OK drill lists went 2026-09-29: the page is gone and its
     # readers — failed.sh, the day pages, the box-reason producer — take the
-    # name and the red-run columns only)
+    # name and the red-run columns only; the OK Files / Files columns went
+    # 2026-09-30 for the same reason — ok still decides Only red below)
     function flush() {
         if (site == "") return
         nsites++
@@ -65,22 +66,21 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' '
             if (ok == 0) nnever++
             if (greenday != "") {
                 nflip++
-                L[nflip] = site "|" greenday "|" tailsince "|" tailjd "|" run "|" ok "|" fails "|" fcnt
+                L[nflip] = site "|" greenday "|" tailsince "|" tailjd "|" run
             }
         }
     }
     $12 == "" || $12 == "Unknown" || $4 == "" { next }   # "Unknown" = no subscription (2026-09-29)
     {
         if ($12 != site) { flush()
-            site = $12; fcnt=0; ok=0; fails=0; run=0
+            site = $12; ok=0; run=0
             day=""; dayok=0; greenday=""; tailsince=""; tailjd=0; lastfail=0 }
         if ($4 != day) { if (day != "" && dayok) greenday = day; day = $4 }
-        fcnt++
         if ($7 + 0 > maxjd) { maxjd = $7 + 0; maxdate = $4 }
         if ($2 != "Failed" && $2 != "Expired") {
             ok++; run = 0; dayok = 1; lastfail = 0
         } else {
-            fails++; dayok = 0; lastfail = 1
+            dayok = 0; lastfail = 1
             if (run == 0) { tailsince = $4 " " substr($5, 1, 8); tailjd = $7 + 0 }
             run++
         }
@@ -89,7 +89,7 @@ agg=$(LC_ALL=C sort -t"$(printf '\t')" -k12,12 -k6,6 "$FILES" | awk -F'\t' '
         flush()
         for (i = 1; i <= nflip; i++) {
             split(L[i], f, "|")
-            printf "S|%s|%s|%s|%d|%s|%s|%s|%s\n", f[1], f[2], f[3], maxjd - f[4], f[5], f[6], f[7], f[8]
+            printf "S|%s|%s|%s|%d|%s\n", f[1], f[2], f[3], maxjd - f[4], f[5]
         }
         printf "TOT|%d|%d|%d|%s|%d\n", nsites+0, nred+0, nflip+0, maxdate, nnever+0
     }
@@ -106,23 +106,23 @@ n_rows=0
 {
     printf 'TITLE\tFrom green to red\n'
     printf 'TABLE\tSubscriptions now red that were green before\twide\tnofilter\n'
-    printf 'HEAD\tSubscription\tLast green day\tWent red on\tDays red\tConsecutive failures\tOK Files\tFiles\n'
-    printf 'KIND\tsite\ttext\ttext\tnum\tnumfailed\tnumprocessed\tnum\n'
+    printf 'HEAD\tSubscription\tLast green day\tWent red on\tDays red\tConsecutive failures\n'
+    printf 'KIND\tsite\ttext\ttext\tnum\tnumfailed\n'
     # Newest flips first (the freshest regressions are the actionable ones),
     # printed straight into the report — no per-row command substitution.
-    while IFS='|' read -r _ site greenday flip daysred run ok fails fcnt; do
+    while IFS='|' read -r _ site greenday flip daysred run; do
         [ -z "$site" ] && continue
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-            "$site" "$greenday" "$flip" "$daysred" "$run" "$ok" "$fcnt"
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\n' \
+            "$site" "$greenday" "$flip" "$daysred" "$run"
         n_rows=$((n_rows + 1))
     done <<< "$(printf '%s\n' "$agg" | grep '^S|' | LC_ALL=C sort -t'|' -k4,4r -k2,2)"
     # the empty-state row ends its line like every other (2026-09-28 fix: it
     # used to run into the next NOTE/TOTAL line, rendering that text as a cell)
     if [ "$n_rows" -eq 0 ]; then
-        printf 'ROW\t@{colspan=7}No subscription flipped from green to red — every currently-red subscription has never delivered an OK File (the Only red view lists those).\n'
+        printf 'ROW\t@{colspan=5}No subscription flipped from green to red — every currently-red subscription has never delivered an OK File (the Only red view lists those).\n'
     fi
     if [ "$n_flip" -gt 0 ]; then
-        printf 'TOTAL\tTotal (%s subscriptions)\t\t\t\t\t\t\n' "$n_flip"
+        printf 'TOTAL\tTotal (%s subscriptions)\t\t\t\t\n' "$n_flip"
     fi
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

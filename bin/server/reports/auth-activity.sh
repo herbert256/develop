@@ -35,6 +35,12 @@ known_names() {   # $1 marker  $2 transfer .rpt — emits "marker<TAB>name" line
     [ -f "$2" ] || return 0
     awk -F'\t' -v M="$1" '$1=="TABLE"{t++; if(t>1)exit} t==1&&$1=="ROW"{print M "\t" $2}' "$2"
 }
+# + every CONFIGURED account (2026-09-30 audit S-01: an account with a detail
+# page but no transfer is absent from account.rpt and stayed unlinked)
+base_names() {   # $1 marker  $2 base cache — emits "marker<TAB>name" lines
+    [ -f "$2" ] || return 0
+    awk -F'\t' -v M="$1" '$1 != "" { print M "\t" $1 }' "$2"
+}
 # LINK_AWK — acctlink() returns the @{alink=…} cell prefix (resolved through
 # the slugmap at render time) for a known account (exact, also @endpoint-stripped), or "" when unresolved.
 LINK_AWK='
@@ -128,7 +134,7 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
         for (x in al9) { split(x, a9, SUBSEP); printf "AL\t%s\t%s\t%d\n", a9[1], a9[2], al9[x] }   # hash order — the shell sorts the sidecar
         printf "TOT\t%d\t%d\t%d\n", tot+0, naccts+0, nips+0
     }
-' <(known_names KA "$TACCT") "$PARSED")
+' <(known_names KA "$TACCT"; base_names KA "$CONFIG_BASE/_accounts.tsv") "$PARSED")
 
 # the per-(account, login) sidecar (see the AL comment above): account <TAB>
 # login <TAB> successful logons. Sorted (never awk hash order), atomic.
@@ -179,7 +185,7 @@ cert_rows() {
 
     printf 'TABLE\tBy account\n'
     printf 'HEAD\tAccount\tLogins\tSource IPs\tFirst seen\tLast seen\n'
-    printf 'KIND\tmono\tnum\tnum\ttext\ttext\n'
+    printf 'KIND\tacct\tnum\tnum\ttext\ttext\n'
     printf 'RECALC\t-\ts0\t-\t-\t-\n'
     acct_rows
     printf 'TOTAL\tTotal (%s account(s))\t@{class=num}%s\t\t\t\n' "$naccts" "$tot"

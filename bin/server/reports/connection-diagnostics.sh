@@ -217,7 +217,7 @@ fp_rows() {
 
     printf 'TABLE\tBy remote host\twide\n'
     printf 'HEAD\tRemote host\tFailures\tTop reason\tFirst seen\tLast seen\n'
-    printf 'KIND\tmono\tnumfailed\ttext\ttext\ttext\n'
+    printf 'KIND\thost\tnumfailed\ttext\ttext\ttext\n'
     printf 'RECALC\t-\ts0\t-\t-\t-\n'
     host_rows
     printf 'TOTAL\tTotal (%s host(s))\t@{class=num failed}%s\t\t\t\n' "$n_host" "$t_fail"

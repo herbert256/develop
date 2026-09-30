@@ -39,7 +39,10 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         tl++; if (pf) tf++; else tp++
         if (!($1 in seenc)) { seenc[$1] = 1; tcid++ }
         if (d != "") { dl[d]++; df[d] += pf; dp[d] += (!pf); if (!((d SUBSEP $1) in dc)) { dc[d SUBSEP $1] = 1; dcid[d]++ } }
-        s = ($6 == "") ? "(no subscription)" : $6
+        # "Unknown" (or blank) = no subscription (2026-09-30 audit T-05): in
+        # the per-day table and the SUMMARY, never a Per subscription row
+        if ($6 == "" || $6 == "Unknown") next
+        s = $6
         sl[s]++; if (!((s SUBSEP $1) in sc)) { sc[s SUBSEP $1] = 1; scid[s]++ }
         if (d != "") { sdl[s SUBSEP d]++
             if (!(s in sfirst) || d < sfirst[s]) sfirst[s] = d
@@ -51,12 +54,13 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         for (s in sl) {
             bk = ""; for (k in sdl) { split(k, a2, SUBSEP); if (a2[1] == s) bk = bk (bk ? "," : "") a2[2] ":" sdl[k] }
             printf "SUB|%08d|%s|%d|%d|%s|%s|%s|%s\n", sl[s], s, sl[s], scid[s], sfirst[s], slast[s], bk, buildlist(top["S" SUBSEP s])
+            stl += sl[s]; stf += scid[s]   # the Per subscription TOTAL = its rows
         }
-        printf "TOT|%d|%d|%d|%d\n", tl+0, tf+0, tp+0, tcid+0
+        printf "TOT|%d|%d|%d|%d|%d|%d\n", tl+0, tf+0, tp+0, tcid+0, stl+0, stf+0
     }
 ' "$PARSED")
 
-IFS='|' read -r _ tot_legs tot_failed tot_processed tot_files <<< "$(printf '%s\n' "$agg" | grep '^TOT|' || printf 'TOT|0|0|0|0\n')"
+IFS='|' read -r _ tot_legs tot_failed tot_processed tot_files sub_legs sub_files <<< "$(printf '%s\n' "$agg" | grep '^TOT|' || printf 'TOT|0|0|0|0|0|0\n')"
 
 emptym=""
 if [ "$tot_legs" = 0 ]; then emptym=1; fi
@@ -129,7 +133,7 @@ IFS='|' read -r _ srv_err srv_ok srv_peakd srv_peakn srv_okfirst <<< "$(printf '
             printf 'ROW\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids=%s\n' "$s" "$legs" "$cid" "$first" "$last" "$bk" "$dr"
         done <<< "$(printf '%s\n' "$agg" | grep '^SUB|' | sort -t'|' -k2,2r)"
     fi
-    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}%s\t\t\n' "$tot_legs" "$tot_files"
+    printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}%s\t\t\n' "$sub_legs" "$sub_files"
 
     # ---- table 3: the server log's own resubmission trail (2026-08) ----
     if [ "${srv_err:-0}" -gt 0 ] || [ "${srv_ok:-0}" -gt 0 ]; then

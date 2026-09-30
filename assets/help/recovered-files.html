@@ -17,25 +17,25 @@
 <h1>Retries &amp; resubmissions &rsaquo; Recovered files</h1>
 <h2>What it shows</h2>
 <ul>
-<li>A <strong>recovered File</strong> carried at least one failed leg and still finished OK. Eight boxes: <strong>Recovered Files</strong>, <strong>Automatic</strong>, <strong>Manual</strong>, their share <strong>of all Files</strong>, <strong>Failed legs healed</strong>, and the <strong>Subscriptions</strong>, <strong>Protocols</strong> and <strong>Days</strong> involved.</li>
+<li>A <strong>recovered File</strong> carried at least one failed leg and still finished OK. The boxes: Recovered Files, Automatic, Manual, share of all Files, Failed legs healed, and the Subscriptions, Protocols and Days involved.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Per subscription</strong> &mdash; <strong>Recovered</strong> = <strong>Automatic</strong> + <strong>Manual</strong>; <strong>Files</strong> = all its Files; <strong>Recovered %</strong> = the share that needed a retry.</li>
+<li><strong>Per subscription</strong> &mdash; <strong>Recovered</strong> = <strong>Automatic</strong> + <strong>Manual</strong>; <strong>Files</strong> = all its Files; <strong>Recovered %</strong>. The <strong>Unknown</strong> subscription is left out (it counts in the boxes and the other tables).</li>
 <li><strong>Per protocol</strong> &mdash; the same split, plus <strong>Failed legs healed</strong> over all <strong>Failed legs</strong> of that protocol = <strong>Healed %</strong>, how often a failure there is transient.</li>
 <li><strong>Per day</strong> &mdash; <strong>Files</strong>, <strong>Recovered</strong>, <strong>Automatic</strong>, <strong>Manual</strong>, <strong>Share %</strong>; only days with a recovery; the Date opens the day page.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Automatic = a later leg delivered it without an operator (a platform retry, or a failed last leg the server log shows ended ok &mdash; a bookend-settled File); Manual = one of its legs carries the Resubmitted flag (an operator). They are the Transfer top view&rsquo;s Recovered Automatic / Manual and the home page&rsquo;s Cured.</li>
-<li>Orange File rows elsewhere cover MORE: every OK File with a failed leg (this page) <em>or</em> a resubmitted leg &mdash; a resubmitted File that never failed is orange but not Recovered.</li>
+<li>Automatic = no operator (a platform retry, or a bookend-settled File); Manual = a leg carries the Resubmitted flag. They are the Transfer top view&rsquo;s Recovered and the home page&rsquo;s Cured.</li>
+<li>Orange File rows elsewhere also cover a resubmitted File that never failed: orange, not Recovered.</li>
 <li>OK = Processed or Waiting. A File counts on its <strong>start day</strong>.</li>
-<li>Per protocol uses the <em>failed</em> leg&rsquo;s protocol; failed legs on two protocols count under each, while its Total row counts each File once, narrowed dates included.</li>
+<li>Per protocol uses the <em>failed</em> leg&rsquo;s protocol; failed legs on two protocols count under each, its Total once.</li>
 <li>A narrowed date range hides a subscription or protocol with no recovered File in it.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>A high Recovered % on a busy flow points at a flaky endpoint that succeeds on the second try. Click a row for its 10 most recent recovered Files.</li>
+<li>A high Recovered % on a busy flow points at a flaky endpoint. Click a row for its 10 newest recovered Files.</li>
 </ul>
 </main>
 </body>

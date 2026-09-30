@@ -72,11 +72,15 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         if(!((c SUBSEP p) in sp)){ sp[c SUBSEP p]=1; rp[p]++; rpd[p SUBSEP d]++
             if(!((d SUBSEP p) in pds)){ pds[d SUBSEP p]=1; pdl2[d] = pdl2[d] (pdl2[d] ? "|" : "") p }
             addtop("P" SUBSEP p, fsk[c], d " " ftm[c], c) }
-        if(!(c in rec)){ rec[c]=1; tR++
-            s=fsite[c]; rs[s]++; rsd[s SUBSEP d]++; rd[d]++
-            if(s in sidx) si=sidx[s]; else { si=++nsi; sidx[s]=si }   # compact id for the uniq payload
-            if(!((d SUBSEP si) in sds)){ sds[d SUBSEP si]=1; sdl[d] = sdl[d] (sdl[d] ? "|" : "") si }
-            addtop("S" SUBSEP s, fsk[c], d " " ftm[c], c)
+        if(!(c in rec)){ rec[c]=1; tR++; rd[d]++
+            s=fsite[c]
+            # "Unknown" = no subscription (2026-09-30 audit T-05): it counts in
+            # the STATs, the per-day and per-protocol tables, never in the Per
+            # subscription table (nor its Subscriptions STAT)
+            if(s!="Unknown"){ rs[s]++; rsd[s SUBSEP d]++
+                if(s in sidx) si=sidx[s]; else { si=++nsi; sidx[s]=si }   # compact id for the uniq payload
+                if(!((d SUBSEP si) in sds)){ sds[d SUBSEP si]=1; sdl[d] = sdl[d] (sdl[d] ? "|" : "") si }
+                addtop("S" SUBSEP s, fsk[c], d " " ftm[c], c) }
             addtop("D" SUBSEP d, fsk[c], d " " ftm[c], c) }
     }
     END {
@@ -85,7 +89,9 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         # per protocol, each with its per-day bucket twin
         for(c in rec){ s=fsite[c]; d=fday[c]
             if(c in rsb){ rsM[s]++; rsdM[s SUBSEP d]++; rdM[d]++; tM++; tMd[d]++ }
-            else        { rsA[s]++; rsdA[s SUBSEP d]++; rdA[d]++; tA++; tAd[d]++ } }
+            else        { rsA[s]++; rsdA[s SUBSEP d]++; rdA[d]++; tA++; tAd[d]++ }
+            # the Per subscription TOTAL: the rows it lists (no Unknown)
+            if(s!="Unknown"){ sR++; if(c in rsb) sM++; else sA++ } }
         for(k in sp){ split(k,a,SUBSEP); c=a[1]; p=a[2]; if(!(c in rec)) continue; d=fday[c]
             if(c in rsb){ rpM[p]++; rpdM[p SUBSEP d]++ } else { rpA[p]++; rpdA[p SUBSEP d]++ } }
         for(k in scd){ split(k,a,SUBSEP); if(a[1] in rs) sbk[a[1]] = sbk[a[1]] (sbk[a[1]] ? "," : "") a[2] ":" (rsd[k]+0) ":" (rsdA[k]+0) ":" (rsdM[k]+0) ":" scd[k] }
@@ -123,11 +129,11 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
             sbh = sbh (sbh ? "," : "") d ":" thld[d] }
         for(d in dayc){ sbs = sbs (sbs ? "," : "") d ":" dayc[d] ":" ((d in rd) ? rd[d] : 0) }
         printf "SBR|%s\nSBS|%s\nSBH|%s\nSBU|%s\nSBP|%s\nSBD|%s\nSBA|%s\nSBM|%s\n", sbr, sbs, sbh, sbu, sbp, sbd, sba, sbm
-        printf "TOT|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d\n", tR+0, tFC+0, thl+0, nsub+0, np+0, nd+0, sFC+0, pAF+0, pHL+0, dFC+0, tA+0, tM+0
+        printf "TOT|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d\n", tR+0, tFC+0, thl+0, nsub+0, np+0, nd+0, sFC+0, pAF+0, pHL+0, dFC+0, tA+0, tM+0, sR+0, sA+0, sM+0
     }
 ' "$FILES" "$PARSED")
 
-IFS='|' read -r _ tR tFC thl nsub nprot ndays sFC pAF pHL dFC tA tM \
+IFS='|' read -r _ tR tFC thl nsub nprot ndays sFC pAF pHL dFC tA tM sR sA sM \
     <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
 sba=$(printf '%s\n' "$agg" | sed -n 's/^SBA|//p')
 sbm=$(printf '%s\n' "$agg" | sed -n 's/^SBM|//p')
@@ -138,7 +144,7 @@ sbu=$(printf '%s\n' "$agg" | sed -n 's/^SBU|//p')
 sbp=$(printf '%s\n' "$agg" | sed -n 's/^SBP|//p')
 sbd=$(printf '%s\n' "$agg" | sed -n 's/^SBD|//p')
 oshare=$(awk -v r="$tR" -v n="$tFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }')
-sshare=$(awk -v r="$tR" -v n="$sFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }')
+sshare=$(awk -v r="$sR" -v n="$sFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }')
 hshare=$(awk -v r="$pHL" -v n="$pAF" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }')
 dshare=$(awk -v r="$tR" -v n="$dFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }')
 
@@ -164,7 +170,7 @@ dshare=$(awk -v r="$tR" -v n="$dFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }
     printf 'RECALC\t-\ts0\ts1\ts2\ts3\tp0.3\n'
     printf '%s\n' "$agg" | grep '^SUB|' | sort -t'|' -k3,3nr -k2,2 | awk -F'|' '
         $2 != "" { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s%%\t@data:buckets=%s\t@data:coreids=%s\n", $2, $3, ($4 > 0 ? $4 : ""), ($5 > 0 ? $5 : ""), $6, $7, $8, $9 }' || true
-    printf 'TOTAL\tTotal\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num}%s\t@{class=num}%s%%\n' "$tR" "$tA" "$tM" "$sFC" "$sshare"
+    printf 'TOTAL\tTotal\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num}%s\t@{class=num}%s%%\n' "$sR" "$sA" "$sM" "$sFC" "$sshare"
 
     printf 'TABLE\tPer protocol\tzerohide=0\ttab=recfiles\n'
     printf 'HEAD\tProtocol\tRecovered\tAutomatic\tManual\tFailed legs healed\tFailed legs\tHealed %%\n'

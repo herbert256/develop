@@ -4,7 +4,7 @@
 # (data/dashboards/reports/*.rpt, written by bin/dashboards/reports.sh) into
 # docs/dashboards/*.html: big-number KPI cards + inline-SVG charts.
 #
-# Each .rpt is one page: TITLE (html_head title) / H1 / INTRO + one KPI line
+# Each .rpt is one page: TITLE (html_head title) / H1 + one KPI line
 # per card (value, label, sub, accent, href) and one CARD line per chart
 # (title, sub, href, span, chart type, up to 7 chart args — CH_* color
 # tokens resolve here, so a palette change needs only a re-publish);
@@ -137,7 +137,7 @@ render_card() {   # $1 chart id  $2 title  $3 sub  $4 href  $5 span  $6 chart  $
 npages=0
 for rpt in "$DRPT"/*.rpt; do
     [ -f "$rpt" ] || continue
-    title=$(field1 TITLE "$rpt"); h1=$(field1 H1 "$rpt"); intro=$(field1 INTRO "$rpt")
+    title=$(field1 TITLE "$rpt"); h1=$(field1 H1 "$rpt")   # (no INTRO: the help page explains, 2026-09-30)
     page=$(field1 PAGE "$rpt"); foot=$(field1 FOOT "$rpt")
     base=${rpt##*/}; base=${base%.rpt}
     out="$DDIR/${page:-$base}.html"
@@ -195,9 +195,9 @@ for rpt in "$DRPT"/*.rpt; do
     # protocol, rendered by publish_lib's shared top_table into the same
     # .daytop grid — partners left, subscriptions right, one metric per row
     topcards=""
-    while IFS=$'\t' read -r _ tkind ttit tunit thref trows; do
+    while IFS=$'\t' read -r _ tkind ttit tunit thref trows tslugs; do
         [ -n "$trows" ] || continue
-        topcards+="$(top_table "$tkind" "$ttit" "$tunit" "$thref" "$trows")" || continue
+        topcards+="$(top_table "$tkind" "$ttit" "$tunit" "$thref" "$trows" "$tslugs")" || continue
     done < <(grep '^TOP'$'\t' "$rpt" || true)
     # the daily series -> the raw-text payload report.js setupDaytop reads
     # to follow the From/To range: TOPDATA lines (per entity — the Top 5
@@ -235,7 +235,6 @@ for rpt in "$DRPT"/*.rpt; do
         html_head "$title" "$CSSREL" "$OV_DATES" "" "$hslug" "dashboards" "" "" "slotchart.js"
         printf '<main class="dash">\n'
         printf '<h1>%s</h1>\n' "$h1"
-        [ -n "$intro" ] && printf '<p class="dash-intro">%s</p>\n' "$intro"
         if [ -n "$kpis" ]; then printf '<div class="kpi-row">%s</div>\n' "$kpis"; fi
         # the herotabs row must be the grid's IMMEDIATE previous sibling
         # (setupHeroToggle: grid = bar.nextElementSibling); button 0 = the

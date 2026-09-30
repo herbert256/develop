@@ -126,9 +126,9 @@ awk -F'\t' -v ROWS="$TMPD/score.pre" -v STATS="$TMPD/stats.tsv" -v SPMAP="$SP_MA
             else if (KT[p])       weak = "TLSv1.2 (" wpc ")"
             else                  weak = "-"
             hosts = (NH[p] + 0 > 0) ? NH[p] : ""
-            dir = (DI[p] && DO[p]) ? "two-way" : (DO[p] ? "out" : (DI[p] ? "in" : "-"))
+            dir = (DI[p] && DO[p]) ? "both" : (DO[p] ? "out" : (DI[p] ? "in" : "-"))   # "both" like the rest of the site (two-way until 2026-09-30)
             if (F[p] >= 100) { nsc++
-                printf "%03d\t%s\t%d\t%d\t%.1f\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\n", \
+                printf "%03d\t%s\t%d\t%d\t%.1f%%\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\n", \
                     sc, p, sc, F[p], errpct, trend, human(B[p]), wait, weak, hosts, dir, L[p], B[p] > ROWS
             }
         }
@@ -177,10 +177,17 @@ top1=$(sv top1); top3=$(sv top3); top10=$(sv top10); gini=$(sv gini)
     printf 'TABLE\tScorecard\twide\tnofilter\n'
     printf 'HEAD\tPartner\tScore\tFiles\tError %%\tTrend (14d)\tVolume\tAvg pickup wait\tWeakest security\tHosts\tDirection\tLast seen\n'
     printf 'KIND\tptn\tnum\tnum\tnum\ttext\tnum\ttext\ttext\tnum\ttext\ttext\n'
-    LC_ALL=C sort -t$'\t' -k1,1n -k2,2f "$TMPD/score.pre" | awk -F'\t' '{
-        res = ($3 + 0 < 40) ? "red" : ($3 + 0 < 70) ? "orange" : "green"
-        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s\n", \
-            $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, res }'
+    # the ROW tints by the partner RESULT (base/_partners.tsv, like every
+    # entity row on the site); the score BAND colours the Score cell only
+    # (2026-09-30 audit S-04: the band tinted the whole row, so a red partner
+    # read green here)
+    LC_ALL=C sort -t$'\t' -k1,1n -k2,2f "$TMPD/score.pre" | awk -F'\t' -v PB="$DATA/flow-manager/base/_partners.tsv" '
+        BEGIN { while ((getline l < PB) > 0) { split(l, a, "\t"); if (a[1] != "") R[toupper(a[1])] = a[3] } close(PB) }
+        {
+        band = ($3 + 0 < 40) ? "failed" : ($3 + 0 < 70) ? "warn" : "processed"
+        res = R[toupper($2)]
+        printf "ROW\t%s\t@{class=%s}%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\n", \
+            $2, band, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, (res != "" ? "\t@data:res=" res : "") }'
     awk -F'\t' '{ n++; f += $4; b += $13 }
         END { split("B KB MB GB TB PB", U, " "); i = 1; v = b + 0
             while (v >= 1024 && i < 6) { v /= 1024; i++ }

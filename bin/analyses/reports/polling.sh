@@ -189,14 +189,14 @@ agg=$(printf '%s\n' "$cron" | awk -F'\t' -v RPF="$_rp" -v USF="$_us" -v ACTF="$a
     # codes with their words as the hover title ("; "-joined — the cell attr
     # list splits on ",")
     function actcell(u, sk,   ak, c, n3, A3, W3, i3, o, t) {
-        if (index(u, "SWIFT") > 0) return "@{class=act,title=SWIFT: runs through CFT}CFT"
+        if (index(u, "SWIFT") > 0) return "@{title=SWIFT: runs through CFT}CFT"
         ak = (u in AN) ? u : ((sk != "" && (sk in AN)) ? sk : resolve(u, AU, nak, AN, 2))
-        if (ak == "") return "@{class=act}"
-        c = AC[ak]; if (c == "") return "@{class=act}Yes"
+        if (ak == "") return ""
+        c = AC[ak]; if (c == "") return "Yes"
         split("status Undeployed|status SAVED_NOT_DEPLOYED|schedule No|folder monitoring Inactive", W3, "|")
         n3 = split(c, A3, ","); o = ""; t = ""
         for (i3 = 1; i3 <= n3; i3++) { o = o (o == "" ? "" : ", ") A3[i3]; t = t (t == "" ? "" : "; ") A3[i3] " " W3[A3[i3] + 0] }
-        return "@{class=act,title=" t "}" o
+        return "@{title=" t "}" o
     }
     function emit(name, u, pk, lk, sk,   cronx, sched, obs, polls, empty, matched, pct, lst, starts, fails, why, ll, nm) {
         # UC3 ONLY (2026-09-13): in the UC3 status roster, or UC3-named
@@ -205,7 +205,7 @@ agg=$(printf '%s\n' "$cron" | awk -F'\t' -v RPF="$_rp" -v USF="$_us" -v ACTF="$a
         if (u in CN) { cronx = CC[u]; sched = CS[u]; obs = (CBAD[u] ? "@{class=obsbad}" : "") CO[u]
                        if (CST[u] > 0) starts = CST[u]; if (CFL[u] > 0) fails = CFL[u]; why = CWHY[u] }
         else sched = "no cron"   # a UC3 without a receive schedule: it never polls on its own (the former Missing cronjobs page, 2026-09-29)
-        polls = "-"; empty = ""; matched = ""; pct = ""; ll = ""; lst = ""
+        polls = ""; empty = ""; matched = ""; pct = ""; ll = ""; lst = ""   # no polls = a blank count, like UC status (a "-" until 2026-09-30)
         if (pk != "") { polls = PP[pk]; empty = PE[pk]; matched = PM[pk]; pct = PPCT[pk]; ll = PLL[pk] }
         else if (u in CN && CPOLLS[u] > 0) polls = CPOLLS[u]
         if (lk != "") lst = LE[lk]

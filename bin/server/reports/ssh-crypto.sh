@@ -480,7 +480,7 @@ pt_rows() {
 
     printf 'TABLE\tDeprecated-parameter warnings\twide\n'
     printf 'HEAD\tParameter\tAccount\tSubscription\tRemote host\tWarnings\tFirst\tLast\n'
-    printf 'KIND\tmono\tmono\tmono\tmono\tnumwarn\ttext\ttext\n'
+    printf 'KIND\tmono\tacct\tsite\thost\tnumwarn\ttext\ttext\n'
     printf 'RECALC\t-\t-\t-\t-\ts0\t-\t-\n'
     dep_rows
     printf 'TOTAL\t@{colspan=4}Total (%s combination(s))\t@{class=num warn}%s\t\t\n' "$n_dep_rows" "$dep"

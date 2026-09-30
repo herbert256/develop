@@ -65,7 +65,7 @@ agg=$(LC_ALL=C awk -F'\t' -v PAGES="$pages" '
         cid = $1; n++
         st = ($2 == "Processed") ? "OK" : ($2 == "Failed") ? "Error" : $2
         if (cid in PG) st = "@{href=../files/" cid ".html}" st
-        side = ($16 == "in") ? "In" : ($16 == "out") ? "Out" : ""
+        side = ($16 == "in" || $16 == "out") ? $16 : ""   # lowercase like every in / out value (2026-09-30: "In" / "Out" before)
         res = $25; tint = (res == "green" || res == "orange" || res == "red") ? "\t@data:res=" res : ""
         printf "F\t%s\tROW\t%s %s\t%s\t%s\t%s\t%s\t%s\t%s\t@{sortval=%d}%s\t@{class=mono}%s\t%s%s\n", \
             $6, $4, $5, clean($3), clean($14), clean($15), side, $10 + 0, st, $8 + 0, human($8), cid, lit(clean($11)), tint

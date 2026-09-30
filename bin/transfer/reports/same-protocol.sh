@@ -44,6 +44,9 @@ shopt -u nullglob
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 [ -f "$UCDF" ] || UCDF=/dev/null
 [ -f "$SUBRES" ] || SUBRES=/dev/null
+# the published File pages (bin/transfer/filepages.sh): a Files-table CoreId
+# links its page when it has one (2026-09-30 audit T-08)
+FPF="$CACHE_DIR/_filepages.tsv"; [ -f "$FPF" ] || FPF=/dev/null
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/sameproto.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT
@@ -52,7 +55,7 @@ TAB=$(printf '\t')
 # ONE awk: the legs (first inbound / last outbound per CoreId), then the Files
 # (outcome, subscription, name, start) — emits the File rows and the
 # per-subscription figures, each behind a sort prefix
-LC_ALL=C awk -F'\t' -v UCDF="$UCDF" -v SUBRES="$SUBRES" -v LEGS="$PARSED" -v FILEROWS="$TMP/files" -v SUBROWS="$TMP/subs" '
+LC_ALL=C awk -F'\t' -v UCDF="$UCDF" -v SUBRES="$SUBRES" -v FPF="$FPF" -v LEGS="$PARSED" -v FILEROWS="$TMP/files" -v SUBROWS="$TMP/subs" '
     # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
     function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
     BEGIN {
@@ -60,6 +63,8 @@ LC_ALL=C awk -F'\t' -v UCDF="$UCDF" -v SUBRES="$SUBRES" -v LEGS="$PARSED" -v FIL
         close(UCDF)
         while ((getline l < SUBRES) > 0) { n = split(l, a, "\t"); if (n >= 3 && a[1] != "") SRES[toupper(a[1])] = a[3] }
         close(SUBRES)
+        while ((getline l < FPF) > 0) { split(l, a, "\t"); if (a[1] != "") FP[a[1]] = 1 }
+        close(FPF)
     }
     FILENAME == LEGS {
         c = $1; NL[c]++
@@ -80,7 +85,7 @@ LC_ALL=C awk -F'\t' -v UCDF="$UCDF" -v SUBRES="$SUBRES" -v LEGS="$PARSED" -v FIL
         # the site words (2026-09-29): Processed = OK, Failed = Error; Waiting and
         # Expired keep their names (the states the outcome policy counts as OK / Error)
         oc = ($2 == "Failed") ? "@{class=failed}Error" : ($2 == "Expired") ? "@{class=failed}Expired" : ($2 == "Processed" ? "@{class=processed}OK" : $2)
-        printf "%s\tROW\t%s\t%s %s\t%s\t%s\t%s\t%d\t%s\t@{class=mono}%s\t%s%s\n", $6, s, $4, $5, IP[c], IT[c], OT[c], NL[c], oc, c, lit($11), ftint > FILEROWS
+        printf "%s\tROW\t%s\t%s %s\t%s\t%s\t%s\t%d\t%s\t@{class=mono%s}%s\t%s%s\n", $6, s, $4, $5, IP[c], IT[c], OT[c], NL[c], oc, ((c in FP) ? ",href=../files/" c ".html" : ""), c, lit($11), ftint > FILEROWS
         if (s == "Unknown") next   # no subscription (2026-09-29): a Files row, no Per subscription row
         k = s SUBSEP IP[c]
         FN[k]++; if (bad) FE[k]++; else FO[k]++

@@ -238,9 +238,11 @@ if [ "$(exp ioerr)" -gt 0 ]; then
     check $([ "$n" -gt 0 ] && echo 0 || echo 1) "io-errors.rpt has 0 rows"
     n=$(awk -F'\t' '$1=="TABLE" { t++ } t==1 && $1=="ROW" && $3=="ZG-ZKA-HOOLI" && $4 ~ /^FE[0-9]+$/ && index($5, "UC4_ZG_ZKA_HOOLI") { n++ } END { print n+0 }' "$R" 2>/dev/null)
     check $([ "${n:-0}" -eq 1 ] && echo 0 || echo 1) "io-errors folder table has $n ZG-ZKA-HOOLI row(s) with an FE login and the UC4 subscription, expected 1"
-    for st in Failed Processed; do
-        n=$(awk -F'\t' -v s="@{class=failed}Failed" '$1=="TABLE" { t++ } t==2 && $1=="ROW" && index($0, s) { n++ } END { print n+0 }' "$R" 2>/dev/null)
-        [ "$st" = Processed ] && n=$(awk -F'\t' '$1=="TABLE" { t++ } t==2 && $1=="ROW" && index($0, "@{class=processed}Processed") { n++ } END { print n+0 }' "$R" 2>/dev/null)
+    # (the State words are the site's Error / OK since 2026-09-30 — Failed /
+    # Processed before)
+    for st in Error OK; do
+        n=$(awk -F'\t' -v s="@{class=failed}Error" '$1=="TABLE" { t++ } t==2 && $1=="ROW" && index($0, s) { n++ } END { print n+0 }' "$R" 2>/dev/null)
+        [ "$st" = OK ] && n=$(awk -F'\t' '$1=="TABLE" { t++ } t==2 && $1=="ROW" && index($0, "@{class=processed}OK") { n++ } END { print n+0 }' "$R" 2>/dev/null)
         check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "io-errors line list has no $st line (the file-name join to _files.tsv)"
     done
     n=$(awk -F'\t' '$1=="TABLE" { t++ } t==2 && $1=="ROW" && index($0, "not logged") { n++ } END { print n+0 }' "$R" 2>/dev/null)
@@ -686,8 +688,8 @@ check $([ "$(grep -c 'href="\./build.html"' docs/tools/sitemap.html 2>/dev/null)
 check $([ -z "$(ls docs/tools/whats-new.html docs/help/whats-new.html bin/build/whats-new-history.tsv 2>/dev/null)" ] && echo 0 || echo 1) "What is new (tools/whats-new.html, its help page or bin/build/whats-new-history.tsv) still exists"
 check $(grep -rlq 'whats-new' docs --include='*.html' 2>/dev/null && echo 1 || echo 0) "a page still links whats-new"
 check $([ "$(grep -c 'href="\.\./reports/index.html"' docs/tools/sitemap.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "tools/sitemap.html does not link the Reports start page ../reports/index.html"
-check $([ "$(grep -c 'href="\.\./assets/style.css"' docs/tools/build.html 2>/dev/null)" = 1 ] && [ "$(grep -c '@B@' docs/tools/build.html build/index.html 2>/dev/null | awk -F: '{ s += $2 } END { print s + 0 }')" = 0 ] && echo 0 || echo 1) "tools/build.html does not load ../assets/style.css, or a @B@ placeholder survived"
-check $([ "$(grep -c 'href="\.\./docs/assets/style.css"' build/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "build/index.html (the local copy) does not load ../docs/assets/style.css"
+check $([ "$(grep -cE 'href="\.\./assets/style\.css(\?v=[0-9]+)?"' docs/tools/build.html 2>/dev/null)" = 1 ] && [ "$(grep -c '@B@' docs/tools/build.html build/index.html 2>/dev/null | awk -F: '{ s += $2 } END { print s + 0 }')" = 0 ] && echo 0 || echo 1) "tools/build.html does not load ../assets/style.css, or a @B@ placeholder survived"
+check $([ "$(grep -cE 'href="\.\./docs/assets/style\.css(\?v=[0-9]+)?"' build/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "build/index.html (the local copy) does not load ../docs/assets/style.css"
 check $([ "$(grep -c 'tools/sitemap.html' docs/assets/report.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "report.js does not point the top bar at tools/sitemap.html"
 hdr=$(grep -o '<th[^>]*>[^<]*</th>' "docs/transfer/topview.html" 2>/dev/null | sed 's/<[^>]*>//g' | tr '\n' '|')
 check $([ "$hdr" = "|Files|Recovered|Resubmit|Transfers|State||Date|First|Last|Count|Ok|Error|Error %|Automatic|Manual|Ok|Error|Count|Ok|Error|Error %|Processed|Failed|Waiting|Expired|Volume|" ] && echo 0 || echo 1) "transfer/topview.html headers are '$hdr'"

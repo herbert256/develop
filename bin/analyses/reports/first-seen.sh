@@ -235,7 +235,7 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
         for (i = 1; i <= bn; i++) print buf[i] > f
         close(f); bn = 0
     }
-    function pagespec(v, out, desc,   line, i, k) {
+    function pagespec(v, out,   line, i, k) {
         print "TITLE\tFirst seen" > out
         line = "SEEN"; for (i = 1; i <= nt; i++) line = line OFS ((tn[v SUBSEP TL[i]] + 0) - (cnt[v SUBSEP TL[i] SUBSEP "notseen"] + 0))
         print line > out
@@ -267,7 +267,7 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
         # ordered day list
         nd = 0; for (d in alldates) days[++nd] = d
         for (i = 2; i <= nd; i++) { v = days[i]; j = i - 1; while (j >= 1 && days[j] > v) { days[j+1] = days[j]; j-- } days[j+1] = v }
-        pagespec(1, MAIN,  "On what day each configured logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs — the same Seen/Not seen split as the home status tables. Per column: Seen + Not seen = Total.")
+        pagespec(1, MAIN)   # (its description argument went 2026-09-30: never printed — the start page has its own text)
     }
 '
 # The awk wrote the page to .tmp (after the per-cell rpts); the rename here

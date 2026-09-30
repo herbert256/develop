@@ -18,23 +18,22 @@
 <h2>What it shows</h2>
 <ul>
 <li>One row per failing subscription: its newest File in error (Failed or Expired), or a <strong>server row</strong> when only the server log reddens it &mdash; together every red subscription.</li>
-<li>Views: <strong>Still failing</strong> (default, first) hides the subscriptions green again; <strong>All</strong> keeps them.</li>
-<li>Also the help of the <strong>File pages</strong> (<code>File: &lt;name&gt;</code>, any outcome) and the <strong>error pages</strong> (<code>Failed subscription: &lt;subscription&gt; - &lt;reason&gt;</code>). Only the published Files (per subscription the newest OK File and the three newest Error Files) have a page.</li>
+<li>Views: <strong>Still failing</strong> (default) hides the subscriptions green again; <strong>All</strong> keeps them.</li>
+<li>Also the help of the <strong>File pages</strong> (<code>File: &lt;name&gt;</code>, any outcome) and the subscription <strong>error pages</strong> (<code>Failed subscription: &lt;subscription&gt; - &lt;reason&gt;</code>). Only the newest OK File and the three newest Error Files of a subscription have a page.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Subscription</strong>; <strong>Date/time</strong> &mdash; the File&rsquo;s start; a server row: the reddening error&rsquo;s time.</li>
-<li><strong>Reason</strong> &mdash; the File&rsquo;s first classifying server-log error (<em>Connection failures</em>, <em>Route stopped</em>&hellip;), <em>One-legged</em>, <em>Expired (not collected)</em>, else the last leg&rsquo;s raw status.</li>
-<li><strong>CoreId / SessionId</strong> &mdash; the File&rsquo;s CoreId; a server row: the session of the reddening error.</li>
-<li><strong>Last green day</strong> (<em>never</em> = never delivered), <strong>Days red</strong> (the current run&rsquo;s first failure to the window end), <strong>Failures in a row</strong> &mdash; blank on server rows.</li>
+<li><strong>Subscription</strong>; <strong>Date/time</strong> &mdash; the File&rsquo;s start, or the reddening error&rsquo;s time.</li>
+<li><strong>Reason</strong> &mdash; the first classifying server-log error (<em>Connection failures</em>, <em>Route stopped</em>&hellip;), <em>One-legged</em>, <em>Expired (not collected)</em>, else the last leg&rsquo;s raw status.</li>
+<li><strong>CoreId / SessionId</strong> &mdash; the File&rsquo;s CoreId, or the session of the reddening error.</li>
+<li><strong>Last green day</strong> (<em>never</em> = never delivered), <strong>Days red</strong>, <strong>Failures in a row</strong> &mdash; blank on server rows.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Row tint = the subscription&rsquo;s colour (see Generic help); a row opens its error page &mdash; a row whose newest Error File is Expired opens nothing (an Expired File has no page).</li>
+<li>Row tint = the subscription&rsquo;s colour; a row opens its error page (an Expired File has none).</li>
 <li>A server row: a server error after the last delivery, a deploy mistake, or an attributed authentication failure.</li>
-<li>File and error pages: the <strong>facts</strong> (File name, CoreId, Date/time, Subscription, Partner, Account, Login, Remote host, each when known) and the <strong>legs</strong> in chronological order.</li>
-<li>Then the <strong>server log</strong>, oldest first: the legs&rsquo; sessions and every line naming the CoreId or a transfer ID.</li>
-<li>A subscription&rsquo;s error page: facts, <strong>Last server error</strong>, the reddening connection&rsquo;s log.</li>
+<li>A File page: the <strong>facts</strong> (File name, CoreId, Date/time, <strong>Reason</strong> for an Error File, Subscription, Partner, Account, Login, Remote host), the <strong>legs</strong> in order, then the <strong>server log</strong> of their sessions and every line naming the CoreId or a transfer ID.</li>
+<li>A subscription error page: facts, <strong>Last server error</strong>, the reddening connection&rsquo;s log.</li>
 </ul>
 <h2>Tips</h2>
 <ul>

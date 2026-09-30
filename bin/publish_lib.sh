@@ -228,22 +228,21 @@ cross_tabs() { printf '%s' "$1"; }   # $1 = "Ent|Ent|..."
 report_tabs() {
     case $1 in
         account|login|subscription|remote-host|logical|partner|application|domain|bl) echo "All|Seen|Not seen|OK|Warning|Error" ;;   # Entities group (pages under docs/<area>/entities/; default = All via first_page). Every view is listed so member-row links resolve to the same view (member_page_for_label).
-        cross-account)      cross_tabs "Login|Subscriptions|Hosts|Logical|Partners|Applications|Domains|BL" ;;
-        cross-login)        cross_tabs "Account|Subscriptions|Hosts|Logical|Partners|Applications|Domains|BL" ;;
-        cross-subscription) cross_tabs "Account|Login|Hosts|Logical|Partners|Applications|Domains|BL" ;;
-        cross-host)         cross_tabs "Account|Login|Subscriptions|Logical|Partners|Applications|Domains|BL" ;;
-        cross-logical)      cross_tabs "Account|Login|Subscriptions|Hosts|Partners|Applications|Domains|BL" ;;
-        cross-partner)      cross_tabs "Account|Login|Subscriptions|Hosts|Logical|Applications|Domains|BL" ;;
-        cross-application)  cross_tabs "Account|Login|Subscriptions|Hosts|Logical|Partners|Domains|BL" ;;
-        cross-domain)       cross_tabs "Account|Login|Subscriptions|Hosts|Logical|Partners|Applications|BL" ;;
-        cross-bl)           cross_tabs "Account|Login|Subscriptions|Hosts|Logical|Partners|Applications|Domains" ;;
+        cross-account)      cross_tabs "Logins|Subscriptions|Hosts|Logical|Partners|Applications|Domains|BL" ;;
+        cross-login)        cross_tabs "Accounts|Subscriptions|Hosts|Logical|Partners|Applications|Domains|BL" ;;
+        cross-subscription) cross_tabs "Accounts|Logins|Hosts|Logical|Partners|Applications|Domains|BL" ;;
+        cross-host)         cross_tabs "Accounts|Logins|Subscriptions|Logical|Partners|Applications|Domains|BL" ;;
+        cross-logical)      cross_tabs "Accounts|Logins|Subscriptions|Hosts|Partners|Applications|Domains|BL" ;;
+        cross-partner)      cross_tabs "Accounts|Logins|Subscriptions|Hosts|Logical|Applications|Domains|BL" ;;
+        cross-application)  cross_tabs "Accounts|Logins|Subscriptions|Hosts|Logical|Partners|Domains|BL" ;;
+        cross-domain)       cross_tabs "Accounts|Logins|Subscriptions|Hosts|Logical|Partners|Applications|BL" ;;
+        cross-bl)           cross_tabs "Accounts|Logins|Subscriptions|Hosts|Logical|Partners|Applications|Domains" ;;
         files)         echo "By size|Empty files|By type|Duplicates|Largest files|Size regime|Stub shippers" ;;   # 2026-09-29: + top-transfers and size-profile
         went-quiet)    echo "Subscriptions|Accounts" ;;   # 2026-07 Tier 3: + stale-accounts
         # ---- the 2026-07 MERGED reports: one tab per component TABLE, in
         # component order — the tab count MUST equal the merged rpt's TABLE count
         activity)      echo "Per week|Per hour|Hour × weekday|Per weekday" ;;   # 2026-09-29: Per day went (= the Top view, Volume included)
         retries)       echo "Failing flows|Legs before success|Gave up|Retry spacing|Failing side|Resubmitted per day|Per subscription|Resubmission outcomes|Recovered files" ;;   # 2026-09-29: + recovered-files (its three tables on one tab)
-        episodes)      echo "Recovered flows" ;;   # 2026-09-29: recovered only (the Episodes tab — episodes-src — went the same day, user request)
         file-journey)  echo "Patterns|Leg count|Most legs|Protocol journey" ;;   # (Last leg + In and out went 2026-09-29, user request)
         file-in-file-out) echo "Handovers|UC4 to UC2" ;;   # 2026-09-29: + uc4-to-uc2 (each component's two tables on one tab)
         errors)        echo "Log reasons|Heatmap|Top messages" ;;   # 2026-09-29: "Log reasons" — server-log LINES by reason, not the Files in error the analyses Error reasons page counts   # 2026-09-29: Per component (the levels per component) rides the server Top view   # 2026-09-28: Per day went (= the Top view), By hour / By weekday folded into the Heatmap, Reasons carries the per-week table (tab=reasons)
@@ -257,7 +256,7 @@ report_tabs() {
         ranking)       echo "Subscriptions|Accounts|Logins|Hosts|Logical|Partners|Applications|Domains|BL" ;;   # the 9 entity types, in ranking.sh's SPECS order
         # (anomalies had "Hourly|Daily" until 2026-08 — the two granularities
         # now share ONE page, Daily first, so the report is not split)
-        pirates)       echo "Details|Top view" ;;   # the single-leg list + the count per day
+        pirates)       echo "Details|Per day" ;;   # the single-leg list + the count per day ("Top view" until 2026-09-30: the Top view is the transfer Top view)
         entity-coverage) echo "Accounts|Logical|Partners|Domains|Applications|BL" ;;   # one coverage table per entity; Accounts is the default (first_page). (The RULE rode on the basename until 2026-09-29 — -once/-ok/-diff; the verdicts are columns now.)
         *)             echo "" ;;
     esac
@@ -322,7 +321,7 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         logical) echo "Logical" ;;
         partner) echo "Partners" ;; application) echo "Applications" ;; domain) echo "Domains" ;;
         bl) echo "BL" ;;
-        cross-account) echo "Account" ;; cross-login) echo "Login" ;; cross-subscription) echo "Subscriptions" ;;
+        cross-account) echo "Accounts" ;; cross-login) echo "Logins" ;; cross-subscription) echo "Subscriptions" ;;
         cross-host) echo "Hosts" ;; cross-logical) echo "Logical" ;;
         cross-partner) echo "Partners" ;; cross-application) echo "Applications" ;; cross-domain) echo "Domains" ;;
         cross-bl) echo "BL" ;;
@@ -366,12 +365,15 @@ esc() { local s=$1; s=${s//&/&amp;}; s=${s//</&lt;}; s=${s//>/&gt;}; s=${s//\"/&
 
 # One Top-5 card from a TOP rpt line (the day pages' protocol, shared with the
 # Overview since 2026-08): TOP<TAB>kind<TAB>title<TAB>unit<TAB>href<TAB>
-# name US value US … (US = \x1f). Kind P/A/S names the entity column and pins
-# the card to its .daytop grid column (.dt-p / .dt-s), so a metric with nothing
-# on one side leaves a hole instead of pulling the other side across.
-top_table() {   # $1 kind  $2 title  $3 unit  $4 href  $5 rows
-    local kind=$1 rows=$5 nm val body="" ent
-    case $kind in P) ent="Partner" ;; A) ent="Account" ;; *) ent="Subscription" ;; esac
+# name US value US … (US = \x1f)<TAB>slug US slug … . Kind P/S names the
+# entity column and pins the card to its .daytop grid column (.dt-p / .dt-s),
+# so a metric with nothing on one side leaves a hole instead of pulling the
+# other side across. Each name with a slug links its detail page, the whole
+# cell the target (2026-09-30 audit D-02 / L-03); both callers render pages
+# one level below the docs root (day/, dashboards/), hence "../details/".
+top_table() {   # $1 kind  $2 title  $3 unit  $4 href  $5 rows  [$6 slugs]
+    local kind=$1 rows=$5 slugs=${6:-} nm val sl body="" ent sdir
+    case $kind in P) ent="Partner"; sdir=partners ;; *) ent="Subscription"; sdir=subscriptions ;; esac
     esc "$2";    local et=$ESC
     esc "$3";    local eu=$ESC
     esc "$4";    local eh=$ESC     # the href carries &axway_sort= — esc makes it &amp;
@@ -381,9 +383,19 @@ top_table() {   # $1 kind  $2 title  $3 unit  $4 href  $5 rows
         nm=${rows%%$'\037'*}; rows=${rows#*$'\037'}
         val=${rows%%$'\037'*}
         if [ "$val" = "$rows" ]; then rows=""; else rows=${rows#*$'\037'}; fi
+        sl=""
+        if [ -n "$slugs" ]; then
+            sl=${slugs%%$'\037'*}
+            if [ "$sl" = "$slugs" ]; then slugs=""; else slugs=${slugs#*$'\037'}; fi
+        fi
         esc "$nm"; local en=$ESC
         esc "$val"; local ev=$ESC
-        body+="<tr><td>$en</td><td class=\"num\">$ev</td></tr>"
+        if [ -n "$sl" ]; then
+            esc "$sl"
+            body+="<tr><td class=\"cl\"><a href=\"../details/$sdir/$ESC.html\">$en</a></td><td class=\"num\">$ev</td></tr>"
+        else
+            body+="<tr><td>$en</td><td class=\"num\">$ev</td></tr>"
+        fi
     done
     [ -n "$body" ] || return 0
     local col; case $kind in P) col=dt-p ;; *) col=dt-s ;; esac
@@ -594,8 +606,16 @@ render_topbar() {
     # function rides inline right after its anchors (ONE line: apply_help_chrome
     # swaps the whole bar line — the script must stay on it)
     if env_has_switch; then printf '<script>%swindow.AXWAY_ENVLINKS();</script>' "$ENVSWITCH_JS"; fi
+    # ...and so does the WRAPPED-BAR fit (2026-09-30 audit J-03: on a narrow
+    # window the fixed bar wraps and covered the h1 — report.js fitTopbar
+    # pads the report pages, these pages load no report.js). KEEP IN STEP
+    # with report.js fitTopbar.
+    printf '<script>%s</script>' "$FITTOP_JS"
     printf '\n'
 }
+# report.js fitTopbar, inline for the baked-chrome pages (render_topbar, the
+# build report fallback bar): pad the body to a wrapped fixed top bar.
+FITTOP_JS='(function(){function f(){var b=document.querySelector(".topbar");if(!b||!document.body)return;var h=b.offsetHeight;document.body.style.paddingTop=h>48?(h+12)+"px":""}f();addEventListener("resize",f)})();'
 # (The site-wide fixed FOOTER BAR was removed 2026-07, with its "Build report"
 # link and build timestamp. The build report is reachable from the SITE MAP,
 # which links the report of the run that built the site — see write_sitemap in
@@ -969,7 +989,6 @@ tab_help_slug() {
         uc-status/UC4) echo server-uc4-status ;;
         file-in-file-out/UC4\ to\ UC2) echo uc4-to-uc2 ;;
         retries/Recovered\ files) echo recovered-files ;;
-        episodes/Recovered\ flows) echo recovered ;;
         *) help_slug_for "$1" "$2" ;;
     esac
 }
@@ -1133,25 +1152,17 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
         printf '%s\n' "$stable" | LC_ALL=C awk -F'\t' -v OFS='\t' -v sfx="$1" -v mods="$2" '
             { $2 = $2 " \342\200\224 " sfx; n = split(mods, M, " "); for (i = 1; i <= n; i++) $0 = $0 OFS M[i]; print }'
     }
-    # All = seen (green) + configured-never-seen (red) rows, MERGED by Files
-    # DESCENDING (field 3, a bare integer; the count-less rows sort as 0 and
-    # land at the bottom) with the name — case folded, byte-order tiebreak — as
-    # the tiebreak, so the baked .rpt order MATCHES the initial sort and a
-    # no-JS render shows the same order. The OK/Warning/Error blocks filter
-    # these rows in place, so they inherit the order too.
-    local all_rows=""
-    [ -n "$srows" ]  && all_rows=$(printf '%s\n' "$srows" | sed $'s/$/\t@data:seen=1/')
-    [ -n "$nsrows" ] && all_rows+=${all_rows:+$'\n'}$nsrows
-    [ -n "$ghrows" ] && all_rows+=${all_rows:+$'\n'}$ghrows
-    [ -n "$ghnsrows" ] && all_rows+=${all_rows:+$'\n'}$ghnsrows
-    # the seen rows keep their BAKED busiest-first order (there is no single
-    # Files column to sort on); the never-seen / ghost rows follow, by name
+    # All = the seen rows + the configured-never-seen / ghost rows. The seen
+    # rows keep their BAKED busiest-first order (there is no single Files
+    # column to sort on); the never-seen / ghost rows follow, by name (case
+    # folded, byte-order tiebreak). The OK/Warning/Error blocks filter these
+    # rows in place, so they inherit the order too.
     local _blank=""
     [ -n "$nsrows" ] && _blank=$nsrows
     [ -n "$ghrows" ] && _blank+=${_blank:+$'\n'}$ghrows
     [ -n "$ghnsrows" ] && _blank+=${_blank:+$'\n'}$ghnsrows
     [ -n "$_blank" ] && _blank=$(printf '%s\n' "$_blank" | LC_ALL=C sort -t$'\t' -k2,2f -k2,2)
-    all_rows=""
+    local all_rows=""
     [ -n "$srows" ] && all_rows=$(printf '%s\n' "$srows" | sed $'s/$/\t@data:seen=1/')
     [ -n "$_blank" ] && all_rows+=${all_rows:+$'\n'}$_blank
     # the All view tints every row by the entity RESULT (the base caches'

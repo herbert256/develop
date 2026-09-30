@@ -24,8 +24,8 @@
 <h2>Rules</h2>
 <ul>
 <li>Application and partner are parts 2 and 3 of the logical name <code>domain_application_partner</code> of the File&rsquo;s subscription &mdash; a naming heuristic, good for exposure and failing pairs, not a configuration export.</li>
-<li>A File counts for every application and every partner of its subscription; an application&rsquo;s Files sum its pairs, so a File shared by two partners counts twice there.</li>
-<li>Error % = Failed or Expired Files. <strong>Red</strong> = a pair at 100% Error (first table: an application with one) &mdash; usually a decommissioned counterparty still being tried.</li>
+<li>A File counts for every application and every partner of its subscription, but once per application; the Partners and Files totals are distinct.</li>
+<li>Error % = Failed or Expired Files. Row tint = the application&rsquo;s result; a <strong>red</strong> cell = pairs at 100% Error &mdash; usually a decommissioned counterparty still being tried.</li>
 </ul>
 </main>
 </body>

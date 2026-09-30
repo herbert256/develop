@@ -20,7 +20,7 @@
 #   NAVROW  label|href ...      prev/next day
 #   KPI     val label sub accent href [delta]   the FIVE headline cards, in
 #           display order and under their display labels: Files /
-#           File error rate / Volume (transfer pass) then Server lines /
+#           File error rate / Volume (transfer pass) then Server records /
 #           Server error rate (server pass)
 #   CARD    title sub href span chart a1..a5    the HERO chart
 #   CARDALT label title sub href span chart a1..a5   an ALTERNATE view of the
@@ -61,12 +61,17 @@ TP="$DATA/transfer/cache/_transfers.tsv"   # 10 protocol 11 date 22 resubmitted 
 TT="$DATA/transfer/reports/topview.rpt"    # per-day Files/Transfers counts (col 5 = Files, >0 on data days)
 SV="$DATA/server/reports/topview.rpt"      # per-day records/levels/components/first/last
 SP="$DATA/server/cache/_parse.tsv"         # 1 date 2 time 3 level 4 component 5 message
-SLF="$DATA/server/reports/went-kaput.rpt"   # ROW: 5 = "Latest error" date+time (Subscription · Last OK transfer · Errors after · Latest error · Source · Latest message — the per-day "Problems this day" PROBLEM link; field 6 until the column set changed, which silently dropped the link)
+SLF="$DATA/server/reports/went-kaput.rpt"   # ROW: 3 = "Latest error" date+time (Subscription · Latest error since 2026-09-30 — the per-day "Problems this day" PROBLEM link; field 5 before, 6 before that: a column change silently drops the link, so keep this in step)
 NRD="$DATA/server/reports/no-remote-dir.rpt"   # table 2 ("Missing remote directories per day"): date, errors, subscriptions (per-day PROBLEM link)
-NRF="$DATA/server/reports/no-remote-files.rpt" # table 2 ("Polls that found no file, per day"): date, polls, subscriptions (per-day PROBLEM link)
+NRF="$DATA/server/reports/no-remote-files.rpt" # table 2 ("Never find a file — polls per day"): date, polls, subscriptions (per-day PROBLEM link)
 ANOM="$DATA/transfer/reports/anomalies.rpt"    # ROW: 2 = Date, in BOTH tables (per-day PROBLEM link, offered only on flagged days)
 GTR="$DATA/transfer/reports/from-green-to-red.rpt"   # ROW: 4 = "Went red on" date+time (per-day PROBLEM link)
-ORED="$DATA/transfer/reports/only-red.rpt"           # ROW: 6 = "First failure" date+time (per-day PROBLEM link)
+ORED="$DATA/transfer/reports/only-red.rpt"           # ROW: 4 = "First failure" date+time (per-day PROBLEM link)
+# the detail-page slugmaps (details.sh — final before this runs: bin/build.sh
+# waits for details.sh before the dashboards + day reports): the Top-5 names
+# link their detail page (2026-09-30 audit D-02 / L-03)
+SLGP="$DATA/transfer/reports/details/partners/_slugmap.tsv"
+SLGS="$DATA/transfer/reports/details/subscriptions/_slugmap.tsv"
 PSLOTS="$DATA/server/reports/pesit-slots.tsv"   # pesit.sh's 30-min direction split (date slot out in) — the PeSIT hero view
 EQSLOTS="$DATA/server/reports/event-queue-slots.tsv"   # event-queue.sh's 30-min line counts (date slot lines) — the EventQueue hero view (2026-09-14)
 
@@ -92,7 +97,7 @@ daycount() {   # $1 rpt  $2 ROW field holding "ccyy-mm-dd hh:mm:ss" -> "date:cou
                           END{ for (k in c) printf "%s:%s ", k, c[k] }' "$1"
 }
 gtrc=$(daycount "$GTR" 4)
-oredc=$(daycount "$ORED" 6)
+oredc=$(daycount "$ORED" 4)
 # The Anomaly-scan entry is offered ONLY on the days the scan actually flagged
 # (2026-08 — it used to sit on every day page as the always-there entry). Both
 # anomalies tables are counted, the daily and the hourly, since either one is a
@@ -138,7 +143,7 @@ _dylap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  day reports: %s\n' "$(
 _dylap "setup (the per-day counts)"
 if [ -f "$TF" ] && [ -n "$tdays" ]; then
 awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v udays="$udays" -v PS="$PSLOTS" -v EQF="$EQSLOTS" \
-    -v gtrc="$gtrc" -v oredc="$oredc" -v anomc="$anomc" -v SPMAP="$SP_MAP" "$SP_AWK"'
+    -v gtrc="$gtrc" -v oredc="$oredc" -v anomc="$anomc" -v SLGP="$SLGP" -v SLGS="$SLGS" -v SPMAP="$SP_MAP" "$SP_AWK"'
     function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
     function humandur(ms,   s,m,h){ ms+=0; if(ms<1000)return int(ms) "ms"; s=int(ms/1000); if(s<60)return s "s"; m=int(s/60); s=s%60; if(m<60)return m "m " s "s"; h=int(m/60); m=m%60; return h "h " m "m" }
     function jdn(y,m,d,  a){ a=int((14-m)/12); y=y+4800-a; m=m+12*a-3; return d+int((153*m+2)/5)+365*y+int(y/4)-int(y/100)+int(y/400)-32045 }
@@ -198,6 +203,12 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         nn = split(raw, Z, US); s = ""
         for (i = 1; i <= nn; i += 2) s = s (s == "" ? "" : US) Z[i] US human(Z[i+1])
         return s }
+    # the detail-page slugs of a Top-5 row list ("name US value US …"),
+    # aligned US-separated, "" for a name with no page (the TOP line field 7)
+    function tslugs(rows, kind,   nn, Z, i, s) {
+        nn = split(rows, Z, US); s = ""
+        for (i = 1; i <= nn; i += 2) s = s (i == 1 ? "" : US) (((kind SUBSEP Z[i]) in SLG) ? SLG[kind SUBSEP Z[i]] : "")
+        return s }
     function dcload(s, A,   np, t, i, p) { np = split(s, t, " ")
         for (i = 1; i <= np; i++) { if (t[i] == "") continue
             p = index(t[i], ":"); if (p > 1) A[substr(t[i], 1, p - 1)] = substr(t[i], p + 1) } }
@@ -207,7 +218,10 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         if (PS != "") { while ((getline pl < PS) > 0) { n = split(pl, pz, "\t"); if (n >= 4) { PO[pz[1], pz[2]+0] = pz[3]+0; PI[pz[1], pz[2]+0] = pz[4]+0 } } close(PS) }
         # the EventQueue 30-min sidecar (event-queue.sh, 2026-09-14) — missing = all zeros
         if (EQF != "") { while ((getline el < EQF) > 0) { n = split(el, ez, "\t"); if (n >= 3) EQC[ez[1], ez[2]+0] = ez[3]+0 } close(EQF) }
-        dcload(gtrc, GTRC); dcload(oredc, OREDC); dcload(anomc, ANOMC) }
+        dcload(gtrc, GTRC); dcload(oredc, OREDC); dcload(anomc, ANOMC)
+        # the two slugmaps (name TAB slug) — a missing map = no links
+        if (SLGP != "") { while ((getline sl < SLGP) > 0) { n = split(sl, sz, "\t"); if (n >= 2 && sz[2] != "") SLG["P" SUBSEP sz[1]] = sz[2] } close(SLGP) }
+        if (SLGS != "") { while ((getline sl < SLGS) > 0) { n = split(sl, sz, "\t"); if (n >= 2 && sz[2] != "") SLG["S" SUBSEP sz[1]] = sz[2] } close(SLGS) } }
     FNR == 1 { fno++ }
     fno == 1 {   # _files.tsv
         d = $4; if (d == "") next
@@ -383,10 +397,15 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             # Waiting and Expired — each on the day it happened. The three
             # subscription verdicts are full-period reports (`nofilter`), so
             # their links carry no ?axway_date=; the file counts do.
+            # "Files in error" opens the list of those Files — the home Error
+            # cell target (2026-09-30 audit D-05; the Top view before), the
+            # empty ?axway_search= clearing a remembered search; "One-legged"
+            # the per-day tab, whose rows ARE days (audit T-03: the Details
+            # tab kept a row per subscription at its full-period count)
             if (F[d] + 0 > 0)
-                printf "PROBLEM\ttransfer\t../transfer/topview.html" q "\tFiles in error\t**%d Error / %d OK** — **%.1f%%** error rate; the day in the Top view\n", F[d], P[d]+0, erate >> out
+                printf "PROBLEM\ttransfer\t../transfer/failed-files.html" q "&amp;axway_search=\tFiles in error\t**%d Error / %d OK** — **%.1f%%** error rate; the Error Files of the day\n", F[d], P[d]+0, erate >> out
             if (PIR[d] + 0 > 0)
-                printf "PROBLEM\ttransfer\t../transfer/pirates-details.html" q "\tOne-legged Files\t**%d** File(s) with only one leg — one-sided, incomplete crossings that never completed\n", PIR[d] >> out
+                printf "PROBLEM\ttransfer\t../transfer/pirates-per-day.html" q "\tOne-legged Files\t**%d** File(s) with only one leg — one-sided, incomplete crossings that never completed\n", PIR[d] >> out
             if (GTRC[d] + 0 > 0)
                 printf "PROBLEM\ttransfer\t../analyses/failed.html\tWent red\t**%d** subscription(s) went red this day — they delivered OK before and have not recovered since\n", GTRC[d] >> out
             if (OREDC[d] + 0 > 0)
@@ -465,7 +484,8 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             printf "CARDALT\tError %% Files\tFile error rate per slot\t%s · per slot, the %% of its Files that Failed or Expired — a slot with no Files shows a gap\t../transfer/topview.html" q "\tspan2\tslots\trate\t%s\t\t15:%s\t60:%s\n", d, RATES[30], RATES[15], RATES[60] >> out
             printf "CARDALT\tTransfer errors\tTransfer errors per slot\t%s · Transfers (raw log records) whose Status is anything but Processed, per slot — one File can contribute several failed legs; a quiet slot is a real zero\t../transfer/failure-heatmap.html" q "\tspan2\tslots\terrs\t%s\t\t15:%s\t60:%s\n", d, ERRS[30], ERRS[15], ERRS[60] >> out
             # ---- the six Top-5 tables --------------------------------------
-            # TOP<TAB>kind<TAB>title<TAB>unit<TAB>href<TAB>name US value US …
+            # TOP<TAB>kind<TAB>title<TAB>unit<TAB>href<TAB>name US value US …<TAB>slug US slug …
+            # (field 7, 2026-09-30: the detail-page slug of each name, "" = no page)
             # Emitted one row per METRIC (Files, Volume, Errors), two columns per
             # row — PARTNERS then SUBSCRIPTIONS — which is the reading order of
             # the 2-column .daytop grid. The kind field also fixes each card to
@@ -473,19 +493,23 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             # HOLE rather than shifting the other side across.
             # The "See more" href opens the matching Transfer > Entities view
             # NARROWED TO THIS DAY and sorted descending on the same column —
-            # ?axway_date beats the page\047s data-date-reset, and the Entities
-            # layout is Name 0 · Direction 1 · Files 2 · Volume 3 · OK 4 · Retry 5 · Resubmit 6 · Error 7.
+            # ?axway_date beats the page\047s data-date-reset. The sort goes by
+            # header LABEL (the grouped Entities layout: positions shift when a
+            # group is hidden) — Volume = Total, Errors = Error; the Files
+            # cards add none (no single Files column), so that view opens in
+            # its baked order unless the viewer own stored Entities sort
+            # (shared by the nine entities, one hour) takes precedence.
             for (tm = 1; tm <= 3; tm++) {
                 tmet = (tm == 1) ? "Files" : (tm == 2) ? "Volume" : "Errors"
-                tcol = (tm == 1) ? "" : (tm == 2) ? "&axway_sort=Total:-1" : "&axway_sort=Error:-1"   # the Entities page sorts by header LABEL (2026-09-13, the grouped layout): Volume = Total, Error = the Files group Error (the first match); Files = the page own busiest-first order, no sort
+                tcol = (tm == 1) ? "" : (tm == 2) ? "&axway_sort=Total:-1" : "&axway_sort=Error:-1"   # Error = the Files group Error (the first header reading it)
                 for (tk = 1; tk <= 2; tk++) {
                     tkind = (tk == 1) ? "P" : "S"
                     tname = (tk == 1) ? "partners" : "subscriptions"
                     tpage = (tk == 1) ? "partner" : "subscription"
                     trows = (tm == 1) ? top5(FC, tkind, d) : (tm == 2) ? top5b(VC, tkind, d) : top5(EC, tkind, d)
                     if (trows == "") continue
-                    printf "TOP\t%s\tTop 5 %s by %s\t%s\t../transfer/entities/%s-all.html?axway_date=%s%s\t%s\n", \
-                        tkind, tname, tmet, tmet, tpage, d, tcol, trows >> out
+                    printf "TOP\t%s\tTop 5 %s by %s\t%s\t../transfer/entities/%s-all.html?axway_date=%s%s\t%s\t%s\n", \
+                        tkind, tname, tmet, tmet, tpage, d, tcol, trows, tslugs(trows, tkind) >> out
                 }
             }
             if (issrv[d]) printf "CARDALT\tPeSIT\tPeSIT problems per slot\t%s · ST \342\206\222 CFT (red) vs CFT \342\206\222 ST (purple) problem lines on the CFT link\t\tspan2\tslots\tpesit\t%s\t\t\t60:%s\n", d, PESS[30], PESS[60] >> out
@@ -530,7 +554,7 @@ fi
 # iteration order).
 # ---------------------------------------------------------------------------
 # Per-day count of subscriptions whose LATEST post-transfer issue (the
-# went-kaput report's ROW col 6 = "date time") falls on that day
+# went-kaput report's ROW col 3 = "date time") falls on that day
 # — surfaced as a "Problems this day" PROBLEM link. Empty when the report is
 # absent (env split) or has no rows (the "(none)" placeholder has no date).
 # The no-remote-dir per-day figures (its SECOND table: Date, Errors,
@@ -550,7 +574,7 @@ if [ -f "$NRF" ]; then
 fi
 slfc=""
 if [ -f "$SLF" ]; then
-    slfc=$(awk -F'\t' '$1=="ROW"{ d=substr($5,1,10); if (d ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) c[d]++ } END{ for (k in c) printf "%s:%s ", k, c[k] }' "$SLF")
+    slfc=$(awk -F'\t' '$1=="ROW"{ d=substr($3,1,10); if (d ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) c[d]++ } END{ for (k in c) printf "%s:%s ", k, c[k] }' "$SLF")
 fi
 if [ -f "$SV" ] && [ -f "$SP" ] && [ -n "$sdays" ]; then
 # THE SERVER PASS IN PARALLEL (2026-09-27): one job per core over its own
@@ -689,7 +713,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             # ---- KPIs: the two server-side cards of the day page -----------
             cov = (FI[d] != "" && FI[d] != "-" && LA[d] != "" && LA[d] != "-") ? FI[d] "–" LA[d] : "log messages"
             wd = wdname(d)      # same-weekday means for the KPI deltas
-            printf "KPI\t%d\tServer lines\t%s\tpurple\t../server/topview.html" q "\t%s\n", REC[d]+0, cov, pctd(REC[d], wdc[wd] ? aRec[wd]/wdc[wd] : 0) >> out
+            printf "KPI\t%d\tServer records\t%s\tpurple\t../server/topview.html" q "\t%s\n", REC[d]+0, cov, pctd(REC[d], wdc[wd] ? aRec[wd]/wdc[wd] : 0) >> out
             printf "KPI\t%.1f%%\tServer error rate\terrors ÷ records\tblue\t../server/topview.html" q "\t%s\n", ep, pctd(ep, aRec[wd] ? aErr[wd]*100/aRec[wd] : 0) >> out
             # ---- PROBLEM links: this day problem reports, dated (?axway_date),
             #      surfaced in the combined day page "Problems this day" section ----

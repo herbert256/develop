@@ -4,8 +4,9 @@
 # subscriptions: the same filename is carried by two different flows within the
 # window, with OpsWise copying it across in between. BOTH DIRECTIONS since
 # 2026-09-19 (user request):
-#   In --> Out   it ARRIVES from one partner, then LEAVES to another
-#   Out --> In   it LEAVES to one partner, then ARRIVES from another
+#   in → out   it ARRIVES from one partner, then LEAVES to another
+#   out → in   it LEAVES to one partner, then ARRIVES from another
+#   (lowercase like every Direction value, 2026-09-30 — "In --> Out" before)
 # The two flows are named by their ORDER — First and Second — and the pair's
 # Direction says which way round it was; a route is a (First, Second,
 # Direction) triple.
@@ -150,7 +151,7 @@ route_rows=$(LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k15,15 -k3,3n "$TMP.p
     }
     { k = $1 SUBSEP $2 SUBSEP $15 }
     k != cur { flush(); cur = k; ink = $1; outk = $2; n = 0; nf = 0; same = 0
-               dirlbl = ($15 == "out") ? "Out --> In" : "In --> Out"
+               dirlbl = ($15 == "out") ? "out → in" : "in → out"
                delete g; delete fseen; gmin = $3; gmax = $3 }
     {
         n++; g[n] = $3
@@ -201,9 +202,15 @@ IFS=' ' read -r nroutes ncross <<< "$(printf '%s\n' "$route_rows" | awk -F'\t' '
                          if (s < 5400) return sprintf("%.0f min", s/60)
                          if (s < 172800) return sprintf("%.1f h", s/3600)
                          return sprintf("%.1f d", s/86400) }
-        NR <= n { printf "ROW\t%s\t%s %s\t%s\t%s %s\t%s\t%s\t%s\t%s\t%s\n", $8, $9, $10, $1, $11, $12, $2, ($15 == "out" ? "Out --> In" : "In --> Out"), hd($3), $4, $5
+        # sizes read like every other size cell ("16 B", "1.2 MB" — raw
+        # bytes until 2026-09-30); report.js parses them back for its totals
+        function hsz(v) { if (v >= 1073741824) return sprintf("%.1f GB", v/1073741824)
+                          if (v >= 1048576) return sprintf("%.1f MB", v/1048576)
+                          if (v >= 1024)    return sprintf("%.1f KB", v/1024)
+                          return v " B" }
+        NR <= n { printf "ROW\t%s\t%s %s\t%s\t%s %s\t%s\t%s\t%s\t%s\t%s\n", $8, $9, $10, $1, $11, $12, $2, ($15 == "out" ? "out → in" : "in → out"), hd($3), hsz($4 + 0), hsz($5 + 0)
                   c++; a += $4; b += $5 }
-        END { printf "TOTAL\tTotal (%d row(s))\t\t\t\t\t\t\t@{class=num}%d\t@{class=num}%d\n", c+0, a+0, b+0 }'
+        END { printf "TOTAL\tTotal (%d row(s))\t\t\t\t\t\t\t@{class=num}%s\t@{class=num}%s\n", c+0, hsz(a+0), hsz(b+0) }'
 
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

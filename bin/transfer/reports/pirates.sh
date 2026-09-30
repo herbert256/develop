@@ -7,11 +7,14 @@
 # incomplete transfer: one side was logged, the counterpart leg never happened,
 # so the file never actually made the full crossing (it ends up Failed).
 #
-# The Details tab is a per-SUBSCRIPTION rollup — Subscription, Count, First
-# date, Last date of its single-leg transfers; the Top view tab counts them
-# per day. Reads the shared caches: _files.tsv ($FILES, one row per CoreId;
-# col 10 = leg/row count), joined to _transfers.tsv ($PARSED) for the single
-# leg's raw Direction (kept in the agg for the per-day Error/OK split).
+# The Details tab is a per-SUBSCRIPTION rollup — Subscription, One-legged
+# Files (drilling to its 10 newest), First date, Last date; the Per day tab
+# counts them per day. Reads _files.tsv ($FILES, one row per CoreId; col 10 =
+# leg/row count). (2026-09-30 audit: the _transfers.tsv join for the leg
+# direction went — nothing read it; the Details count became "One-legged
+# Files" with a File drill — the page had no way to reach the Files; the
+# Unknown subscription is skipped in Details like every subscription-keyed
+# table, the Per day tab still counts it.)
 #
 # Usage:
 #   ./pirates.sh   # reads input/*.csv (via the caches), writes data/pirates.rpt
@@ -36,25 +39,19 @@ fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Per single-leg CoreId, tab-separated:
-#   datetime  direction  outcome  account  site  partner  size_bytes  size_human  file  coreid
+#   date  time  site  sortkey  coreid
 agg=$(awk -F'\t' '
-    function human(b,   u, i, v) { split("B KB MB GB TB PB", u, " "); i = 1; v = b + 0
-        while (v >= 1024 && i < 6) { v /= 1024; i++ }
-        return (i == 1) ? v " " u[i] : sprintf("%.1f %s", v, u[i]) }
-    FNR==NR { dir[$1] = $2; next }                 # _transfers.tsv: coreid -> its (single) leg direction
     $10 == 1 {                 # _files.tsv: exactly one leg
-        oc = ($2 != "Failed" && $2 != "Expired") ? "OK" : "Error"
-        printf "%s %s\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n", \
-            $4, $5, (($1 in dir) ? dir[$1] : ""), oc, $3, $12, $20, $8, human($8), $11, $1
+        printf "%s\t%s\t%s\t%s\t%s\n", $4, $5, $12, $6, $1
     }
-' "$PARSED" "$FILES")
+' "$FILES")
 
 n_total=$(printf '%s\n' "$agg" | grep -c . || true)
 
-# Per-day counts for the "Top view" tab: date (first token of the datetime) ->
-# the count. Deterministic (sort by date), newest first.
+# Per-day counts for the "Per day" tab: date -> the count. Deterministic (sort
+# by date), newest first.
 pd=$(printf '%s\n' "$agg" | awk -F'\t' '
-        { split($1, dt, " "); d = dt[1]; if (d == "") next
+        { d = $1; if (d == "") next
           c[d]++ }
         END { for (d in c) printf "%s\t%d\n", d, c[d] }' \
     | LC_ALL=C sort -t$'\t' -k1,1r)
@@ -66,27 +63,36 @@ pd=$(printf '%s\n' "$agg" | awk -F'\t' '
     # ---- tab 1: Details — per-subscription rollup of the single-leg transfers ----
     if [ "$n_total" -eq 0 ]; then
         printf 'TABLE\tDetails\tnofilter\tnosort\n'
-        printf 'HEAD\tSubscription\tCount\tFirst date\tLast date\n'
-        printf 'KIND\tsite\tnum\ttext\ttext\n'
+        printf 'HEAD\tSubscription\tOne-legged Files\tFirst date\tLast date\n'
+        printf 'KIND\tsite\tnumfailed\ttext\ttext\n'
         printf 'ROW\t(none)\t\t\t\n'
     else
-        printf 'TABLE\tDetails\n'
-        printf 'HEAD\tSubscription\tCount\tFirst date\tLast date\n'
-        printf 'KIND\tsite\tnum\ttext\ttext\n'
-        # most single-leg transfers first, subscription name as the tiebreaker
-        printf '%s\n' "$agg" | awk -F'\t' '
-                { s = ($5 == "") ? "(no subscription)" : $5
-                  split($1, dt, " "); d = dt[1]
+        # nofilter (2026-09-30 audit T-03): the rows are full-period rollups
+        # with no per-day payload, so a narrowed From/To kept every row whose
+        # First..Last span overlapped it at its FULL count; the per-day view
+        # is the Per day tab
+        printf 'TABLE\tDetails\tnofilter\tdrill=File\n'
+        printf 'HEAD\tSubscription\tOne-legged Files\tFirst date\tLast date\n'
+        printf 'KIND\tsite\tnumfailed\ttext\ttext\n'
+        # most one-legged Files first, subscription name as the tiebreaker;
+        # the count cell drills to its 10 newest Files (coreids-failed binds
+        # the one numfailed cell). "Unknown" = no subscription: skipped here
+        # (the Unknown transfers report lists those Files)
+        printf '%s\n' "$agg" | awk -F'\t' "$COREIDS_AWK"'
+                $3 == "" || $3 == "Unknown" { next }
+                { s = $3; d = $1
                   c[s]++
-                  if (d != "") { if (f[s] == "" || d < f[s]) f[s] = d; if (d > l[s]) l[s] = d } }
-                END { for (s in c) printf "%d\t%s\t%s\t%s\n", c[s], s, f[s], l[s] }' \
+                  if (d != "") { if (f[s] == "" || d < f[s]) f[s] = d; if (d > l[s]) l[s] = d }
+                  addtop(s, $4, $1 " " $2, $5) }
+                END { for (s in c) printf "%d\t%s\t%s\t%s\t%s\n", c[s], s, f[s], l[s], buildlist(top[s]) }' \
             | LC_ALL=C sort -t$'\t' -k1,1rn -k2,2 \
             | awk -F'\t' '
-                { printf "ROW\t%s\t%s\t%s\t%s\n", $2, $1, $3, $4; t += $1 }
-                END { printf "TOTAL\tTotal (%d subscription(s))\t@{class=num}%d\t\t\n", NR, t }'
+                { printf "ROW\t%s\t%s\t%s\t%s\t@data:coreids-failed=%s\n", $2, $1, $3, $4, $5; t += $1 }
+                END { printf "TOTAL\tTotal (%d subscription(s))\t@{class=num failed}%d\t\t\n", NR, t }'
     fi
 
-    # ---- tab 2: Top view — the one-legged Files per day ----
+    # ---- tab 2: Per day — the one-legged Files per day ("Top view" until
+    # 2026-09-30) ----
     # (2026-09-29 audit: "Single-leg transfers" + Error / OK columns — the
     # count is FILES, and a lone leg is Failed by the outcome rule, so Error
     # always equalled the count and OK was always empty: one column now)

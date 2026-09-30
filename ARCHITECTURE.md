@@ -426,7 +426,7 @@ Linear/Log row of a card** sits in its `.chartbtns` wrapper, beside the chart, n
 slotchart.js finds the card's chart from the enclosing `.chartbox` (2026-09-29 fix — the
 `parentNode` lookup found none and stored every click under kind `count`). The card titles carry no "per slot" / "up to each slot" tail — the slot semantics live in
 the card subtitles. Sixteen hero views on the sample, all chart type `slots` at 6-hour slots
-(`overview.sh`), the first button row: Duration (hero) · Files processed · Volume · Throughput ·
+(`overview.sh`), the first button row: Duration (hero) · OK Files · Volume · Throughput ·
 Error % Files · Transfer errors (raw `Failed` + `Failed Subtransmission` legs from
 `_transfers.tsv`) · Connections (sessions opened, by who dialled) · PeSIT · EventQueue — PeSIT and
 EventQueue LAST of the flat views and conditional on their sidecars, so their omission never
@@ -477,7 +477,7 @@ exactly. Orange is transfer evidence only.
 **Cross-check after any change**: orange ends at `first-seen.rpt`'s DATED Seen (the sum of its
 day rows — the no-date row went 2026-09-30; acceptance 2026-08-22: subscriptions 283, partners 97, accounts 221).
 The overview-only views (Throughput, Connections, Seen, Use cases) are not on the day pages:
-Throughput's slots open the day's Duration, Connections' and the Seen curves' its Files processed,
+Throughput's slots open the day's Duration, Connections' and the Seen curves' its OK Files,
 a UC stack's the UC's status page.
 
 **Slot charts are drawn CLIENT-SIDE** by `docs/assets/slotchart.js`; every other chart type
@@ -526,7 +526,7 @@ Entities `datereset`). CSS `.daytop`: tracks `minmax(0,1fr)`; `.daytop td` sets
 
 The hero = the shared slot views (same labels as the Overview) at 30-minute slots. Slot columns
 carry no day link: an empty CARD a3 makes `render_card` fall back to the CARD's own href as
-LINKPAT. `Files processed` is the one card that FILLS a3
+LINKPAT. `OK Files` is the one card that FILLS a3
 (`../transfer/entities/subscription-all.html?axway_date=<d>`), so its plot and title point at
 different pages — its subtitle says so. The PeSIT view reads `pesit-slots.tsv`, the sidecar
 `bin/server/reports/pesit.sh` writes (a missing sidecar leaves the day view an all-zero series —
@@ -607,7 +607,7 @@ Subscriptions page; orange rows left out, user request), newest first, Date/time
 page through the subscriptions slugmap); the banner opens the report via `data-href`. (The
 log-exports facts table, `write_log_facts`, went 2026-09-29 — the build report carries it.)
 Every status cell opens the **Entities view whose row
-count IS that figure** (columns Entity · Total · Seen · OK · Error · Warning · Ok — the
+count IS that figure** (columns Entity · Total · Seen % · OK % · Error · Warning · Ok — the
 Transfer/Server columns and the "including server log" switch went with the blue result,
 2026-09-27): Total links `<e>-all`, Seen `<e>-seen`, the counts their result views; the
 percentage columns link too; a 0 renders as an empty cell (inert). The
@@ -725,8 +725,8 @@ name match, case aside). Runs after `details.sh` (needs the slugmaps). No Logica
 entities, same total-row pair/once rule) but counts only the Files whose START date (`_files.tsv`
 col 4) falls in ONE calendar month: "this" = the month of the newest File start, "previous" = the
 month before. 18 `.rpt` under `data/transfer/reports/month-stats/{this,previous}-<entity>.rpt`
-(`META month` / `META which`), columns Total files · In · Out · Errors · Auto Retries · Resubmit
-OK · Resubmit Error · Waiting · Expired, busiest first. `render_month_stats` (publish_lib, from the
+(`META month` / `META which`), columns Files · In Files · Out Files · Error · Automatic · Resubmit
+Ok · Resubmit Error · Waiting · Expired (the labels since 2026-09-30), busiest first. `render_month_stats` (publish_lib, from the
 transfer publish) renders them into `docs/transfer/month-stats/` with two NAV tab rows (the month
 with its yyyy-mm, then the entity) and no From/To filter; help slug `month-stats`. Its Reports
 group member is `transfer/month-stats/this` — `rg_landing` and `apply_report_groups`
@@ -748,7 +748,8 @@ consumer resolves links through it. The `<body>` carries a tint class (the RESUL
 From/To, no search box, no RECALC/@data:buckets** (`CUR_DATES` stays empty; `setupSearch` skips
 `/details/`).
 
-Page order IS the section number: -1 direction · 0 header data · 0.9 Waiting/Expired summary ·
+Page order IS the section number: -1 direction · 0 header data (the 0.9 Waiting/Expired summary is
+HELD and rendered right after the Features block, `we_table` — 2026-09-30, not in section order) ·
 1 Activity per day · 2 subscription · 2.6/2.7 Incoming/Outgoing connections · 2.8 account ·
 2.81–2.83 domain/application/partner · 3 login · 5 protocol · 6 av · (9, the latest Files,
 went 2026-09-29) ·
@@ -973,7 +974,8 @@ exactly that set.
   filtered. `esearch` renders the controls open: entity-type checkbox buttons (all OFF =
   everything; the `TYPES` array is the button order, the filter map is keyed by NAME) + the search
   input. The search matches the NAME column only; no views, no drills, no date filter; rows tinted
-  by RESULT. Also lists every whitelisted IP (type "Whitelist", linking the allowing account).
+  by RESULT. Also lists every whitelisted IP (type "Whitelist", linking the address's incoming-connection
+  page when it has one, else the allowing account — 2026-09-30).
   **Adding a column means shifting report.js** — the Type cell is read by INDEX (`cells[2]`) in
   several places.
 - **Failed Subscriptions** — `bin/transfer/reports/failed.sh`, the first member of the Errors

@@ -745,9 +745,9 @@ rows=$(awk -F'\t' '
     # flows (the TOTAL counts it once) — a search must not re-sum it (2026-09-29)
     printf 'TABLE\tUC2 subscriptions\twide\tnofilter\tnoagg=5\ttab=uc2\n'
     printf 'HEAD\tStatus\tSubscription\tExpired\tFirst\tLast\tPickups\tLast pickup\n'
-    printf 'KIND\ttext\tmono\tnum\ttext\ttext\tnum\ttext\n'
+    printf 'KIND\ttext\tmono\tnumfailed\ttext\ttext\tnum\ttext\n'
     [ -z "$rows" ] || printf '%s\n' "$rows"   # (no blank line before TOTAL, 2026-09-29 audit)
-    printf 'TOTAL\tTotal (%s subscription(s))\t\t@{class=num}%s\t\t\t@{class=num}%s\t\n' \
+    printf 'TOTAL\tTotal (%s subscription(s))\t\t@{class=num failed}%s\t\t\t@{class=num}%s\t\n' \
         "$(( n_never + n_nofiles + n_coll + n_ok + n_nothing ))" "$([ "${t_ef:-0}" = 0 ] || printf '%s' "$t_ef")" "$([ "${t_pk:-0}" = 0 ] || printf '%s' "$t_pk")"
 
     printf 'FOOT\n'

@@ -88,8 +88,8 @@ function pktable(nm,   k, t) {
     t = t "ROW\tPickup logons (SSH)\t" (pkn[k] + 0) "\n"
     t = t "ROW\tPickup logons that collected files\t" (pkw[k] + 0) "\n"
     t = t "ROW\tFiles picked up (transfer log)\t" (pkc[k] + 0) "\n"
-    t = t "ROW\tCurrent waiting files\t" (pkwt[k] + 0) "\n"
-    t = t "ROW\tExpired files\t" (pkxp[k] + 0) "\n"
+    t = t "ROW\tCurrent waiting Files\t" (pkwt[k] + 0) "\n"
+    t = t "ROW\tExpired Files\t" (pkxp[k] + 0) "\n"
     t = t "ROW\tPickup pattern\t" pkp[k] "\n"
     # only when there ARE such logons — a 0 row says nothing on a flow whose
     # partner never delivers (most of them)

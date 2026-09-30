@@ -17,7 +17,7 @@
 <h1>Use cases</h1>
 <h2>What it shows</h2>
 <ul>
-<li>One row per use case &mdash; what it means and how many configured subscriptions it has, by colour &mdash; then, when the FlowManager template export is loaded, the templates behind them.</li>
+<li>One row per use case &mdash; its meaning and its configured subscriptions by colour &mdash; then, with the FlowManager template export loaded, the templates behind them.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
@@ -25,16 +25,15 @@
 <li><strong>Direction</strong> &mdash; connection side / file movement: <strong>out/in</strong> = we connect out, the file comes to us.</li>
 <li><strong>Trigger</strong> &mdash; <em>OpsWise</em> (our automation starts it), <em>Partner</em> (the partner connects in) or <em>Cronjob</em> (a receive schedule polls the partner).</li>
 <li><strong>We are</strong> &mdash; client, server or both; <strong>We</strong> &mdash; send, receive or relay.</li>
-<li><strong>Total</strong> &middot; <strong>Seen</strong> (a File in the transfer log) &middot; <strong>Error</strong> (red) &middot; <strong>Warning</strong> (orange) &middot; <strong>Ok</strong> (green) &mdash; Total and the colour counts open <a href="subscriptions.html">Configured subscriptions</a> filtered to that use case and colour (Seen is no link); Total leaves out the skipped (white) ones.</li>
+<li><strong>Total</strong> &middot; <strong>Seen</strong> (a File in the transfer log) &middot; <strong>Error</strong> (red) &middot; <strong>Warning</strong> (orange) &middot; <strong>Ok</strong> (green) &mdash; Total and the colour counts open <a href="subscriptions.html">Configured subscriptions</a> filtered that way; Total leaves out the skipped (white) ones.</li>
 <li>Seen is not always Error + Ok: a UC3 that polls and cannot connect is red without ever transferring a File.</li>
 <li><strong>Description</strong> &mdash; the use case in one sentence.</li>
-<li><strong>Templates</strong> &mdash; Template (&#128279; opens it in FlowManager) &middot; Use Case &middot; <strong>Route</strong> (the flow pattern a subscription instantiates) &middot; <strong>Subscriptions</strong> created from it &middot; <strong>Status</strong> (the template&rsquo;s own status code) &middot; Last modified.</li>
+<li><strong>Templates</strong> &mdash; Template (&#128279; opens it in FlowManager) &middot; Use Case &middot; <strong>Route</strong> (the flow pattern) &middot; <strong>Subscriptions</strong> created from it &middot; <strong>Status</strong> (its own status code) &middot; Last modified.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
 <li>A subscription&rsquo;s use case is its <code>UC&lt;n&gt;</code> name prefix, else the one derived from its configured pattern &mdash; the same everywhere on the site.</li>
 <li>UC1&ndash;UC4 bridge one partner to our internal application; UC5&ndash;UC8 relay between two partners with no internal CFT leg.</li>
-<li>A use case with a published template but no subscriptions gets a row with blank counts.</li>
 <li>&#9888; under the table: subscriptions whose configured direction disagrees with their use case &mdash; a naming or configuration error.</li>
 <li>Colours per <a href="general.html">Generic help</a>.</li>
 </ul>

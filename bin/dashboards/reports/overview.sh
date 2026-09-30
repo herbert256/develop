@@ -240,8 +240,8 @@ fi
 # The curves count CONFIGURED entities (2026-08-15 audit A4). A logged site
 # value is canonicalized to the configured subscription it uniquely prefixes
 # (the uc-status/first-seen rule); a value matching no configured name drops
-# out. Orange ends at first-seen.rpt's DATED Seen (its Seen minus the no-date
-# bucket) — the cross-check after any change here.
+# out. Orange ends at first-seen.rpt's DATED Seen (the sum of its day rows)
+# — the cross-check after any change here.
 #
 # PARTNER attribution is the site-wide UNION rule plus the coverage pages'
 # host evidence: col 20 ∪ the subscription's configured partner(s) (col 12 on
@@ -627,8 +627,13 @@ fi
 # links open the matching Entities view sorted descending on the same column —
 # no ?axway_date, so the page opens at its full-range default (datereset).
 tops=""
+# the detail-page slugmaps (details.sh, final before this runs): the Top-5
+# names link their detail page (2026-09-30 audit D-02 / L-03) — TOP field 7
+# and TOPDATA field 4 carry the slug, "" = no page
+SLGP="$DATA/transfer/reports/details/partners/_slugmap.tsv"
+SLGS="$DATA/transfer/reports/details/subscriptions/_slugmap.tsv"
 if [ -f "$TR" ]; then
-    tops=$(awk -F'\t' -v SPMAP="$SP_MAP" "$SP_AWK"'
+    tops=$(awk -F'\t' -v SPMAP="$SP_MAP" -v SLGP="$SLGP" -v SLGS="$SLGS" "$SP_AWK"'
         function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
         function tally(kind, nm,   k, kd, e9) {
             if (nm == "") return
@@ -671,7 +676,13 @@ if [ -f "$TR" ]; then
             nn = split(raw, Z, US); s = ""
             for (i = 1; i <= nn; i += 2) s = s (s == "" ? "" : US) Z[i] US human(Z[i+1])
             return s }
-        BEGIN { US = sprintf("%c", 31) }
+        function tslugs(rows, kind,   nn, Z, i, s) {
+            nn = split(rows, Z, US); s = ""
+            for (i = 1; i <= nn; i += 2) s = s (i == 1 ? "" : US) (((kind SUBSEP Z[i]) in SLG) ? SLG[kind SUBSEP Z[i]] : "")
+            return s }
+        BEGIN { US = sprintf("%c", 31)
+            if (SLGP != "") { while ((getline sl < SLGP) > 0) { n = split(sl, sz, "\t"); if (n >= 2 && sz[2] != "") SLG["P" SUBSEP sz[1]] = sz[2] } close(SLGP) }
+            if (SLGS != "") { while ((getline sl < SLGS) > 0) { n = split(sl, sz, "\t"); if (n >= 2 && sz[2] != "") SLG["S" SUBSEP sz[1]] = sz[2] } close(SLGS) } }
         {
             if ($12 != "Unknown") tally("S", $12)   # "Unknown" = no subscription (2026-09-29): not a Top-5 subscription
             # the partner UNION set (bin/pda-union.sh; a missing map leaves
@@ -680,23 +691,25 @@ if [ -f "$TR" ]; then
             for (ipt = 1; ipt <= npt; ipt++) tally("P", PTZ[ipt])
         }
         END {
-            # the Entities layout is Name 0 · Direction 1 · Files 2 · Volume 3
-            # · OK 4 · Retry 5 · Resubmit 6 · Error 7 — the sort target of each "See more" link
+            # the "See more" sort goes by header LABEL (the grouped Entities
+            # layout) — Volume = Total, Errors = Error; the Files cards add
+            # none (no single Files column): the baked order, unless the viewer
+            # own stored Entities sort takes precedence
             for (tm = 1; tm <= 3; tm++) {
                 tmet = (tm == 1) ? "Files" : (tm == 2) ? "Volume" : "Errors"
-                tcol = (tm == 1) ? "" : (tm == 2) ? "?axway_sort=Total:-1" : "?axway_sort=Error:-1"   # the Entities page sorts by header LABEL (2026-09-13, the grouped layout): Volume = Total, Error = the Files group Error (the first match); Files = the page own busiest-first order, no sort12)
+                tcol = (tm == 1) ? "" : (tm == 2) ? "?axway_sort=Total:-1" : "?axway_sort=Error:-1"   # Error = the Files group Error (the first header reading it)
                 for (tk = 1; tk <= 2; tk++) {
                     tkind = (tk == 1) ? "P" : "S"
                     tname = (tk == 1) ? "partners" : "subscriptions"
                     tpage = (tk == 1) ? "partner" : "subscription"
                     trows = (tm == 1) ? top5(FC, tkind) : (tm == 2) ? top5b(VC, tkind) : top5(EC, tkind)
                     if (trows == "") continue
-                    printf "TOP\t%s\tTop 5 %s by %s\t%s\t../transfer/entities/%s-all.html%s\t%s\n", \
-                        tkind, tname, tmet, tmet, tpage, tcol, trows
+                    printf "TOP\t%s\tTop 5 %s by %s\t%s\t../transfer/entities/%s-all.html%s\t%s\t%s\n", \
+                        tkind, tname, tmet, tmet, tpage, tcol, trows, tslugs(trows, tkind)
                 }
             }
             # the per-entity daily series behind the client-side date filter
-            # (TOPDATA<TAB>kind<TAB>name<TAB>YYYYMMDD:files:vol:errs|…, one line
+            # (TOPDATA<TAB>kind<TAB>name<TAB>YYYYMMDD:files:vol:errs|…<TAB>slug, one line
             # per entity): a narrowed From/To must RE-SELECT the Top 5 — the
             # busiest of a week need not be the busiest of the period — so
             # report.js setupDaytop rebuilds the six tables from these. Dates
@@ -719,7 +732,7 @@ if [ -f "$TR" ]; then
                         dc = DT[jd]; gsub(/-/, "", dc)
                         s = s (s == "" ? "" : "|") dc ":" FCD[kd]+0 ":" VCD[kd]+0 ":" ECD[kd]+0
                     }
-                    if (s != "") printf "TOPDATA\t%s\t%s\t%s\n", tkind, nm, s
+                    if (s != "") printf "TOPDATA\t%s\t%s\t%s\t%s\n", tkind, nm, s, (((tkind SUBSEP nm) in SLG) ? SLG[tkind SUBSEP nm] : "")
                 }
             }
         }' "$TR")
@@ -727,13 +740,13 @@ fi
 
 {
     printf 'PAGE\tindex\n'
-    printf 'TITLE\tDashboards — Axway ST reports\n'
+    printf 'TITLE\tDashboard — Axway ST reports\n'   # = its h1 and the top-bar link (2026-09-30)
     printf 'H1\tDashboard\n'
     # every File, so the Top view (its per-day Files Count), not Activity per
     # day (delivered Files only since 2026-09-13) — 2026-09-28 fix
-    printf 'KPI\t%s\tFiles transferred\tlogical transfers\tblue\t../transfer/topview.html\n' "$(knum_files "${T_FILES:-0}")"
+    printf 'KPI\t%s\tFiles\tlogical transfers\tblue\t../transfer/topview.html\n' "$(knum_files "${T_FILES:-0}")"
     printf 'KPI\t%s%%\tFile error rate\t\tred\t../transfer/topview.html\n' "${T_FPCT:-0}"
-    printf 'KPI\t%s\tVolume moved\t\tgreen\t../transfer/topview.html\n' "$(humanbytes "${T_VOL:-0}")"
+    printf 'KPI\t%s\tVolume\t\tgreen\t../transfer/topview.html\n' "$(humanbytes "${T_VOL:-0}")"
     printf 'KPI\t%s\tServer records\tlog messages\tpurple\t../server/topview.html\n' "$(knum_recs "${S_REC:-0}")"
     printf 'KPI\t%s%%\tServer error rate\t\tamber\t../server/topview.html\n' "${S_EPCT:-0}"
     # the hero + its alternates: the SIX shared slot views plus the two
@@ -755,9 +768,9 @@ fi
         # "seen" curve to show (a single day is one point on it), so clicking a
         # slot opens that day's OK Files graph. The link pattern is a
         # free-form string — nothing ties it to the card's own view.
-        [ -n "$ptn6" ] && printf 'CARDALT\tSeen|Partners\tPartners seen\thow many partners the site had seen in the transfer log by then (orange), split into green (its latest File was delivered — expired pickups and waiting files count green here — the curve has no orange) and red (its latest File FAILED) — green and red move both ways and always sum to orange; click a slot for that day'"'"'s Files processed\t../transfer/entities/partner-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=OK%%20Files\t%s\t%s\t%s\t%s\t%s\n' "$ptn6" "60:$ptn1" "120:$ptn2" "240:$ptn4" "720:$ptn12" "1440:$ptn24"
-        [ -n "$acc6" ] && printf 'CARDALT\tSeen|Accounts\tAccounts seen\thow many accounts the site had seen in the transfer log by then (orange), split into green (its latest File was delivered — expired pickups and waiting files count green here — the curve has no orange) and red (its latest File FAILED) — green and red move both ways and always sum to orange; click a slot for that day'"'"'s Files processed\t../transfer/entities/account-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=OK%%20Files\t%s\t%s\t%s\t%s\t%s\n' "$acc6" "60:$acc1" "120:$acc2" "240:$acc4" "720:$acc12" "1440:$acc24"
-        [ -n "$sub6" ] && printf 'CARDALT\tSeen|Subscriptions\tSubscriptions seen\thow many subscriptions the site had seen in the transfer log by then (orange), split into green and red: red = the flow is failing (its latest File FAILED, or the server log erred after its last delivery — the same red as the home page), green = everything else, expired pickups and waiting files included (the curve has no orange). Green and red move both ways and always sum to orange; click a slot for that day'"'"'s Files processed\t../transfer/entities/subscription-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=OK%%20Files\t%s\t%s\t%s\t%s\t%s\n' "$sub6" "60:$sub1" "120:$sub2" "240:$sub4" "720:$sub12" "1440:$sub24"
+        [ -n "$ptn6" ] && printf 'CARDALT\tSeen|Partners\tPartners seen\thow many partners the site had seen in the transfer log by then (orange), split into green (its latest File was delivered — expired pickups and waiting files count green here — the curve has no orange) and red (its latest File FAILED) — green and red move both ways and always sum to orange; click a slot for that day'"'"'s OK Files\t../transfer/entities/partner-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=OK%%20Files\t%s\t%s\t%s\t%s\t%s\n' "$ptn6" "60:$ptn1" "120:$ptn2" "240:$ptn4" "720:$ptn12" "1440:$ptn24"
+        [ -n "$acc6" ] && printf 'CARDALT\tSeen|Accounts\tAccounts seen\thow many accounts the site had seen in the transfer log by then (orange), split into green (its latest File was delivered — expired pickups and waiting files count green here — the curve has no orange) and red (its latest File FAILED) — green and red move both ways and always sum to orange; click a slot for that day'"'"'s OK Files\t../transfer/entities/account-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=OK%%20Files\t%s\t%s\t%s\t%s\t%s\n' "$acc6" "60:$acc1" "120:$acc2" "240:$acc4" "720:$acc12" "1440:$acc24"
+        [ -n "$sub6" ] && printf 'CARDALT\tSeen|Subscriptions\tSubscriptions seen\thow many subscriptions the site had seen in the transfer log by then (orange), split into green and red: red = the flow is failing (its latest File FAILED, or the server log erred after its last delivery — the same red as the home page), green = everything else, expired pickups and waiting files included (the curve has no orange). Green and red move both ways and always sum to orange; click a slot for that day'"'"'s OK Files\t../transfer/entities/subscription-all.html\tspan2\tslots\tseen\t%s\t../day/{}.html?axway_hero=OK%%20Files\t%s\t%s\t%s\t%s\t%s\n' "$sub6" "60:$sub1" "120:$sub2" "240:$sub4" "720:$sub12" "1440:$sub24"
         # the four UC status stacks — OVERVIEW ONLY, so their labels deliberately
         # match no day-page button (picking one and opening a day page falls back
         # to Duration, exactly as picking "Partners seen" already does)

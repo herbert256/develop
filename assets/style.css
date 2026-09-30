@@ -595,10 +595,6 @@ body.home .tablewrap table { margin-left:auto; margin-right:auto; }
 .dash { max-width:1180px; margin:0 auto; }
 .dash > h1 { text-align:center; }   /* the dashboards pages center their title (the day pages' .daynav h1 centers itself) */
 .dash > .controls { text-align:center; }   /* the date row right under it centers with it */
-.dash-intro { color:#5a6b7d; font-size:1rem; margin:-0.4rem 0 1.5rem; max-width:70ch; }
-.dash-intro strong { color:#20344a; }
-.dash-intro a, .dash-intro a strong { color:#3b6ea5; }   /* linked dashboard names read as links (the strong rule above would swallow the anchor color) */
-.dash-intro a:hover { text-decoration:underline; }
 
 
 /* KPI cards */
@@ -674,8 +670,6 @@ body.home .tablewrap table { margin-left:auto; margin-right:auto; }
 
 /* FlowManager deep-link icon: a second, small anchor next to a name (the Use
    cases page's Templates table, bin/analyses/publish.sh). Muted until hovered. */
-.fmlink { text-decoration:none; font-size:0.78em; opacity:0.5; }
-.fmlink:hover { opacity:1; text-decoration:none; }
 /* Partner-GROUP icon: a small anchor after a grouped partner's name (the
    Entities Partner pages; render_rpt.awk gicon) linking to the page that
    explains why those partner codes were merged into one group. */

@@ -276,9 +276,12 @@ cov_view() {
         # The STAT boxes sit AFTER the TABLE line on purpose: segment_rpt puts
         # every directive following a TABLE into THAT table block, so each
         # tabbed page gets its own boxes instead of one shared set.
+        # the lowercased label in "Total N …" — except the acronym-like
+        # BL and Logical, which keep their case (2026-09-30: "30 bl")
+        function lcl(l) { return (l == "BL" || l == "Logical") ? l : tolower(l) }
         $3 == "END" { tot = $4; tg = $5; tr = $6; to = $7; tk = $8; tx = $9
             printf "TABLE\t%s\twide\tgsep=2,5,8\n", LABEL
-            printf "STAT\twhite\t%d\tTotal %s\n", tot+0, tolower(LABEL)
+            printf "STAT\twhite\t%d\tTotal %s\n", tot+0, lcl(LABEL)
             printf "STAT\tgreen\t%d (%.0f%%)\tCovered (Current)\n", tg+0, (tot > 0 ? 100 * tg / tot : 0)
             printf "STAT\tred\t%d (%.0f%%)\tNot covered\n", tr+0, (tot > 0 ? 100 * tr / tot : 0)
             printf "STAT\twhite\t%d\tCovered once\n", to+0
@@ -289,7 +292,7 @@ cov_view() {
             printf "KIND\t%s\ttext\tnum\tnum\tnum\tnum\tnum\tnum\ttext\ttext\ttext\ttext\n", KIND
             for (i = 1; i <= nbuf; i++) print BUF[i]
             printf "TOTAL\tTotal (%d %s)\t\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t\t\t\t\n", \
-                tot+0, tolower(LABEL), s3+0, s4+0, s5+0, s6+0, s7+0, s8+0
+                tot+0, lcl(LABEL), s3+0, s4+0, s5+0, s6+0, s7+0, s8+0
             next
         }
         $3 == "ROW" {

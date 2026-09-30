@@ -75,13 +75,14 @@ _fs_cell() {   # $1 = the cell .rpt
         logins)        resfile="$DATA/flow-manager/base/_logins.tsv";        nlabel="Login" ;;
         hosts)         resfile="$DATA/flow-manager/base/_hosts.tsv";         nlabel="Host" ;;
         partners)      resfile="$DATA/flow-manager/base/_partners.tsv";      nlabel="Partner" ;;
+        logicals)      resfile="$DATA/flow-manager/base/_logicals.tsv";      nlabel="Logical" ;;   # (2026-09-30 audit S-02: untinted, headed "Name" before)
         *)             nlabel="Name" ;;
     esac
     [ -f "$resfile" ] || resfile=""
     # (the Total / Seen / Not seen cells open the Entities views —
-    # write_first_seen_page; first-seen.sh writes a .rpt per dated cell and
-    # the no-date cell only, their rows name ⇥ seen ⇥ detail slug ⇥ first
-    # transfer)
+    # write_first_seen_page; first-seen.sh writes a .rpt per dated cell only
+    # (the no-date cell went 2026-09-30), their rows name ⇥ seen ⇥ detail
+    # slug ⇥ first transfer)
     {
         html_head "$title" "../assets/style.css" "" "HOME" "first-seen"
         esc "$title"; printf '<h1>%s</h1>\n' "$ESC"
@@ -760,8 +761,8 @@ write_logical_detection_page() {
 # — the pickup-side file mask as the green
 # suffix), the Cron expression and Schedule exactly as the Polling page shows
 # them (subscriptions.json via jq + bin/cron2human.awk, the same pipeline as
-# polling.sh; blank without a cron), and the ALL-TIME File counts — Total files · In · Out · Errors ·
-# Automatic · Resubmit OK / Error · Waiting · Expired — from
+# polling.sh; blank without a cron), and the ALL-TIME File counts — Files · In · Out · Error ·
+# Automatic · Resubmit Ok / Error · Waiting · Expired (the Month stats labels, 2026-09-30) — from
 # month-stats.sh's _alltime.tsv sidecar (the Entities
 # definitions; a subscription never seen in the log shows blanks; 0 shows
 # blank). Rows tint by the subscription's result (green / orange / red);
@@ -911,7 +912,9 @@ write_subscriptions_page() {
         # cron2human.awk) stack with <br>
         function crcell(raw,   o) { o = e(raw); gsub(/\037/, "<br>", o); return "<code>" o "</code>" }
         # the Active cell (2026-09-14): Yes, or the codes ", "-joined with their
-        # words as the hover title; blank when the JSON does not name it
+        # words as the hover title; blank when the JSON does not name it.
+        # class="act" has no CSS: it is the MARKER bin/sample/verify.sh finds
+        # the Active column (and the table rows) by — keep it
         function actcell(k, AA,   c, n3, A3, W3, i3, o, t) {
             # a SWIFT subscription runs through CFT (2026-09-15, user rule): CFT, whatever the JSON says
             if (index(k, "SWIFT") > 0) return "<td class=\"act\" title=\"SWIFT: runs through CFT\">CFT</td>"
@@ -1072,7 +1075,7 @@ write_subscriptions_page() {
         html_head "Configured subscriptions" "../assets/style.css" "" "" "subscriptions" "" "" "sort-fresh"
         printf '<h1>Configured subscriptions%s</h1>\n' "${fmts:+ - FM export $fmts}"
         printf '<div class="tablewrap"><table class="index fit">\n'
-        printf '<tr><th>Subscription</th><th>Use case</th><th>Active</th><th>Color</th><th>Direction</th><th>Endpoint</th><th>From</th><th>To</th><th class="num">Total files</th><th class="num">In Files</th><th class="num">Out Files</th><th class="num">Errors</th><th class="num">Automatic</th><th class="num">Resubmit OK</th><th class="num">Resubmit Error</th><th class="num">Waiting</th><th class="num">Expired</th><th>Error reason</th><th>Logical</th><th>Account</th><th>Partner</th><th>Domain</th><th>Application</th><th>BL</th><th>Cron expression</th><th>Schedule</th></tr>\n'
+        printf '<tr><th>Subscription</th><th>Use case</th><th>Active</th><th>Color</th><th>Direction</th><th>Endpoint</th><th>From</th><th>To</th><th class="num">Files</th><th class="num">In Files</th><th class="num">Out Files</th><th class="num">Error</th><th class="num">Automatic</th><th class="num">Resubmit Ok</th><th class="num">Resubmit Error</th><th class="num">Waiting</th><th class="num">Expired</th><th>Error reason</th><th>Logical</th><th>Account</th><th>Partner</th><th>Domain</th><th>Application</th><th>BL</th><th>Cron expression</th><th>Schedule</th></tr>\n'
         [ -n "$rows" ] && printf '%s\n' "$rows"
         printf '<tr class="total"><td>%s</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>%s<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n' "$tlbl" "$tcells"
         printf '</table></div>\n'
@@ -1099,7 +1102,7 @@ write_accounts_page() {
       ($c|map(select(.s=="PWD"))) as $p|($c|map(select(.s=="KEY"))) as $k|($c|map(select(.s!="PWD" and .s!="KEY"))) as $o|
       "PWD\tpassword\t\($p|length)\t\($p|map(select(.a=="PASSWORD"))|length)",
       "KEY\tpublic key\t\($k|length)\t\($k|map(select(.a|IN("PUBLIC_KEY","PASSWORD_OR_PUBLIC_KEY")))|length)",
-      "(other)\tno PWD/KEY suffix (the FTP endpoints, below)\t\($o|length)\t-"')
+      "(other)\tno PWD/KEY suffix\t\($o|length)\t-"')
     mm_rows=$(jq -r '.[]|.communicationProfiles[]?|select(.name!=null)|(.name|split("_")[-1]) as $s|
       select(($s=="PWD" and .clientAuthentication!="PASSWORD") or ($s=="KEY" and (.clientAuthentication|IN("PUBLIC_KEY","PASSWORD_OR_PUBLIC_KEY")|not)))|
       "\(.name)\t\($s)\t\(.clientAuthentication//"null")"' "$P" | LC_ALL=C sort)
@@ -1149,8 +1152,9 @@ write_accounts_page() {
     local pda_ok
     IFS=$'\t' read -r _ pda_ok pda_bad <<< "$(printf '%s\n' "$pda_rows" | grep '^#')"
     pda_rows=$(printf '%s\n' "$pda_rows" | grep -v '^#' || true)
-    # The FTP profiles == the "(other)" auth-suffix exceptions (same set): FTP has
-    # no public key, so their auth is unset and their name ends in a partner tag.
+    # The FTP profiles (their names end in _PWD like any password profile, so
+    # they count in the PWD suffix row — NOT the "(other)" one, 2026-09-30
+    # audit S-11: this comment and the row text said otherwise).
     local ftp_rows nftp
     ftp_rows=$(jq -r '.[]|.communicationProfiles[]?|select(.protocol=="FTP")|"\(.name)\t\((.name|split("_")[-1]))\t\(.clientAuthentication//"none")"' "$P" | LC_ALL=C sort)
     nftp=$(printf '%s' "$ftp_rows" | grep -c $'\t' || true)
@@ -1237,6 +1241,13 @@ write_accounts_page() {
     lnm_rows=$(jq -r '.[] as $a | $a.communicationProfiles[]? | select(.type=="CLIENT" and .login!=null and .loginName!=null and (.login!=.loginName))
         | "\($a.name)\t\(.name)\t\(.login)\t\(.loginName)"' "$P" | LC_ALL=C sort)
     nlnm=$(printf '%s' "$lnm_rows" | grep -c $'\t' || true)
+    # ENTITY LINKS (2026-09-30 audit S-03 / L-05: every name on this page was
+    # plain text): a name cell is written as a MARKER — G sub F mode F name G,
+    # the name HTML-escaped; mode c = keep the <code> style, l = a ", "-joined
+    # list (each item linked, a "(+N more)" tail kept) — and ONE awk pass over
+    # the finished page (_acc_links) turns each marker into a link to its
+    # detail page when the sub-dir slugmap names it, else the plain name.
+    local G=$'\035' F=$'\036'
     {
         html_head "Configured accounts" "../assets/style.css" "" "" "accounts" "" "" "sort-fresh"
         printf '<h1>Configured accounts</h1>\n'   # = its Reports menu label (2026-09-29)
@@ -1269,7 +1280,8 @@ write_accounts_page() {
             [ -n "$tok" ] || continue
             esc "$tok"; se=$ESC
             if [ "$match" = "-" ]; then
-                printf '<tr><td>%s</td><td>%s</td><td class="num">%s</td><td class="num"></td><td class="num"></td></tr>\n' "$se" "$mean" "$(dotify "$n")"
+                # (a 0 count is blank, like every count cell)
+                printf '<tr><td>%s</td><td>%s</td><td class="num">%s</td><td class="num"></td><td class="num"></td></tr>\n' "$se" "$mean" "$( [ "${n:-0}" -gt 0 ] && dotify "$n" )"
             else
                 mmc=$((n - match))
                 printf '<tr><td>%s</td><td>%s</td><td class="num">%s</td><td class="num st-ok">%s</td>%s</tr>\n' "$se" "$mean" "$(dotify "$n")" "$(dotify "$match")" \
@@ -1299,8 +1311,11 @@ write_accounts_page() {
                 [ -n "$nm" ] || continue
                 esc "$nm"; nme=$ESC; esc "$dm"; dme=$ESC; esc "$ap"; ape=$ESC; esc "$pt"; pte=$ESC
                 esc "$miss"; mse=$ESC; esc "$why"; whe=$ESC
-                printf '<tr data-res="%s"><td><code>%s</code></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n' \
-                    "${res:-orange}" "$nme" "${dme:-&mdash;}" "${ape:-&mdash;}" "${pte:-&mdash;}" "$mse" "$whe"
+                [ -n "$dme" ] && dme="${G}domains${F}l${F}${dme}${G}"
+                [ -n "$ape" ] && ape="${G}applications${F}l${F}${ape}${G}"
+                [ -n "$pte" ] && pte="${G}partners${F}l${F}${pte}${G}"
+                printf '<tr data-res="%s"><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n' \
+                    "${res:-orange}" "${G}accounts${F}c${F}${nme}${G}" "${dme:-&mdash;}" "${ape:-&mdash;}" "${pte:-&mdash;}" "$mse" "$whe"
             done
             printf '</table></div>\n'
         else
@@ -1316,13 +1331,13 @@ write_accounts_page() {
         printf '</table></div>\n'
         printf '<h2>Incoming partners without IP whitelisting (%s)</h2>\n' "$(dotify "$niw")"
         if [ "$niw" -gt 0 ]; then
-            printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Partner</th><th>Protocol</th><th>Authentication</th><th>Status</th></tr>\n'
+            printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Protocol</th><th>Authentication</th><th>Status</th></tr>\n'
             printf '%s\n' "$iw_rows" | tr '\t' '\036' | while IFS=$'\036' read -r p proto auth; do
                 [ -n "$p" ] || continue
                 res=$(awk -F'\t' -v n="$p" 'toupper($1)==toupper(n){print $3; exit}' $DATA/flow-manager/base/_accounts.tsv)
                 case $res in green) st="seen (last OK)" ;; red) st="seen (last Error)" ;; orange) st="never seen" ;; *) st="-" ;; esac
                 esc "$p"; pe=$ESC; esc "$proto"; pre=$ESC; esc "$auth"; ae=$ESC; esc "$st"; ste=$ESC
-                printf '<tr data-res="red"><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n' "$pe" "$pre" "$ae" "$ste"
+                printf '<tr data-res="red"><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n' "${G}accounts${F}${F}${pe}${G}" "$pre" "$ae" "$ste"
             done
             printf '</table></div>\n'
         else
@@ -1342,7 +1357,7 @@ write_accounts_page() {
                 prevh=""
                 printf '%s\n' "$arows" | tr '\t' '\036' | while IFS=$'\036' read -r h v pf; do
                     [ -n "$h" ] || continue
-                    if [ "$h" = "$prevh" ]; then hcell=""; else esc "$h"; hcell="<code>$ESC</code>"; prevh="$h"; fi
+                    if [ "$h" = "$prevh" ]; then hcell=""; else esc "$h"; hcell="${G}hosts${F}c${F}${ESC}${G}"; prevh="$h"; fi
                     esc "$v"; ve=$ESC; esc "$pf"; pfe=$ESC
                     printf '<tr data-res="red"><td>%s</td><td>%s</td><td>%s</td></tr>\n' "$hcell" "$ve" "$pfe"
                 done
@@ -1360,13 +1375,13 @@ write_accounts_page() {
                 [ -n "$warows" ] || continue
                 wanh=$(printf '%s\n' "$warows" | awk -F'\t' 'NF && !($1 in h){h[$1]=1;n++} END{print n+0}')
                 esc "$wlabel"
-                printf '<h3>%s (%s IP(s))</h3>\n<div class="tablewrap"><table class="index fit">\n<tr><th>Whitelisted IP</th><th>Value</th><th>Partners</th></tr>\n' "$ESC" "$(dotify "$wanh")"
+                printf '<h3>%s (%s IP(s))</h3>\n<div class="tablewrap"><table class="index fit">\n<tr><th>Whitelisted IP</th><th>Value</th><th>Accounts</th></tr>\n' "$ESC" "$(dotify "$wanh")"
                 previp=""
                 printf '%s\n' "$warows" | tr '\t' '\036' | while IFS=$'\036' read -r ip v pf; do
                     [ -n "$ip" ] || continue
                     if [ "$ip" = "$previp" ]; then ic=""; else esc "$ip"; ic="<code>$ESC</code>"; previp="$ip"; fi
                     esc "$v"; ve=$ESC; esc "$pf"; pfe=$ESC
-                    printf '<tr data-res="orange"><td>%s</td><td>%s</td><td>%s</td></tr>\n' "$ic" "$ve" "$pfe"
+                    printf '<tr data-res="orange"><td>%s</td><td>%s</td><td>%s</td></tr>\n' "$ic" "$ve" "${G}accounts${F}l${F}${pfe}${G}"
                 done
                 printf '</table></div>\n'
             done
@@ -1381,7 +1396,7 @@ write_accounts_page() {
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th>Login</th></tr>\n'
             printf '%s\n' "$nsl_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a p l; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$p"; pe=$ESC; esc "$l"; le=$ESC
-                printf '<tr data-res="orange"><td>%s</td><td><code>%s</code></td><td><code>%s</code></td></tr>\n' "$ae" "$pe" "$le"
+                printf '<tr data-res="orange"><td>%s</td><td><code>%s</code></td><td>%s</td></tr>\n' "${G}accounts${F}${F}${ae}${G}" "$pe" "${G}logins${F}c${F}${le}${G}"
             done
             printf '</table></div>\n'
         else printf '<p class="range">Every incoming login is a standard <code>FE&lt;digits&gt;</code> name.</p>\n'; fi
@@ -1391,7 +1406,7 @@ write_accounts_page() {
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Login</th><th class="num">Accounts</th><th>On</th></tr>\n'
             printf '%s\n' "$shl_rows" | while IFS=$'\t' read -r l n ac; do
                 [ -n "$l" ] || continue; esc "$l"; le=$ESC; esc "$ac"; ace=$ESC
-                printf '<tr data-res="orange"><td><code>%s</code></td><td class="num">%s</td><td>%s</td></tr>\n' "$le" "$n" "$ace"
+                printf '<tr data-res="orange"><td>%s</td><td class="num">%s</td><td>%s</td></tr>\n' "${G}logins${F}c${F}${le}${G}" "$n" "${G}accounts${F}l${F}${ace}${G}"
             done
             printf '</table></div>\n'
         else printf '<p class="range">Every login belongs to a single account.</p>\n'; fi
@@ -1401,7 +1416,7 @@ write_accounts_page() {
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th class="num">Hosts</th><th>Host list</th></tr>\n'
             printf '%s\n' "$mh_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a p n hl; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$p"; pe=$ESC; esc "$hl"; hle=$ESC
-                printf '<tr data-res="orange"><td>%s</td><td><code>%s</code></td><td class="num">%s</td><td>%s</td></tr>\n' "$ae" "$pe" "$n" "$hle"
+                printf '<tr data-res="orange"><td>%s</td><td><code>%s</code></td><td class="num">%s</td><td>%s</td></tr>\n' "${G}accounts${F}${F}${ae}${G}" "$pe" "$n" "${G}hosts${F}l${F}${hle}${G}"
             done
             printf '</table></div>\n'
         else printf '<p class="range">Every communication profile resolves to a single host.</p>\n'; fi
@@ -1411,7 +1426,7 @@ write_accounts_page() {
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th>Login</th></tr>\n'
             printf '%s\n' "$npw_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a p l; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$p"; pe=$ESC; esc "$l"; le=$ESC
-                printf '<tr data-res="orange"><td>%s</td><td><code>%s</code></td><td><code>%s</code></td></tr>\n' "$ae" "$pe" "$le"
+                printf '<tr data-res="orange"><td>%s</td><td><code>%s</code></td><td>%s</td></tr>\n' "${G}accounts${F}${F}${ae}${G}" "$pe" "${G}logins${F}c${F}${le}${G}"
             done
             printf '</table></div>\n'
         else printf '<p class="range">Every incoming password profile has a stored password.</p>\n'; fi
@@ -1421,7 +1436,7 @@ write_accounts_page() {
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th class="num">Profiles</th><th>Communication profiles</th></tr>\n'
             printf '%s\n' "$mcp_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a n ps; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$ps"; pse=$ESC
-                printf '<tr data-res="orange"><td>%s</td><td class="num">%s</td><td><code>%s</code></td></tr>\n' "$ae" "$n" "$pse"
+                printf '<tr data-res="orange"><td>%s</td><td class="num">%s</td><td><code>%s</code></td></tr>\n' "${G}accounts${F}${F}${ae}${G}" "$n" "$pse"
             done
             printf '</table></div>\n'
         else printf '<p class="range">Every account has exactly one communication profile.</p>\n'; fi
@@ -1431,12 +1446,51 @@ write_accounts_page() {
             printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th>login</th><th>loginName</th></tr>\n'
             printf '%s\n' "$lnm_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a p l ln; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$p"; pe=$ESC; esc "$l"; le=$ESC; esc "$ln"; lne=$ESC
-                printf '<tr data-res="orange"><td>%s</td><td><code>%s</code></td><td><code>%s</code></td><td><code>%s</code></td></tr>\n' "$ae" "$pe" "$le" "$lne"
+                printf '<tr data-res="orange"><td>%s</td><td><code>%s</code></td><td>%s</td><td>%s</td></tr>\n' "${G}accounts${F}${F}${ae}${G}" "$pe" "${G}logins${F}c${F}${le}${G}" "${G}logins${F}c${F}${lne}${G}"
             done
             printf '</table></div>\n'
         else printf '<p class="range">Every <code>login</code> matches its <code>loginName</code>.</p>\n'; fi
         printf '</body>\n</html>\n'
-    } > "$out"
+    } | _acc_links > "$out"
+}
+
+# the link pass of the Configured accounts page (see ENTITY LINKS above):
+# stdin = the page with its markers, stdout = the page with links
+_acc_links() {
+    local d="$DATA/transfer/reports/details" maps=() sm
+    for sm in accounts logins hosts partners domains applications; do
+        [ -f "$d/$sm/_slugmap.tsv" ] && maps+=("$d/$sm/_slugmap.tsv")
+    done
+    awk -F'\t' '
+        BEGIN { G = sprintf("%c", 29); F = sprintf("%c", 30) }
+        function unesc(s) { gsub(/&lt;/, "<", s); gsub(/&gt;/, ">", s); gsub(/&quot;/, "\"", s); gsub(/&amp;/, "\\&", s); return s }
+        function one(sd, nm, code,   t, k) {
+            t = code ? "<code>" nm "</code>" : nm
+            k = sd SUBSEP toupper(unesc(nm))
+            return (k in SL) ? "<a href=\"../details/" sd "/" SL[k] ".html\">" t "</a>" : t
+        }
+        function repl(inner,   P, n, code, o, i, it, tail) {
+            split(inner, P, F); code = (index(P[2], "c") > 0)
+            if (index(P[2], "l") == 0) return one(P[1], P[3], code)
+            n = split(P[3], L, ", "); o = ""
+            for (i = 1; i <= n; i++) {
+                it = L[i]; tail = ""
+                if (match(it, / \(\+[0-9]+ more\)$/)) { tail = substr(it, RSTART); it = substr(it, 1, RSTART - 1) }
+                o = o (i > 1 ? ", " : "") one(P[1], it, code) tail
+            }
+            return o
+        }
+        FILENAME != "-" { sd = FILENAME; sub(/\/_slugmap\.tsv$/, "", sd); sub(/.*\//, "", sd); SL[sd SUBSEP toupper($1)] = $2; next }
+        {
+            s = $0; out = ""
+            while ((i = index(s, G)) > 0) {
+                rest = substr(s, i + 1); j = index(rest, G)
+                if (j == 0) break
+                out = out substr(s, 1, i - 1) repl(substr(rest, 1, j - 1))
+                s = substr(rest, j + 1)
+            }
+            print out s
+        }' ${maps[@]+"${maps[@]}"} -
 }
 
 # (the Cronjobs page — docs/analyses/cronjobs.html, hand-written here until

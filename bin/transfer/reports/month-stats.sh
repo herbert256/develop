@@ -13,12 +13,12 @@
 # PLUS the ALL-TIME sidecar $REPORTS_DIR/_alltime.tsv — every File, the same
 # nine counts per (entity type, name) — the analyses Subscriptions page reads it.
 #
-# Columns per name: Total files · In Files · Out Files · Errors · Automatic ·
-# Resubmit OK · Resubmit Error · Waiting · Expired — the Entities pages'
+# Columns per name: Files · In Files · Out Files · Error · Automatic ·
+# Resubmit Ok · Resubmit Error · Waiting · Expired — the Entities pages'
 # definitions (In/Out = the movement direction, _files.tsv col 17, else the
-# connection side col 16; Errors =
+# connection side col 16; Error =
 # Failed + Expired; Automatic = an OK File with a failed leg and no
-# resubmitted leg; Resubmit OK / Error = every File with a resubmitted leg, by
+# resubmitted leg; Resubmit Ok / Error = every File with a resubmitted leg, by
 # outcome — the leg flags _files.tsv col 26 / col 27; Waiting / Expired = the
 # outcome col 2). Attribution per entity
 # mirrors entities.sh exactly (see there); totals per (name, File) pair for
@@ -139,7 +139,7 @@ for which in this previous; do
         IFS='|' read -r _ _ _ tc tin tout tfe tra tmo tme twt tex ns \
             <<< "$({ grep "^T|$mon|$dim|" "$AGG" || true; } | awk 'NR == 1')"
         : "${tc:=0}" "${tin:=0}" "${tout:=0}" "${tfe:=0}" "${tra:=0}" "${tmo:=0}" "${tme:=0}" "${twt:=0}" "${tex:=0}" "${ns:=0}"
-        # rows busiest first (Total files desc, name tiebreak); no count cell
+        # rows busiest first (Files desc, name tiebreak); no count cell
         # ever shows a 0 (2026-09-29: only In / Out were blanked)
         rows=$({ grep "^S|$mon|$dim|" "$AGG" || true; } | LC_ALL=C sort -t'|' -k5,5nr -k4,4f -k4,4 | awk -F'|' '
             function nz(x) { return (x + 0 == 0) ? "" : x + 0 }
@@ -162,7 +162,10 @@ for which in this previous; do
             # two subscription files only (the tab row), so only they carry it
             [ "$dim" = subscription ] && printf 'META\tmonth\t%s\n' "$mon"
             printf 'TABLE\t%s — Files started in %s\twide\tsort=1:-1\n' "$title" "$mon"
-            printf 'HEAD\t%s\tTotal files\tIn Files\tOut Files\tErrors\tAutomatic\tResubmit OK\tResubmit Error%s\n' "$chead" "$hstate"
+            # the site words (2026-09-30 audit T-10): Files · Error · Ok, as the
+            # Entities groups and the Top view ("Total files", "Errors" and
+            # "Resubmit OK" until then)
+            printf 'HEAD\t%s\tFiles\tIn Files\tOut Files\tError\tAutomatic\tResubmit Ok\tResubmit Error%s\n' "$chead" "$hstate"
             printf 'KIND\t%s\tnum\tnum\tnum\tnumfailed\tnumwarn\tnumwarn\tnumfailed%s\n' "$nkind" "$kstate"
             [ -n "$rows" ] && printf '%s\n' "$rows"
             printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s%s\n' \

@@ -22,13 +22,13 @@
 </ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>UC3 subscriptions</strong> &mdash; Status &middot; Subscription &middot; Files / OK / Error / Last file &middot; <strong>Polls</strong> / <strong>Empty polls</strong> (poll results; empty = no file found) &middot; <strong>Problems</strong> (a connection failure or failed listing) &middot; <strong>Last log</strong> (newest line of any counted kind, poll preparation included).</li>
+<li><strong>UC3 subscriptions</strong> &mdash; Status &middot; Subscription &middot; Files / OK / Error / Last file &middot; <strong>Polls</strong> / <strong>Empty polls</strong> (poll results; empty = no file found) &middot; <strong>Problems</strong> (a connection failure or failed listing) &middot; <strong>Last log</strong> (the newest counted line).</li>
 <li><strong>Polls by subscription</strong> &mdash; Polls &middot; Empty polls (no file matched) &middot; Files matched &middot; Empty % &middot; First &middot; Last; worst first.</li>
 <li><strong>Remote directory listing failures</strong> &mdash; Listing errors &middot; First &middot; Last: the folder could not be listed at all (path, permissions).</li>
 <li><strong>Configured cronjobs</strong> &mdash; every receive schedule in the configuration: Cron expression (Quartz, raw) &middot; Schedule (plain English) &middot; <strong>Observed</strong> &middot; Polls &middot; Active days. Boxes count schedules, SFTP, FTP and distinct expressions.</li>
 <li><strong>Schedules that never complete a poll</strong> &mdash; those whose Observed is <strong>-</strong>: <strong>Poll starts</strong> (setup lines on the scheduled minutes) &middot; <strong>Failure lines</strong> &middot; <strong>What goes wrong</strong> (the dominant one: timeout, handshake, authentication, listing).</li>
 <li><strong>Missing remote directories</strong> + <strong>Missing remote directories per day</strong> (only when logged) &mdash; listings answered <em>No such file</em>, still open: Last error &middot; Remote directory (every rejected path as logged) &middot; Last OK File &middot; Last good poll &middot; Errors.</li>
-<li><strong>UC3 subscriptions that never find a file</strong> + <strong>Polls that found no file, per day</strong> &mdash; never-transferred UC3 flows whose every poll found 0 files: Last &middot; Polls &middot; Days &middot; First.</li>
+<li><strong>UC3 subscriptions that never find a file</strong> + <strong>Never find a file &mdash; polls per day</strong> &mdash; never-transferred UC3 flows whose every poll found 0 files: Last &middot; Polls &middot; Days &middot; First.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
@@ -36,15 +36,14 @@
 <li><strong>error</strong> red, never an OK File: last File Failed, server-log errors after it, or no connection on 3 polls in a row.</li>
 <li><strong>not seen</strong> orange: never in the transfer log (or last File Expired) &mdash; a UC3 polling cleanly with nothing to fetch stays here.</li>
 <li><strong>Observed</strong>: the median of each day&rsquo;s first poll &plusmn; one standard deviation, or the poll rate above 3 a day; <strong>&middot; files</strong> = only file arrivals give a slot; <strong>-</strong> = never observed; <strong>dark red</strong> = contradicts the schedule.</li>
-<li>Authentication failures name only host and user, so they match through the configured host and can be shared by its flows.</li>
-<li>A missing directory drops out once the flow recovers: a later OK File or successful listing of that site.</li>
+<li>Authentication failures name only host and user, so they match through the configured host.</li>
+<li>A missing directory drops out once a later OK File or successful listing shows recovery.</li>
 <li>Never find a file leaves out flows that found files their pattern did not match &mdash; a pattern problem.</li>
 <li>From/To narrows Polls by subscription, the listing failures, Missing remote directories and Never find a file (with their per-day tables); the other three tables are full-period.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>A UC3 fails quietly, without transfer records: read Empty polls and Problems before chasing the partner.</li>
-<li>A UC3 subscriptions row&rsquo;s drill lists its newest problem lines first, then its newest poll lines.</li>
+<li>A UC3 fails quietly, without transfer records: read Empty polls and Problems (a row&rsquo;s drill lists its problem lines first) before chasing the partner.</li>
 </ul>
 </main>
 </body>

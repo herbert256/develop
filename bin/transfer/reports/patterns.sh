@@ -127,13 +127,13 @@ shown=$(printf '%s\n' "$agg" | awk -F'\t' -v n="$TOP_N" '$1 == "A" { c++ } END {
 {
     printf 'TITLE\tTransfer Patterns\n'
     printf 'TABLE\tTransfer patterns\tnosearch\tswitch=protocol:Protocol off\n'
-    printf 'HEAD\tPattern\tLegs\tFiles\tTransfers\tLast 5 files\n'
+    printf 'HEAD\tPattern\tLegs\tFiles\tTransfers\tLast 5 Files\n'
     printf 'KIND\tclines\tnum\tnum\tnum\tclinks\n'
     printf 'RECALC\t-\t-\ts0\ts1\t-\n'
     emit_rows A
     printf 'TOTAL\tTotal (%s patterns)\t\t@{class=num}%s\t@{class=num}%s\t\n' "$np" "$tot" "$phys"
     printf 'TABLE\t\tnosearch\tswitch=protocol:Protocol on\n'   # no heading: the page title says it, and the first table (whose <h2> the page drops) sets the layout
-    printf 'HEAD\tPattern\tLegs\tFiles\tTransfers\tLast 5 files\n'
+    printf 'HEAD\tPattern\tLegs\tFiles\tTransfers\tLast 5 Files\n'
     printf 'KIND\tclines\tnum\tnum\tnum\tclinks\n'
     printf 'RECALC\t-\t-\ts0\ts1\t-\n'
     emit_rows P

@@ -241,7 +241,8 @@ fi
     printf 'PAGE\tmonitor\n'
     printf 'TITLE\tMonitor — Axway ST reports\n'
     printf 'H1\tMonitor\n'
-    printf 'INTRO\tThe end-to-end monitor drops one file every 15 minutes on the CFT and sends it through all four use cases with ourselves as the remote partner. The three views cut its trip into disjoint segments — before ST (CFT pickup), the whole loop, and inside ST without the poll wait (staging) — so an incident shows up in exactly the segment that owns it.\n'
+    # (no INTRO since 2026-09-30: a report page explains itself on its help
+    # page only — help/monitor.html carries the text)
     printf 'HERO0\tMonitor CFT pickup\n'
     printf 'CARD\tMonitor CFT pickup time per slot\tper monitor file, the time from its drop on the CFT (the timestamp in its name) to the start of its inbound UC1 leg into ST — CFT directory pickup + PeSIT delivery; P50 dark green, P90 orange, P98 dark red; click a slot for its day\t\tspan2\tslots\tdurfit\t%s\t../day/{}.html?axway_hero=OK%%20Files\t%s\t%s\t%s\n' "$mcp6" "240:$mcp4" "720:$mcp12" "1440:$mcp24"
     printf 'CARDALT\tMonitor duration\tMonitor loop duration per slot\tper monitor file, the time from entering ST (inbound UC1 leg start) to the final hand-off back to CFT (outbound UC3 leg start), joined on the file name; a file that never reached UC3 counts as 1 hour — or the slowest completed file when longer; P50 dark green, P90 orange, P98 dark red; click a slot for its day\t../transfer/duration.html\tspan2\tslots\tdurfit\t%s\t../day/{}.html?axway_hero=OK%%20Files\t%s\t%s\t%s\n' "$mdur6" "240:$mdur4" "720:$mdur12" "1440:$mdur24"

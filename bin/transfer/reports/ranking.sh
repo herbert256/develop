@@ -109,7 +109,22 @@ nall=0
         n=$(printf '%s' "$rows" | grep -c '^ROW' || true)
         if [ -n "$rows" ]; then printf '%s\n' "$rows"
         else printf 'ROW\t@{colspan=11}No ranked %ss in this environment.\n' "$noun"; fi
-        printf 'TOTAL\tTotal (%s %s(s))\t\t\t\t\t\t\t\t\t\t\n' "$n" "$noun"
+        # Files and Volume ADD UP where a File belongs to one row — the
+        # subscriptions, accounts and logins (2026-09-30 audit T-17; the Month
+        # stats total-row rule): their TOTAL carries the two sums (the Volume
+        # from the per-day payload bytes, which sum to each row Volume);
+        # the union-attributed types keep a blank total, positions never add
+        tf=""; tv=""
+        case $ty in
+            SITE|ACC|LOGIN)
+                if [ -s "$f" ]; then
+                    IFS=$'\t' read -r tf tv <<< "$(awk -F'\t' '
+                        function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0; while(v>=1024&&i<6){v/=1024;i++} return (i==1)?sprintf("%d %s",v,u[i]):sprintf("%.2f %s",v,u[i]) }
+                        { tf += $3; n = split($13, D, ","); for (i = 1; i <= n; i++) { split(D[i], x, ":"); tb += x[4] } }
+                        END { printf "@{class=num}%d\t@{class=num}%s\n", tf, human(tb) }' "$f")"
+                fi ;;
+        esac
+        printf 'TOTAL\tTotal (%s %s(s))\t\t%s\t\t%s\t\t\t\t\t\t\n' "$n" "$noun" "$tf" "$tv"
         nall=$((nall + n))
     done <<EOF
 $SPECS

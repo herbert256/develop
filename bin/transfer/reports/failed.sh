@@ -359,6 +359,13 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" \
         return m[3] "-" m[1] "-" m[2] " " t
     }
     function esc(s) { gsub(/[\t\r\n]/, " ", s); return s }
+    # a remote host that is a raw IPv4 (a partner SOURCE address — an inbound
+    # leg keeps it raw) links its incoming-connection page (2026-09-30, audit
+    # D-04 — the detail pages do the same); the renderer resolves the alink
+    # through that directory slugmap, so an address without a page stays
+    # plain. Any other value is an endpoint name: the hosts entity cell.
+    function isip4(v) { return v ~ /^[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+$/ }
+    function hostcell(nm) { return isip4(nm) ? "@{alink=incoming_connections/" nm "}" nm : entcell(HRES, "hosts", nm) }
     # lit(): a raw name starting with @ would read as renderer metadata; the empty block @{} keeps it literal (audit 2026-09-29 F07)
     function lit(s) { return (substr(s, 1, 1) == "@") ? "@{}" s : s }
 
@@ -424,7 +431,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" \
         NL[$1]++
         LEGK[$1, NL[$1]] = $13 sprintf("%06d", NL[$1])
         LEGR[$1, NL[$1]] = sprintf("ROW\t%s\t%s\t%s\t%s\t%s %s\t%s\t%s\t%s\n", \
-            esc($3), esc($2), esc($10), humanbytes($9), esc($11), esc($12), humandur($15), esc($16), esc($23))
+            esc($3), esc($2), esc($10), humanbytes($9), esc($11), esc($12), humandur($15), (isip4($16) ? "@{alink=incoming_connections/" $16 "}" $16 : esc($16)), esc($23))
         # every leg transfer_id -> its CoreId, for the server-log id join
         if ($23 != "" && !tid[$1, $23]++) print $23 "\t" $1 > IDS
         # every leg SESSION -> its CoreId (col 24, the technical connection):
@@ -449,15 +456,15 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" \
             # is still on the page (the intro below) since it is the value to
             # quote to Axway support, and it is still the page URL.
             nm = (FNAME[c] != "") ? FNAME[c] : c
-            if (c in FSET) {
-                # a FILE page (any outcome, 2026-09-03): named by the File,
-                # the outcome stated, no verdict in the title
-                printf "TITLE\tFile: %s\n", nm > f
-            } else if (OC[c] == "Expired") {
-                printf "TITLE\tExpired pickup: %s\n", SITE[c] > f
-            } else {
-                printf "TITLE\tFailed subscription: %s\n", SITE[c] > f
-            }
+            # EVERY CoreId page is titled by its File (2026-09-30, audit
+            # D-03): the error pages read "Failed subscription: <subscription>
+            # - <reason>" (or "Expired pickup: …") until then, which named a
+            # subscription that may be green again by now and read
+            # "Failed subscription: Unknown" for the unplaced Files. The
+            # subscription and the reason are rows of the facts table below
+            # (the reason pass adds the Reason row); only the
+            # subscription-named server-failing pages keep that title.
+            printf "TITLE\tFile: %s\n", nm > f
             # The FACTS table (2026-08), first thing on the page and in place of
             # the prose line that used to open it: what this File was, where it
             # went and who it belonged to. The last three cells carry the
@@ -480,7 +487,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" \
             else if (np9 > 1) { pl9 = PP9[1]; for (q9 = 2; q9 <= np9; q9++) pl9 = pl9 ", " PP9[q9]; printf "ROW\tPartner\t%s\n", pl9 > f }
             if (ACCTN[c] != "")  printf "ROW\tAccount\t%s\n", entcell(ARES, "accounts", ACCTN[c]) > f
             if (LOGINN[c] != "") printf "ROW\tLogin\t%s\n", entcell(LRES, "logins", LOGINN[c]) > f
-            if (HOSTN[c] != "")  printf "ROW\tRemote host\t%s\n", entcell(HRES, "hosts", HOSTN[c]) > f
+            if (HOSTN[c] != "")  printf "ROW\tRemote host\t%s\n", hostcell(HOSTN[c]) > f
             # no TOTAL: an Item/Value facts table has nothing to total, and
             # an empty footer row would just draw a grey strip under it (the
             # detail pages\047 Features table omits it for the same reason)
@@ -1018,7 +1025,8 @@ if [ "$FAILED_MODE" = full ]; then   # ---- the evidence sidecar + the File reas
 # whose last transfer FAILED and which sits in no specific box therefore had no
 # reason at all, though its own error page was showing the very line that
 # explains it (an ARRC0029 routing-step warning, in the case that found this).
-# The drill .rpt carries the subscription in its TITLE and the log lines as
+# The drill .rpt carries the subscription in its facts table (TABLE 1, the
+# Subscription row — its TITLE until 2026-09-30) and the log lines as
 # "ROW <date time> <Level> <message>".
 #
 # Per subscription, the FIRST few Error/Warning lines of its NEWEST drill page.
@@ -1054,8 +1062,13 @@ LC_ALL=C awk -F'\t' -v CAND=8 "$(cat "$LIB_DIR/../flip-reason.awk")"'
         sub(/".*/, "", t9); return (t9 in ptid) }
     FNR == 1 { flush(); site = ""; fn = 0; fmax = ""; prev = ""; tno = 0; split("", ptid) }
     $1 == "TABLE" { prev = ""; tno++ }
-    $1 == "TITLE" { site = $2; sub(/^Failed subscription: /, "", site)
-                    sub(/^Expired pickup: /, "", site); next }   # the drill-only Expired pages (the 30-day guarantee)
+    # the page subscription = the facts table (TABLE 1) Subscription row,
+    # its cell attribute block stripped ("-" = none). Until 2026-09-30 it was
+    # parsed from the TITLE, which the CoreId pages no longer carry (they are
+    # titled by the File) and which a server-failing page suffixes with
+    # " - <reason>" — such a page never joined the sidecar under its name
+    $1 == "ROW" && tno == 1 && $2 == "Subscription" { site = $3; sub(/^@\{[^}]*\}/, "", site)
+                    if (site == "-") site = ""; next }
     $1 == "ROW" && tno == 2 && NF >= 9 && $9 != "" { ptid[$9] = 1 }   # the legs table: the page own transfer ids
     $1 == "ROW" && site != "" && NF >= 4 && ($3 == "Error" || $3 == "Warning" || ($3 == "Info" && ownbookend($4))) {
         if ($2 > fmax) fmax = $2                # the page own newest line, for picking the page
@@ -1205,27 +1218,35 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -
 LC_ALL=C sort "$TMP/reasons" > "$REPORTS_DIR/_failed-reasons.tsv.tmp" 2>/dev/null || : > "$REPORTS_DIR/_failed-reasons.tsv.tmp"
 mv "$REPORTS_DIR/_failed-reasons.tsv.tmp" "$REPORTS_DIR/_failed-reasons.tsv"
 
-# The same Reason lands in each drill page TITLE — "Failed subscription:
-# <name> - <reason>" — so the error page answers WHY in its own heading
-# (2026-08). Rewrite-in-place: the page is buffered whole, then written back
-# with the one line changed. Only the pages that RENDER (2026-09-29 audit):
-# a CoreId page outside the published set (_filepages.tsv) stays an evidence
-# intermediate, and nothing reads its title after the evidence pass above.
+# The same Reason lands on each Error File page as a "Reason" row of its
+# facts table, right after Date/time — so the page answers WHY at the top
+# (2026-08 in the TITLE, "Failed subscription: <name> - <reason>"; a facts
+# row since 2026-09-30, audit D-03, when every CoreId page became "File:
+# <name>" — and the File pages of Error Files, files/, carry it too: they
+# showed no reason at all). Rewrite-in-place: the page is buffered whole,
+# then written back with the one row added. Only the pages that RENDER
+# (2026-09-29 audit): a CoreId page outside the published set
+# (_filepages.tsv) stays an evidence intermediate.
 if [ -s "$TMP/reasons" ]; then
-    LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v FPF="$FPF" '
+    LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v FILEDIR="$FILEDIR" -v FPF="$FPF" '
         BEGIN { while ((getline l < FPF) > 0) { split(l, a, "\t"); if (a[1] != "") pub[a[1]] = 1 } close(FPF) }   # (not FNR==NR: FPF may be empty)
+        function addreason(f, r,   n, i, l, done) {
+            n = 0
+            while ((getline l < f) > 0) buf[++n] = l
+            close(f)
+            if (n == 0) return
+            done = 0
+            for (i = 1; i <= n; i++) {
+                print buf[i] > f
+                if (!done && index(buf[i], "ROW\tDate/time\t") == 1) { print "ROW\tReason\t" r > f; done = 1 }
+            }
+            close(f)
+            for (i = 1; i <= n; i++) delete buf[i]
+        }
         { cid = $1; r = $2; if (cid == "" || r == "") next
           if (cid ~ /^[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+$/ && !(cid in pub)) next
-          f = ERRDIR "/" cid ".rpt"; n = 0
-          while ((getline l < f) > 0) buf[++n] = l
-          close(f)
-          if (n == 0) next
-          for (i = 1; i <= n; i++) {
-              if (index(buf[i], "TITLE\t") == 1) print buf[i] " - " r > f
-              else print buf[i] > f
-          }
-          close(f)
-          for (i = 1; i <= n; i++) delete buf[i] }
+          addreason(ERRDIR "/" cid ".rpt", r)
+          addreason(FILEDIR "/" cid ".rpt", r) }
     ' "$TMP/reasons"
 fi
 fi   # (full mode)
@@ -1275,14 +1296,14 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" \
         if ((getline l < MJF) > 0) MAXJ = l + 0
         close(MJF)
         # from-green-to-red.rpt ROW: 2 site, 3 last green day, 5 days red,
-        # 6 consecutive failures; only-red.rpt ROW: 2 site, 3 Files, 8 days
+        # 6 consecutive failures; only-red.rpt ROW: 2 site, 3 Files, 5 days
         # failing — both written by the report pool, present on the catch-up
         # run (the first run leaves the columns blank, the catch-up fills them)
         while ((getline l < FGR) > 0) { n = split(l, a, "\t")
             if (a[1] == "ROW" && n >= 6 && substr(a[2], 1, 2) != "@{") { k = toupper(cl(a[2])); RLG[k] = cl(a[3]); RDR[k] = cl(a[5]); RCF[k] = cl(a[6]) } }
         close(FGR)
         while ((getline l < ORED) > 0) { n = split(l, a, "\t")
-            if (a[1] == "ROW" && n >= 8 && substr(a[2], 1, 2) != "@{") { k = toupper(cl(a[2])); RLG[k] = "never"; RDR[k] = cl(a[8]); RCF[k] = cl(a[3]) } }
+            if (a[1] == "ROW" && n >= 5 && substr(a[2], 1, 2) != "@{") { k = toupper(cl(a[2])); RLG[k] = "never"; RDR[k] = cl(a[5]); RCF[k] = cl(a[3]) } }
         close(ORED)
         while ((getline l < SUBRES) > 0) { n = split(l, a, "\t")
             if (n >= 3 && a[1] != "") SRES[toupper(a[1])] = a[3] }

@@ -100,7 +100,7 @@ bl_tsv() {
         }' "$lmap" "$sl" "$scov" | LC_ALL=C sort -t$'\t' -k1,1 -k2,2 | cov_put "$COVSRC/bl.tsv"
 }
 
-# External-partner figures for the root index's one-row "External Partners"
+# External-partner figures for the root index's one-row "Partners"
 # table. The partner ORGANISATIONS (In clusters, Out endpoints, both-ways
 # linked pairs) are derived by bin/flow-manager.sh — data/flow-manager/base/_partners.tsv
 # and the _accounts-partners/_hosts-partners/_partners-white xref caches are
@@ -112,7 +112,7 @@ bl_tsv() {
 # pairs, and col 8 = the In partner's whitelist IPs / a linked Out row's In
 # partner. In partners first (label-sorted), then the Out hosts verbatim
 # from hosts.tsv. write_coverage_pages renders a page per nonzero cell from
-# it, and the External Partners row reads its figures + links the pages.
+# it, and the Partners row reads its figures + links the pages.
 # Emits nothing (and writes no TSV) when the inputs are missing.
 external_partners_tsv() {
     local pbase="$DATA/flow-manager/base/_partners.tsv"
@@ -252,8 +252,8 @@ external_partners_tsv() {
     } | cov_put "$COVSRC/partners.tsv"
 }
 
-# Internal-application figures for the root index's one-row "Internal
-# Applications" table — the same shape and machinery as External Partners.
+# Application figures for the root index's one-row "Applications"
+# table — the same shape and machinery as Partners.
 # The application names come from bin/flow-manager.sh's _accounts-apps.tsv cache
 # (the MIDDLE part of the three-part logical flow names, joined via the account);
 # this only joins the coverage TSV onto it. One row per (application,
@@ -297,8 +297,8 @@ _sub_spine_tsv() {
 }
 internal_apps_tsv()    { _sub_spine_tsv "$DATA/flow-manager/xref/_subscriptions-apps.tsv"    applications applications; }
 
-# Internal-domain figures for the root index's one-row "Internal Domains"
-# table — External Partners' shape again, one level up:
+# Internal-domain figures for the root index's one-row "Domains"
+# table — the Partners shape again, one level up:
 # the domain (the FIRST part of the three-part logical flow name) comes from
 # bin/flow-manager.sh's _accounts-domains.tsv cache. One row per (domain,
 # direction) into $COVSRC/domains.tsv, the applications.tsv shape exactly.

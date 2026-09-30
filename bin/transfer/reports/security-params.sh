@@ -34,7 +34,8 @@ SECROW_AWK='
     { bk = ($5 == "-") ? "" : $5
       lk = ($1 in sl) ? "@{href=secparams/" sl[$1] ".html}" : ""
       # TRANSFERS = the OK legs ($4) — one column, no Error / OK pair, no
-      # green/red cells, no drills (2026-09-13, user request)
+      # green/red cells, no drills (2026-09-13, user request); headed "OK
+      # transfers" since 2026-09-30
       printf "ROW\t%s\t%s%s\t%s\t@data:buckets=%s\n", lbl, lk, $1, $4, bk }
 '
 
@@ -61,22 +62,27 @@ trap 'rm -f "$subfile" "$pairfile"' EXIT
 # Read the shared parse cache (6=site, 10=protocol, 21=secparams raw).
 # Emits (stdout):  PROTO|protocol|count...   and   ATTR|key|value|count...
 # Emits (subfile): the per-subscription rows above.
-agg=$(awk -F'\t' -v subout="$subfile" "$COREIDS_AWK"'
+agg=$(awk -F'\t' -v subout="$subfile" '
     function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
     # file 1 = $FILES: the per-CoreId host-resolved partner (col 20, filled at
     # parse time via _hosts-partners.tsv, else the account org; empty when the
     # parse abstained) — the OTHER half of the site-wide PARTNER UNION
     FNR == NR { if ($20 != "") { hpv = $20; gsub(/[|\t]/, " ", hpv); hp[$1] = hpv } next }
     {
-        st = $3; sub(/ Subtransmission$/, "", st); f = (st != "Processed"); oc = f ? "F" : "P"
-        sk = $13; disp = $11 " " $12; tid = $23
+        st = $3; sub(/ Subtransmission$/, "", st); f = (st != "Processed")
         proto = $10; if (proto == "") proto = "UNKNOWN"
         d = $11
         site = $6; gsub(/[|\t]/, " ", site)
+        # the Unknown subscription (and a siteless leg) is no subscription: its
+        # legs stay in the SUMMARY (the protocol counts below) but out of the
+        # value counts, which must equal the Total of the per-value page each
+        # value cell opens (2026-09-30 audit T-01: TLSv1.3 6840 vs 6735)
+        unk = (site == "" || site == "Unknown")
         h = ($1 in hp) ? hp[$1] : ""   # this leg CoreId host-resolved partner
         # protocol counts feed only the page TOTAL/SUMMARY (every leg counted
         # once); the Protocol distribution TABLE lives in the protocol report
         pc[proto]++; if (f) pf[proto]++; else pp[proto]++
+        if (unk) next
 
         sp = $19
         if (sp == "" || sp == "UNKNOWN") next
@@ -96,14 +102,14 @@ agg=$(awk -F'\t' -v subout="$subfile" "$COREIDS_AWK"'
             if (key == "" || val == "") continue
             cnt[key SUBSEP val]++; if (f) cf[key SUBSEP val]++; else cp[key SUBSEP val]++
             if (d != "") { cd2[key SUBSEP val SUBSEP d]++; if (f) cfd[key SUBSEP val SUBSEP d]++; else cpd[key SUBSEP val SUBSEP d]++ }
-            if (site != "" && site != "Unknown") { sk4 = key SUBSEP val SUBSEP site SUBSEP h; asc[sk4]++; if (f) asf[sk4]++; else asp[sk4]++ }
-            addtop("A" SUBSEP key SUBSEP val SUBSEP oc, sk, disp, tid)   # drill: 10 most recent rows per attribute-value + outcome
+            sk4 = key SUBSEP val SUBSEP site SUBSEP h; asc[sk4]++; if (f) asf[sk4]++; else asp[sk4]++
         }
     }
     END {
         for (k in cd2) { split(k, a, SUBSEP); kk = a[1] SUBSEP a[2]; abk[kk] = abk[kk] (abk[kk] ? "," : "") a[3] ":" cd2[k] ":" (cfd[k]+0) ":" (cpd[k]+0) }
         for (k in pc) printf "PROTO|%s|%d|%d|%d\n", k, pc[k], pf[k]+0, pp[k]+0
-        for (kv in cnt) { split(kv, a, SUBSEP); printf "ATTR|%s|%s|%d|%d|%d|%s|%s|%s\n", a[1], a[2], cnt[kv], cf[kv]+0, cp[kv]+0, (abk[kv]==""?"-":abk[kv]), orlist(top["A" SUBSEP a[1] SUBSEP a[2] SUBSEP "F"]), orlist(top["A" SUBSEP a[1] SUBSEP a[2] SUBSEP "P"]) }
+        # (the two drill lists per value went 2026-09-30: no drill since 2026-09-13)
+        for (kv in cnt) { split(kv, a, SUBSEP); printf "ATTR|%s|%s|%d|%d|%d|%s\n", a[1], a[2], cnt[kv], cf[kv]+0, cp[kv]+0, (abk[kv]==""?"-":abk[kv]) }
         # per-(subscription, host-partner) rows -> the sidecar
         for (k in asc) { split(k, a, SUBSEP); printf "%s|%s|%s|%s|%d|%d|%d\n", a[1], a[2], a[3], a[4], asc[k], asf[k]+0, asp[k]+0 > subout }
     }
@@ -237,14 +243,14 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
     function subtotal() {
         printf "TOTAL\tTotal (%d subscription(s))\t\t@{class=num}%d\n", sn, sp > out
         printf "TABLE\tPartners\n" > out
-        printf "HEAD\tPartner\tSubscriptions\tTransfers\n" > out
+        printf "HEAD\tPartner\tSubscriptions\tOK transfers\n" > out
         printf "KIND\tptn\tnum\tnum\n" > out
         ptbl = 1
     }
     function closepage() {
         if (!ptbl) subtotal()
         printf "TOTAL\tTotal (%d partner(s))\t@{class=num}%d\t@{class=num}%d\n", pn, ps, pp > out
-        printf "NOTE\tCounts individual transfers (legs) — security parameters are negotiated per leg. Full period (this page is not date-filtered). Click a subscription or partner to open its detail page. Partners use the site-wide UNION attribution: a leg counts under every partner of its subscription AND under the partner its remote host resolves to, so a subscription with more than one partner is counted under each in the Partners table.\n" > out
+        printf "NOTE\tCounts individual OK transfers (legs) — security parameters are negotiated per leg. Full period (this page is not date-filtered). Click a subscription or partner to open its detail page. Partners use the site-wide UNION attribution: a leg counts under every partner of its subscription AND under the partner its remote host resolves to, so a subscription with more than one partner is counted under each in the Partners table.\n" > out
         printf "FOOT\n" > out
         close(out)
     }
@@ -253,9 +259,9 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
         out = secdir "/" $3 ".rpt"
         sn = sc = sf = sp = 0; pn = ps = pc = pf = pp = 0; ptbl = 0
         printf "TITLE\tSubscriptions using %s %s\n", $4, $5 > out
-        printf "INTRO\tEvery subscription (and its partner) that used **%s: %s** on at least one transfer leg. Counts are transfers (legs), full period.\n", $4, $5 > out
+        printf "INTRO\tEvery subscription (and its partner) that used **%s: %s** on at least one transfer leg. Counts are OK transfers (legs), full period.\n", $4, $5 > out
         printf "TABLE\t\n" > out                 # empty heading — the h1 names the page
-        printf "HEAD\tSubscription\tPartner\tTransfers\n" > out
+        printf "HEAD\tSubscription\tPartner\tOK transfers\n" > out
         printf "KIND\tsite\tptn\tnum\n" > out
         next
     }
@@ -282,15 +288,15 @@ emit_attr_rows() {   # $1 = attribute key
     # TRANSFERS = the OK legs (2026-09-13, user request: one Transfers column,
     # no Error / OK pair, no green/red cells, no drills); the bucket payload
     # keeps its metrics, so the token reads metric 2 (ok); rows sort by it
-    printf '%s\n' "$agg" | awk -F'|' -v k="$key" '$1=="ATTR" && $2==k { print $3"\t"$4"\t"$5"\t"$6"\t"$7"\t"$8"\t"$9 }' \
+    printf '%s\n' "$agg" | awk -F'|' -v k="$key" '$1=="ATTR" && $2==k { print $3"\t"$4"\t"$5"\t"$6"\t"$7 }' \
         | LC_ALL=C sort -t$'\t' -k4,4nr | awk -F'\t' -v smap="$smap" -v d="$key" -v lbl="$label" "$SECROW_AWK"
 }
 
 {
     printf 'TITLE\tSecurity Parameters\n'   # = its Reports menu label (2026-09-29)
     printf 'DESC\tEvery attribute parsed from the SecurityParameters column — TLS version, cipher, cipher suite, MAC, key exchange, public key — in one table.\n'
-    printf 'TABLE\t\tdrill=transfer\tnoagg=2\n'
-    printf 'HEAD\tAttribute\tValue\tTransfers\n'
+    printf 'TABLE\t\tnoagg=2\n'
+    printf 'HEAD\tAttribute\tValue\tOK transfers\n'
     printf 'KIND\ttext\ttext\tnum\n'
     printf 'RECALC\t-\t-\ts2\n'
     for pk in "Protocol" "Cipher" "Cipher suite" "MAC" "Key Exchange" "Public Key"; do

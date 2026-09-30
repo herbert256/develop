@@ -106,10 +106,13 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
                 mark=""
                 if((j==mn || !(fromjdn(j-1) in C)) && FI[d] > "02:00:00") mark=" (partial start)"
                 if((j==mx || !(fromjdn(j+1) in C)) && LA[d] < "22:00:00") mark=(mark==""?" (partial end)":" (partial)")
-                # a nonzero Waiting / Expired cell opens its report (2026-08-31,
-                # user request); zero stays a plain blank / 0
-                wcell = (WW[d]+0>0 ? "@{href=waiting.html}" (WW[d]+0) : "")
-                xcell = (WX[d]+0>0 ? "@{href=expired.html}" (WX[d]+0) : "0")
+                # the per-DAY Waiting / Expired cells carry no link (2026-09-30
+                # audit T-15: they opened the full-period Waiting / Expired
+                # pages, which have no date filter — a day of 5 opened 384);
+                # the TOTAL row cells keep theirs (full period = full period).
+                # Zero stays a plain blank / 0
+                wcell = (WW[d]+0>0 ? WW[d]+0 : "")
+                xcell = (WX[d]+0>0 ? WX[d]+0 : "0")
                 # the amber Recovered cells (Automatic / Manual) are blank on 0
                 printf "R1\tROW\t@{href=../day/%s.html}%s%s\t%s\t%s\t%d\t%d\t%d\t%s%%\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s%%\t%d\t%d\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
                     d, d, mark, fi, la, \

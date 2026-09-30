@@ -53,6 +53,15 @@ awk -F'\t' -v T1="$TMPD/t1.pre" -v T2="$TMPD/t2.pre" -v STATS="$TMPD/stats.tsv" 
         aset = ap_union($18, $12)
         err = ($2 == "Failed" || $2 == "Expired") ? 1 : 0
         na = split(aset, A, "\037"); np = split(pset, P, "\037")
+        hasp = 0; for (j = 1; j <= np; j++) if (P[j] != "") { hasp = 1; PD[P[j]] = 1 }
+        if (hasp) {
+            # the per-application Files and the TOTAL count every File ONCE
+            # (2026-09-30 audit S-05: the pair counts were summed, so a File
+            # of two partners counted twice for its application)
+            nfd = 0
+            for (i = 1; i <= na; i++) if (A[i] != "") { AFD[A[i]]++; nfd = 1 }
+            NFD += nfd
+        }
         for (i = 1; i <= na; i++) if (A[i] != "") for (j = 1; j <= np; j++) if (P[j] != "") {
             k = A[i] SUBSEP P[j]
             if (F[k] == "") { KORD[++nk] = k }            # emptiness, not membership (mawk)
@@ -63,29 +72,27 @@ awk -F'\t' -v T1="$TMPD/t1.pre" -v T2="$TMPD/t2.pre" -v STATS="$TMPD/stats.tsv" 
     END {
         for (z = 1; z <= nk; z++) { k = KORD[z]; split(k, X, SUBSEP); a = X[1]
             if (AN[a] == "") AORD[++nap] = a
-            AN[a]++; AF[a] += F[k]
+            AN[a]++
             ep = 100 * E[k] / F[k]
             if (ep > AW[a] + 0) AW[a] = ep
             if (E[k] == F[k]) AB[a]++
-            printf "%s\t%09d\t%s\t%d\t%.1f\t%s\n", a, 999999999 - F[k], X[2], F[k], ep, L[k] > T2
+            printf "%s\t%09d\t%s\t%d\t%.1f%%\t%s\n", a, 999999999 - F[k], X[2], F[k], ep, L[k] > T2
         }
         close(T2)
         tot100 = 0
         for (z = 1; z <= nap; z++) { a = AORD[z]; tot100 += AB[a] + 0
-            printf "%03d\t%s\t%d\t%d\t%.1f\t%d\n", 999 - AN[a], a, AN[a], AF[a], AW[a] + 0, AB[a] + 0 > T1 }
+            printf "%03d\t%s\t%d\t%d\t%.1f%%\t%d\n", 999 - AN[a], a, AN[a], AFD[a] + 0, AW[a] + 0, AB[a] + 0 > T1 }
         close(T1)
-        printf "apps\t%d\npairs\t%d\nfull\t%d\n", nap, nk, tot100 > STATS
+        npd = 0; for (x in PD) npd++
+        printf "apps\t%d\npairs\t%d\nfull\t%d\nptns\t%d\nfiles\t%d\n", nap, nk, tot100, npd, NFD + 0 > STATS
         close(STATS)
     }
 ' "$TF"
 
 sv() { awk -F'\t' -v k="$1" '$1 == k { print $2 }' "$TMPD/stats.tsv"; }
-n_apps=$(sv apps); n_pairs=$(sv pairs); n_full=$(sv full)
+n_apps=$(sv apps); n_pairs=$(sv pairs); n_full=$(sv full); n_ptns=$(sv ptns); n_files=$(sv files)
 
-# the most exposed application, for the intro
-IFS=$'\t' read -r x_app x_ptn x_full <<EOF
-$(LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2f "$TMPD/t1.pre" | awk -F'\t' -v OFS='\t' 'NR == 1 { print $2, $3, $6 }')
-EOF
+# (the most-exposed-application read for the intro went 2026-09-30: no intro renders)
 
 {
     printf 'TITLE\tApplication dependencies\n'
@@ -94,23 +101,32 @@ EOF
     printf 'STAT\twhite\t%s\tDependency pairs\n' "$n_pairs"
     printf 'STAT\tred\t%s\tPairs at 100%% Error\n' "$n_full"
 
-    printf 'TABLE\tApplications by external exposure\tnofilter\n'
+    # the ROW tints by the APPLICATION result (base/_apps.tsv, like every
+    # entity row — 2026-09-30 audit S-04: red only when a pair ran at 100%
+    # Error, untinted otherwise); that count colours its own cell. The
+    # Partners / Files totals are DISTINCT (a partner serves several
+    # applications, a File can belong to several) — noagg: a narrowed view
+    # shows a dash, never a double-counting sum.
+    printf 'TABLE\tApplications by external exposure\tnofilter\tnoagg=1,2\n'
     printf 'HEAD\tApplication\tPartners\tFiles\tWorst pair Error %%\tPairs at 100%% Error\n'
     printf 'KIND\tapp\tnum\tnum\tnum\tnum\n'
-    LC_ALL=C sort -t$'\t' -k1,1 -k2,2f "$TMPD/t1.pre" | awk -F'\t' '{
-            n++; p += $3; f += $4; b += $6
-            res = ($6 + 0 > 0) ? "\t@data:res=red" : ""
-            printf "ROW\t%s\t%d\t%d\t%s\t%s%s\n", $2, $3, $4, $5, ($6 + 0 > 0 ? $6 : ""), res
+    LC_ALL=C sort -t$'\t' -k1,1 -k2,2f "$TMPD/t1.pre" | awk -F'\t' -v AB="$DATA/flow-manager/base/_apps.tsv" -v NPT="$n_ptns" -v NFI="$n_files" '
+        BEGIN { while ((getline l < AB) > 0) { split(l, a, "\t"); if (a[1] != "") R[toupper(a[1])] = a[3] } close(AB) }
+        {
+            n++; b += $6
+            res = R[toupper($2)]
+            printf "ROW\t%s\t%d\t%d\t%s\t%s%s\n", $2, $3, $4, $5, ($6 + 0 > 0 ? "@{class=failed}" $6 : ""), (res != "" ? "\t@data:res=" res : "")
         }
-        END { printf "TOTAL\tTotal (%d application(s))\t@{class=num}%d\t@{class=num}%d\t\t@{class=num}%d\n", n + 0, p + 0, f + 0, b + 0 }'
+        END { printf "TOTAL\tTotal (%d application(s))\t@{class=num}%d\t@{class=num}%d\t\t@{class=num failed}%d\n", n + 0, NPT + 0, NFI + 0, b + 0 }'
 
     printf 'TABLE\tThe dependency pairs\tnofilter\tpager=50\n'
     printf 'HEAD\tApplication\tPartner\tFiles\tError %%\tLast seen\n'
     printf 'KIND\tapp\tptn\tnum\tnum\ttext\n'
+    # a pair is no entity: no row tint; a pair at 100% Error colours its
+    # Error % cell (2026-09-30 audit S-04)
     LC_ALL=C sort -t$'\t' -k1,1f -k2,2 -k3,3f "$TMPD/t2.pre" | awk -F'\t' '{
             n++; f += $4
-            res = ($5 + 0 >= 100) ? "\t@data:res=red" : ""
-            printf "ROW\t%s\t%s\t%d\t%s\t%s%s\n", $1, $3, $4, $5, ($6 != "" ? $6 : "-"), res
+            printf "ROW\t%s\t%s\t%d\t%s%s\t%s\n", $1, $3, $4, ($5 + 0 >= 100 ? "@{class=failed}" : ""), $5, ($6 != "" ? $6 : "-")
         }
         END { printf "TOTAL\tTotal (%d pair(s))\t\t@{class=num}%d\t\t\n", n + 0, f + 0 }'
 

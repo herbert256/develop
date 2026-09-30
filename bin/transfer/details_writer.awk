@@ -358,6 +358,15 @@ function last_error_table(   i, F9, cid, res) {
     }
     emitl("TOTAL\tTotal (" nle " subscription(s))\t\t")
 }
+# the held Waiting/Expired rows (section 0.9) as ONE table, right after the
+# Features block: login_feat_row pairs the two on the LOGIN pages, the UC2
+# Pickup table joins the Activity per day | Features row before it on the
+# SUBSCRIPTION pages (publish-details.sh)
+function we_table(   i) {
+    if (nwe == 0) return
+    emitl("TABLE\tWaiting/Expired\trestint\tnosearch"); emitl("HEAD\tState\tFiles\tFirst staged\tLast staged"); emitl("KIND\ttext\tnum\ttext\ttext")
+    for (i = 1; i <= nwe; i++) emitl(WE[i])
+}
 function emit_intro(   ucd, nca, i, CA, dupacct) {
     if (intro_done == 1) return
     intro_done = 1
@@ -381,6 +390,7 @@ function emit_intro(   ucd, nca, i, CA, dupacct) {
             twin_features_rows()
             if (x_grpfold != "") { npg++; PG[npg] = x_grpfold }
         }
+        we_table()
         return
     }
     # seen pages: the Features table (configuration only), suppressed when it
@@ -404,6 +414,7 @@ function emit_intro(   ucd, nca, i, CA, dupacct) {
         if (x_onebl != "") emitl("ROW\tBL\t@{alink=bl/" x_onebl "}" x_onebl)
         if (pend_t == "SITE") sum_locations()
     }
+    we_table()
 }
 
 # the Duration / Size / Date / Ranking sxs=4 quartet (seen pages)
@@ -570,7 +581,6 @@ function start_table(s,   WEH, WEK) {
     else if (s == "10") time_table("Load by weekday", "Weekday", "sxs")
     else if (s == "11") time_table("Load by hour", "Hour", "sxs")
     else if (s == "12.6") { emitl("TABLE\tDwell\tsxs=4"); emitl("HEAD\tDwell\tFiles\tShare"); emitl("KIND\ttext\tnum\tnum") }
-    else if (s == "0.9") { emitl("TABLE\tWaiting/Expired\trestint\tnosearch"); emitl("HEAD\tState\tFiles\tFirst staged\tLast staged"); emitl("KIND\ttext\tnum\ttext\ttext") }
     # (section 9, the Latest 100 Files table, went 2026-09-29, user request —
     # a subscription page has the browser-built Files table, files_table())
     else if (s == "2.6") { emitl("TABLE\tIncoming connections\tsxs=3\tfold=orange|{n} IPs in whitelist without traffic"); emitl("HEAD\tIP\tIn\tOut"); emitl("KIND\tmono\tnum\tnum") }   # no Name column: incoming addresses are the partner's own and never resolve to a configured endpoint (verified 0 of 30k rows)
@@ -1272,6 +1282,7 @@ function reset_entity() {
     x_perf = ""; x_ip = ""; x_dtrank = ""; x_pday = ""; dirv = "unknown"; BOTHMODE = 0; perf_done = 0
     split("", bk_f); split("", bk_e); split("", bk_b); split("", bk_ord); nbk = 0
     split("", LE); nle = 0
+    split("", WE); nwe = 0
     busy_day = "-"; busy_cnt = 0
     x_grpfold = ""
     x_oneacct = ""; x_onedom = ""; x_oneapp = ""; x_oneptn = ""; x_onelgc = ""; x_onebl = ""
@@ -1436,6 +1447,18 @@ NF < 4 { next }
         nle++; LE[nle] = $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9
         next
     }
+    # section 0.9 — the Waiting/Expired rows. HELD like 0.4 (2026-09-30,
+    # audit D-01): rendered here they made emit_intro fire FIRST on the pages
+    # that have them, so Features and Last error(s) jumped to the page top and
+    # the section order differed from every other page of the type. The table
+    # lands right after the Features block (emit_intro -> we_table). HAS_WE is
+    # still set here: the Activity per day header (start_table 1) reads it.
+    if (sec == "0.9") {
+        split($5, W9, "|")
+        HAS_WE = 1
+        nwe++; WE[nwe] = sprintf("ROW\t%s files\t%s\t%s\t%s\t@data:res=%s", W9[1], W9[2], W9[3], W9[4], (W9[1] == "Expired") ? "red" : "orange")
+        next
+    }
     ensure_file()
     if (sec != cur_sec) {
         finish_section()
@@ -1448,7 +1471,7 @@ NF < 4 { next }
         if (sec == "2.6") had26 = 1
         if (sec == "2.7") had27 = 1
         cur_sec = sec
-        if (sec == "0.9" || sec == "2.6" || sec == "2.7" || sec == "12.6") { TMODE = 0; start_table(sec) }
+        if (sec == "2.6" || sec == "2.7" || sec == "12.6") { TMODE = 0; start_table(sec) }
         else if (BOTHMODE == 1) { buf_sec = sec; sec_in = 0; sec_out = 0 }
         else { TMODE = 0; start_table(sec) }
     }
@@ -1491,12 +1514,6 @@ NF < 4 { next }
         } else {
             emitl(sprintf("ROW\t%s\t%s\t%s\t%s\t%s", lbl, $6, $7, $8, $9))
         }
-    }
-    else if (sec == "0.9") {
-        split($5, W9, "|")
-        res = (W9[1] == "Expired") ? "red" : "orange"
-        HAS_WE = 1
-        emitl(sprintf("ROW\t%s files\t%s\t%s\t%s\t@data:res=%s", W9[1], W9[2], W9[3], W9[4], res))
     }
     else if (sec == "2.6" || sec == "2.7") {
         win = $6; wout = $7; wrev = $8

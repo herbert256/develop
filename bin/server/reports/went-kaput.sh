@@ -276,7 +276,6 @@ totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH"
             if (dt > ldt[s]) { ldt[s] = dt; lm[s] = $5 }  # strictly greater: first occurrence wins ties
             if ($3 == "E") {
                 ne[s]++
-                hasE[s, csrc] = 1
                 if (dt > ldtE[s]) { ldtE[s] = dt; lmE[s] = $5 }
             } else nw[s]++
         }
@@ -306,12 +305,12 @@ totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH"
             printf "%s\t%s\t%s\t%s\t%s\n", s, ldt[s], ss, substr(lm[s], 1, 200), substr(lmE[s], 1, 200) > evid
             if (ne[s] == 0) continue                  # warnings only: not an error signal, no row
             if (col[toupper(s)] != "green") { nred++; continue }   # already red: not a warning any more
-            ssE = ""
-            for (j = 1; j <= 4; j++) if (hasE[s, ord[j]]) ssE = ssE (ssE == "" ? "" : ", ") ord[j]
-            # ROW: Subscription | Last OK transfer | Errors after | Latest error | Source | Latest message
-            # (the log-line drill went 2026-09-29 with the page: no reader)
-            printf "ROW\t%s\t%s\t%d\t%s\t%s\t%s\n",
-                s, cut[s], ne[s]+0, ldtE[s], ssE, substr(lmE[s], 1, 200) >> rowfile
+            # ROW: Subscription | Latest error — what its readers take (the
+            # day pages: field 3; verify.sh: the name). The log-line drill
+            # went 2026-09-29 with the page; Last OK transfer / Errors after /
+            # Source / Latest message 2026-09-30 (no reader — the evidence
+            # sidecar carries the facts the Reason readers need)
+            printf "ROW\t%s\t%s\n", s, ldtE[s] >> rowfile
             nrows++; terr += ne[s]
         }
         close(evid)
@@ -327,20 +326,16 @@ else
     : > "$EVID.tmp" && mv "$EVID.tmp" "$EVID"
 fi
 
-# 3) write the .rpt (sorted by Latest error, newest first — ROW field 5)
+# 3) write the .rpt (sorted by Latest error, newest first — ROW field 3)
 {
     printf 'TITLE\tTrouble after success\n'   # = its Reports menu label (2026-09-29)
+    printf 'TABLE\tSubscriptions failing after last successful transfer\tnofilter\n'
+    printf 'HEAD\tSubscription\tLatest error\n'
+    printf 'KIND\tsite\ttext\n'
     if [ "$nrows" -eq 0 ]; then
-        printf 'TABLE\tSubscriptions failing after last successful transfer\tnosort\tnofilter\n'
-        printf 'HEAD\tSubscription\tLast OK transfer\tErrors after\tLatest error\tSource\tLatest message\n'
-        printf 'KIND\tsite\ttext\tnumfailed\ttext\ttext\ttext\n'
-        printf 'ROW\t(none)\t\t\t\t\t\n'
+        printf 'ROW\t(none)\t\n'
     else
-        printf 'TABLE\tSubscriptions failing after last successful transfer\twide\tnofilter\n'
-        printf 'HEAD\tSubscription\tLast OK transfer\tErrors after\tLatest error\tSource\tLatest message\n'
-        printf 'KIND\tsite\ttext\tnumfailed\ttext\ttext\ttext\n'
-        LC_ALL=C sort -t"$(printf '\t')" -k5,5r "$rowfile"
-        printf 'TOTAL\tTotal (%d subscription(s))\t\t@{class=num failed}%d\t\t\t\n' "$nrows" "$terr"   # red like its column (2026-09-29)
+        LC_ALL=C sort -t"$(printf '\t')" -k3,3r "$rowfile"
     fi
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

@@ -23,14 +23,14 @@
 <ul>
 <li><strong>Attribute</strong> &mdash; TLS version, Cipher, Cipher suite, MAC, Key Exchange, Public Key.</li>
 <li><strong>Value</strong> &mdash; each attribute&rsquo;s values, busiest first; a value opens its own page.</li>
-<li><strong>Transfers</strong> &mdash; the OK legs that used it.</li>
+<li><strong>OK transfers</strong> &mdash; the OK legs that used it; legs of the <strong>Unknown</strong> subscription are left out (the summary line keeps them).</li>
 </ul>
 <h2>Rules</h2>
 <ul>
 <li>Counts <strong>transfers (legs)</strong>, not Files: parameters are negotiated per leg, so one File&rsquo;s Inbound and Outbound legs can differ.</li>
-<li>A leg counts once per attribute, so Transfers does not add across attributes: the Total stays blank.</li>
+<li>A leg counts once per attribute, so OK transfers does not add across attributes: the Total stays blank.</li>
 <li>&ldquo;TLS version&rdquo; is the log&rsquo;s <code>Protocol:</code> key, renamed to keep it apart from the transfer protocol (see <a href="protocol.html">Protocol, Direction &amp; Mode</a>).</li>
-<li><strong>Value pages</strong> &mdash; every <strong>Subscription</strong> that used the value, with its <strong>Partner</strong> and <strong>Transfers</strong>, then a <strong>Partners</strong> table (Partner, Subscriptions, Transfers). Full period. A leg counts under every partner of its subscription and under its remote host&rsquo;s partner.</li>
+<li><strong>Value pages</strong> &mdash; every <strong>Subscription</strong> that used the value, with its <strong>Partner</strong> and <strong>OK transfers</strong>, then a <strong>Partners</strong> table (Partner, Subscriptions, OK transfers); a value cell equals its page&rsquo;s Total. Full period. A leg counts under every partner of its subscription and under its remote host&rsquo;s partner.</li>
 </ul>
 <h2>Tips</h2>
 <ul>

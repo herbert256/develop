@@ -46,11 +46,15 @@ agg=$(activity_stream | awk -F'\t' -v heat="$HEAT" '
         hrec[h]++; hbytes[h] += okb; trec++; tbytes += okb
         if (pf) { hfail[h]++; tfail++ } else { hproc[h]++; tproc++ }
         hdr[h SUBSEP d]++; hdf[h SUBSEP d] += pf; hdp[h SUBSEP d] += (!pf); hdb[h SUBSEP d] += okb
-        # the same File on the heatmap grid: hour × weekday (2=jdn), each cell
-        # keeping its own per-date series for report.js recalcHeat
-        w = ($2 + 0) % 7
-        c[h SUBSEP w]++; if (c[h SUBSEP w] > max) max = c[h SUBSEP w]; tot[w]++
-        if (d != "") { hwd = h SUBSEP w SUBSEP d; if (!(hwd in cd)) ord[h SUBSEP w] = ord[h SUBSEP w] (ord[h SUBSEP w] ? "," : "") d; cd[hwd]++ }
+        # the same OK File on the heatmap grid: hour × weekday (2=jdn), each
+        # cell keeping its own per-date series for report.js recalcHeat — OK
+        # Files like its sibling tabs (2026-09-30 audit T-07: the grid counted
+        # EVERY File, 33620 against the 32062 OK Files beside it)
+        if (!pf) {
+            w = ($2 + 0) % 7
+            c[h SUBSEP w]++; if (c[h SUBSEP w] > max) max = c[h SUBSEP w]; tot[w]++
+            if (d != "") { hwd = h SUBSEP w SUBSEP d; if (!(hwd in cd)) ord[h SUBSEP w] = ord[h SUBSEP w] (ord[h SUBSEP w] ? "," : "") d; cd[hwd]++ }
+        }
     }
     END {
         for (k in hdr) { split(k, a, SUBSEP); bk[a[1]] = bk[a[1]] (bk[a[1]] ? "," : "") a[2] ":" hdr[k] ":" (hdf[k]+0) ":" (hdp[k]+0) ":" hdb[k] }
@@ -97,7 +101,8 @@ n_hours=$(printf '%s\n' "$agg" | grep -c '^HOUR|' || true)
     # the bucket payload keeps all four metrics, so the tokens read metric 2
     # (ok) for Files and the bar, metric 3 for Volume
     # the column reads "Delivered" (2026-09-29): it counts the OK Files only,
-    # and the Volume beside it is their bytes; the grid below counts every File
+    # and the Volume beside it is their bytes; the grid below counts the OK
+    # Files too (every File until 2026-09-30)
     printf 'HEAD\tHour\tOK Files\tVolume\tLoad\n'   # OK = Processed + Waiting (2026-09-29 audit: "Delivered" held the staged Waiting Files)
     printf 'KIND\ttext\tnum\tnum\tbar\n'
     printf 'RECALC\t-\ts2\th3\tb2\n'

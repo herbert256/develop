@@ -31,12 +31,14 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # ONE pass over the shared parse cache for all six tables — 2=direction,
 # 3=status, 7=action_by, 9=size, 10=protocol, 11=date, 12=time, 13=sortkey,
-# 20=mode, 23=transfer_id. Every table gets its per-date buckets (the date
-# filter) and its 10 most-recent transfers per outcome (the drill-down).
+# 20=mode. Every table gets its per-date buckets (the date filter). (The 10
+# most-recent transfers per outcome — the drill payloads — went 2026-09-30:
+# no table has shipped a drill since 2026-09-13, and six addtop calls per leg
+# were the costliest part of the pass.)
 #   PROTO|  by protocol          AB|    by action by
 #   DIR|    by direction         X|     direction x action by
 #   PXD|    protocol x direction MODE|  BINARY/ASCII
-agg=$(awk -F'\t' "$COREIDS_AWK"'
+agg=$(awk -F'\t' '
     function human(b,   u, i, v) {
         split("B KB MB GB TB PB", u, " ")
         i = 1; v = b + 0
@@ -53,7 +55,6 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         if (mode == "" || mode == "unknown") mode = "UNKNOWN"   # fold the cache lowercase "unknown" into one casing
         xk = proto SUBSEP dir       # protocol x direction
         yk = dir SUBSEP ab          # direction x action by
-        oc = f ? "F" : "P"
 
         # VOLUME = the OK legs'"'"' bytes, the Transfers column'"'"'s own scope
         # (2026-09-29: every leg'"'"'s bytes beside an OK-only count)
@@ -65,12 +66,6 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         yr[yk]++; yd[yk] = dir; ya[yk] = ab; if (f) yff[yk]++; else ypp[yk]++
         mr[mode]++; if (f) mf[mode]++; else mp[mode]++
         tr2++; tb += okb; if (f) tf++; else tp++
-        addtop("PRO" SUBSEP proto SUBSEP oc, $13, $11 " " $12, $23)
-        addtop("DIR" SUBSEP dir   SUBSEP oc, $13, $11 " " $12, $23)
-        addtop("PXD" SUBSEP xk    SUBSEP oc, $13, $11 " " $12, $23)
-        addtop("AB"  SUBSEP ab    SUBSEP oc, $13, $11 " " $12, $23)
-        addtop("X"   SUBSEP yk    SUBSEP oc, $13, $11 " " $12, $23)
-        addtop("M"   SUBSEP mode  SUBSEP oc, $13, $11 " " $12, $23)
         if (d != "") {                                  # per-date metrics for the filter
             pdl[proto SUBSEP d]++; pdf[proto SUBSEP d] += f; pdp[proto SUBSEP d] += (!f); pdb[proto SUBSEP d] += okb
             ddl[dir SUBSEP d]++;   ddf[dir SUBSEP d]  += f;  ddp[dir SUBSEP d]  += (!f); ddb[dir SUBSEP d]  += okb
@@ -90,12 +85,12 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         for (k in adl) { split(k, a, SUBSEP); abk[a[1]] = abk[a[1]] (abk[a[1]] ? "," : "") a[2] ":" adl[k] ":" (adf[k]+0) ":" (adp[k]+0) }
         for (k in ydl) { split(k, a, SUBSEP); kk2 = a[1] SUBSEP a[2]; ybk[kk2] = ybk[kk2] (ybk[kk2] ? "," : "") a[3] ":" ydl[k] ":" (ydf[k]+0) ":" (ydp[k]+0) }
         for (k in mdl) { split(k, a, SUBSEP); mbk[a[1]] = mbk[a[1]] (mbk[a[1]] ? "," : "") a[2] ":" mdl[k] ":" (mdf[k]+0) ":" (mdp[k]+0) }
-        for (k in pr) printf "PROTO|%s|%d|%d|%d|%d|%s|%s|%s|%s|%s\n", k, pr[k], pf[k]+0, pp[k]+0, pb[k], human(pb[k]), rshare(pp[k]+0), pbk[k], buildlist(top["PRO" SUBSEP k SUBSEP "F"]), buildlist(top["PRO" SUBSEP k SUBSEP "P"])
-        for (k in dr) printf "DIR|%s|%d|%d|%d|%d|%s|%s|%s|%s|%s\n",   k, dr[k], dff[k]+0, dpp[k]+0, db[k], human(db[k]), rshare(dpp[k]+0), dbk[k], buildlist(top["DIR" SUBSEP k SUBSEP "F"]), buildlist(top["DIR" SUBSEP k SUBSEP "P"])
-        for (k in xr) printf "PXD|%s|%s|%d|%d|%d|%d|%s|%s|%s|%s|%s\n", xp[k], xd[k], xr[k], xff[k]+0, xpp[k]+0, xb[k], human(xb[k]), rshare(xpp[k]+0), xbk[k], buildlist(top["PXD" SUBSEP k SUBSEP "F"]), buildlist(top["PXD" SUBSEP k SUBSEP "P"])
-        for (k in ar) printf "AB|%s|%d|%d|%d|%s|%s|%s\n", k, ar[k], afl[k]+0, app[k]+0, abk[k], buildlist(top["AB" SUBSEP k SUBSEP "F"]), buildlist(top["AB" SUBSEP k SUBSEP "P"])
-        for (k in yr) printf "X|%s|%s|%d|%d|%d|%s|%s|%s\n", yd[k], ya[k], yr[k], yff[k]+0, ypp[k]+0, ybk[k], buildlist(top["X" SUBSEP k SUBSEP "F"]), buildlist(top["X" SUBSEP k SUBSEP "P"])
-        for (k in mr) printf "MODE|%s|%d|%d|%d|%s|%s|%s\n", k, mr[k], mf[k]+0, mp[k]+0, mbk[k], buildlist(top["M" SUBSEP k SUBSEP "F"]), buildlist(top["M" SUBSEP k SUBSEP "P"])
+        for (k in pr) printf "PROTO|%s|%d|%d|%d|%d|%s|%s|%s\n", k, pr[k], pf[k]+0, pp[k]+0, pb[k], human(pb[k]), rshare(pp[k]+0), pbk[k]
+        for (k in dr) printf "DIR|%s|%d|%d|%d|%d|%s|%s|%s\n",   k, dr[k], dff[k]+0, dpp[k]+0, db[k], human(db[k]), rshare(dpp[k]+0), dbk[k]
+        for (k in xr) printf "PXD|%s|%s|%d|%d|%d|%d|%s|%s|%s\n", xp[k], xd[k], xr[k], xff[k]+0, xpp[k]+0, xb[k], human(xb[k]), rshare(xpp[k]+0), xbk[k]
+        for (k in ar) printf "AB|%s|%d|%d|%d|%s\n", k, ar[k], afl[k]+0, app[k]+0, abk[k]
+        for (k in yr) printf "X|%s|%s|%d|%d|%d|%s\n", yd[k], ya[k], yr[k], yff[k]+0, ypp[k]+0, ybk[k]
+        for (k in mr) printf "MODE|%s|%d|%d|%d|%s\n", k, mr[k], mf[k]+0, mp[k]+0, mbk[k]
         printf "TOT|%d|%d|%d|%d|%s\n", tr2, tf+0, tp+0, tb, human(tb)
     }
 ' "$PARSED")
@@ -115,13 +110,15 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_bytes tot_human <<< "$(pr
     printf 'DESC\tTransfers (the OK legs) and volume by protocol × direction, the direction × action-by breakdown, and the BINARY/ASCII transfer mode split — the per-leg dimensions on one page.\n'
 
     # TRANSFERS = the OK legs in every table (2026-09-13, user request: one
-    # Transfers column, no Error / OK pair, no green/red cells, no drills);
+    # Transfers column, no Error / OK pair, no green/red cells, no drills) —
+    # headed "OK transfers" since 2026-09-30 (Security outreach, a sibling in
+    # the group, counts EVERY leg under plain "Transfers");
     # the bucket payloads keep all metrics, so the tokens read metric 2 (ok)
     # for Transfers and the share, metric 3 for Volume; rows sort by it
     # (the By protocol and By direction tables went 2026-09-29: their rows are
     # the subtotals of Protocol × direction)
-    printf 'TABLE\tProtocol × direction\tdrill=transfer\n'
-    printf 'HEAD\tProtocol\tDirection\tTransfers\tVolume\t%% of transfers\n'
+    printf 'TABLE\tProtocol × direction\n'
+    printf 'HEAD\tProtocol\tDirection\tOK transfers\tVolume\t%% of OK transfers\n'
     printf 'KIND\ttext\ttext\tnum\tnum\tnum\n'
     printf 'RECALC\t-\t-\ts2\th3\t%%2\n'
     printf '%s\n' "$agg" | grep '^PXD|' | sort -t'|' -k6,6nr | awk -F'|' '
@@ -133,8 +130,8 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_bytes tot_human <<< "$(pr
 
     # (the By action by table went 2026-09-29: the subtotals of Direction x
     # action by)
-    printf 'TABLE\tDirection x action by\tdrill=transfer\n'
-    printf 'HEAD\tDirection\tAction By\tTransfers\n'
+    printf 'TABLE\tDirection x action by\n'
+    printf 'HEAD\tDirection\tAction By\tOK transfers\n'
     printf 'KIND\ttext\ttext\tnum\n'
     printf 'RECALC\t-\t-\ts2\n'
     printf '%s\n' "$agg" | grep '^X|' | sort -t'|' -k6,6nr | awk -F'|' '
@@ -143,8 +140,8 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_bytes tot_human <<< "$(pr
 
 
     # ---- Transfer mode BINARY/ASCII (formerly mode.sh, absorbed 2026-07) -----
-    printf 'TABLE\t\tdrill=transfer\n'
-    printf 'HEAD\tMode\tTransfers\n'
+    printf 'TABLE\t\n'
+    printf 'HEAD\tMode\tOK transfers\n'
     printf 'KIND\ttext\tnum\n'
     printf 'RECALC\t-\ts2\n'
     printf '%s\n' "$agg" | grep '^MODE|' | sort -t'|' -k5,5nr | awk -F'|' '

@@ -41,8 +41,11 @@ apply_help_chrome() {
     for f in docs/help/*.html; do
         [ -f "$f" ] || continue
         tmp=$(mktemp "${TMPDIR:-/tmp}/help.XXXXXX")
-        awk -v tb="$tb" '
+        # + the stylesheet cache-buster (2026-09-30 audit L-06: the help
+        # sources load style.css bare, so a CSS change could show stale)
+        awk -v tb="$tb" -v av="${ASSET_VER:-}" '
             /^<div class="topbar"><a class="brand"/         { print tb; next }
+            av != "" { gsub(/href="\.\.\/assets\/style\.css"/, "href=\"../assets/style.css?v=" av "\"") }
             { print }
         ' "$f" > "$tmp" && mv "$tmp" "$f"
     done
@@ -204,12 +207,11 @@ daily_loglines_tsv() {   # $1 = the data root (data)
     return 0
 }
 
-# One Status cell (mirrors bin/analyses/publish.sh's st_cell): a 0 renders
-# blank; a nonzero value links its coverage cell page when that page exists.
-# $3 = the coverage href RELATIVE TO THE DOCS ROOT — the shared home's hrefs
-# carry the docs-root prefix ("coverage/…"), so the existence check is
-# against docs/, never the env-scoped $DOCS.
-_stcell() {   # $1 value  $2 class  [$3 coverage href, docs-root-relative]
+# One Status cell: a 0 renders blank; a nonzero value links its list page
+# (an Entities view) when that page exists. $3 = the href RELATIVE TO THE DOCS
+# ROOT (the home lives at the docs root), so the existence check is against
+# docs/.
+_stcell() {   # $1 value  $2 class  [$3 href, docs-root-relative]
     if [ "${1:-0}" = 0 ]; then printf '<td class="%s"></td>' "$2"; return 0; fi
     dotify_v "$1"
     if [ -n "${3:-}" ] && [ -f "docs/$3" ]; then
@@ -222,9 +224,12 @@ _stcell() {   # $1 value  $2 class  [$3 coverage href, docs-root-relative]
 # The PERCENTAGE columns link the same page as the count they are a share of,
 # so EVERY figure in a row is clickable — a share of a list is that list. A 0 %
 # still renders (unlike a 0 count, which blanks): it is a real reading.
+# Written tight ("71%") like every other percentage cell on the site
+# (2026-09-30 audit L-14; "71&nbsp;%" before), under the "Seen %" / "OK %"
+# headers (D-12: "Seen" / "OK" beside the count column "Ok" read as twins).
 _pctvar() {   # $1 percentage  [$2 href, docs-root-relative]
-    if [ -n "${2:-}" ] && [ -f "docs/$2" ]; then printf '<a href="%s">%s&nbsp;%%</a>' "$2" "$1"
-    else printf '%s&nbsp;%%' "$1"; fi
+    if [ -n "${2:-}" ] && [ -f "docs/$2" ]; then printf '<a href="%s">%s%%</a>' "$2" "$1"
+    else printf '%s%%' "$1"; fi
 }
 
 # One result-status table (Total / Seen % / OK % / Error / Warning / Ok per
@@ -240,7 +245,7 @@ _pctvar() {   # $1 percentage  [$2 href, docs-root-relative]
 _status_table() {
     local cov=$1 title=$2; shift 2
     printf '<div class="sxscol"><h2>%s</h2>\n<div class="tablewrap"><table class="index fit" data-nosearch="1">\n' "$title"
-    printf '<tr><th>Entity</th><th class="num">Total</th><th class="num">Seen</th><th class="num">OK</th><th class="num">Error</th><th class="num">Warning</th><th class="num">Ok</th></tr>\n'
+    printf '<tr><th>Entity</th><th class="num">Total</th><th class="num">Seen %%</th><th class="num">OK %%</th><th class="num">Error</th><th class="num">Warning</th><th class="num">Ok</th></tr>\n'
     # The figures are CALCULATED from the sources — Total / Error / Warning /
     # Ok from the base result column, Seen from home.rpt (one line per
     # member). They are NEVER lifted from the linked pages: the pages must
@@ -309,9 +314,9 @@ _status_table() {
         # so their figures have a view of their own) — the view whose row count
         # IS this figure (All / Seen / OK / Warning / Error, each carrying
         # datereset so it opens at the full date range). A member with NO
-        # Entities report (none today) would fall back to its coverage cell
-        # pages.
-        local h_tot h_seen h_err h_warn h_ok
+        # Entities report (none today) renders its figures unlinked (the
+        # coverage-cell fallback went 2026-09-30 — those pages are gone).
+        local h_tot="" h_seen="" h_err="" h_warn="" h_ok=""
         if [ -n "$ebase" ]; then
             h_tot="$ent-all.html"
             # (The Logical + four PDA rows' Total linked their COVERAGE CELL
@@ -321,10 +326,6 @@ _status_table() {
             h_err="$ent-error.html"
             h_warn="$ent-warning.html"
             h_ok="$ent-ok.html"
-        else
-            h_tot="$cov$member-configured.html";     h_seen="$cov$member-seen.html"
-            h_err="$cov$member-status-error.html"
-            h_warn="$cov$member-status-warning.html"; h_ok="$cov$member-status-ok.html"
         fi
         # Total first, then the two % columns: Seen %, then OK % (green/Total).
         # EVERY figure in the row is a link, the percentages included — each

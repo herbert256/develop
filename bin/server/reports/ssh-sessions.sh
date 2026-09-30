@@ -83,6 +83,7 @@ if [ "${t_tot:-0}" -eq 0 ]; then
         printf 'HEAD\tSignal\tOccurrences\tComponent\tFirst\tLast\n'
         printf 'KIND\ttext\tnumwarn\ttext\ttext\ttext\n'
         printf 'ROW\t@{colspan=5}No session-lifecycle problem messages in this data window.\n'
+        printf 'TOTAL\tTotal (0 rows)\t\t\t\t\n'   # every table carries a TOTAL footer (2026-09-30)
         printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     exit 0

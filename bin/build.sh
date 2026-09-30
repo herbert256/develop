@@ -416,7 +416,11 @@ write_report() {
 <meta http-equiv="Expires" content="0">
 <title>Build report — Axway ST reports</title>
 HTML
-        printf '<link rel="stylesheet" href="%sassets/style.css">\n' "$base"
+        # the stylesheet with its ?v= cache-buster — the same cksum as
+        # publish_lib ASSET_VER, so a CSS change reaches this page too
+        # (2026-09-30 audit L-06; it loaded style.css bare)
+        local _av; _av=$( (cksum docs/assets/style.css docs/assets/report.js docs/assets/slotchart.js docs/assets/all-files-search.js docs/assets/sub-files.js 2>/dev/null || true) | cksum | cut -d' ' -f1 )
+        printf '<link rel="stylesheet" href="%sassets/style.css%s">\n' "$base" "${_av:+?v=$_av}"
         cat <<'HTML'
 <style>
 .buildwrap{font:14px/1.5 -apple-system,"Segoe UI",Roboto,sans-serif;color:#222;max-width:64rem;margin:0 auto;padding:0 1rem}
@@ -464,7 +468,7 @@ HTML
         else
             # (the brand's text is the environment label, like render_topbar)
             # (the three area start pages went 2026-09-29 — reports/index.html is THE start page)
-            printf '<div class="topbar"><a class="brand" href="%sindex.html">%s</a><nav class="nav"><a href="%sreports/index.html">Reports</a><a href="%sdashboards/index.html">Dashboards</a></nav><span class="tr-group"><span class="tright">Build report</span></span></div>\n' \
+            printf '<div class="topbar"><a class="brand" href="%sindex.html">%s</a><nav class="nav"><a href="%sreports/index.html">Reports</a><a href="%sdashboards/index.html">Dashboards</a></nav><span class="tr-group"><span class="tright">Build report</span></span></div><script>(function(){function f(){var b=document.querySelector(".topbar");if(!b||!document.body)return;var h=b.offsetHeight;document.body.style.paddingTop=h>48?(h+12)+"px":""}f();addEventListener("resize",f)})();</script>\n' \
                 "$base" "$(printf '%s' "${ENV_LABEL:-Cloud}" | esc)" "$base" "$base"
         fi
         # THE TIMINGS LIVE IN THE TITLE (2026-08): start → end and the

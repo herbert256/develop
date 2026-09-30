@@ -120,7 +120,9 @@ npages=$(LC_ALL=C awk -F'\t' \
             nacc = (ip in na) ? na[ip] : 0
             nn = (ip in n) ? n[ip] : 0
 
-            printf "TITLE\t%s\n", ip > out
+            # titled like the other detail families name their entity
+            # (2026-09-30, audit D-08 — the bare address before)
+            printf "TITLE\tIncoming connection: %s\n", ip > out
             printf "META\tdirclass\tres-%s\n", r > out
             printf "TABLE\tSummary\tnosearch\n" > out
             printf "HEAD\tMetric\tValue\n" > out
@@ -135,21 +137,22 @@ npages=$(LC_ALL=C awk -F'\t' \
                 printf "ROW\tFirst seen\t%s\n", fd[ip] > out
                 printf "ROW\tLast seen\t%s\n", ld[ip] > out
             }
-            printf "TOTAL\tTotal (%d rows)\t\n", 4 + (ptr != "" ? 1 : 0) + (nn ? 4 : 0) - 1 > out
+            # (no TOTAL: an Item/Value summary has nothing to total — the
+            # Features tables of the other detail families carry none either)
             if (nn) {
                 # per-day table, date ascending (insertion sort — few days)
                 for (i = 1; i <= nd[ip]; i++) sd[i] = ds[ip, i]
                 for (i = 2; i <= nd[ip]; i++) { v = sd[i]; for (j = i - 1; j >= 1 && sd[j] > v; j--) sd[j+1] = sd[j]; sd[j+1] = v }
-                printf "TABLE\tActivity per day\n" > out
+                printf "TABLE\tActivity per day\tpager=10\n" > out   # paged like every detail family (2026-09-30)
                 printf "HEAD\tDate\tFiles\tError\tOK\tVolume\n" > out
-                printf "KIND\ttext\tnum\tnumfailed\tnumprocessed\ttext\n" > out
+                printf "KIND\ttext\tnum\tnumfailed\tnumprocessed\tnum\n" > out
                 for (i = 1; i <= nd[ip]; i++) { d = sd[i]
                     printf "ROW\t%s\t%d\t%s\t%s\t%s\n", d, df[ip, d], (((ip, d) in dfd) ? dfd[ip, d] : ""), (((ip, d) in dp) ? dp[ip, d] : ""), hb(dv[ip, d] + 0) > out }
                 # the Error / OK totals keep their column tint and show no 0 (2026-09-29)
                 printf "TOTAL\tTotal (%d days)\t@{class=num}%d\t@{class=num failed}%s\t@{class=num processed}%s\t%s\n", nd[ip], nn, (ko[ip] + 0 > 0 ? ko[ip] + 0 : ""), (ok[ip] + 0 > 0 ? ok[ip] + 0 : ""), hb(vol[ip]) > out
                 printf "TABLE\tLatest %d Files\trestint\n", nt[ip] > out   # rows tint by the File colour (2026-09-29)
                 printf "HEAD\tDate\tTime\tAccount\tSubscription\tFile\tSize\tOutcome\n" > out
-                printf "KIND\ttext\ttext\tacct\tsite\tfile\ttext\ttext\n" > out
+                printf "KIND\ttext\ttext\tacct\tsite\tfile\tnum\ttext\n" > out
                 for (i = 1; i <= nt[ip]; i++) {
                     split(tl[ip, i], a, "\t")
                     oc = a[7]

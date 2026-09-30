@@ -28,7 +28,11 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # _files.tsv: 1=coreid 2=outcome 3=account 4=date 5=time 6=sortkey 8=size
 # 10=rows(legs) 11=file 12=site. Bucket = the leg count itself for 1..10,
 # then two ranges for the repeat-collect tail.
-agg=$(awk -F'\t' "$COREIDS_AWK"'
+# the published File pages (bin/transfer/filepages.sh): a Most-legs CoreId
+# links its page when it has one (2026-09-30 audit T-08, like Longest Files)
+FPF="$CACHE_DIR/_filepages.tsv"; [ -f "$FPF" ] || FPF=/dev/null
+agg=$(awk -F'\t' -v FPF="$FPF" '
+    BEGIN { while ((getline l < FPF) > 0) { split(l, a9, "\t"); if (a9[1] != "") FP[a9[1]] = 1 } close(FPF) }
     function human(b,   u, i, v) {
         split("B KB MB GB TB PB", u, " ")
         i = 1; v = b + 0
@@ -49,10 +53,9 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
         if (pf) { bf[i]++; tfl++ } else { bp[i]++; tpr++ }
         if (br[i] > maxrec) maxrec = br[i]
         if (d != "") { bdr[i SUBSEP d]++; bdf[i SUBSEP d] += pf; bdp[i SUBSEP d] += (!pf); if (!pf) bdb[i SUBSEP d] += size }
-        addtop("L" SUBSEP i SUBSEP (pf ? "F" : "P"), $6, $4 " " $5, $1)
         # bounded top-25 by legs (ties: newest start first via the sortkey)
         tk = sprintf("%012d", legs) $6
-        pay = legs "\t" $4 " " $5 "\t" $12 "\t" $3 "\t" lit($11) "\t" $1 (($25 ~ /^(green|orange|red)$/) ? "\t@data:res=" $25 : "")   # the File colour, col 25
+        pay = legs "\t" $4 " " $5 "\t" $12 "\t" $3 "\t" lit($11) "\t" (($1 in FP) ? "@{href=../files/" $1 ".html}" : "") $1 (($25 ~ /^(green|orange|red)$/) ? "\t@data:res=" $25 : "")   # the File colour, col 25
         if (tn < 25) { tn++; TK[tn] = tk; TV[tn] = pay }
         else {
             mi = 1; for (z = 2; z <= tn; z++) if (TK[z] < TK[mi]) mi = z
@@ -71,7 +74,9 @@ agg=$(awk -F'\t' "$COREIDS_AWK"'
             if (bp[i] + 0 == 0) continue   # no OK File: nothing this table counts (2026-09-29: rows of 0)
             sh = tpr > 0 ? sprintf("%.1f", (bp[i]+0) * 100 / tpr) : "0.0"
             w = int((bp[i]+0) * 100 / maxpr)
-            printf "BKT|%s|%d|%d|%d|%d|%s|%s|%d|%s|%s|%s\n", lab[i], br[i]+0, bf[i]+0, bp[i]+0, bb[i]+0, human(bb[i]+0), sh, w, bk[i], buildlist(top["L" SUBSEP i SUBSEP "F"]), buildlist(top["L" SUBSEP i SUBSEP "P"])
+            # (the per-bucket Error / OK drill lists went 2026-09-30: no row
+            # has shipped them since the one Files column, 2026-09-13)
+            printf "BKT|%s|%d|%d|%d|%d|%s|%s|%d|%s\n", lab[i], br[i]+0, bf[i]+0, bp[i]+0, bb[i]+0, human(bb[i]+0), sh, w, bk[i]
         }
         # top-25, most legs first (selection sort on the padded keys)
         for (z = 1; z <= tn; z++) for (y = z + 1; y <= tn; y++) if (TK[y] > TK[z]) { t2 = TK[z]; TK[z] = TK[y]; TK[y] = t2; t2 = TV[z]; TV[z] = TV[y]; TV[y] = t2 }
@@ -103,13 +108,13 @@ top_n=0
     printf 'HEAD\tLegs\tFiles\tVolume\t%% of Files\tDistribution\n'
     printf 'KIND\ttext\tnum\tnum\tnum\tbar\n'
     printf 'RECALC\t-\ts2\th3\t%%2\tb2\n'
-    while IFS='|' read -r _ label rec fa pr bytes human sh w bk ccf ccp; do
+    while IFS='|' read -r _ label rec fa pr bytes human sh w bk; do
         [ -z "$label" ] && continue
         printf 'ROW\t%s\t%s\t%s\t%s%%\t%s\t@data:buckets=%s\t@data:ord=%s\n' "$label" "$pr" "$human" "$sh" "$w" "$bk" "$ord"
         ord=$((ord + 1))
     done <<< "$(printf '%s\n' "$agg" | grep '^BKT|')"
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}%s\t@{class=num}100.0%%\t\n' "$tot_processed" "$tot_vol"
-    printf 'LINK\tpirates-details.html\tOne-legged transfers (the 1-leg Files, per subscription)\n'
+    printf 'LINK\tpirates-details.html\tOne-legged Files (the 1-leg Files, per subscription)\n'
 
     printf 'TABLE\tFiles with the most legs\trestint\n'   # rows tint by the File colour (2026-09-29)
     printf 'HEAD\tLegs\tDate & time\tSubscription\tAccount\tFile\tCoreId\n'

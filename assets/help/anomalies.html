@@ -32,8 +32,8 @@
 <h2>Rules</h2>
 <ul>
 <li>Typical = the median over the window&rsquo;s days (per hour of day for Hourly), weekdays and weekends apart; hours bucket by File start.</li>
-<li>Hourly, each also &ge;4&times; typical: Error rate &ge;25% on &ge;5 Files; Duration avg per delivered File &ge;5 min on &ge;5 delivered Files; Files spike &ge;30; Silence 0 where &ge;20 are typical; Volume &ge;100 MB.</li>
-<li>Daily: Error rate &ge;10%, &ge;20 Files, &ge;4&times;; Duration &ge;5 min, &ge;20 delivered Files, &ge;4&times;; Files spike &ge;100, &ge;2&times;; Files drop &le;&frac14; of a &ge;100 typical; Silence as hourly; Volume &ge;200 MB, &ge;2&times;.</li>
+<li>Hourly, each also &ge;4&times; typical: Error rate &ge;25% on &ge;5 Files; Duration avg per delivered File &ge;5 min on &ge;5 delivered Files; Files spike &ge;30 OK Files; Silence 0 Files where &ge;20 are typical; Volume &ge;100 MB.</li>
+<li>Daily: Error rate &ge;10%, &ge;20 Files, &ge;4&times;; Duration &ge;5 min, &ge;20 delivered Files, &ge;4&times;; Files spike &ge;100 OK Files, &ge;2&times;; Files drop &le;&frac14; of a &ge;100 typical (OK Files); Silence as hourly; Volume &ge;200 MB, &ge;2&times;.</li>
 <li>Consecutive flagged hours merge into one episode, bridging a single calm hour.</li>
 </ul>
 <h2>Tips</h2>

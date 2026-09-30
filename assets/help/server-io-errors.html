@@ -18,21 +18,21 @@
 <h2>What it shows</h2>
 <ul>
 <li>The platform failing to read or write a file on <strong>its own storage</strong> (<code>IO Error reading file /data/FlowManager/&lt;account&gt;@&lt;login&gt;/&hellip;</code>).</li>
-<li>The upload landed, then the file could not be read back: moved or deleted mid-route, a stale NFS handle, a full volume, a permission.</li>
+<li>The upload landed, then could not be read back: moved or deleted mid-route, a stale NFS handle, a full volume, a permission.</li>
 <li>The summary line totals lines, folders, Files in error and days.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Per folder</strong> &mdash; <strong>Last</strong> / <strong>First</strong> line, <strong>Account</strong>, <strong>Login</strong>, <strong>Subscriptions</strong>, <strong>Folder</strong>.</li>
+<li><strong>Per folder</strong> &mdash; <strong>Last</strong> / <strong>First</strong> line, <strong>Account</strong>, <strong>Login</strong>, <strong>Subscriptions</strong> (each links its page), <strong>Folder</strong>.</li>
 <li><strong>Per folder</strong> counts &mdash; <strong>IO errors</strong> (lines), <strong>Files</strong> (distinct names), <strong>Error</strong> / <strong>OK</strong> (distinct Files by outcome), <strong>Not logged</strong> (lines naming no File), <strong>Days</strong> with a line.</li>
-<li><strong>IO error lines</strong> &mdash; <strong>Date</strong>, <strong>Time</strong>, <strong>Account</strong>, <strong>Login</strong>, <strong>Subscription</strong>, <strong>File</strong> (opens its File page when the File has one), <strong>Operation</strong> (&ldquo;reading file&rdquo;), <strong>State</strong>, <strong>Transfer</strong> (the joined File&rsquo;s start).</li>
+<li><strong>IO error lines</strong> &mdash; <strong>Date</strong>, <strong>Time</strong>, <strong>Account</strong>, <strong>Login</strong>, <strong>Subscription</strong>, <strong>File</strong> (opens its File page, if any), <strong>Operation</strong>, <strong>State</strong>, <strong>Transfer</strong> (the joined File&rsquo;s start).</li>
 <li><strong>Per day</strong> &mdash; <strong>Date</strong>, <strong>IO errors</strong>, <strong>Folders</strong>, <strong>Files</strong>.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
 <li>Source: every server-log line with <strong>IO Error</strong> or <strong>Input/output error</strong>; the folder <code>account@login</code> gives Account and Login.</li>
 <li>Each line joins <strong>by file name</strong> to the File in flight (the newest starting before it, else the first after).</li>
-<li><strong>State</strong>: <em>Failed</em> = the route never read it (a one-legged File), <em>Processed</em> = a retry read it, <em>not logged</em> = no File has that name.</li>
+<li><strong>State</strong>: <em>Error</em> = the route never read it (a one-legged File), <em>OK</em> = a retry read it, <em>not logged</em> = no File has that name. A line joined to a File takes that File&rsquo;s row colour.</li>
 <li>Error / OK follow the site outcome (Waiting = OK, Expired = Error). Counts re-total under the date filter.</li>
 </ul>
 <h2>Tips</h2>
