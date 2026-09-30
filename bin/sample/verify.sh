@@ -811,13 +811,15 @@ check $(grep -q 'data-restint' docs/transfer/duration-longest.html 2>/dev/null &
 # (2026-09-30, user request: Errors right after Overview, then Duration ->
 # transfer/duration.html and Waiting/Expired -> transfer/waiting-expired.html,
 # then Entities and Files; later that day "Partners: In / Out" after Files,
-# since the evening one "Partners" link -> analyses/partners-in.html)
+# since the evening one "Partners" link -> analyses/partners-in.html, right
+# after Duration since the night)
 n=$(awk '/<span class="entgroup">/ && !a { a = NR } />Overview<\/a>/ && !o { o = NR } />Errors<\/a>/ && !r { r = NR } />Duration<\/a>/ && !d { d = NR } />Waiting\/Expired<\/a>/ && !w { w = NR } />Entities<\/a>/ && !e { e = NR } />Files<\/a>/ && !f { f = NR } /partners-in\.html">Partners<\/a>/ && !p { p = NR } /search\/search.html" title="Search"/ && !s { s = NR }
-    END { print (a && a <= o && o < r && r < d && d < w && w < e && e < f && f < p && p <= s) ? 1 : 0 }' docs/assets/topbar.js 2>/dev/null)
-check $([ "${n:-0}" = 1 ] && grep -q 'subscription-all.html">Entities</a>' docs/assets/topbar.js && grep -q 'search/all-files.html">Files</a>' docs/assets/topbar.js && grep -q "transfer/duration.html\">Duration</a>" docs/assets/topbar.js && grep -q "transfer/waiting-expired.html\">Waiting/Expired</a>" docs/assets/topbar.js && grep -q 'analyses/partners-in.html">Partners</a>' docs/assets/topbar.js && ! grep -q 'entpair' docs/assets/topbar.js && echo 0 || echo 1) "topbar.js lacks the Overview / Errors / Duration / Waiting/Expired / Entities / Files / Partners cluster in that order (Duration -> transfer/duration.html, Waiting/Expired -> transfer/waiting-expired.html, Files -> search/all-files.html, Partners -> analyses/partners-in.html)"
+    END { print (a && a <= o && o < r && r < d && d < p && p < w && w < e && e < f && f <= s) ? 1 : 0 }' docs/assets/topbar.js 2>/dev/null)
+check $([ "${n:-0}" = 1 ] && grep -q 'subscription-all.html">Entities</a>' docs/assets/topbar.js && grep -q 'search/all-files.html">Files</a>' docs/assets/topbar.js && grep -q "transfer/duration.html\">Duration</a>" docs/assets/topbar.js && grep -q "transfer/waiting-expired.html\">Waiting/Expired</a>" docs/assets/topbar.js && grep -q 'analyses/partners-in.html">Partners</a>' docs/assets/topbar.js && ! grep -q 'entpair' docs/assets/topbar.js && echo 0 || echo 1) "topbar.js lacks the Overview / Errors / Duration / Partners / Waiting/Expired / Entities / Files cluster in that order (Duration -> transfer/duration.html, Waiting/Expired -> transfer/waiting-expired.html, Files -> search/all-files.html, Partners -> analyses/partners-in.html)"
 # Errors is a top-bar link, not a Reports pulldown line
 check $(grep -oE 'reports:"([^"\\]|\\.)*"' docs/assets/topbar-data.js 2>/dev/null | grep -q 'analyses/failed.html' && echo 1 || echo 0) "the Reports pulldown still lists the Errors group"
 check $(grep -q 'errors:"analyses/failed.html"' docs/assets/topbar-data.js 2>/dev/null && echo 0 || echo 1) "topbar-data.js lacks errors:\"analyses/failed.html\" (the runtime bar's Errors link)"
+check $(grep -oE 'reports:"([^"\\]|\\.)*"' docs/assets/topbar-data.js 2>/dev/null | grep -q 'partners-in.html' && echo 1 || echo 0) "the Reports pulldown still lists the Partners group (a top-bar link since 2026-09-30)"
 # the Implementation 1 | 2 tab row went with the File search pages
 # (2026-09-29): the all-files page is the only implementation left
 check $(grep -q 'Implementation 1, period' docs/search/all-files.html 2>/dev/null && echo 1 || echo 0) "search/all-files.html still carries the Implementation tab row"
@@ -1211,8 +1213,8 @@ n=$(grep -oE 'reports:"([^"\\]|\\.)*"' "$t" 2>/dev/null | grep -o '<a ' | wc -l 
 # groups — and Entities left off the menu, the top bar's own Entities link
 # opens it; Failures renamed Errors the same day and taken off the menu too,
 # a top-bar link of its own; later that day the Cleanup group went and
-# Overview became a top-bar link too)
-check $([ "${n:-0}" = 10 ] && echo 0 || echo 1) "the Reports menu has ${n:-0} line(s), expected 10 (Start page + 9 groups; Overview, Entities and Errors not listed)"
+# Overview became a top-bar link too; Partners left the menu 2026-09-30)
+check $([ "${n:-0}" = 9 ] && echo 0 || echo 1) "the Reports menu has ${n:-0} line(s), expected 9 (Start page + 8 groups; Overview, Entities, Errors and Partners not listed)"
 check $(grep -oE 'reports:"([^"\\]|\\.)*"' "$t" 2>/dev/null | grep -q 'transfer/topview.html' && echo 1 || echo 0) "the Reports menu still lists the Overview group"
 check $(grep -q 'overview:"transfer/topview.html"' "$t" 2>/dev/null && echo 0 || echo 1) "topbar-data.js lacks overview:\"transfer/topview.html\" (the runtime bar's Overview link)"
 check $(grep -oE 'reports:"([^"\\]|\\.)*"' "$t" 2>/dev/null | grep -q 'transfer/entities/' && echo 1 || echo 0) "the Reports menu still lists the Entities group"

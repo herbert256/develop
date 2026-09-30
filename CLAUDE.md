@@ -1775,7 +1775,7 @@ front end) then four fix workers with disjoint files. The rules it left:
   auth-activity).
 - **Partner scorecard, Blast radius and Application dependencies are GONE** (writers, .rpt, pages, help pages) —
   never restore; verify.sh asserts the absence.
-- **Top bar**: Overview · Errors · Duration · Waiting/Expired · Entities · Files · **Partners** + the search icon
+- **Top bar**: Overview · Errors · Duration · **Partners** · Waiting/Expired · Entities · Files + the search icon
   ("Partners: In / Out" until the evening, user request: ONE link → `analyses/partners-in.html`, Partners Out
   through the Partners group row; a fixed path in topbar.js like Duration; linkcheck models the edge; verify.sh
   checks the order and that the `.entpair` pair is gone).
@@ -1809,6 +1809,11 @@ front end) then four fix workers with disjoint files. The rules it left:
   ITS `<stem>-<view>.html` when that page exists, else at its landing page — Partners in ⇄ Partners Out keep
   Endpoint / Accounts / Partners (the request), and so do the other same-named tabs (Connections ⇄ Logons
   › By account, Entity coverage ⇄ Missing entities › Accounts). Entities, xref and Month stats never carry.
+- **Menus** (later that night, user request): the **Partners** group is NOT a Reports pulldown line (like
+  Entities / Errors / Overview — the top bar's Partners link, now right AFTER Duration: Overview · Errors ·
+  Duration · Partners · Waiting/Expired · Entities · Files); the group stays for the start page, the sitemap and
+  the rows. **Coverage** opens on **First seen** (its first member, the pulldown's landing), then Entity
+  coverage · Not in Flow Manager · Skipped · Missing entities. verify.sh checks the order and the menu.
 
 ## Rules from the fifth 2026-09-30 "few little things" batch (user request, the evening)
 
@@ -1856,8 +1861,8 @@ front end) then four fix workers with disjoint files. The rules it left:
   Collected · Oldest Waiting · Last Expired) is `nofilter`, skips Unknown, tints by the subscription
   colour; its Waiting / Expired cells open the `waiting/` / `expired/` File lists. The Entities
   Waiting / Expired cells, the Top view TOTAL cells and the day-page lines link here.
-- **Top bar**: Overview · Errors · Duration (`transfer/duration.html`) · Waiting/Expired
-  (`transfer/waiting-expired.html`) · Entities · Files · Partners (fourth batch) + the search icon; NO data period.
+- **Top bar**: Overview · Errors · Duration (`transfer/duration.html`) · Partners · Waiting/Expired
+  (`transfer/waiting-expired.html`) · Entities · Files + the search icon (Partners: fourth batch, after Duration since the night); NO data period.
 - **Column groups**: the `gsep` gap is 30 px site-wide (= the home table's spacers).
 - **Activity › Per weekday**: Weekday · Days · Files · Avg/day · Volume · Load — Files = the OK
   Files, no Error %. The Per week / Per hour tabs keep "OK Files".
@@ -1948,7 +1953,7 @@ front end) then four fix workers with disjoint files. The rules it left:
 
 - **The Errors group** (Failures until 2026-09-29, "Rename Failures to Errors"): NOT on the
   Reports pulldown — its own top-bar link (`ERRORS_HREF`, the group's first page, Failed
-  Subscriptions; `errors` in topbar-data.js). The top bar's Overview · Errors · Duration · Waiting/Expired · Entities ·
+  Subscriptions; `errors` in topbar-data.js). The top bar's Overview · Errors · Duration · Partners · Waiting/Expired · Entities ·
   Files (2026-09-30 order, user request) are ONE cluster (`span.entgroup`, the entity-search icon after them; Overview joined later that
   day — `OVERVIEW_HREF` = transfer/topview.html, `overview` in topbar-data.js) in topbar.js buildTopbar.
 - **Sub-rows** (`_report_subrows`, publish_lib.sh): members of a group that collapse into ONE

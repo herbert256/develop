@@ -2031,7 +2031,7 @@ _report_groups() {
         "Logons & connections|server/logons=Logons|server/connections=Connections" \
         "Partners|analyses/partners-in=Partners in|analyses/partners-out=Partners Out" \
         "Configuration|analyses/subscriptions=Configured subscriptions|analyses/accounts=Configured accounts|analyses/logical-detection=Logical detection|analyses/xref/cross=Cross References" \
-        "Coverage|transfer/entity-coverage=Entity coverage|analyses/first-seen=First seen|transfer/not-in-flow-manager=Not in Flow Manager|transfer/skipped=Skipped|server/missing-entities=Missing entities"
+        "Coverage|analyses/first-seen=First seen|transfer/entity-coverage=Entity coverage|transfer/not-in-flow-manager=Not in Flow Manager|transfer/skipped=Skipped|server/missing-entities=Missing entities"
 }
 # THE SUB-ROWS (2026-09-29, user request: "On the group Failures move the 4
 # server logs to 4 buttons as [a second] selection, have "Server log" as first
@@ -2083,11 +2083,14 @@ rg_rel() {
 # ERRORS_HREF, the group's first member's landing page.
 # NOT Overview either (2026-09-29, user request: "Move Overview from the
 # Reports pulldown to the top menu bar, just before Entities"): OVERVIEW_HREF.
+# NOT Partners either (2026-09-30, user request: "Remove Partners from the
+# Reports pulldown"): the top bar links Partners in, whose group row reaches
+# Partners Out; the group stays for the start page, the sitemap and the rows.
 REPORTS_MENU='<a class="ddtop" href="@reports/index.html">Start page</a>'
 ERRORS_HREF=""; OVERVIEW_HREF=""
 while IFS= read -r _rgl; do
     [ -n "$_rgl" ] || continue
-    [ "${_rgl%%|*}" = Entities ] && continue
+    case ${_rgl%%|*} in Entities|Partners) continue ;; esac
     if [ "${_rgl%%|*}" = Errors ] || [ "${_rgl%%|*}" = Overview ]; then
         _rgf=${_rgl#*|}; _rgf=${_rgf%%|*}; rg_landing "${_rgf%%=*}"
         if [ "${_rgl%%|*}" = Errors ]; then ERRORS_HREF=$RG_LANDING; else OVERVIEW_HREF=$RG_LANDING; fi

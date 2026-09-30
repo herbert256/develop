@@ -47,14 +47,15 @@
   // 1 the brand — its TEXT is the environment label (input/environment.txt;
   // "Axway ST" without one), or on a runtime checkout the pair "Acceptance /
   // Production", the active one bold and yellow (.envcur) linking the home
-  // page · 2 Overview · Errors · Duration · Waiting/Expired · Entities · Files
-  // · Partners + the search icon (ONE cluster, 2026-09-29; since
+  // page · 2 Overview · Errors · Duration · Partners · Waiting/Expired ·
+  // Entities · Files + the search icon (ONE cluster, 2026-09-29; since
   // 2026-09-30, user request, Errors right after Overview, Duration ->
   // transfer/duration.html and Waiting/Expired -> transfer/waiting-expired.html
   // added, the data period between the brand and the cluster gone; later that
   // day the pair "Partners: In / Out", since the evening just "Partners" ->
   // analyses/partners-in.html (Partners Out through its group row), fixed paths
-  // like Duration) · 3 the ONE Reports pulldown · 4 the Dashboard link · 5 the
+  // like Duration, right after Duration since the night) · 3 the ONE Reports
+  // pulldown · 4 the Dashboard link · 5 the
   // site map and help icons.
   function buildTopbar() {
     var tb = document.querySelector("div.topbar");
@@ -81,10 +82,10 @@
       (M.overview ? '<a class="entlabel" href="' + b + esc(M.overview) + '">Overview</a>' : "") +
       (M.errors ? '<a class="entlabel" href="' + b + esc(M.errors) + '">Errors</a>' : "") +
       '<a class="entlabel" href="' + b + 'transfer/duration.html">Duration</a>' +
+      '<a class="entlabel" href="' + b + 'analyses/partners-in.html">Partners</a>' +
       '<a class="entlabel" href="' + b + 'transfer/waiting-expired.html">Waiting/Expired</a>' +
       '<a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
       '<a class="entlabel" href="' + b + 'search/all-files.html">Files</a>' +
-      '<a class="entlabel" href="' + b + 'analyses/partners-in.html">Partners</a>' +
       '<a class="searchbtn" href="' + b + 'search/search.html" title="Search" aria-label="Search">🔍</a></span>' +
       '<nav class="nav">' +
       // the Reports label is focusable: focus opens the menu through the CSS
