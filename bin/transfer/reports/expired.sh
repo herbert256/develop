@@ -175,20 +175,7 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
     printf 'STAT\twhite\t%s d\tAverage staged to deleted\n' "$avgage"
     printf 'STAT\torange\t%s\tStill waiting (in window)\n' "$nwait"
 
-    # ---- 1. the retention curve --------------------------------------------
-    printf 'TABLE\tHow long until a staged file expires\tnofilter\tnosearch\n'
-    printf 'HEAD\tStaged to deleted\tFiles\tShare\n'
-    printf 'KIND\ttext\tnum\tnum\n'
-    if [ -s "$TMPD/x_age" ]; then
-        LC_ALL=C sort -t"$(printf '\t')" -k1,1n "$TMPD/x_age" | awk -F'\t' -v t="$nexp" \
-            '{ printf "ROW\t%d day(s)\t%d\t%.1f%%\n", $1, $2, t ? $2*100/t : 0 }
-             END { printf "TOTAL\tTotal (%d row(s))\t@{class=num}%d\t@{class=num}100.0%%\n", NR, t }'
-    else
-        printf 'ROW\t@{colspan=3}No expired Files in this data window.\n'
-        printf 'TOTAL\tTotal (0 rows)\t\t\n'
-    fi
-
-    # ---- 2. the subscriptions (per ACCOUNT until 2026-09-19, user request) ---
+    # ---- 1. the subscriptions (per ACCOUNT until 2026-09-19, user request) ---
     # default sort = Last deletion descending (2026-09-21, user request): declared
     # (sort=10:-1) AND baked in that order, the name as the tie-break
     printf 'TABLE\tSubscriptions the expired files belong to\twide\tnofilter\trestint\tsort=10:-1\n'
@@ -222,9 +209,10 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
         printf 'TOTAL\tTotal (0 subscriptions)\t\t\t\t\t\t\t\t\t\t\n'
     fi
 
-    # ---- 3. the sweep nights ------------------------------------------------
-    # (3 and 4 side by side — sxs, 2026-09-29, user request: "have the last 2
-    # tables next to each other")
+    # ---- 2. the sweep nights ------------------------------------------------
+    # (2, 3 and 4 side by side — sxs, 2026-09-29, user request: "have the last 2
+    # tables next to each other"; the retention curve, the FIRST table until
+    # then, moved to the end of that row 2026-09-30, user request)
     printf 'TABLE\tExpiries per sweep night\tnofilter\tsxs\n'
     printf 'HEAD\tDeletion night\tFiles expired\tVolume\tSubscriptions\n'
     printf 'KIND\ttext\tnum\tnum\tnum\n'
@@ -241,7 +229,7 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
         printf 'TOTAL\tTotal (0 nights)\t\t\t\n'
     fi
 
-    # ---- 4. the staging weekday --------------------------------------------
+    # ---- 3. the staging weekday --------------------------------------------
     printf 'TABLE\tStaged on which weekday - expired vs collected\tnofilter\tnosearch\tsxs\n'
     printf 'HEAD\tStaged on\tExpired\tCollected\tExpired share\n'
     printf 'KIND\ttext\tnumfailed\tnumprocessed\tnum\n'
@@ -254,6 +242,19 @@ share=$(awk -v e="$nexp" -v c="$ncoll" 'BEGIN{ printf "%.1f", (e+c) ? e*100/(e+c
     else
         printf 'ROW\t@{colspan=4}No staged UC2 Files in this data window.\n'
         printf 'TOTAL\tTotal (0 weekdays)\t\t\t\n'
+    fi
+
+    # ---- 4. the retention curve --------------------------------------------
+    printf 'TABLE\tHow long until a staged file expires\tnofilter\tnosearch\tsxs\n'
+    printf 'HEAD\tStaged to deleted\tFiles\tShare\n'
+    printf 'KIND\ttext\tnum\tnum\n'
+    if [ -s "$TMPD/x_age" ]; then
+        LC_ALL=C sort -t"$(printf '\t')" -k1,1n "$TMPD/x_age" | awk -F'\t' -v t="$nexp" \
+            '{ printf "ROW\t%d day(s)\t%d\t%.1f%%\n", $1, $2, t ? $2*100/t : 0 }
+             END { printf "TOTAL\tTotal (%d row(s))\t@{class=num}%d\t@{class=num}100.0%%\n", NR, t }'
+    else
+        printf 'ROW\t@{colspan=3}No expired Files in this data window.\n'
+        printf 'TOTAL\tTotal (0 rows)\t\t\n'
     fi
 
     printf 'SUMMARY\tExpired: %s Files (%s%% of resolved staged)  |  Volume: %s  |  Average staged to deleted: %s d  |  Still waiting: %s\n' \
