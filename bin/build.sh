@@ -1057,7 +1057,7 @@ run_step "publish: index pages + home"                                    bin/bu
 # nothing rewrites a page behind it: input/rename.txt's presentation renames
 # land on the rendered pages and the client data payloads; the caches and
 # .rpt files keep the real values.
-run_step "publish: display renames (input/rename.txt)"                    bin/build/display-rename.sh
+run_step "publish: display sweep (no milliseconds, input/rename.txt)"      bin/build/display-rename.sh
 
 # ---- RUNTIME-ONLY: the shareable site archive (2026-08-30) ------------------
 # In a runtime checkout — recognized by the ABSENT input/.sample-estate

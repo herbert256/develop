@@ -2147,7 +2147,7 @@ _hdr_with_nav() {
 # one-member group gets no row. Idempotent: a page already carrying a
 # grouptag is left alone (a re-run of bin/build/publish.sh alone).
 apply_report_groups() {
-    local q line glabel rest allstems=" " e m dir stem f b s st best page row tag i j n k sline sm
+    local q line glabel rest allstems=" " e m dir stem f b s st best page row tag i j n k sline sm sfx tgt mj
     local -a arr MP ML MLAND fam SUBOF SL_LBL SL_FIRST sarr
     q=$(mktemp "${TMPDIR:-/tmp}/axrg.XXXXXX")
     while IFS= read -r line; do
@@ -2204,6 +2204,17 @@ apply_report_groups() {
             esac
             for f in ${fam[@]+"${fam[@]}"}; do
                 page=${f#"$DOCS/"}; row=""
+                # THE VIEW CARRY (2026-09-30, user request: switching between
+                # Partners in and Partners Out "must keep the active second
+                # selection"): a page <stem>-<view>.html links a sibling member
+                # at ITS <stem>-<view>.html when that page exists (partners-in-
+                # accounts <-> partners-out-accounts), else at its landing page;
+                # the special families (entities, xref, month stats) never carry
+                sfx=""
+                case $dir in transfer/entities|analyses/xref|transfer/month-stats) ;; *)
+                    b=${f##*/}; b=${b%.html}
+                    [ "${b#"$stem"-}" != "$b" ] && sfx=-${b#"$stem"-} ;;
+                esac
                 if [ "$glabel" != Entities ] && [ "$n" -gt 1 ]; then
                     row='<p class="tabs">'
                     for ((j = 0; j < n; j++)); do
@@ -2218,7 +2229,15 @@ apply_report_groups() {
                         fi
                         esc "${ML[$j]}"
                         if [ "$j" = "$i" ]; then row+="<span class=\"tab active\">$ESC</span>"
-                        else rg_rel "$page" "${MLAND[$j]}"; row+="<a class=\"tab\" href=\"$RG_REL\">$ESC</a>"; fi
+                        else
+                            tgt=${MLAND[$j]}; mj=${MP[$j]}
+                            if [ -n "$sfx" ]; then
+                                case ${mj%/*} in transfer/entities|analyses/xref|transfer/month-stats) ;; *)
+                                    [ -f "$DOCS/$mj$sfx.html" ] && tgt="$mj$sfx.html" ;;
+                                esac
+                            fi
+                            rg_rel "$page" "$tgt"; row+="<a class=\"tab\" href=\"$RG_REL\">$ESC</a>"
+                        fi
                     done
                     row+='</p>'
                     # a sub-row member's page: the SECOND row, its sub-row's

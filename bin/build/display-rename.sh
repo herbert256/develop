@@ -24,7 +24,8 @@
 #
 # The entity column (subscription account login host logical partner
 # application domain bl profile any) is documentation and validation; the value match is
-# what rewrites. A missing or empty rename.txt is a no-op. MANUAL-REPUBLISH
+# what rewrites. A missing or empty rename.txt renames nothing (the MILLISECOND
+# sweep below runs regardless, 2026-09-30). MANUAL-REPUBLISH
 # GOTCHA: this runs only in bin/build.sh — a manual per-area publish shows
 # real values until the next build.
 #
@@ -96,6 +97,38 @@ apply_rules() {
     rm -f "$lst"
     echo "display-rename: $dir: applied $n rule(s) to $np page(s)." >&2
 }
+
+# THE MILLISECOND SWEEP (2026-09-30, user request: "General site rule, never
+# show the .mmm of a time, only hh:mm:ss"): every rendered page and client-side
+# data payload under docs/ (not the code in docs/assets/) drops the ".mmm" after
+# an hh:mm:ss — table cells, drill entries, log lines, File pages, the -data.js
+# payloads alike. Presentation only, like the renames: the caches and the .rpt
+# files keep the milliseconds (sort precision). The front-end decoders read the
+# drill entries by pattern (report.js expandFileList / bindDrill: a leading
+# \d\d:\d\d:\d\d, the UUID / 32-hex CoreId), never by position, so the shorter
+# stamps decode the same. Only the files that carry one are rewritten.
+# ONE perl per batch of files, in parallel, each reading a file whole and
+# writing it back only when the substitution changed something; each batch
+# prints its count as ONE short line (atomic on the pipe). NOT a parallel
+# `grep -l` into one list: concurrent greps interleave their buffered output
+# and garble the file names (the first try, 2026-09-30 — 12 pages missed).
+ms_sweep() {
+    local nj np
+    nj=${AXWAY_NJOBS:-$(sysctl -n hw.ncpu 2>/dev/null || echo 4)}
+    np=$(find docs -type f \( -name '*.html' -o -name '*.js' \) ! -path 'docs/assets/*' -print0 \
+        | xargs -0 -P "$nj" -n 200 perl -e '
+            my $n = 0;
+            for my $f (@ARGV) {
+                open(my $h, "<", $f) or die "ms-sweep: $f: $!"; my $c = do { local $/; <$h> }; close $h;
+                next unless $c =~ s{(?<![0-9])([0-9]{2}:[0-9]{2}:[0-9]{2})\.[0-9]{3}(?![0-9])}{$1}g;
+                open(my $o, ">", $f) or die "ms-sweep: $f: $!"; print $o $c; close $o or die "ms-sweep: $f: $!";
+                $n++;
+            }
+            print "$n\n";' \
+        | awk '{ s += $1 } END { print s + 0 }')
+    echo "display-rename: milliseconds dropped from the times on $np page(s) / payload(s)." >&2
+}
+ms_sweep
 
 r=$(load_rules "input/rename.txt")
 [ -n "$r" ] || { echo "display-rename: input/rename.txt holds no usable rule; nothing to rename." >&2; exit 0; }

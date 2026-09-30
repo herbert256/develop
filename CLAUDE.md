@@ -1794,6 +1794,22 @@ front end) then four fix workers with disjoint files. The rules it left:
   Partners row by stem. verify.sh checks the rows, the names and the totals. A column change in a writer needs
   its RULES string changed in step (one rule per ROW field from field 3).
 
+## Rules from the sixth 2026-09-30 batch ("a few different things", user request)
+
+- **No search-syntax hint**: the "Wildcards: ? = 1 character, * = 0..n characters …" line under the search
+  boxes (report.js `SEARCH_HINT`, the `.essearchhint` / `.controlshint` rows) is GONE everywhere; the search
+  box tooltip still explains the syntax. Never bring the visible hint back.
+- **NEVER SHOW MILLISECONDS** (site rule): a time shows as hh:mm:ss. `bin/build/display-rename.sh` (the build
+  stage "display sweep") strips the ".mmm" after every hh:mm:ss in every page and data payload under docs/
+  (not docs/assets/) — one perl per batch, writing a file back only when it changed (a parallel `grep -l`
+  into one list garbled the names). Presentation only: caches and .rpt keep the milliseconds; the drill
+  decoders match by pattern, never by position. A manual per-area publish shows them until the next build.
+  verify.sh fails on any hh:mm:ss.mmm left outside docs/assets/.
+- **THE VIEW CARRY** (`apply_report_groups`): a page `<stem>-<view>.html` links a sibling group member at
+  ITS `<stem>-<view>.html` when that page exists, else at its landing page — Partners in ⇄ Partners Out keep
+  Endpoint / Accounts / Partners (the request), and so do the other same-named tabs (Connections ⇄ Logons
+  › By account, Entity coverage ⇄ Missing entities › Accounts). Entities, xref and Month stats never carry.
+
 ## Rules from the fifth 2026-09-30 "few little things" batch (user request, the evening)
 
 - **Waiting & Expired › Subscriptions**: Oldest Waiting / Last Expired are one-unit AGES to the data's last

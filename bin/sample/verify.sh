@@ -226,6 +226,20 @@ for pr in analyses/failing-reasons:1 transfer/pirates-details:1 server/failure-f
     got=$(grep -o 'data-recalc=' "docs/$p.html" 2>/dev/null | wc -l | tr -d ' ')
     check $([ -f "docs/$p.html" ] && [ "${got:-0}" -ge "$want" ] && ! grep -q 'data-nofilter' "docs/$p.html" && echo 0 || echo 1) "docs/$p.html is nofilter again or lost its RECALC ($got of $want) — the From/To re-count (2026-09-30)"
 done
+# the VIEW CARRY (2026-09-30, user request: switching between Partners in and
+# Partners Out keeps the active view): each view page's group row links the
+# sibling's page of the SAME view (apply_report_groups)
+for v in accounts partners; do
+    check $(grep -q "href=\"partners-out-$v.html\">Partners Out</a>" "docs/analyses/partners-in-$v.html" 2>/dev/null && grep -q "href=\"partners-in-$v.html\">Partners in</a>" "docs/analyses/partners-out-$v.html" 2>/dev/null && echo 0 || echo 1) "Partners in / Partners Out $v view: the group row does not keep the view (partners-{in,out}-$v.html)"
+done
+check $(grep -q 'href="partners-out.html">Partners Out</a>' docs/analyses/partners-in.html 2>/dev/null && echo 0 || echo 1) "Partners in (Endpoint) no longer links Partners Out's Endpoint page"
+# NO MILLISECONDS on the site (2026-09-30, user request: "never show the .mmm
+# of a time, only hh:mm:ss") — bin/build/display-rename.sh's sweep over every
+# page and data payload outside docs/assets/
+n=$(find docs -type f \( -name '*.html' -o -name '*.js' \) ! -path 'docs/assets/*' -print0 | xargs -0 grep -lE '[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}' 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n page(s) / payload(s) still show a time with milliseconds (hh:mm:ss.mmm)"
+# the search-syntax hint under the search boxes is GONE (2026-09-30, user request)
+check $(! grep -q 'Wildcards: ? = 1 character' docs/assets/report.js 2>/dev/null && echo 0 || echo 1) "report.js still renders the 'Wildcards: ? = 1 character …' search hint"
 # the three partner study reports are GONE (2026-09-30, user request): no
 # writer, .rpt, page or help page may come back
 n=$(ls bin/analyses/reports/partner-scorecard.sh bin/analyses/reports/blast-radius.sh bin/analyses/reports/app-partners.sh data/analyses/reports/partner-scorecard.rpt data/analyses/reports/blast-radius.rpt data/analyses/reports/app-partners.rpt docs/analyses/partner-scorecard.html docs/analyses/blast-radius.html docs/analyses/app-partners.html docs/help/partner-scorecard.html docs/help/blast-radius.html docs/help/app-partners.html 2>/dev/null | wc -l | tr -d ' ')

@@ -522,9 +522,7 @@ a.daybtn:hover { background:#e8f0fe; text-decoration:none; }
                        display:flex; align-items:center; flex-wrap:wrap; gap:0.3rem 0; }
 .searchcfg .essearch label { margin:0 0.35rem 0 0; }
 .searchcfg .essearch input.search { font:inherit; padding:2px 1.5rem 2px 6px; min-width:22rem; max-width:100%; }
-.searchcfg .essearchhint { margin:0 0 0.2rem; }                  /* the syntax hint on its OWN line, below the search box */
-.searchcfg .essearchhint .searchhint { margin-left:0; }          /* flush-left on its own line (override the "to the right" left margin) */
-.searchhint { display:inline-block; font-size:0.8rem; color:#777; margin:0 0 0 0.9rem; vertical-align:middle; }   /* the search syntax hint, to the RIGHT of the search box (Entity Search + Report finder) */
+.searchhint { display:inline-block; font-size:0.8rem; color:#777; margin:0 0 0 0.9rem; vertical-align:middle; }   /* the all-files search result count, to the RIGHT of the search box (the syntax hint that shared it went 2026-09-30) */
 /* Row 1: the type checkboxes flush left, the four view buttons on the SAME line
    pushed to the RIGHT (margin-left:auto) with extra space before them. */
 .searchcfg .cfgline { display:flex; align-items:center; flex-wrap:wrap; row-gap:0.35rem; margin:0.2rem 0 0.5rem; }
@@ -557,8 +555,6 @@ a.daybtn:hover { background:#e8f0fe; text-decoration:none; }
    between it and the From/To pulldowns, and put the syntax hint on its own line
    just below (flush-left under the box), like the Search page. */
 .controls .search-wrap.sepafter { margin-right:2rem; }
-.controlshint { margin:-0.8rem 0 1.2rem; }
-.controlshint .searchhint { margin-left:0; }
 th.sortable { cursor:pointer; }
 th.sortable:hover { background-color:#2c4a6b; }
 .arrow { font-size:0.75em; }
