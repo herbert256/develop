@@ -234,8 +234,8 @@ _rlap "UC3 poll evidence"
 # figures equal:
 #   subscriptions  every dest_site (col 12) in _files.tsv
 #   hosts          every LEG host (_transfers.tsv col 16) of an OUT-connection
-#                  File (_files.tsv col 16) — the rows remote-host.sh and the
-#                  Entities writer list, so the raw INCOMING addresses of an
+#                  File (_files.tsv col 16) — the rows the Entities writer
+#                  (entities.sh) lists, so the raw INCOMING addresses of an
 #                  in-connection File are not invented as entities here either.
 #                  2026-09-28 fix (the production run): the File's FIRST host
 #                  (_files col 15) alone missed an outbound leg to an unmapped

@@ -1054,8 +1054,9 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # busiest-first with no sort= marker. Below: the views, the
     # subset totals re-summing the grouped columns (entity_res_block), an
     # empty group hidden per view (entity_hide_groups), the TOTAL row last
-    # (entity_total_last). The nine classic <name>.rpt stay DATA producers
-    # (showseen, entity-search, the rosters) and render no page.
+    # (entity_total_last). The nine classic <name>.rpt records (written by
+    # entities.sh too) are DATA (showseen, entity-search, the rosters) and
+    # render no page.
     local _nreal=23   # the directive + Name + 21 figure columns (the Reason column follows Days)
     segment_rpt "$rpt"                                  # TBLOCK[1]=Summary
     local sumblk=${TBLOCK[1]:-}

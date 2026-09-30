@@ -633,9 +633,10 @@ application, bl (group `account-login-site`, label "Entities") — each rendered
 `bin/transfer/reports/entities.sh` (2026-09-13, user request — built that day as the
 `transfer/entities2/` twin experiment and adopted the same day; the classic Name · Direction · Files ·
 Volume · OK · Retry · Resubmit · Error · Last seen pages are gone). The nine classic `<name>.rpt`
-(`account.sh`, `subscription.sh`, `login.sh`, `remote-host.sh`, `pda-entities.sh`) stay DATA
-producers — `showseen.sh`, `entity-search.sh` and the server rosters read them positionally — and
-render no page.
+records are DATA — `showseen.sh`, `entity-search.sh`, `home.sh` and the server rosters read them
+positionally — and render no page; since 2026-09-30 `entities.sh` writes them too (`classic_dim`,
+from its own S| rows — the five classic writers `account.sh`, `subscription.sh`, `login.sh`,
+`remote-host.sh`, `pda-entities.sh` were folded in, byte-identical).
 
 THE GROUPED LAYOUT — Name, then seven column groups (a `GHEAD` banner row + `gsep=` dividers like
 the Top view), ONE table per view:
@@ -676,8 +677,8 @@ cells lose their tint inside the views' tinted rows, only `.failed`/`.processed`
 Files that carried a leg of that outcome; a Duration cell → the 10 newest OK Files whose (grid) span
 is at or above that percentile, each entry carrying its span — a THIRD pass over `_files.tsv` once
 the thresholds are known (`calc_pcts` at the pass's first line; END computes them itself on an empty
-cache). The writer's attribution mirrors the classic writers exactly (Files / Error / Auto / Volume /
-First / Last agree row for row with their `.rpt`); totals per (name, File) pair for
+cache). The writer's attribution is the classic one (the classic records are written from these
+same rows since 2026-09-30); totals per (name, File) pair for
 subscription / login / remote-host, once per File for the rest — the classic `T|` rule; rows baked
 busiest-first with no `sort=`.
 

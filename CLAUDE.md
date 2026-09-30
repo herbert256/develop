@@ -353,8 +353,8 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
   500 lines, above that `SEGMENT_AWK` (one awk pass printing `$'…'` assignments that are eval'd —
   the bash loop was quadratic, 6.4 s on a 21k-row report); the bash version stays the reference
   and the fallback. KEEP THE TWO IN STEP (identical on all 13.5k production-size .rpt files).
-- **pda-entities.sh** computes the per-leg flags ONCE (a temp file) and runs its five dimensions
-  as parallel jobs (2026-09-28).
+- (**pda-entities.sh** — its five dimensions as parallel jobs, 2026-09-28 — is folded into
+  `entities.sh` since 2026-09-30, like the other four classic writers.)
 - **2026-09-29 round (prd 197 → ~184 s; six timed prd runs with a 1-s CPU sampler):** the
   appended-names RESCAN is gone from the normal run — `result.sh discover-hosts` appends the
   transfer-log-discovered HOSTS right after the transfer parse (during the server-parse wait;
@@ -982,8 +982,8 @@ Counting `_transfers.tsv` rows over-counts (~3x) and double-counts volume.
 **Count/volume/failure/timing reports read `$FILES`**; **per-row dimension reports read
 `$PARSED`** and count rows, their count column labelled **"Transfers"** ("Files" is reserved for
 per-CoreId counts). The nine ENTITIES reports share one Summary/Detail layout counting distinct
-CoreIds (`login.sh`/`subscription.sh`/`remote-host.sh` join `$PARSED`→`$FILES` deduped per
-`(entity,CoreId)` — per-entity counts can sum to more than the distinct total).
+CoreIds (login / subscription / remote host join `$PARSED`→`$FILES` deduped per
+`(entity,CoreId)` — per-entity counts can sum to more than the distinct total; `entities.sh`).
 
 **PARTNER = UNION attribution**: a File counts for EVERY partner of its subscription (col 12 on
 `xref/_subscriptions-partners.tsv`) unioned with col 20 (alone it misses both-partner files, empty
@@ -1067,8 +1067,8 @@ view has a row the base cache knows nothing about and the home figure disagrees 
 footer. The transfer log therefore DISCOVERS entities: they are appended with an empty result
 and coloured normally. The rosters MIRROR the reports that
 list them: subscriptions = every `_files.tsv` col 12; hosts = every LEG host (`_transfers.tsv`
-col 16) of an OUT-connection File (`_files.tsv` col 16) — exactly the rows `remote-host.sh` and the
-Entities writer list, so raw INCOMING addresses are never invented as entities (2026-09-28: the
+col 16) of an OUT-connection File (`_files.tsv` col 16) — exactly the rows the
+Entities writer lists, so raw INCOMING addresses are never invented as entities (2026-09-28: the
 File's first host, col 15, alone missed an outbound leg to an unmapped raw address and a production
 Entities view listed it untinted, home 105 vs page 106). That population is materialized once as
 `colour/_hostlegs.tsv` (host ⇥ File sortkey ⇥ outcome ⇥ subscription ⇥ File end) and read by the
@@ -1292,10 +1292,11 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   the row's `@data:coreids-<key>`, bound by BUILT column index); the Transfers cells to the Files
   with a leg of that outcome; a Duration cell to the 10 newest OK Files at or above that
   percentile, each entry with its span (the writer reads `_files.tsv` a THIRD time once the
-  thresholds are known). The writer's attribution mirrors the nine classic writers (`account.sh`,
-  `subscription.sh`, `login.sh`, `remote-host.sh`, `pda-entities.sh`), which STAY as DATA
-  producers — `showseen.sh`, `entity-search.sh` and the server rosters read their `<name>.rpt`
-  positionally — but render no page. Links INTO the pages sort by header LABEL
+  thresholds are known). Since 2026-09-30 (user decision) the writer ALSO writes the nine
+  CLASSIC records `data/transfer/reports/<name>.rpt` (`classic_dim`, from the same S| rows) —
+  the five classic writers (`account.sh`, `subscription.sh`, `login.sh`, `remote-host.sh`,
+  `pda-entities.sh`) are GONE, folded in with a byte-identical proof; `showseen.sh`,
+  `entity-search.sh`, `home.sh` and the server rosters read those records positionally — no page. Links INTO the pages sort by header LABEL
   (`?axway_sort=Error:-1` / `Total:-1` — report.js resolves the first header cell reading it; the
   home day table and the overview/day Top 5 produce them), since the positions shift when a group
   is hidden. The hand-written help pages `entities-<name>.html` describe this layout. Other
@@ -1597,7 +1598,7 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   domain,application,partner,logical,bl}.rpt`, no page) hold ONE record per name since the same
   day: name · Files · Error · OK · newest Error File start · newest OK File start (1.46 MB →
   40 KB) — what their readers use (the server rosters, entity-search,
-  showseen, home). The Recovered / Retry / Resubmit rules read `_files.tsv` cols 26 / 27.
+  showseen, home). Written by `entities.sh` since 2026-09-30 (the five classic writers folded in). The Recovered / Retry / Resubmit rules read `_files.tsv` cols 26 / 27.
 - **Dead .rpt text is GONE** (2026-09-29, the same day's follow-up — Herbert: "why … Left on
   purpose and not fix those?"): every NOTE / INTRO / DESC / SUMMARY / KEYWORDS line no consumer
   reads was removed from the writers and a report FOOT carries no text (each class PROVEN dead by

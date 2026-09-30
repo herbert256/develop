@@ -16,8 +16,8 @@
 #   (the showseen-<member>.rpt files went 2026-09-29: home.sh read only their
 #   "Seen: N", which it now counts from the coverage TSV — the same tuples)
 # The seen flags and last transactions are lifted straight from the classic
-# entity records (<basename>.rpt, their FIRST table — account.sh and its
-# twins) so this and the entity reports agree.
+# entity records (<basename>.rpt, their FIRST table — written by
+# entities.sh since 2026-09-30) so this and the entity reports agree.
 #
 # "Seen" match (case-insensitive, but '-' and '_' are DIFFERENT characters):
 #   accounts      — name == an account value (_transfers.tsv col 4), EXACTLY

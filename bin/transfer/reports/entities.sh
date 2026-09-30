@@ -5,11 +5,12 @@
 # the classic Name · Direction · Files · Volume · OK · Retry · Resubmit ·
 # Error · Last seen pages): the nine Entities reports in a GROUPED layout,
 # one .rpt per entity under data/transfer/reports/entities/, rendered by
-# publish_lib's render_entity_report into docs/transfer/entities/. The nine
-# classic writers (account.sh, subscription.sh, login.sh, remote-host.sh,
-# pda-entities.sh) keep writing their <name>.rpt as DATA producers —
-# showseen.sh, entity-search.sh and the server rosters read them — but
-# render no page any more.
+# publish_lib's render_entity_report into docs/transfer/entities/. It ALSO
+# writes the nine CLASSIC records data/transfer/reports/<name>.rpt (classic_dim,
+# at the bottom) — the five classic writers account.sh, subscription.sh,
+# login.sh, remote-host.sh and pda-entities.sh were folded in here 2026-09-30
+# (user decision; proven byte-identical): showseen.sh, entity-search.sh,
+# home.sh and the server rosters read them; they render no page.
 #
 # Layout: the Name, then SEVEN column groups (a GHEAD banner + the gsep=
 # dividers, the Top view way), in this order:
@@ -34,10 +35,9 @@
 # Resubmit or State group is hidden per view, the TOTAL row is last
 # (publish_lib).
 #
-# Attribution per entity mirrors the five classic writers EXACTLY (account.sh,
-# subscription.sh, login.sh, remote-host.sh, pda-entities.sh) — so Files and
-# Error agree row for row with their .rpt (the classic records carry only
-# Files / Error / OK and the newest Error / OK File start since 2026-09-29):
+# Attribution per entity — the rule of the five former classic writers
+# (account.sh, subscription.sh, login.sh, remote-host.sh, pda-entities.sh),
+# whose records are written from these same rows since 2026-09-30:
 #   account      _files col 3
 #   subscription the distinct non-empty _transfers col 6 over the File's legs
 #   login        the distinct non-empty _transfers col 5   (each: one count
@@ -51,10 +51,10 @@
 #   domain       col 19
 #   bl           col 12 via _subscriptions-bl
 # Totals: subscription / login / remote-host sum the (name, File) pairs, the
-# others count each File once — exactly what the classic T| lines do.
+# others count each File once.
 #
 # Usage:
-#   ./entities.sh    # reads the caches, writes data/transfer/reports/entities/<entity>.rpt (nine files)
+#   ./entities.sh    # reads the caches, writes data/transfer/reports/entities/<entity>.rpt + data/transfer/reports/<entity>.rpt (nine each)
 #
 # (Until 2026-09-13 this was entities2.sh, the twin experiment; the S| / T|
 # streams and the display rules below are its.)
@@ -147,8 +147,12 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
         out = ""; for (i2 = 1; i2 <= n2; i2++) out = out (out == "" ? "" : ",") Q[i2] "." C[i2]
         HIST = out
         P90 = prank(Q, C, n2, N, 90); P95 = prank(Q, C, n2, N, 95); P99 = prank(Q, C, n2, N, 99); P100 = prank(Q, C, n2, N, 100) }
-    function acc(key,   dk) {
+    function acc(key,   dk, lv) {
         sc[key]++; if (isin) sfin[key]++; if (isout) sfout[key]++; if (f) sfe[key]++; sv[key] += size
+        # the newest Error / OK File start per key, as "sortkey SUBSEP date
+        # time" — the CLASSIC records (below) carry it as Last Error / Last OK
+        lv = sk SUBSEP disp
+        if (f) { if (!(key in LTE) || lv > LTE[key]) LTE[key] = lv } else { if (!(key in LTO) || lv > LTO[key]) LTO[key] = lv }
         stok[key] += tk; ster[key] += te
         if (ra) sra[key]++; if (rmo) smo[key]++; if (rme) sme[key]++; if (wt) swt[key]++; if (ex) sex[key]++
         if (!(key in havemin) || sk < mink[key]) { mink[key] = sk; fst[key] = date; havemin[key] = 1 }
@@ -241,6 +245,11 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
             if (t in PAIRTOT) tot(t) }
         for (t in TS) if (!(t in PAIRTOT)) tot(t)
     }
+    # the "date time" of a newest-File value, read the way the classic
+    # account.sh LAST_AWK read it (cut at the first "," and the first double
+    # space) — the Last Error / Last OK of the classic records
+    function lastts(s,   c) { s = substr(s, index(s, SUBSEP) + 1) "  "
+        c = index(s, ","); if (c) s = substr(s, 1, c - 1); c = index(s, "  "); return c ? substr(s, 1, c - 1) : s }
     # the entries of a per-day duration histogram ("q.c;q.c"), ordered by q
     function sortqc(s,   n3, a3, i3, p3, Q3, E3) { n3 = split(s, a3, ";"); if (n3 < 2) return s
         for (i3 = 1; i3 <= n3; i3++) { p3 = index(a3[i3], "."); Q3[i3] = substr(a3[i3], 1, p3 - 1) + 0; E3[Q3[i3]] = a3[i3] }
@@ -263,7 +272,7 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
         for (key in sc) for (i2 = 1; i2 <= ndl; i2++) { dk = key SUBSEP DL[i2]; if (!(dk in dql)) continue
             ddp[key] = ddp[key] (ddp[key] == "" ? "" : ",") DL[i2] ":" sortqc(dql[dk]) }
         for (key in sc) { split(key, kk, SUBSEP); t = kk[1]; ns[t]++
-            printf "S|%s|%s|%d|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", \
+            printf "S|%s|%s|%d|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", \
                 t, kk[2], sc[key], fst[key], lst[key], nd[key]+0, stok[key]+0, ster[key]+0, sfin[key]+0, sfout[key]+0, sfe[key]+0, \
                 sra[key]+0, smo[key]+0, sme[key]+0, swt[key]+0, sex[key]+0, sv[key]+0, bk[key], \
                 buildlist(top[key SUBSEP "tok"]), buildlist(top[key SUBSEP "terr"]), buildlist(top[key SUBSEP "fin"]), buildlist(top[key SUBSEP "fout"]), \
@@ -271,7 +280,8 @@ awk -F'\t' -v PF="$PARSED" -v FF="$FILES" -v OUTP="$AGG" -v DSEL="$1" \
                 buildlist(top[key SUBSEP "wait"]), buildlist(top[key SUBSEP "exp"]), \
                 ((key in KP90) ? KP90[key] : ""), ((key in KP95) ? KP95[key] : ""), ((key in KP99) ? KP99[key] : ""), ((key in KP100) ? KP100[key] : ""), \
                 ((key in ddp) ? ddp[key] : ""), \
-                buildlist(top[key SUBSEP "d90"]), buildlist(top[key SUBSEP "d95"]), buildlist(top[key SUBSEP "d99"]), buildlist(top[key SUBSEP "d100"]) > (OUTP "." t) }
+                buildlist(top[key SUBSEP "d90"]), buildlist(top[key SUBSEP "d95"]), buildlist(top[key SUBSEP "d99"]), buildlist(top[key SUBSEP "d100"]), \
+                ((key in LTE) ? lastts(LTE[key]) : ""), ((key in LTO) ? lastts(LTO[key]) : "") > (OUTP "." t) }
         for (k in tdd) { split(k, kk, SUBSEP); tdays[kk[1]]++ }
         for (t in tc) for (i2 = 1; i2 <= ndl; i2++) { dk = t SUBSEP DL[i2]; if (!(dk in tdd)) continue
             tbk[t] = tbk[t] (tbk[t] ? "," : "") DL[i2] ":" tdl[dk] ":" (tdin[dk]+0) ":" (tdout[dk]+0) ":" (tdfe[dk]+0) ":" (tdb[dk]+0) ":" (tdtok[dk]+0) ":" (tdter[dk]+0) ":" (tdra[dk]+0) ":" (tdmo[dk]+0) ":" (tdme[dk]+0) ":" (tdwt[dk]+0) ":" (tdex[dk]+0) ":" (tdtok[dk]+tdter[dk]) }
@@ -376,7 +386,49 @@ fmt_dim() {
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
     echo "Data written to $OUT ($ns $noun(s), $tc file(s))." >&2
 }
+# THE CLASSIC RECORDS (2026-09-30, user decision — the five classic writers
+# account.sh, subscription.sh, login.sh, remote-host.sh and pda-entities.sh
+# are folded in here): data/transfer/reports/<dim>.rpt, ONE table, one ROW per
+# name, busiest first — the classic four: name · Files · Error · OK · Last
+# Error · Last OK (the start "date time" of the newest Error / OK File); the
+# Logical / PDA five and BL: name · Files · Error · OK. Read by showseen.sh,
+# entity-search.sh, home.sh (the names), the server rosters (known_names)
+# and the Entities page render gate (bin/transfer/publish.sh). Same
+# attribution as the grouped rows above (it IS their S| stream: Files = $4,
+# Error = $12, OK = the rest, the stamps $39 / $40), and the classic writers'
+# own S| line + `sort -t'|' -k3,3nr` (ties fall back to the whole line), so
+# the files are byte-identical to what the five scripts wrote.
+classic_dim() {
+    local dim=$1 title table chead stamps OUT rows
+    case $dim in
+        account)      title="Accounts";      table="Summary per Account";      chead="Account";      stamps=1 ;;
+        subscription) title="Subscriptions"; table="Summary per Subscription"; chead="Subscription"; stamps=1 ;;
+        login)        title="Logins";        table="Summary per login";        chead="Login";        stamps=1 ;;
+        remote-host)  title="Hosts";         table="Summary per Remote Host";  chead="Remote Host";  stamps=1 ;;
+        logical)      title="Logical";       table="Summary per Logical";      chead="Logical";      stamps=0 ;;
+        partner)      title="Partners";      table="Summary per Partner";      chead="Partner";      stamps=0 ;;
+        application)  title="Applications";  table="Summary per Application";  chead="Application";  stamps=0 ;;
+        domain)       title="Domains";       table="Summary per Domain";       chead="Domain";       stamps=0 ;;
+        bl)           title="BL";            table="Summary per BL";           chead="BL";           stamps=0 ;;
+    esac
+    OUT="$REPORTS_DIR/$dim.rpt"
+    rows=$({ grep "^S|$dim|" "$AGG.$dim" 2>/dev/null || true; } | awk -F'|' -v ST="$stamps" '
+        ST == 1 { printf "S|%s|%d|%d|%d|%s|%s\n", $3, $4, $12, $4 - $12, $39, $40; next }
+                { printf "S|%s|%d|%d|%d\n", $3, $4, $12, $4 - $12 }' | sort -t'|' -k3,3nr | awk -F'|' -v ST="$stamps" '
+        $2 == "" { next }
+        ST == 1 { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\n", $2, $3, $4, $5, $6, $7; next }
+                { printf "ROW\t%s\t%s\t%s\t%s\n", $2, $3, $4, $5 }')
+    {
+        printf 'TITLE\t%s\n' "$title"
+        printf 'TABLE\t%s\n' "$table"
+        if [ "$stamps" = 1 ]; then printf 'HEAD\t%s\tFiles\tError\tOK\tLast Error\tLast OK\n' "$chead"
+        else printf 'HEAD\t%s\tFiles\tError\tOK\n' "$chead"; fi
+        [ -n "$rows" ] && printf '%s\n' "$rows"
+        printf 'FOOT\n'
+    } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+}
 FMT_PIDS=()
-for dim in $DIMS; do fmt_dim "$dim" & FMT_PIDS+=("$!"); done
+for dim in $DIMS; do fmt_dim "$dim" & FMT_PIDS+=("$!"); classic_dim "$dim" & FMT_PIDS+=("$!"); done
 for _p in "${FMT_PIDS[@]}"; do wait "$_p" || { echo "entities: a report writer failed" >&2; exit 1; }; done
 rm -f "$AGG".*
+echo "Data written to $REPORTS_DIR/{account,subscription,login,remote-host,logical,partner,application,domain,bl}.rpt (the classic records)." >&2
