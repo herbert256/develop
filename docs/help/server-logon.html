@@ -24,11 +24,9 @@
 <h2>Tabs</h2>
 <ul>
 <li><strong>Incoming</strong> &mdash; each configured login through the screening funnel: <strong>Allowed</strong> / <strong>Disallowed</strong>, <strong>Authenticated</strong>, <strong>No account</strong>, <strong>Bad key</strong>, <strong>Key failures</strong>, <strong>Locked</strong>, <strong>Auth failed</strong>, <strong>Session errors</strong>; then <strong>First logon</strong> / <strong>Last logon</strong> / <strong>Logons</strong> / <strong>Pattern</strong> (successful logons, any protocol) and <strong>Re-screens</strong>.</li>
-<li><strong>Outgoing</strong> &mdash; this server failing to log on at a partner: <strong>Remote host</strong>, <strong>User</strong>, <strong>Failures</strong> = <strong>Password</strong> + <strong>Key</strong> + <strong>Certificate</strong> + <strong>Other</strong>, <strong>Reason (last seen)</strong>, <strong>First</strong>, <strong>Last</strong>.</li>
-<li><strong>Near misses</strong> &mdash; unknown <code>FE</code>+digits names: <strong>Attempts</strong>, <strong>Source IPs</strong>, <strong>Top source</strong>, <strong>Configured login</strong> (yes = in Flow Manager, mapped to no account).</li>
+<li><strong>Outgoing</strong> &mdash; this server failing to log on at a partner: <strong>Remote host</strong>, <strong>User</strong>, <strong>Subscription</strong> (the flow that tried: the failed attempt&rsquo;s connection joined to its transfer legs), <strong>Failures</strong> = <strong>Password</strong> + <strong>Key</strong> + <strong>Certificate</strong> + <strong>Other</strong>, <strong>Reason (last seen)</strong>, <strong>First</strong>, <strong>Last</strong>.</li>
 <li><strong>Scanners</strong> &mdash; the 25 most-tried other names.</li>
 <li><strong>By account</strong> / <strong>By source IP</strong> &mdash; successful SSH logins, distinct <strong>Source IPs</strong> / <strong>Accounts</strong>, <strong>First seen</strong> / <strong>Last seen</strong>.</li>
-<li><strong>Certificates</strong> &mdash; per <strong>Certificate serial</strong>: <strong>Auth attempts</strong>, <strong>Accounts on certificate</strong> (above one, amber = a shared key), <strong>First seen</strong> / <strong>Last seen</strong>.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
