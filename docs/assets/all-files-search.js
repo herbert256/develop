@@ -15,12 +15,13 @@
          errored, w waiting, x expired; UPPERCASE = the CoreId has a File
          page, and "D" a delivered one with a page)
 
-   The search: two fields (File name or CoreId, Subscription), the results
+   The search: two fields (File name, Subscription — the CoreId is a column,
+   not searched since 2026-09-30, user request), the results
    following each keystroke after a short pause, Enter at once. A day is
    loaded only when it can hold a match: inside the shared From/To range
    (report.js hands it over — the table is a rangehook table), one of its
    subscriptions matches the Subscription field, and its bloom filter holds
-   every trigram and CoreId token the File field needs — the filter can say
+   every trigram and UUID-run token the File field needs — the filter can say
    "maybe" when the day holds nothing, never "no" when it holds a match.
    Candidate days load newest first, PAR at a time, and are scanned in date
    order; the search stops once the newest SHOW matches are in. Loaded days
@@ -33,8 +34,9 @@
 
    KEEP THE FILTER IN STEP with publish-all-files.sh: the text is lowercased
    with every run of non-ASCII characters -> "?"; an all-[0-9a-f-] trigram is
-   never tested (a CoreId can hold any of them); tokens are "#" + the 8 hex of
-   each /[0-9a-f]{8}-/ occurrence; three hashes h = (h * B + code) mod
+   never tested (the generator files none — the digit runs of every timestamp);
+   tokens are "#" + the 8 hex of each /[0-9a-f]{8}-/ occurrence (a UUID run in a
+   NAME — the CoreId files none since 2026-09-30); three hashes h = (h * B + code) mod
    2147483647 with B = 131, 257 and 521, bit = h mod m (m >= 8 bits/item). */
 (function () {
   "use strict";
@@ -71,7 +73,7 @@
   }
   function has(day, item) { return bit(day, hsh(item, 131)) && bit(day, hsh(item, 257)) && bit(day, hsh(item, 521)); }
   // the items one File-field word needs: its wildcard-free segments'
-  // trigrams (all-hex ones excepted) and CoreId tokens
+  // trigrams (all-hex ones excepted) and UUID-run tokens
   function needs(word) {
     var out = [], segs = word.split(/[*?]/), i, j, s, g, re, m;
     for (i = 0; i < segs.length; i++) {
@@ -191,7 +193,7 @@
       bar.appendChild(l); bar.appendChild(b);
       return b;
     }
-    var fbox = field("File", "File name or CoreId…", "");
+    var fbox = field("File", "File name…", "");
     var sbox = field("Subscription", "Subscription name…", "sep");
     var count = document.createElement("span");
     count.className = "searchhint";
@@ -352,7 +354,7 @@
         for (q = 0; q < R.length && hits.length < SHOW; q++) {
           r = R[q];
           if (sm.length) { var sk = C.subs[r.si] ? C.subs[r.si].key : ""; ok2 = true; for (t2 = 0; t2 < sm.length && ok2; t2++) ok2 = sm[t2](sk); if (!ok2) continue; }
-          ok2 = true; for (t2 = 0; t2 < fm.length && ok2; t2++) ok2 = fm[t2](r.nk) || fm[t2](r.cid);
+          ok2 = true; for (t2 = 0; t2 < fm.length && ok2; t2++) ok2 = fm[t2](r.nk);   // the file NAME only — no CoreId search since 2026-09-30 (user request)
           if (!ok2) continue;
           hits.push([D.d, r]);
         }
