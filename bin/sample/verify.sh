@@ -715,7 +715,7 @@ check $([ "$(grep -c 'used to work and now fails' "$kp" 2>/dev/null)" = 0 ] && e
 # Server Error"): the planted lateok flow (estate.awk UC1_DPL_PAYOUT_DUNDER)
 # logs a connection-failure E line at X and ONE File that STARTED before X
 # and was DELIVERED by its retry after X — start < error < end. The flow
-# stays GREEN: no red flip, not server-failing, not on went-kaput, no banner
+# stays GREEN: no red flip, not server-failing, not in the kaput evidence, no banner
 # on its page; _files.tsv col 24 carries that end; and every dated File has
 # an end no earlier than its start
 if [ "$(exp lateok)" -gt 0 ]; then
@@ -729,7 +729,7 @@ if [ "$(exp lateok)" -gt 0 ]; then
     check $([ "${c:-x}" = "green" ] && echo 0 || echo 1) "the lateok flow is '${c:-absent}', expected green (a File ended OK after the error)"
     check $([ "$(grep -c "^$lk"$'\t' data/colour/_redflip.tsv 2>/dev/null)" = 0 ] && echo 0 || echo 1) "the lateok flow is in _redflip.tsv — the error was counted as after the last transfer"
     check $([ "$(grep -c "$lk" data/transfer/reports/_srvsubs-map.tsv 2>/dev/null)" = 0 ] && echo 0 || echo 1) "the lateok flow is in the server-failing set (_srvsubs-map.tsv)"
-    check $([ "$(grep -c $'^ROW\t'"$lk" data/server/reports/went-kaput.rpt 2>/dev/null)" = 0 ] && echo 0 || echo 1) "the lateok flow has a went-kaput row"
+    check $([ "$(grep -c "^$lk"$'\t' data/server/reports/_kaput-evidence.tsv 2>/dev/null)" = 0 ] && echo 0 || echo 1) "the lateok flow is in the kaput evidence (_kaput-evidence.tsv) — the error was counted as after its last OK transfer"
     ls9=$(awk -F'\t' -v s="$lk" '$1 == s { print $2; exit }' "data/transfer/reports/details/subscriptions/_slugmap.tsv" 2>/dev/null)
     lp="docs/details/subscriptions/${ls9:-missing}.html"
     check $([ -n "$ls9" ] && [ -f "$lp" ] && echo 0 || echo 1) "the lateok flow has no detail page ('${ls9:-no slug}')"
@@ -1251,9 +1251,12 @@ for p in server/errors-log-reasons server/failure-flows server/io-errors server/
     check $(grep -c '<a class="tab" href="[^"]*">\(Errors\|Per flow\|IO errors\|Routing errors\)</a>' "docs/$p.html" 2>/dev/null | awk '{ exit !($1 >= 1) }' && echo 0 || echo 1) "docs/$p.html lacks the Server log second row"
 done
 check $(grep -q '<a class="tab" href="../server/errors-log-reasons.html">Server log</a>' docs/analyses/failed.html 2>/dev/null && grep -q '>Per flow</a>' docs/analyses/failed.html && echo 1 || echo 0) "analyses/failed.html: the Server log entry is missing or the four server members are still in the first row"
-# went-kaput.html is gone (2026-09-29, user request); its .rpt stays (the
-# evidence sidecar, the Trouble after success box, the day pages)
+# went-kaput.html is gone (2026-09-29, user request) and its .rpt with the
+# day pages' Trouble after success line (2026-09-30: bin/build/kaput-evidence.sh
+# writes only the evidence sidecar the Reason readers take)
 check $([ -f docs/server/went-kaput.html ] && echo 1 || echo 0) "docs/server/went-kaput.html still exists"
+check $([ -f data/server/reports/went-kaput.rpt ] || [ -f bin/server/reports/went-kaput.sh ] && echo 1 || echo 0) "went-kaput.rpt / bin/server/reports/went-kaput.sh still exists"
+check $([ -s data/server/reports/_kaput-evidence.tsv ] && echo 0 || echo 1) "the kaput evidence sidecar (_kaput-evidence.tsv) is missing or empty"
 check $(grep -rlq 'went-kaput.html' docs --include='*.html' --include='*.js' 2>/dev/null && echo 1 || echo 0) "a page still links went-kaput.html"
 # the home per-day table has NO Total row (2026-09-29, user request: "remove
 # the Total row in the date tables")

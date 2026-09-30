@@ -14,7 +14,7 @@
 #                                     classified per row from that file's
 #                                     own drill page
 # (publish_lib.sh's Entities Reason column injects it too, classifying the
-# went-kaput evidence sidecar.)
+# kaput evidence sidecar.)
 #
 # Order matters: the first pattern that matches wins, most specific first —
 # a fingerprint rejection also mentions the connection it failed, and must

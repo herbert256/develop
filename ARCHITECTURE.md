@@ -224,7 +224,7 @@ is `data/colour/`; `result.sh` drops the old directory.
    log lines with the same session id to find the right subscription): `_build_ringattr`'s
    session vote is persisted as `colour/_sessvote.tsv` (session → the one flow its lines name /
    its transfer legs carried, `\001` when two) and both wholesale joins — `_build_kaputflip`
-   and went-kaput.sh — skip such a line for the siblings (a production host shared by two
+   and kaput-evidence.sh — skip such a line for the siblings (a production host shared by two
    flows reddened the wrong one on an "Authentication failure connecting to remote host …"
    whose session's poll lines named the other flow's transfer site). **A ring owner serving
    SEVERAL flows counts only for a CONNECTION-level line** (2026-08-31 audit — Connection failures, Wrong
@@ -233,11 +233,11 @@ is `data/colour/`; `result.sh` drops the old directory.
    reaches the colour only through `_build_ringattr`. Before, eight production flows on one
    hybrid account all went red on one sibling's route error with one shared evidence stamp —
    the failure `_build_ringattr` was written to kill, reintroduced by the loose join.
-   `went-kaput.sh` applies the identical rule (its pageless .rpt + evidence sidecar), so the two stay in
+   `bin/build/kaput-evidence.sh` (went-kaput.sh until 2026-09-30) applies the identical rule (its evidence sidecar; the pageless .rpt went 2026-09-30), so the two stay in
    step; 1:1 owners are unchanged. So a Trouble-after-success flow arrives
-   RED on Failed Subscriptions (the home red tables went 2026-09-29); the went-kaput rows (no
-   page since 2026-09-29 — the Trouble after success box) keep only the deploy-classified and
-   poll-cleared remainder. **The UC3 connection-failure streak (2026-09-05, user rule)**: a "Connection failure while
+   RED on Failed Subscriptions (the home red tables went 2026-09-29); the evidence sidecar keeps
+   the deploy-classified and poll-cleared remainder for the Reason readers (the went-kaput rows /
+   .rpt went 2026-09-30). **The UC3 connection-failure streak (2026-09-05, user rule)**: a "Connection failure while
    <UC3 flow> tried to connect …" line reds a UC3 flow only after THREE failed polls in a row.
    When the newest evidence is a connection failure — the flow's own line (its stamp is in
    `_uc3polls.cand`'s sibling `_connfail.cand`, from the per-name mention cache + Error/Warn
@@ -245,8 +245,8 @@ is `data/colour/`; `result.sh` drops the old directory.
    flow's OWN failures newer than its newest successful poll and than the last transfer are the
    streak; below three the connection failures are DISCOUNTED and the newest of the remaining
    evidence decides by the usual test. Nothing left = the flow stays green, listed in
-   `colour/_connhold.tsv` (name, stamp, streak); went-kaput still lists it as trouble after
-   success (the box). Evidence of any other kind flips as before. **No UC3 clean-poll green (2026-09-28,
+   `colour/_connhold.tsv` (name, stamp, streak); the kaput evidence still carries it (the
+   Reason readers). Evidence of any other kind flips as before. **No UC3 clean-poll green (2026-09-28,
    user rule "A UC3 subscription that has no transfers must be orange and not green")**: a
    never-transferred UC3 whose polls work ("Applying the search pattern … for transfer site '…':
    N file(s) …") stays ORANGE — the 2026-08 exception that flipped it GREEN (sidecar
@@ -283,7 +283,8 @@ S = server/, A = analyses/):
   (T) · **Server log** — ONE first-row entry (`_report_subrows`) whose pages carry a second row:
   Errors (S errors: Log reasons / Heatmap / Top messages) · Per flow (S failure-flows) · IO
   errors (S) · Routing errors (S) — the "Server log errors" group until 2026-09-29 (user
-  request); Trouble after success (S went-kaput) lost its page the same day
+  request); Trouble after success (S went-kaput) lost its page the same day (and its .rpt
+  2026-09-30 — bin/build/kaput-evidence.sh writes only the evidence sidecar)
 - **Use cases & delivery** — Use cases (A use-cases) · UC status (A uc-status) · Polling (A) ·
   Waiting (T) · Expired (T) · Went quiet (T) (Punctuality went 2026-09-29, user request)
 - **Activity & volume** — Activity (T) · Ranking (T) · Sizes & types (T files) · Month stats
@@ -832,7 +833,7 @@ SAME row (it reuses the id it finds on the Features line instead of its own `sxs
   any more, **"Last server log messages" no longer suppresses those lines** and shows the page's
   own log in full — the SUPPRESSION SET has no writers left. A SERVER-FAILING subscription (in
   failed.sh's `_srvsubs-map.tsv` — the REDUCED name⇥slug⇥stamp map, without the reason column;
-  went-kaput runs EARLY in the build so the stamps are final on failed.sh's first pass and
+  kaput-evidence runs EARLY in the build so the stamps are final on failed.sh's first pass and
   details.sh needs one run) gets a
   THIRD Features row, **"Server log error"** — the map's stamp, linking the flow's OWN
   `files/<slug>.html`, which failed.sh already writes. The section that re-emitted that page's

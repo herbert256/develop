@@ -1021,7 +1021,7 @@ if [ "$FAILED_MODE" = full ]; then   # ---- the evidence sidecar + the File reas
 # Error/Warning line any of its drill pages shows. The Boxes reason
 # (publish-insights.sh pagereason) names the fault behind a red flow from the
 # server log, and its other source —
-# went-kaput's sidecar — only covers flows whose LAST TRANSFER WAS OK. A flow
+# the kaput-evidence sidecar — only covers flows whose LAST TRANSFER WAS OK. A flow
 # whose last transfer FAILED and which sits in no specific box therefore had no
 # reason at all, though its own error page was showing the very line that
 # explains it (an ARRC0029 routing-step warning, in the case that found this).

@@ -1,9 +1,21 @@
 #!/usr/bin/env bash
 #
-# went-kaput.sh — "Went kaput": subscriptions whose LAST transfer SUCCEEDED but
-# that then logged an Error/Warning in the SERVER log after that transfer, for
-# the subscription itself OR a connected login/account. A "something went wrong
-# after we last succeeded" signal per subscription.
+# kaput-evidence.sh — the SERVER-LOG EVIDENCE after a flow's last OK transfer
+# (went-kaput.sh until 2026-09-30, user decision: its "Trouble after success"
+# page went 2026-09-29 and its .rpt — read only by the day pages' "Trouble
+# after success" line, which never fired on the runtime data — went with the
+# rename; the sidecar stays). A build-only step (bin/build.sh runs it once,
+# early — right after result.sh — not in the server-reports pool).
+#
+# Writes $REPORTS_DIR/_kaput-evidence.tsv (the server reports dir): one line
+# per subscription whose last transfer was OK and that logged an Error/Warn
+# line AFTER it — its own, or a connected login's/account's/host's —
+# whatever its colour:
+#   name <TAB> latest issue <TAB> source(s) <TAB> latest message <TAB> newest E-level message
+# Its readers name the fault behind a red flow from it: bin/transfer/reports/
+# failed.sh (Failed Subscriptions' server rows and Reason), publish_lib.sh (the
+# Entities Subscriptions Error view's Reason) and bin/analyses/
+# publish-insights.sh (the _subs-boxes.tsv reason fallback).
 #
 # Sources (no _parse.tsv scan of its own — it reads the caches the parse built):
 #   - $TRANSFER_CACHE/_files.tsv (transfer, cross-area): the LAST transfer per
@@ -11,64 +23,36 @@
 #     the same string the server per-name caches are keyed by) and its outcome
 #     (last outcome not Failed/Expired = OK; Waiting counts as OK, Expired as Error — 2026-07 policy).
 #   - the server per-name Error/Warn caches
-#     $CACHE_DIR/{subscriptions,accounts,logins}/<name>_err_warn.tsv
+#     $CACHE_DIR/{subscriptions,accounts,logins,hosts}/<name>_err_warn.tsv
 #     (bin/server/parse.sh; the "Skipping the next scheduled occurrence of this
 #     task." poll-backlog warnings are already excluded from those rings).
 #   - $CONFIG_BASE/_subscriptions.tsv: the RESULT COLOUR per subscription
-#     (bin/build/result.sh's third column) — only the greens are listed.
+#     (bin/build/result.sh's third column — the UC3 clean-poll clear below
+#     applies to greens only).
 #   - $CONFIG_XREF/_subscriptions-{accounts,logins,hosts}.tsv: the connected
 #     account(s)/login(s)/host(s) for each subscription (usually one each).
 #     The HOST ring joins only when the subscription has exactly ONE configured
 #     host (2026-08); the endpoint's forward addresses (input/ip/
-#     ip-hosts.tsv) carry rings of their own and count the same way. NOTE this
-#     page is an EARLY WARNING and deliberately looser than the colour step:
-#     bin/build/result.sh's after-last-transfer RED FLIP counts only the
-#     connected-ring lines _build_ringattr pins on THIS flow, while this page
-#     joins the 1-to-1 connected rings wholesale — the Source column says which
-#     entity logged each line, and the reader judges.
-#
-# A subscription is listed when its last transfer was OK AND at least one
-# Error/Warn line — its own or a connected login's/account's/host's — is dated AFTER
-# that transfer AND the flow is STILL GREEN (2026-08). That last condition is
-# what keeps the page an EARLY WARNING: this same evidence is what
-# bin/build/result.sh's after-last-transfer rule reds a flow on, so a
-# subscription the evidence already reddened is not "trouble after success"
-# any more, it is simply failing — and the HOME page lists every red flow with
-# its reason. What is left here is the useful half: flows that still count as
-# healthy but have started logging errors.
-#
-# The evidence for the RED ones is not thrown away, it just leaves by another
-# door: $REPORTS_DIR/_kaput-evidence.tsv carries one line per subscription with
-# post-transfer errors, green or not (name, latest issue, source, message,
-# newest E-level message), and
-# bin/analyses/publish-insights.sh (the Boxes reasons), failed.sh (its
-# server rows) and publish_lib.sh (the Entities Reason) read it to name the
-# fault behind a red flow. Since 2026-08-22 the same evidence FLIPS
-# the flow red (bin/build/result.sh _build_kaputflip — the loose connected-
-# ring join promoted to the colour, deploy-classified flows excluded, the UC3
-# poll green-keep applied, and since 2026-09-05 a UC3 connection failure
-# counting only after THREE failed polls in a row — result.sh HOLDs it), so a
-# trouble-after-success flow normally arrives on Failed Subscriptions RED
-# and leaves this page through the still-green filter; what stays here is the
-# deploy-classified, poll-cleared and connection-held remainder. NOTE a
-# connected account serves other flows too, so an account
-# Error/Warn need not be about THIS subscription; the Source column says which
-# entity logged it, and the click-to-expand drill shows the lines.
+#     ip-hosts.tsv) carry rings of their own and count the same way. This
+#     join is deliberately looser than the colour step: bin/build/result.sh's
+#     after-last-transfer RED FLIP counts only the connected-ring lines
+#     _build_ringattr pins on THIS flow; bin/build/result.sh _build_kaputflip
+#     is the same loose join promoted to the colour (deploy-classified flows
+#     excluded, the UC3 poll green-keep applied, a UC3 connection failure
+#     counting only after THREE failed polls in a row). NOTE a connected
+#     account serves other flows too, so an account Error/Warn need not be
+#     about THIS subscription; the source column says which entity logged it.
 #
 # Usage:
-#   ./went-kaput.sh   # writes data/went-kaput.rpt
+#   ./kaput-evidence.sh   # writes data/server/reports/_kaput-evidence.tsv
 #
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# SERVER lib, not the analyses one: this is a server-DATA report (it reads the
-# server parse cache and writes data/server/reports/). It lives HERE
-# because its page is an analyses/ page (the UC status report group of the one
-# Reports menu, 2026-09-29) — the same arrangement as cross-reference.sh. bin/build.sh runs it ONCE, early —
-# right after result.sh — not the server-reports pool (2026-09-28).
-source "$SCRIPT_DIR/../lib.sh"
+# the SERVER lib: the sidecar lives in data/server/reports/, where its three
+# readers look for it
+source "$SCRIPT_DIR/../server/lib.sh"
 mkdir -p "$REPORTS_DIR"
-OUT="$REPORTS_DIR/went-kaput.rpt"
 
 FILES="$TRANSFER_CACHE/_files.tsv"
 SA="$CONFIG_XREF/_subscriptions-accounts.tsv"
@@ -95,27 +79,25 @@ shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
 shopt -u nullglob
 if [ ${#files[@]} -eq 0 ] || [ ! -s "$FILES" ]; then
-    echo "No server input / no transfer cache for this env — page not published." >&2
-    rm -f "$OUT"   # env-split legitimate state: nothing to report
+    echo "No server input / no transfer cache — no kaput evidence." >&2
+    : > "$EVID"   # an EMPTY sidecar: nothing after a last OK transfer
     exit 0
 fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # 1) the LAST transfer per subscription (max sortkey), keeping only those whose
 #    last transfer was OK (Processed). -> "subscription <TAB> date time", name-
-#    sorted (C collation) so step 2 emits its ROW lines deterministically.
+#    sorted (C collation) so step 2 emits its lines deterministically.
 lastokf="$REPORTS_DIR/.sublogfail.lastok.$$"
-rowfile="$REPORTS_DIR/.sublogfail.$$"; : > "$rowfile"
 pollf="$REPORTS_DIR/.uc3polls.$$"
-trap 'rm -f "$rowfile" "$lastokf" "$pollf"' EXIT
+trap 'rm -f "$lastokf" "$pollf"' EXIT
 
 # THE UC3 CLEAN-POLL CLEAR (2026-08-22): a UC3 whose newest SUCCESSFUL poll
 # ("Applying the search pattern … N file(s) …") is no older than its newest
 # E-level evidence has VERIFIED itself working since the error — the same
 # evidence bin/build/result.sh trusts to keep a would-be-red UC3 green — so it
-# is not "trouble after success" any more and is skipped: off this page AND
-# off the evidence sidecar (the Reason readers take it from there), counted
-# in the INTRO like the red ones. Newest poll stamp per UC3, from the per-name
+# is not "trouble after success" any more and is skipped: off the evidence
+# sidecar (the Reason readers take it from there). Newest poll stamp per UC3, from the per-name
 # MENTION caches (the same scan result.sh's POLLCAND uses; the _err_warn ring
 # is the ERROR ring, not the mention cache).
 {
@@ -154,8 +136,8 @@ awk -F'\t' '
 #    then EVERY per-name Error/Warn ring — subscriptions first, then accounts,
 #    then logins, names C-sorted within a type, which reproduces the old
 #    per-sub candidate order, so the first occurrence still wins the line
-#    dedup and the latest-issue tie. Emits the ROW lines (with the \x1f-joined
-#    last-10 drill) to $rowfile plus one TOTALS line on stdout for bash.
+#    dedup and the latest-issue tie. Writes the evidence sidecar plus one
+#    TOTALS line on stdout for bash.
 rings=()
 add_rings() {   # $1 = the per-name cache subdir
     local d="$CACHE_DIR/$1" n
@@ -178,7 +160,7 @@ mapargs+=("$lastokf")
 [ -f "$SH" ] && mapargs+=("$SH")
 [ -f "$IPH" ] && mapargs+=("$IPH")
 
-totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH" -v iphf="$IPH" -v rowfile="$rowfile" -v subres="$SUBRES" -v pollf="$pollf" -v evid="$EVID.tmp" -v ucdf="$UCDF" -v svf="$SV" -v RNF="$RENAMES_FILE" "$RENAMES_AWK$SUBNAME_AWK$(cat "$ROOT/bin/flip-reason.awk")"'
+totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH" -v iphf="$IPH" -v subres="$SUBRES" -v pollf="$pollf" -v evid="$EVID.tmp" -v ucdf="$UCDF" -v svf="$SV" -v RNF="$RENAMES_FILE" "$RENAMES_AWK$SUBNAME_AWK$(cat "$ROOT/bin/flip-reason.awk")"'
     BEGIN { while ((getline l9 < ucdf) > 0) { n9 = split(l9, a9, "\t"); if (n9 >= 2 && a9[2] == "UC3") ucd3[toupper(a9[1])] = 1 } close(ucdf)
             while ((getline l9 < svf) > 0) { n9 = split(l9, a9, "\t"); if (n9 >= 2 && a9[1] != "") SV9[a9[1]] = a9[2] } close(svf)   # the session vote (see SV above)
             rn_load(RNF); ros_load(subres) }
@@ -189,8 +171,8 @@ totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH"
     # the credential / endpoint every one of those flows uses is broken); a
     # flow-level line on a shared account, login or host concerns ONE of its
     # flows and is not an early warning for the others. The same rule keeps
-    # bin/build/result.sh _build_kaputflip (the colour) and this page (the
-    # warning + the Reason sidecar) in step. 1:1 owners are unchanged.
+    # bin/build/result.sh _build_kaputflip (the colour) and this sidecar (the
+    # Reason) in step. 1:1 owners are unchanged.
     function connlevel(r) { return (r == "Connection failures" || r == "Wrong server fingerprint" || r == "Login errors (out)") }
     # the subscriptions this host ring speaks for: every single-host flow whose
     # host is this endpoint, or an endpoint this ADDRESS forwards to (hmap is
@@ -303,21 +285,13 @@ totals=$(awk -F'\t' -v lastokf="$lastokf" -v saf="$SA" -v slf="$SL" -v shf="$SH"
             # followed): the Reason prefers a real error over a benign warning
             # that merely happens to be newer.
             printf "%s\t%s\t%s\t%s\t%s\n", s, ldt[s], ss, substr(lm[s], 1, 200), substr(lmE[s], 1, 200) > evid
-            if (ne[s] == 0) continue                  # warnings only: not an error signal, no row
-            if (col[toupper(s)] != "green") { nred++; continue }   # already red: not a warning any more
-            # ROW: Subscription | Latest error — what its readers take (the
-            # day pages: field 3; verify.sh: the name). The log-line drill
-            # went 2026-09-29 with the page; Last OK transfer / Errors after /
-            # Source / Latest message 2026-09-30 (no reader — the evidence
-            # sidecar carries the facts the Reason readers need)
-            printf "ROW\t%s\t%s\n", s, ldtE[s] >> rowfile
-            nrows++; terr += ne[s]
+            nev++; if (col[toupper(s)] != "green") nred++
         }
         close(evid)
-        printf "TOTALS\t%d\t%d\t%d\t%d\n", nrows+0, terr+0, nred+0, npoll+0
+        printf "TOTALS\t%d\t%d\t%d\n", nev+0, nred+0, npoll+0
     }
 ' "${mapargs[@]}" ${rings[@]+"${rings[@]}"})
-IFS=$'\t' read -r _tag nrows terr nred npoll <<< "$totals"
+IFS=$'\t' read -r _tag nev nred npoll <<< "$totals"
 # the evidence sidecar
 if [ -f "$EVID.tmp" ]; then
     LC_ALL=C sort -o "$EVID.tmp" "$EVID.tmp"
@@ -326,18 +300,4 @@ else
     : > "$EVID.tmp" && mv "$EVID.tmp" "$EVID"
 fi
 
-# 3) write the .rpt (sorted by Latest error, newest first — ROW field 3)
-{
-    printf 'TITLE\tTrouble after success\n'   # = its Reports menu label (2026-09-29)
-    printf 'TABLE\tSubscriptions failing after last successful transfer\tnofilter\n'
-    printf 'HEAD\tSubscription\tLatest error\n'
-    printf 'KIND\tsite\ttext\n'
-    if [ "$nrows" -eq 0 ]; then
-        printf 'ROW\t(none)\t\n'
-    else
-        LC_ALL=C sort -t"$(printf '\t')" -k3,3r "$rowfile"
-    fi
-    printf 'FOOT\n'
-} > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
-
-echo "Wrote $OUT ($nrows subscription(s), $terr error(s) after last OK transfer; warnings do not list)." >&2
+echo "Wrote $EVID ($nev subscription(s) with server-log evidence after their last OK transfer, $nred of them not green; $npoll UC3 cleared by a newer successful poll)." >&2

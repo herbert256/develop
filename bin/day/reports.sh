@@ -61,7 +61,6 @@ TP="$DATA/transfer/cache/_transfers.tsv"   # 10 protocol 11 date 22 resubmitted 
 TT="$DATA/transfer/reports/topview.rpt"    # per-day Files/Transfers counts (col 5 = Files, >0 on data days)
 SV="$DATA/server/reports/topview.rpt"      # per-day records/levels/components/first/last
 SP="$DATA/server/cache/_parse.tsv"         # 1 date 2 time 3 level 4 component 5 message
-SLF="$DATA/server/reports/went-kaput.rpt"   # ROW: 3 = "Latest error" date+time (Subscription · Latest error since 2026-09-30 — the per-day "Problems this day" PROBLEM link; field 5 before, 6 before that: a column change silently drops the link, so keep this in step)
 NRD="$DATA/server/reports/no-remote-dir.rpt"   # table 2 ("Missing remote directories per day"): date, errors, subscriptions (per-day PROBLEM link)
 NRF="$DATA/server/reports/no-remote-files.rpt" # table 2 ("Never find a file — polls per day"): date, polls, subscriptions (per-day PROBLEM link)
 ANOM="$DATA/transfer/reports/anomalies.rpt"    # ROW: 2 = Date, in BOTH tables (per-day PROBLEM link, offered only on flagged days)
@@ -87,8 +86,7 @@ mkdir -p "$RPTNEW"
 # The two full-period SUBSCRIPTION verdicts of the "Subscriptions with
 # problems" set, bucketed on the day the state CHANGED — the flip moment
 # (from-green-to-red) and the first failure of a never-green flow (only-red)
-# — so each lands on the day page of the day it happened, exactly like the
-# server side's went-kaput. Both reports are `nofilter` (full-period
+# — so each lands on the day page of the day it happened. Both reports are `nofilter` (full-period
 # semantics), so their PROBLEM links carry no ?axway_date=. Empty when the
 # report is absent (env split) or holds only its "(none)" placeholder row.
 daycount() {   # $1 rpt  $2 ROW field holding "ccyy-mm-dd hh:mm:ss" -> "date:count …"
@@ -391,8 +389,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             # ---- problem links ---------------------------------------------
             # PROBLEM<TAB>side<TAB>href<TAB>headline<TAB>desc — side (transfer|
             # server) picks the list on the combined day page, so both passes
-            # write into the ONE day .rpt. Together with went-kaput on the
-            # server side these cover the whole analyses "Subscriptions with
+            # write into the ONE day .rpt. These cover the "Subscriptions with
             # problems" set: one-legged (pirates), from green to red, only red,
             # Waiting and Expired — each on the day it happened. The three
             # subscription verdicts are full-period reports (`nofilter`), so
@@ -553,10 +550,6 @@ fi
 # folded to N, picked count desc / shape asc so it never depends on hash
 # iteration order).
 # ---------------------------------------------------------------------------
-# Per-day count of subscriptions whose LATEST post-transfer issue (the
-# went-kaput report's ROW col 3 = "date time") falls on that day
-# — surfaced as a "Problems this day" PROBLEM link. Empty when the report is
-# absent (env split) or has no rows (the "(none)" placeholder has no date).
 # The no-remote-dir per-day figures (its SECOND table: Date, Errors,
 # Subscriptions) — the missing-remote-directory errors of that day, surfaced as
 # a "Server log problems this day" PROBLEM link. The report lists only OPEN
@@ -572,10 +565,6 @@ nrfc=""
 if [ -f "$NRF" ]; then
     nrfc=$(awk -F'\t' '$1=="TABLE"{t++} $1=="ROW" && t==2 && $2 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ { printf "%s:%s:%s ", $2, $3, $4 }' "$NRF")
 fi
-slfc=""
-if [ -f "$SLF" ]; then
-    slfc=$(awk -F'\t' '$1=="ROW"{ d=substr($3,1,10); if (d ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) c[d]++ } END{ for (k in c) printf "%s:%s ", k, c[k] }' "$SLF")
-fi
 if [ -f "$SV" ] && [ -f "$SP" ] && [ -n "$sdays" ]; then
 # THE SERVER PASS IN PARALLEL (2026-09-27): one job per core over its own
 # byte range of the 3 GB server cache (the jobs compute the same line
@@ -584,11 +573,10 @@ if [ -f "$SV" ] && [ -f "$SP" ] && [ -n "$sdays" ]; then
 # writes the day facts exactly as the single pass did. day_srv is that one
 # program; the mode comes in through the environment (DAYSRV_*).
 day_srv() {
-awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v udays="$udays" -v slfc="$slfc" -v nrdc="$nrdc" -v nrfc="$nrfc" -v anomc="$anomc" '
+awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v udays="$udays" -v nrdc="$nrdc" -v nrfc="$nrfc" -v anomc="$anomc" '
     BEGIN { PART = ENVIRON["DAYSRV_PART"] + 0; REDUCE = ENVIRON["DAYSRV_REDUCE"] + 0; SVF = ENVIRON["DAYSRV_SVF"]
             RANGEF = ENVIRON["DAYSRV_RANGEF"]; RLO = ENVIRON["DAYSRV_LO"] + 0; RHI = ENVIRON["DAYSRV_HI"] + 0; ROFF = ENVIRON["DAYSRV_ROFF"] + 0 }
-    BEGIN { ns = split(slfc, _sa, " "); for (i = 1; i <= ns; i++) { if (_sa[i] == "") continue; p = index(_sa[i], ":"); if (p > 1) SLFC[substr(_sa[i], 1, p - 1)] = substr(_sa[i], p + 1) }
-        na = split(anomc, _aa, " "); for (i = 1; i <= na; i++) { if (_aa[i] == "") continue; p = index(_aa[i], ":"); if (p > 1) ANOMC[substr(_aa[i], 1, p - 1)] = substr(_aa[i], p + 1) }
+    BEGIN { na = split(anomc, _aa, " "); for (i = 1; i <= na; i++) { if (_aa[i] == "") continue; p = index(_aa[i], ":"); if (p > 1) ANOMC[substr(_aa[i], 1, p - 1)] = substr(_aa[i], p + 1) }
         # "date:errors:subscriptions …" — the no-remote-dir per-day table
         nn = split(nrdc, _na, " "); for (i = 1; i <= nn; i++) { if (_na[i] == "") continue
             if (split(_na[i], _nb, ":") == 3) { NRDE[_nb[1]] = _nb[2] + 0; NRDS[_nb[1]] = _nb[3] + 0 } }
@@ -735,13 +723,8 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
                 printf "PROBLEM\tserver\t../analyses/uc-status-uc3.html" q "\tNo remote dir\t**%d** failed listing(s) on **%d** subscription(s) whose configured remote directory does not exist — the partner answered \"No such file\", so no transfer was ever started\n", NRDE[d], NRDS[d] >> out
             if (NRFP[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../analyses/uc-status-uc3.html" q "\tNo remote files\t**%d** poll(s) by **%d** UC3 subscription(s) that have NEVER found a file — the listing works, the remote directory is always empty\n", NRFP[d], NRFS[d] >> out
-            # subscriptions whose last transfer was OK but that logged an
-            # error/warning in the server log afterwards, latest issue this day
-            # (went-kaput.rpt; its page and the Subscriptions in boxes page went
-            # 2026-09-29, so the link opens the server-log errors of the day by
-            # reason — where that error is)
-            if (SLFC[d] + 0 > 0)
-                printf "PROBLEM\tserver\t../server/errors-log-reasons.html" q "\tTrouble after success\t**%d** subscription(s) whose last transfer was OK but that logged a server-log error/warning afterwards, most recently today\n", SLFC[d] >> out
+            # (the "Trouble after success" line — went-kaput.rpt — went
+            # 2026-09-30 with that .rpt: it never fired on the runtime data)
             # A day with NO transfer data got no hero from the transfer pass:
             # give it the records-per-hour chart, plus the anomaly-scan entry
             # the transfer pass adds on the days the scan flagged (such a day

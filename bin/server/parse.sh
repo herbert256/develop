@@ -553,7 +553,7 @@ function hit(ty, w,   k) {
     cnt[k]++
     # the Error/Warn ring keeps its 10 newest Errors AND its 10 newest
     # Warnings (2026-09-28 fix: one shared 10-slot ring let a burst of
-    # Warnings push the flow newest Error out — and the red flip, went-kaput
+    # Warnings push the flow newest Error out — and the red flip, kaput-evidence
     # and failed.sh judge on Errors only)
     if (($3 == "E" || $3 == "W") && !($6 in ended) && $5 !~ /Skipping the next scheduled occurrence of this task/) { ewring[k, $3, ewc[k, $3] % 10] = $0; ewc[k, $3]++; ewk[k] = 1 }
 }
@@ -824,7 +824,7 @@ build_entity_tsvs() {
     # any status and direction — an Error/Warning line on such a session is
     # NOT a server-log error (ENT_PROG keeps it out of the err/warn rings, the
     # one input of the after-last-transfer judgement everywhere: the detail
-    # page banner, result.sh's red flip, went-kaput, failed.sh's server-failing
+    # page banner, result.sh's red flip, kaput-evidence, failed.sh's server-failing
     # set). One line per session: the session id. Recomputed from the
     # WHOLE cache on every rescan, so a bookend arriving in a later export
     # retro-mutes the earlier lines of its session. The shared

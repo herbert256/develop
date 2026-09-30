@@ -366,7 +366,7 @@ _rlap "leg hosts, observed pairs, discovery"
 # only since 2026-08: a Warning never flips a flow red). The evidence is
 # the subscription's own _err_warn ring plus every connected-ring
 # LINE the attribution below pins on this flow, plus (2026-08-22) the LOOSE
-# connected-ring newest E of the went-kaput join — _build_kaputflip below,
+# connected-ring newest E of the kaput-evidence join — _build_kaputflip below,
 # deploy-classified flows excluded — so a trouble-after-success flow reads
 # RED (Failed Subscriptions, the Entities Error view) rather than green.
 IPH_P="$ROOT/input/ip/ip-hosts.tsv"; [ -f "$IPH_P" ] || IPH_P=/dev/null
@@ -402,7 +402,7 @@ RINGORPH="$COLDIR/_ringorphan.tsv"  # ring kind <TAB> name <TAB> newest E-level 
 # transfer legs carried (pass 3), or \001 when they name two. A connected-ring
 # line whose session votes one flow is THAT flow's evidence — carried to it
 # here — and must not be taken wholesale for every sibling on the shared
-# host/account/login (_build_kaputflip, went-kaput.sh). A production host
+# host/account/login (_build_kaputflip, kaput-evidence.sh). A production host
 # shared by two flows reddened the wrong one on an authentication failure
 # whose session named the other flow's transfer site.
 SESSVOTE="$COLDIR/_sessvote.tsv"
@@ -426,8 +426,8 @@ _build_ringattr() {
     # an orphan of its ring), else "". The former UC[0-9]+ regex could not
     # attribute a line to a production hybrid flow at all (no UC prefix), so
     # on that estate the precise channel abstained and the wholesale
-    # went-kaput join decided the colour.
-    local SUBNAME_AWK; SUBNAME_AWK=$(cat "$ROOT/bin/subname.awk")   # shared with went-kaput.sh (2026-09-05)
+    # kaput-evidence join decided the colour.
+    local SUBNAME_AWK; SUBNAME_AWK=$(cat "$ROOT/bin/subname.awk")   # shared with kaput-evidence.sh (2026-09-05)
     # pass 1: the message names it. Emits N (named), S (session to resolve) or
     # X (neither — SSHD/PESITD records carry no session at all): tag, stamp,
     # subscription-or-session, level, ring kind, ring name. A forward-address
@@ -525,7 +525,7 @@ _build_ringattr() {
             ' "$TRANSFERS" >> "$tmp.map"
         fi
     fi
-    # the vote, persisted for _build_kaputflip and went-kaput.sh (see SESSVOTE)
+    # the vote, persisted for _build_kaputflip and kaput-evidence.sh (see SESSVOTE)
     LC_ALL=C sort -u "$tmp.map" > "$SESSVOTE.tmp"; commit_tmp "$SESSVOTE"
     awk -F'\t' -v MAP="$tmp.map" -v ORPH="$RINGORPH.tmp" '
         BEGIN { while ((getline l < MAP) > 0) { n = split(l, a, "\t")
@@ -557,9 +557,9 @@ _rlap "own last Files + connected rings attributed (ringattr)"
 [ -f "$RINGATTR" ] || : > "$RINGATTR"
 
 # ---- the TROUBLE-AFTER-SUCCESS flip evidence (2026-08-22) -------------------
-# The went-kaput join, promoted to the COLOUR: a flow whose CONNECTED
+# The kaput-evidence join, promoted to the COLOUR: a flow whose CONNECTED
 # account/login/host rings carry an E-level line — joined 1-to-1 and
-# WHOLESALE, the way the went-kaput page and the detail-page banner read
+# WHOLESALE, the way the (retired) kaput-evidence page read and the detail-page banner reads
 # them, attribution or not — is failing, and must read red (the user's call,
 # 2026-08-22: an early warning IS a failing flow). Two exceptions, the same
 # two the retired home early-warning table applied: the flow whose NEWEST
@@ -622,7 +622,7 @@ _build_kaputflip() {
     # Before, eight production flows on one hybrid account all went red on
     # one sibling's route error, with one shared evidence stamp — the exact
     # failure _build_ringattr was written to kill, reintroduced by this join.
-    # The 1:1 owners (most of acceptance) are unchanged. went-kaput.sh applies
+    # The 1:1 owners (most of acceptance) are unchanged. kaput-evidence.sh applies
     # the same rule to its page and evidence sidecar.
     awk -F'\t' -v RINGS="$tmp" "$(cat "$ROOT/bin/flip-reason.awk")"'
         function connlevel(r) { return (r == "Connection failures" || r == "Wrong server fingerprint" || r == "Login errors (out)") }
@@ -686,7 +686,7 @@ awk -F'\t' -v rf="$REDFLIP.tmp" -v srvc="$SRVC" '
     # EVL ("|"-joined) — the candidates of the flip SINCE. ERRORS ONLY
     # (2026-08): a Warning must not flip a flow red — the warnings-only shape
     # was the benign "Transfer site ID is not present in environment", which
-    # has its own report, and went-kaput applies the same errors-only rule.
+    # has its own report, and kaput-evidence applies the same errors-only rule.
     function ringmax(f,   l2, b2, n2, t2) {
         while ((getline l2 < f) > 0) {
             n2 = split(l2, b2, "\t")
@@ -714,7 +714,7 @@ awk -F'\t' -v rf="$REDFLIP.tmp" -v srvc="$SRVC" '
     FILENAME == ARGV[2] { if ($1 != "" && $2 != "") pt[toupper($1)] = $2   # newest successful poll, for the green-keep
                           next }   # the UC3 poll evidence (see above)
     FILENAME == ARGV[3] { if ($1 != "" && $2 != "") { RA[toupper($1)] = $2; RAL[toupper($1)] = ($3 != "") ? $3 : $2 }; next }   # subscription -> newest connected-ring Error attributed to it (+ every attributed stamp)
-    FILENAME == ARGV[4] { if ($1 != "" && $2 != "") { KF[toupper($1)] = $2; KFC[toupper($1)] = $3 + 0 }; next }   # subscription -> newest LOOSE connected-ring Error (the went-kaput join; deploy-classified flows absent) + its connection-failure flag
+    FILENAME == ARGV[4] { if ($1 != "" && $2 != "") { KF[toupper($1)] = $2; KFC[toupper($1)] = $3 + 0 }; next }   # subscription -> newest LOOSE connected-ring Error (the kaput-evidence join; deploy-classified flows absent) + its connection-failure flag
     FILENAME == ARGV[5] { if ($1 != "") { u = toupper($1); UC3[u] = 1; ENCF[u] = $3; CFP[u] = $4
                                                       m5 = split($5, Z5, "|"); for (i5 = 1; i5 <= m5; i5++) if (Z5[i5] != "") { cfset[u SUBSEP Z5[i5]] = 1; CFL[u] = CFL[u] SUBSEP Z5[i5] } }
                           next }   # UC3 connection-failure streak candidates (see CONNCAND)
@@ -754,7 +754,7 @@ awk -F'\t' -v rf="$REDFLIP.tmp" -v srvc="$SRVC" '
             if ((k in RA) && RA[k] > bdt) bdt = RA[k]
             if (k in RA) EVL = EVL "|" RAL[k]
             # ... plus the LOOSE connected-ring evidence (2026-08-22): the
-            # went-kaput join promoted to the colour — see _build_kaputflip.
+            # kaput-evidence join promoted to the colour — see _build_kaputflip.
             # Deploy-classified flows are absent from that file by design.
             if ((k in KF) && KF[k] > bdt) bdt = KF[k]
             if (k in KF) EVL = EVL "|" KF[k]
@@ -771,7 +771,7 @@ awk -F'\t' -v rf="$REDFLIP.tmp" -v srvc="$SRVC" '
             # only after THREE failed polls in a row — its connection failures
             # newer than the newest successful poll (CONNCAND) and newer than
             # the last transfer. Fewer = HELD: the flow stays green (the
-            # went-kaput evidence still lists it as trouble after success).
+            # kaput evidence still lists it as trouble after success).
             # Evidence of any other kind, or a newer line, flips as before.
             due = (bdt != "" && bdt > ct && !((k in pt) && pt[k] > bdt))
             held = 0

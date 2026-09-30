@@ -817,7 +817,7 @@ FILENAME == CAL {
         # X (its inbound leg, a failed first push) and whose automatic retry
         # DELIVERED an hour after X. Start < error < end: the start-based rule
         # flipped this flow red, the END rule keeps it green — no banner, not
-        # server-failing, not on went-kaput. Tagged flow only, its own per-day
+        # server-failing, not in the kaput evidence. Tagged flow only, its own per-day
         # seed, so no other flow-day moves.
         if (hastag("lateok") && jd == TOJ + 2) {
             base = jd * 86400000

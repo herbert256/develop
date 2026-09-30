@@ -210,7 +210,7 @@ is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
 # their report groups since the one Reports pulldown, 2026-09-29.)
 
 # (The PAGELESS reports — merged-report components and the data producers
-# whose rows ride another page or none (day, went-kaput, from-green-to-red,
+# whose rows ride another page or none (day, from-green-to-red,
 # only-red, deploy-errors, missing-cronjobs, punctuality-src, fe-overview, the
 # classic entity records …) — are simply the .rpt files no order list names.
 # Their registry PAGELESS_REPORTS / is_pageless_report and subs_report_area

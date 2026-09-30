@@ -70,7 +70,7 @@ pool_run "$SCRIPT_DIR/../analyses/reports/uc4-status.sh"
 pool_run "$SCRIPT_DIR/reports/unknown-entities.sh"   # ONE map-reduce pass -> all five unknown-* rpts (2026-07)
 pool_run "$SCRIPT_DIR/reports/auth-activity.sh"
 pool_run "$SCRIPT_DIR/reports/topview.sh"
-# (went-kaput.sh is NOT in this pool: bin/build.sh runs it once, early — right
+# (bin/build/kaput-evidence.sh — went-kaput.sh here until 2026-09-30 — is not in this pool: bin/build.sh runs it once, early — right
 # after result.sh — because failed.sh and details.sh read its evidence sidecar)
 pool_run "$SCRIPT_DIR/reports/errors-day.sh"
 pool_run "$SCRIPT_DIR/reports/inbound-connections.sh"

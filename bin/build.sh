@@ -945,7 +945,7 @@ fi
 # reddening-session tables (and so the _srvsubs-map) FINAL on failed.sh's
 # FIRST run, so details.sh (which reads that map) needs no second run. It
 # runs ONLY here — bin/server/reports.sh leaves it out.
-run_step "report: went-kaput (early — the failed/details evidence)"       bin/server/reports/went-kaput.sh
+run_step "kaput evidence (early — the failed/details Reason evidence)"    bin/build/kaput-evidence.sh
 
 # ---- 2. report --------------------------------------------------------------
 # details.sh is the longest report step and only the transfer PHASE 2
@@ -979,7 +979,7 @@ bg2_step_wait  # details.sh
 # then after phase 2 + the analyses reports, ~6 s later, and the build then
 # waited up to 8 s for it): their inputs are the transfer caches, phase-1
 # reports (topview, anomalies, from-green-to-red, only-red), the server
-# reports and their slot sidecars (topview, went-kaput, no-remote-dir/-files,
+# reports and their slot sidecars (topview, no-remote-dir/-files,
 # pesit / event-queue / uc<n>-slots), colour/ and the config — all final here.
 # Checked: phase 2 writes showseen / ranking, the analyses step data/analyses/,
 # the cross-* and entity-search .rpt files and data/first-seen/ — none of

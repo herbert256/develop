@@ -229,7 +229,7 @@ right before the server reports since 2026-09-28) — `bin/session-sites.sh` (it
 `data/server/cache/.rescan-mentions` exists (skipped inside when no cache line holds an appended
 name — see BUILD SPEED; a rescan that RAN leaves `data/server/cache/.rescanned`, and `result.sh`
 runs a SECOND time — "re-colour after the mention rescan" — so the colours read the caches the
-rescan rewrote, 2026-09-28), `went-kaput.sh` early (its ONLY run: its evidence sidecar makes the
+rescan rewrote, 2026-09-28), `bin/build/kaput-evidence.sh` early (its ONLY run: its evidence sidecar makes the
 `_srvsubs-map` final on failed.sh's first run, so details.sh runs once) → *report*:
 `bin/transfer/reports/details.sh` in
 background slot 2 beside transfer phase 1 and the server reports (with `AXWAY_WAIT_FAILED=1`: it
@@ -262,7 +262,7 @@ catch-ups settle), dashboards, day → `bin/build/publish.sh` (index pages + the
 Dependency rules: transfer reports before server and analyses reports; dashboards + day after both areas;
 `bin/build/publish.sh` last of the publishes (the area publishes clear the dirs its index pages
 live in). A script that ran twice in one build only to skip the second time runs ONCE now:
-`went-kaput.sh` (not in the server-reports pool), `monitor.sh` (not in `bin/dashboards/reports.sh`)
+`bin/build/kaput-evidence.sh` (not in the server-reports pool), `monitor.sh` (not in `bin/dashboards/reports.sh`)
 and `details.sh` (not in the catch-up).
 
 **BUILD SPEED (2026-09-27/28, the "prd build" analysis — production 6:34 → 3:44 min in 14 rounds,
@@ -535,7 +535,7 @@ snapshot), whose files outlive the build. Do not reintroduce a freshness check: 
 must not repeat work inside one build gets an explicit mode or a single call site instead (the
 server parse's `AXWAY_SKIP_MENTIONS` / `AXWAY_MENTIONS_ONLY`, the transfer parse's
 `AXWAY_DERIVE_ONLY`, the transfer publish's `firstpass` / `catchup` and the analyses publish's
-`catchup` modes, went-kaput / monitor run once). Within-build DEPENDENCY guards stay:
+`catchup` modes, kaput-evidence / monitor run once). Within-build DEPENDENCY guards stay:
 `ensure_logons` builds the logon summary only when it is not there yet (the background step
 normally has), `srv_subset` falls back to the whole cache without `subsets/.done`, and the
 appended-names mention rescan is skipped when it cannot change anything. (The one tracked
@@ -1126,8 +1126,8 @@ lines. **A ring owner serving SEVERAL flows** (2026-08-31 audit): the loose went
 host's ring only when its newest line is about the CONNECTION itself (`flip-reason.awk`:
 Connection failures, Wrong server fingerprint, Login errors (out) — the credential/endpoint every
 flow on it uses is broken); a flow-level line on a shared owner reaches the colour only through
-`_build_ringattr`, which names the flow. `went-kaput.sh` applies the same rule to its (pageless)
-.rpt and to `_kaput-evidence.tsv` (read by failed.sh, the Entities Error view's Reason and
+`_build_ringattr`, which names the flow. `bin/build/kaput-evidence.sh` applies the same rule to
+`_kaput-evidence.tsv` (read by failed.sh, the Entities Error view's Reason and
 `publish-insights.sh`). 1:1 owners are unchanged.
 
 The SAME evidence also **keeps a UC3 green** (2026-08): the after-last-transfer red flip is
@@ -1652,7 +1652,7 @@ front end) then four fix workers with disjoint files. The rules it left:
 - **Pageless producers write only what their readers take** (again): `from-green-to-red.rpt` =
   Subscription · Last green day · Went red on · Days red · Consecutive failures; `only-red.rpt` =
   Subscription · Files · First failure · Days failing (failed.sh reads 2/3/5, day pages 4);
-  `went-kaput.rpt` = Subscription · Latest error (day pages read field 3). A reader that takes a
+  `went-kaput.rpt` is GONE (the same day, user decision — see below). A reader that takes a
   field by NUMBER names the column in a comment — a column change silently drops a link.
 - **Every row tints by the ENTITY's result colour** (Partner scorecard, Blast radius, Application
   dependencies included — their metric colours its own CELL: Score, Sole endpoint for, Pairs at
@@ -1697,12 +1697,13 @@ front end) then four fix workers with disjoint files. The rules it left:
   of their own on their pages — "Server log" = server errors / failure-flows / io-errors /
   routing-errors ("move the 4 server logs to … a second selection, have Server log as first
   selection"). apply_report_groups emits both rows on one queue line.
-- **went-kaput.html is gone** ("Remove server/went-kaput.html"): went-kaput is a PAGELESS report
-  (not in `server_order`, no help page) — its .rpt and evidence sidecar stay
-  (red flip, detail banner, failed.sh, the Trouble after success box, the day pages). The box's
-  flags open the subscription's detail page; the day pages' Trouble after success line opens
-  the server log Errors page (`server/errors-log-reasons.html`; the Boxes page it opened went
-  later that day).
+- **went-kaput.html is gone** ("Remove server/went-kaput.html"). And since 2026-09-30 (user
+  decision, "would we gain much when removing went-kaput.sh?") so is the script as a REPORT:
+  `bin/server/reports/went-kaput.sh` became **`bin/build/kaput-evidence.sh`**, a build-only
+  step that writes ONLY `data/server/reports/_kaput-evidence.tsv` (the Reason evidence failed.sh,
+  the Entities Error view and publish-insights.sh read); `went-kaput.rpt` and the day pages'
+  "Trouble after success" line are gone (the .rpt had 0 rows on both runtimes). The colour never
+  read it (result.sh `_build_kaputflip` is its own join). Never restore the .rpt or the line.
 - **transfer/expired.html**: the last two tables (sweep nights, staging weekday) side by side.
 - **Trends, Route throughput and Punctuality are GONE** (later the same day, user request "Remove
   the reports trends-*, route-throughput, punctuality-*"): trend.sh, duration-trend.sh,

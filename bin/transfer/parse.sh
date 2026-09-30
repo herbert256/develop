@@ -1477,7 +1477,7 @@ COLLAPSE_AWK='
         # dated rows — each row start + its own duration, so a long retry burst
         # whose late leg delivers ends the File when THAT leg ends. The config
         # join lands it in col 24; "" when no row is dated. The after-last-
-        # transfer rule (result.sh, went-kaput, the detail banner) compares a
+        # transfer rule (result.sh, kaput-evidence, the detail banner) compares a
         # server Error against this, not the start: a File that FINISHED OK
         # after the error is a transfer that ended OK after it.
         endst = (maxend > 0) ? stamp_ms(maxend) : ""
@@ -1775,7 +1775,7 @@ col  name       rule
                 leg end over its dated rows (each row's start + its own
                 duration), so a retry burst whose late leg delivers ends when
                 that leg ends (2026-09-12, user rule). "" when no row is dated.
-                The after-last-transfer rule (result.sh, went-kaput, the detail
+                The after-last-transfer rule (result.sh, kaput-evidence, the detail
                 page banner) compares a server Error against the newest OK
                 File's END — a File that finished OK after the error is a
                 transfer that ended OK after it, so the error is not "after

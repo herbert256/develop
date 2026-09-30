@@ -184,7 +184,7 @@ function emit_srv_rows(title, L, n,   i, m, C5, lvl, cmp, body, nrows, tj) {
 # but FINISHED OK after it, a retry burst whose late leg delivered, is a
 # transfer that ended OK after the error, so the error is not after the last
 # transfer). Shared by the banner and the connected-lines cutoff of the Last
-# server log messages table, and the same cut result.sh / went-kaput apply.
+# server log messages table, and the same cut result.sh / kaput-evidence apply.
 function last_transfer_cut() { return (tot_okend > tot_last) ? tot_okend : tot_last }
 
 function err_after_transfer_banner(   m9) {

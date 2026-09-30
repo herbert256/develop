@@ -294,7 +294,7 @@ function build_roster() {
     addf(1, "AB",  "STREAM",   "WEYLAND",  "",  1.5, 0.2, "reason=streamrw")   # "Stream read/write error." lines — the Stream read/write error reason (2026-09-12)
     addf(1, "ODV", "PUBLISH",  "PIEDPIPER","",  1.5, 0.2, "reason=publishfail")   # ARPA0001 "while publishing the file {…} to an account" — the Publish to account failed report (2026-09-12)
     addf(3, "CD",  "NOTARY",   "BLUTH",    "",  1.2, 0.05, "pcaerr")   # ARRC0009 "Error deleting the file after a post client action." on some pulls — the Post client action error report (2026-09-12)
-    addf(1, "DPL", "PAYOUT",   "DUNDER",   "",  1.0, 0,    "quiet,lateok")   # every File delivered, then a connection-failure E line at X and ONE File that STARTED before X and was DELIVERED by its retry after X: start < error < end — the END rule keeps it green, no banner, not server-failing, not on went-kaput (2026-09-12, user rule)
+    addf(1, "DPL", "PAYOUT",   "DUNDER",   "",  1.0, 0,    "quiet,lateok")   # every File delivered, then a connection-failure E line at X and ONE File that STARTED before X and was DELIVERED by its retry after X: start < error < end — the END rule keeps it green, no banner, not server-failing, not in the kaput evidence (2026-09-12, user rule)
     addf(1, "AIM", "SAPPO",    "WONKA-PUO","",  1.2, 0.04, "")          # alias star member
     addf(1, "CDV", "STREAM",   "DUFF",     "",  1.5, 0.03, "")
     addf(1, "IT",  "HEARTBEAT","INITECH",  "",  1.5, 0.02, "skipflow")  # skip-listed wholesale
