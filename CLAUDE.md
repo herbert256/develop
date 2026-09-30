@@ -1823,11 +1823,11 @@ front end) then four fix workers with disjoint files. The rules it left:
   lines went; the buckets keep the empty-poll count, Empty % recomputes from it).
 - **Anomalies**: a Files value reads "N Files" (it still counts the OK Files).
 - **All files search**: with both fields empty the line beside them reads "N files in M subscriptions" for the
-  From/To period, from per-day TALLIES (File count + distinct subscription names; Unknown's Files count, Unknown
-  is no subscription). The period's days load first, then every other day file (4 at a time) — so the browser
-  caches them all; a tally-only read keeps NO rows (rows are cached only when a typed search reads that day,
-  through the same `?v=` URL, from the browser cache). A From/To change recounts from the tallies; a failed
-  day is named, never guessed.
+  From/To period, from the MANIFEST (index.js: per day its File count + subscription indexes; Unknown's Files
+  count, Unknown is no subscription) — exact the moment the page opens (2026-10-01, user request; per-day
+  tallies from the day files until then). warmAll() then loads every day file (4 at a time) for the browser
+  cache only — a tally-only read keeps NO rows (rows are cached only when a typed search reads that day,
+  through the same `?v=` URL, from the browser cache). A From/To change recounts from the manifest.
 
 ## Rules from the tenth 2026-09-30 request (Patterns, the search icon, Entities & Files)
 

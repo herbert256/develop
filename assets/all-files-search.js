@@ -27,9 +27,9 @@
    order; the search stops once the newest SHOW matches are in. Loaded days
    stay cached for the next query. With BOTH fields empty the line beside
    them reads "N files in M subscriptions" for the From/To period (the
-   period summary, from per-day TALLIES: File count + subscription names),
-   and every day shard is loaded in the background for its tally only (the
-   cache warm-up, 2026-09-30); a day's parsed rows are kept only when a
+   period summary, from the MANIFEST: per day its File count + subscription
+   indexes, 2026-10-01), and every day shard is loaded in the background
+   for the browser cache (the warm-up, 2026-09-30; tally-only reads); a day's parsed rows are kept only when a
    typed search needs them.
 
    KEEP THE FILTER IN STEP with publish-all-files.sh: the text is lowercased
@@ -111,11 +111,11 @@
     if (!X) X = { subs: "", days: "" };
 
     // ---- the manifest ----------------------------------------------------
-    var SUBK = [], SLUGOF = {}, i, f;
+    var SUBK = [], SUBN = [], SLUGOF = {}, i, f;
     var sl = lines(X.subs);
     for (i = 0; i < sl.length; i++) {
       f = sl[i].split("\t");
-      SUBK.push(f[0].toLowerCase()); SLUGOF[f[0]] = f[1] || "";
+      SUBK.push(f[0].toLowerCase()); SUBN.push(f[0]); SLUGOF[f[0]] = f[1] || "";
     }
     var DAYS = [], dl = lines(X.days);
     for (i = 0; i < dl.length; i++) {
@@ -236,12 +236,12 @@
     // subscriptions" for the selected period … so that all data files are
     // forced to be loaded and in the local cache of the browser"). With both
     // fields empty the line beside them counts the Files of the From/To
-    // period and their DISTINCT subscriptions (the names the day rows use)
-    // from the per-day TALLIES — the period's days load first, PAR at a
-    // time; warmAll() then loads EVERY other day in the background (the same
-    // loader and ?v= URLs, so a later search finds the files in the browser
-    // HTTP cache). Neither keeps a day's rows: only a typed search does.
-    // A failed shard is counted and named, never guessed.
+    // period and their DISTINCT subscriptions — from the MANIFEST since
+    // 2026-10-01 (per day its File count + subscription indexes: exact at
+    // once); warmAll() loads EVERY day file in the background for the
+    // browser cache only (the same loader and ?v= URLs, tally-only reads, so
+    // a later search finds the files in the HTTP cache and no rows stay in
+    // the tab: only a typed search keeps a day's rows).
     // "Unknown" (no subscription found) counts its Files but is no
     // subscription — the site rule every subscription count follows.
     function inRange(D) { return !range || (D.d >= range.f && D.d <= range.t); }
@@ -261,38 +261,25 @@
       step();
     }
     function plural(n, one, many) { return n + " " + (n === 1 ? one : many); }
+    // THE PERIOD SUMMARY comes from the MANIFEST (2026-10-01, user request):
+    // every day of it carries its File count and the dictionary indexes of
+    // its subscriptions, so the line is exact the moment the page opens — no
+    // day file needed. warmAll() still loads every day file in the
+    // background, for the browser cache only (a later search reads them
+    // from there).
     function summary(my) {
       if (NOIDX) { count.textContent = "the search index did not load — reload the page"; return; }
-      var days = [], k;
-      for (k = 0; k < DAYS.length; k++) if (inRange(DAYS[k])) days.push(DAYS[k]);
-      var next = 0, inflight = 0, settled = 0, bad = 0;
-      function show() {
-        if (my !== gen) return;
-        if (settled < days.length) { count.textContent = "loading… " + settled + " of " + plural(days.length, "day", "days"); return; }
-        var nf = 0, ns = 0, seen = {}, p, T, q, nm;
-        for (p = 0; p < days.length; p++) {
-          T = TALLY[days[p].d];
-          if (!T) continue;                  // a shard that failed to load (counted in bad)
-          nf += T.n;
-          for (q = 0; q < T.s.length; q++) {
-            nm = T.s[q];
-            if (nm !== "" && nm !== "Unknown" && seen["k" + nm] !== 1) { seen["k" + nm] = 1; ns++; }   // "Unknown" is no subscription (its Files count)
-          }
+      if (my !== gen) return;
+      var nf = 0, ns = 0, seen = {}, k, q, D, nm;
+      for (k = 0; k < DAYS.length; k++) {
+        D = DAYS[k]; if (!inRange(D)) continue;
+        nf += D.n;
+        for (q = 0; q < D.subs.length; q++) {
+          nm = SUBN[+D.subs[q]];
+          if (nm && nm !== "Unknown" && seen["k" + nm] !== 1) { seen["k" + nm] = 1; ns++; }   // "Unknown" is no subscription (its Files count)
         }
-        count.textContent = plural(nf, "file", "files") + " in " + plural(ns, "subscription", "subscriptions") +
-          (bad ? " · " + plural(bad, "day", "days") + " could not be loaded (reload to retry)" : "");
       }
-      function pump() {
-        if (my !== gen) return;              // a newer search or period took over
-        while (inflight < PAR && next < days.length) {
-          var D = days[next++];
-          if (TALLY[D.d]) { settled++; continue; }
-          inflight++;
-          load(D, function (ok) { inflight--; settled++; if (!ok) bad++; pump(); }, false);
-        }
-        show();
-      }
-      pump();
+      count.textContent = plural(nf, "file", "files") + " in " + plural(ns, "subscription", "subscriptions");
       warmAll();
     }
     function sync(fq, sq) {
