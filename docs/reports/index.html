@@ -7,10 +7,10 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<link rel="stylesheet" href="../assets/style.css?v=4283021085">
-<script src="../assets/topbar-data.js?v=973611455" defer></script>
-<script src="../assets/topbar.js?v=4283021085" defer></script>
-<script src="../assets/report.js?v=4283021085" defer></script>
+<link rel="stylesheet" href="../assets/style.css?v=2087555106">
+<script src="../assets/topbar-data.js?v=2729763428" defer></script>
+<script src="../assets/topbar.js?v=2087555106" defer></script>
+<script src="../assets/report.js?v=2087555106" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="index"></div>
@@ -71,13 +71,11 @@
 <tr><td><a href="../transfer/av-scan-breakdown.html">AV Scan</a></td><td class="desc">Anti-virus scan outcomes on the first Inbound leg of every File — the scan runs when a file enters the system.</td></tr>
 <tr><td><a href="../transfer/connection-efficiency.html">Connection efficiency</a></td><td class="desc">How the technical connections (Session IDs) are used: Files per connection per account, connection storms per minute, and the anatomy of failing sessions.</td></tr>
 <tr><th colspan="2">Logons &amp; connections</th></tr>
-<tr><td><a href="../server/logons-incoming.html">Logons</a></td><td class="desc">The whole SSH authentication story: the incoming screening funnel (with bad keys and lockouts), successful logons per account and source IP and our outbound auth failures (with the subscription that tried).</td></tr>
+<tr><td><a href="../server/logons-scanners.html">Logons</a></td><td class="desc">Who knocks with names we do not know, and the successful SSH logons per account and per source IP.</td></tr>
 <tr><td><a href="../server/connections-per-day.html">Connections</a></td><td class="desc">Connection volume in and out per day, account and address, and why our outbound connections fail: failure reasons, per remote host, test connections and rejected host keys.</td></tr>
 <tr><th colspan="2">Partners</th></tr>
-<tr><td><a href="../analyses/partners-in.html">Partners - Incoming</a></td><td class="desc">Every FE login on one line: its use cases, the last logon here and on the old gateway, its Files in and out with the retrieved, Waiting and Expired ones and the oldest wait, its pickups, and the SSH screening funnel — Allowed, Disallowed, Authenticated, Auth Failed (bad key, key failures and failed authentications), Locked — with the logon pattern.</td></tr>
-<tr><td><a href="../analyses/partner-scorecard.html">Partner scorecard</a></td><td class="desc">One composite 0-100 health score per partner with at least 100 Files, built from error rate, 14-day trend, UC2 pickup wait, security posture, endpoint redundancy and recency — every component visible as its own column, worst partner first.</td></tr>
-<tr><td><a href="../analyses/blast-radius.html">Blast radius</a></td><td class="desc">What dies with each remote host: per outbound endpoint the Files, volume, subscriptions, applications, domains and partners routed over it — plus which partners have no second endpoint and which endpoints serve several partners at once.</td></tr>
-<tr><td><a href="../analyses/app-partners.html">Application dependencies</a></td><td class="desc">Which external partner organisations each internal application exchanges Files with: partner count, Files and worst-pair Error % per application, plus the full (application, partner) dependency matrix.</td></tr>
+<tr><td><a href="../analyses/partners-in.html">Partners in</a></td><td class="desc">Every login a partner connects in with, on one line: its use cases, the last logon here and on the old gateway, its Files in and out with the retrieved, Waiting and Expired ones and the oldest wait, its pickups, and the whole SSH screening funnel — Allowed, Disallowed, Authenticated, No account, Bad key, Key failures, Locked, Auth failed, Session errors, Re-screens — with the first logon, the logon count and the pattern.</td></tr>
+<tr><td><a href="../analyses/partners-out.html">Partners Out</a></td><td class="desc">Every host this server connects out to: the subscriptions that use it, our connections and the last one, and our failed logons there — Password, Key, Certificate and Other with the newest reason and the first and last day.</td></tr>
 <tr><th colspan="2">Configuration</th></tr>
 <tr><td><a href="../analyses/subscriptions.html">Configured subscriptions</a></td><td class="desc">Every configured subscription on one row, the skip-listed ones included: active or not, its result colour and direction, its Logical, Account, Partner, Domain, Application and BL groups, the endpoint and the From / To folders.</td></tr>
 <tr><td><a href="../analyses/accounts.html">Configured accounts</a></td><td class="desc">The accounts (partners) and their communication profiles — naming vs configured type and authentication, insecure and unrestricted endpoints, conflicting host / whitelist setup, and the account and login integrity checks.</td></tr>
