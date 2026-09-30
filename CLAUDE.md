@@ -1819,6 +1819,12 @@ front end) then four fix workers with disjoint files. The rules it left:
   line booked under several keys builds the key once and calls `addkey(p, key)`. `date.awk minof`
   and `logons.sh secof` keep a one-entry day-number cache (a set flag + a STRING comparison
   `(d "") != cache` — an empty or numeric-looking date against the unset cache compared equal).
+- **Folding logon.sh's per-line pass into the logon summary** (S-04, measured 2026-09-30, user
+  request, NOT done): the shared work is only ~25 % of logon.sh (read + split + family
+  classification, ~−5 CPU-s on production); the rest would move into the single-threaded
+  background summary the build waits for before the server reports — ~+20 s production WALL (its
+  "waited 2s" would become ~27 s) plus a details.sh `ensure_logons` duplicate-compute risk. The
+  summary's long wall time is harmless: it is hidden behind other work. Do not retry.
 - **Measured, not worth it** (do not retry): an `inbound` server subset, a `day` marker subset for
   day_srv, sharing the three `_files.tsv` subscription sorts (<0.5 CPU-s), one shared SSH subset for
   the logon family readers (breaks even), `grep -F` prefilters (slower than mawk).
