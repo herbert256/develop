@@ -19,15 +19,16 @@
 <h1>Partners Out</h1>
 <h2>What it shows</h2>
 <ul>
-<li>One row per <strong>host</strong> this server connects out to: every configured host, every host we failed to log on at, and every address we opened a connection to. Full period; no date filter.</li>
+<li>One row per <strong>host</strong> this server connects out to: every configured host, every host we failed to log on at, and every address we opened a connection to. Full period; no date filter. Laid out like <a href="partners-in.html">Partners in</a>.</li>
 <li><strong>Views</strong> &mdash; <strong>Endpoint</strong> (a row per host), <strong>Accounts</strong> and <strong>Partners</strong>: the same table per account / partner, over the hosts the configuration pairs it with. A host several accounts use counts for each of them (its failures too &mdash; <strong>User</strong> names the account that failed), so the rows can add up to more than the Total, which counts every host once; an address no host maps to is left out. Per entity: counts summed, Last connection / Last the newest, First the earliest, Reason the newest failure&rsquo;s.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
 <li><strong>Remote host</strong> &mdash; links its detail page; an address no host maps to shows as the address.</li>
 <li><strong>Use cases</strong> &mdash; the use cases of the host&rsquo;s subscriptions (UC1&ndash;UC4, a hybrid flow by its derived use case): the configured ones plus any whose failed attempt reached the host &mdash; the same cell as on <a href="partners-in.html">Partners in</a>.</li>
-<li><strong>Connections</strong> / <strong>Last connection</strong> &mdash; the connections we opened (the &ldquo;had initiated a connection&rdquo; lines without a login name), over the host&rsquo;s name and addresses &mdash; the host page&rsquo;s figures.</li>
-<li><strong>User</strong> &mdash; the account(s) our failed logons used. <strong>Failures</strong> = <strong>Password</strong> + <strong>Key</strong> + <strong>Certificate</strong> + <strong>Other</strong>: our authentication failures at the host.</li>
+<li><strong>Files In</strong> / <strong>Files Out</strong> &mdash; <strong>Count</strong>: the Files whose outgoing connection reached the host, by movement (the Entities Remote Hosts figures); <strong>Errors</strong>: those that failed or expired.</li>
+<li><strong>Connections</strong> &mdash; <strong>Connections</strong> / <strong>Last connection</strong>: the connections we opened (the &ldquo;had initiated a connection&rdquo; lines without a login name), over the host&rsquo;s name and addresses &mdash; the host page&rsquo;s figures.</li>
+<li><strong>Failed logons</strong> &mdash; <strong>User</strong>: the account(s) our failed logons used. <strong>Failures</strong> = <strong>Password</strong> + <strong>Key</strong> + <strong>Certificate</strong> + <strong>Other</strong>: our authentication failures at the host.</li>
 <li><strong>Reason (last seen)</strong> &mdash; the newest failure&rsquo;s reason; <strong>First</strong> / <strong>Last</strong> &mdash; the first and last failure day.</li>
 </ul>
 <h2>Rules</h2>
