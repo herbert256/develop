@@ -13,14 +13,19 @@
 # from docs/assets/topbar-data.js. A naive href scan therefore finds almost no
 # navigation at all and calls ~2,600 pages unreachable. This models what
 # topbar.js emits, from the page's own attributes:
-#   - every menu href in topbar-data.js, its "@" placeholder replaced by data-b
+#   - the errors:"…" and overview:"…" links of topbar-data.js, data-b + the
+#     path (the Reports pulldown and its menu hrefs went 2026-09-30)
 #   - brand -> data-b + index.html
 #   - data-b + dashboards/index.html, search/search.html,
 #     search/all-files.html (the Files link, 2026-09-28),
 #     tools/sitemap.html, transfer/entities/subscription-all.html,
 #     transfer/duration.html + transfer/waiting-expired.html (the Duration and
 #     Waiting/Expired links, 2026-09-30), analyses/partners-in.html (the
-#     Partners link, 2026-09-30)
+#     Partners link, 2026-09-30), transfer/security-params.html,
+#     analyses/first-seen.html, analyses/subscriptions.html,
+#     analyses/use-cases.html, transfer/file-journey-patterns.html and
+#     transfer/activity-per-week.html (Security · Seen · Configuration · Use
+#     cases · Patterns · Activity, 2026-09-30 — the pulldown's replacement)
 #   - the help icon  -> data-b + help/<data-help>.html
 # EVERY page carries the placeholder since 2026-09-30 — the help pages and the
 # build report too (their baked bar, render_shared_topbar, went with the one
@@ -107,15 +112,9 @@ awk -v DOCS="$DOCS" '
 
     FNR == 1 { nfile++ }
     nfile == 1 { FILE[$0] = 1; next }
-    nfile == 2 {                                   # topbar-data.js: the menu hrefs
-        s = $0
-        while (match(s, /href=\\"[^"\\]+\\"/)) {
-            h = substr(s, RSTART + 7, RLENGTH - 9)
-            MENU[++MENUN] = h
-            s = substr(s, RSTART + RLENGTH)
-        }
-        # the top-bar LINKS of their own (2026-09-29): errors:"…" and
-        # overview:"…", docs-root-relative — "@" + the path, like a menu href
+    nfile == 2 {                                   # topbar-data.js: the data links
+        # the top-bar LINKS kept as data (2026-09-29): errors:"…" and
+        # overview:"…", docs-root-relative — "@" + the path
         s = $0
         while (match(s, /(errors|overview):"[^"]+"/)) {
             h = substr(s, RSTART, RLENGTH); sub(/^[a-z]+:"/, "", h); sub(/"$/, "", h)
@@ -155,6 +154,13 @@ awk -v DOCS="$DOCS" '
                     edge(page, b "transfer/duration.html")          # the Duration link (2026-09-30)
                     edge(page, b "transfer/waiting-expired.html")   # the Waiting/Expired link (2026-09-30)
                     edge(page, b "analyses/partners-in.html")      # the Partners link (2026-09-30)
+                    # the six links that replaced the Reports pulldown (2026-09-30)
+                    edge(page, b "transfer/security-params.html")
+                    edge(page, b "analyses/first-seen.html")
+                    edge(page, b "analyses/subscriptions.html")
+                    edge(page, b "analyses/use-cases.html")
+                    edge(page, b "transfer/file-journey-patterns.html")
+                    edge(page, b "transfer/activity-per-week.html")
                     if (hlp != "") edge(page, b "help/" hlp ".html")
                 }
             }

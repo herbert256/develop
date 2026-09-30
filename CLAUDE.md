@@ -157,11 +157,11 @@ checkout with logs but no config export: it synthesizes the two JSONs from the t
   `topbar_placeholder`; `render_topbar` / `render_shared_topbar` / `FITTOP_JS` / `ENVSWITCH_JS` are
   gone, there is no keep-in-step twin. topbar.js `buildTopbar` renders the full bar from
   `docs/assets/topbar-data.js` (pure data, written by `ensure_assets`: the
-  ONE menu string, `reports` (the Reports pulldown, 2026-09-29 — the transfer / server / analyses /
-  goodies keys are gone), with its `@` placeholder (the `monitor:0|1` flag went 2026-09-30 with the Monitor dashboard),
+  NO menu string since 2026-09-30 — the `reports` key went with the Reports pulldown, user request; the
+  `monitor:0|1` flag went 2026-09-30 with the Monitor dashboard —
   `coreid:"<url>"`, `env:"<label>"`, `envkey:"<key>"`, `sites` (the four env URLs) — the DATA PERIOD `period` went 2026-09-30, user request (and
   day.rpt's META first/last with it);
-  `?v=` stamp `TB_VER` folds the menu, the errors / overview hrefs, the template, the label, the key
+  `?v=` stamp `TB_VER` folds the errors / overview hrefs, the template, the label, the key
   and the site URLs).
 - report.js has no `pageEnv`/`setupEnvSwitch`; the sessionStorage keys carry no env prefix; the
   `report-area` meta is the area alone.
@@ -1381,7 +1381,18 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   account join is `xref/_subscriptions-accounts.tsv` and ONLY that — **never match
   subscriptions to accounts by name**.
 
-### Report groups and menus — ONE "Reports" pulldown
+### Report groups and menus — NO pulldown since 2026-09-30
+
+**THE REPORTS PULLDOWN IS GONE** (2026-09-30, late, user request: "Remove the Reports pulldown"):
+the top bar links the groups by FIXED paths in assets/topbar.js — Overview · Errors (data) ·
+Duration · Partners · Waiting/Expired · Security (`transfer/security-params.html`) · Seen
+(`analyses/first-seen.html`) · Configuration (`analyses/subscriptions.html`) · Use cases
+(`analyses/use-cases.html`) · Patterns (`transfer/file-journey-patterns.html`) · Activity
+(`transfer/activity-per-week.html`) · Entities · Files; Logons & connections has no top-bar link (the
+Reports start page and the sitemap reach it). `REPORTS_MENU`, topbar-data.js `reports`, the `.dd`
+dropdown CSS and report.js's Escape handler went; linkcheck models the fixed links, verify.sh the
+order and the absence. The history below describes the 2026-09-29 pulldown the groups came from.
+
 
 **Since 2026-09-29 (user request: "Reorganise Transfer Reports and Server Reports and Analyses
 and Goodies, just one pulldown named Reports, create logical groups, have all reports in the same
@@ -1405,8 +1416,7 @@ sidecars `_inbound-addr.tsv` / the flat server `_subscriptions.tsv` deleted; nev
 - **`_report_groups`** (`bin/publish_lib.sh`) is THE single source of truth: one line per group,
   `Label|dir/stem=Label|…` — `dir` the docs directory the page renders into (transfer / server /
   analyses, plus `transfer/entities`, `transfer/month-stats` and `analyses/xref`), `stem` the report basename or the
-  hand-written page name. It feeds `REPORTS_MENU` (topbar-data.js `reports`, the ONE menu key;
-  topbar.js `buildTopbar` draws ONE `.dd`; `TB_VER` folds it), the start page
+  hand-written page name. It feeds (the pulldown `REPORTS_MENU` until 2026-09-30) the start page
   (`write_reports_index` + `rg_desc`: a report's DESC, fixed texts for the hand-written pages),
   the sitemap (ONE `.smcols` flow of cards since 2026-09-29, user request — no Reports /
   Dashboards / Tools sections: the Start page card, one card per group, a Dashboards card and
@@ -1793,6 +1803,17 @@ front end) then four fix workers with disjoint files. The rules it left:
   `render_subs_group_pages` (the Endpoint help page, their own report key); `apply_report_groups` gives them the
   Partners row by stem. verify.sh checks the rows, the names and the totals. A column change in a writer needs
   its RULES string changed in step (one rule per ROW field from field 3).
+
+## Rules from the seventh 2026-09-30 batch ("a few different things", user request, late)
+
+- **Partners in**: Files Out = Count · Errors · Retrieved · Waiting · Expired (the Pickup group merged in,
+  `gsep=2,4,9,13`); verify.sh checks the 5-column banner and that no Pickup banner is left.
+- **Protocol, Direction & Mode** has two tabs, Direction × action by · Mode: the Protocol × direction tab
+  (`protocol-protocol-direction.html`) is GONE, with protocol.sh's per-protocol / per-direction / per-action-by
+  aggregates (unread since 2026-09-29). Never restore; verify.sh asserts the absence.
+- **No Reports pulldown; six more top-bar links** — see "Report groups and menus" (the cluster:
+  Overview · Errors · Duration · Partners · Waiting/Expired · Security · Seen · Configuration · Use cases ·
+  Patterns · Activity · Entities · Files + the search icon).
 
 ## Rules from the sixth 2026-09-30 batch ("a few different things", user request)
 

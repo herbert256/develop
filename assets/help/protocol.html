@@ -5,14 +5,13 @@
 </ul>
 <h2>Tabs</h2>
 <ul>
-<li><strong>Protocol &times; direction</strong> &mdash; Protocol (pesit, ssh, ftp, routing &hellip;), Direction, <strong>OK transfers</strong>, <strong>Volume</strong>, <strong>% of OK transfers</strong>.</li>
 <li><strong>Direction &times; action by</strong> &mdash; Direction, <strong>Action By</strong> (who initiated the leg: User or Server), <strong>OK transfers</strong>.</li>
 <li><strong>Mode</strong> &mdash; the log&rsquo;s Mode column (BINARY / ASCII), <strong>OK transfers</strong>.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
 <li>Counts <strong>transfers (legs)</strong>, not Files: a File&rsquo;s Inbound leg (say ssh) and Outbound leg (say pesit) count once each.</li>
-<li><strong>OK transfers</strong> = the OK legs only; <strong>Volume</strong> = the bytes of those OK legs; the share is over the OK legs. A row with no OK leg is left out, on every tab.</li>
+<li><strong>OK transfers</strong> = the OK legs only; the summary&rsquo;s volume = the bytes of those OK legs. A row with no OK leg is left out, on every tab.</li>
 <li><code>UNKNOWN</code> = nothing logged for that attribute.</li>
-<li>A protocol&rsquo;s or direction&rsquo;s own total is the sum of its rows: search or sort the table.</li>
+<li>A direction&rsquo;s own total is the sum of its rows: search or sort the table. (The Protocol &times; direction tab went 2026-09-30.)</li>
 </ul>

@@ -250,7 +250,7 @@ report_tabs() {
         connections)   echo "Per day|By account|By address|Failure reasons|By remote host|Test connections|Host keys" ;;   # 2026-09-29: By protocol went (= the Per day column totals)   # 2026-08: + connection-diagnostics tables 4-5; 2026-09-28: Whitelist usage (= Incoming Allowed + Re-screens) and Test outcomes (empty by construction) gone
         logons)        echo "Scanners|By account|By source IP" ;;   # Incoming / Outgoing went 2026-09-30, user request (-> Partners in / Partners Out, analyses/)   # Near misses + Certificates went 2026-09-30, user request   # 2026-08: + the door-knocker tables (logon component tables 3-4); 2026-09-28: the ssh-key-auth tabs went (Key mismatches = Incoming Bad key, Lockouts now in Incoming Locked, Outbound key failures = a subset of Outgoing)
         uc-status)     echo "UC1|UC2|UC3|UC4" ;;
-        protocol)      echo "Protocol × direction|Direction × action by|Mode" ;;   # 2026-09-29: the one-dimension tables (By protocol / By direction / By action by) went — the subtotals of the crosstabs   # the 2026-07 merge: + direction-action's Action By/Crosstab tables + the Mode split
+        protocol)      echo "Direction × action by|Mode" ;;   # 2026-09-30: the Protocol × direction tab went (user request); 2026-09-29: the one-dimension tables (By protocol / By direction / By action by) went — the subtotals of the crosstabs   # the 2026-07 merge: + direction-action's Action By/Crosstab tables + the Mode split
         av-scan)       echo "Breakdown|Per day|Per protocol|Blocked|Not performed|Not first inbound" ;;
         # security-params: ONE table since 2026-09-29 (the six attribute tabs went)   # 2026-08: one tab per attribute; the report always emits all six tables (empty when absent) so the count matches in every env. Protocol table dropped — the protocol report owns it.
         ranking)       echo "Subscriptions|Accounts|Logins|Hosts|Logical|Partners|Applications|Domains|BL" ;;   # the 9 entity types, in ranking.sh's SPECS order
@@ -2073,32 +2073,19 @@ rg_rel() {
     RG_REL="$up$td"
 }
 
-# THE REPORTS PULLDOWN — Start page (reports/index.html) + one line per group,
-# landing on its first member. "@" = the page's docs-root prefix, swapped per
-# page by assets/topbar.js (topbar-data.js `reports`).
-# NOT Entities (2026-09-29, user request): the top bar's own Entities link
-# opens them; the group stays for the start page, the finder and the h1 tags.
-# NOT Errors either (2026-09-29, user request: "Remove Failures from the
-# Reports Pulldown, have it as an own link in the Top Menu bar"): its link is
-# ERRORS_HREF, the group's first member's landing page.
-# NOT Overview either (2026-09-29, user request: "Move Overview from the
-# Reports pulldown to the top menu bar, just before Entities"): OVERVIEW_HREF.
-# NOT Partners either (2026-09-30, user request: "Remove Partners from the
-# Reports pulldown"): the top bar links Partners in, whose group row reaches
-# Partners Out; the group stays for the start page, the sitemap and the rows.
-REPORTS_MENU='<a class="ddtop" href="@reports/index.html">Start page</a>'
+# THE REPORTS PULLDOWN IS GONE (2026-09-30, user request: "Remove the Reports
+# pulldown"): the top bar links the groups it opened as fixed paths in
+# assets/topbar.js (Duration, Partners, Security, Seen, Configuration, Use
+# cases, Patterns, Activity, …); the Reports start page and the sitemap still
+# list every group. Two top-bar links stay DATA — the Errors and Overview
+# groups' landing pages (ERRORS_HREF / OVERVIEW_HREF, topbar-data.js
+# `errors` / `overview`), computed from _report_groups here.
 ERRORS_HREF=""; OVERVIEW_HREF=""
 while IFS= read -r _rgl; do
     [ -n "$_rgl" ] || continue
-    case ${_rgl%%|*} in Entities|Partners) continue ;; esac
-    if [ "${_rgl%%|*}" = Errors ] || [ "${_rgl%%|*}" = Overview ]; then
-        _rgf=${_rgl#*|}; _rgf=${_rgf%%|*}; rg_landing "${_rgf%%=*}"
-        if [ "${_rgl%%|*}" = Errors ]; then ERRORS_HREF=$RG_LANDING; else OVERVIEW_HREF=$RG_LANDING; fi
-        continue
-    fi
-    _rgf=${_rgl#*|}; _rgf=${_rgf%%|*}; _rgf=${_rgf%%=*}
-    rg_landing "$_rgf"; esc "${_rgl%%|*}"
-    REPORTS_MENU+="<a href=\"@$RG_LANDING\">$ESC</a>"
+    case ${_rgl%%|*} in Errors|Overview) ;; *) continue ;; esac
+    _rgf=${_rgl#*|}; _rgf=${_rgf%%|*}; rg_landing "${_rgf%%=*}"
+    if [ "${_rgl%%|*}" = Errors ]; then ERRORS_HREF=$RG_LANDING; else OVERVIEW_HREF=$RG_LANDING; fi
 done < <(_report_groups)
 unset _rgl _rgf
 
@@ -2317,7 +2304,7 @@ ENV_SITES_JS='{local:{acceptance:"http://localhost/acceptance/",production:"http
 # (THE DATA PERIOD in the top bar — "yyyy-mm-dd / yyyy-mm-dd" from the day
 # report's META first/last, topbar-data.js `period`, 2026-09-13 — went
 # 2026-09-30, user request: "remove 2026-08-31 / 2026-09-30".)
-TB_VER=$(printf '%s' "$REPORTS_MENU$ERRORS_HREF$OVERVIEW_HREF$TB_CID${ENV_LABEL:-}${ENV_KEY:-}$ENV_SITES_JS" | cksum | cut -d' ' -f1)
+TB_VER=$(printf '%s' "$ERRORS_HREF$OVERVIEW_HREF$TB_CID${ENV_LABEL:-}${ENV_KEY:-}$ENV_SITES_JS" | cksum | cut -d' ' -f1)
 
 # Copy the shared assets into docs/ and write .nojekyll. Idempotent, so each
 # publish script can call it and still produce a valid site when run on its own.
@@ -2347,13 +2334,8 @@ ensure_assets() {
     }
     # (build-stamp.js is GONE with the footer bar: no page shows a build time
     # any more, so there is nothing to stamp.)
-    # The runtime top bar's menu data (assets/topbar.js): the ONE
-    # Reports pulldown string (2026-09-29: the transfer / server / analyses /
-    # goodies keys went with their four dropdowns), docs-root-relative with
-    # its "@" placeholder kept verbatim (topbar.js swaps it for the page's
-    # data-b prefix).
-    local r=$REPORTS_MENU
-    r=${r//\\/\\\\}; r=${r//\"/\\\"}
+    # The runtime top bar's data (assets/topbar.js) — no menu string since
+    # 2026-09-30 (the Reports pulldown went, user request)
     # + the CoreId -> File Tracking URL template (TB_CID) and the environment
     # label (ENV_LABEL), both baked as plain strings
     local c=${TB_CID:-} e=${ENV_LABEL:-} k=${ENV_KEY:-}
@@ -2365,7 +2347,7 @@ ensure_assets() {
     # ENV_SITES_JS — a JS object literal, baked verbatim)
     # + errors: the top bar's Errors link (ERRORS_HREF, docs-root-relative —
     # a plain page path, nothing to escape)
-    local _tb; printf -v _tb 'window.AXWAY_TB={reports:"%s",errors:"%s",overview:"%s",coreid:"%s",env:"%s",envkey:"%s",sites:%s};' "$r" "${ERRORS_HREF:-}" "${OVERVIEW_HREF:-}" "$c" "$e" "$k" "$ENV_SITES_JS"
+    local _tb; printf -v _tb 'window.AXWAY_TB={errors:"%s",overview:"%s",coreid:"%s",env:"%s",envkey:"%s",sites:%s};' "${ERRORS_HREF:-}" "${OVERVIEW_HREF:-}" "$c" "$e" "$k" "$ENV_SITES_JS"
     _asset_put docs/assets/topbar-data.js "$_tb"
     [ -f docs/.nojekyll ] || : > docs/.nojekyll
 }

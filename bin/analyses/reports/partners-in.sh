@@ -16,9 +16,12 @@
 # groups), column groups under a GHEAD banner:
 #   Login · Use cases
 #   Files In   Count · Errors       fe-overview Files in / Error in
-#   Files Out  Count · Errors       fe-overview Files out / Error out (Errors =
-#                                   the Failed Files; Expired has its column)
-#   Pickup     Retrieved · Waiting · Expired     fe-overview, verbatim
+#   Files Out  Count · Errors · Retrieved · Waiting · Expired   fe-overview Files
+#                                   out / Error out (Errors = the Failed Files;
+#                                   Expired has its column) + the pickup state,
+#                                   verbatim (a Pickup group of its own until the
+#                                   night of 2026-09-30, user request: "combine
+#                                   Files Out & Pickup as Files Out")
 #   Logons     Logons · Cloud · Gateway · Pattern (Logons / Pattern from the
 #              funnel, Cloud / Gateway from the FE overview)
 #   Screening  Allowed · Disallowed · Authenticated · Bad key · Locked · Auth
@@ -111,10 +114,10 @@ awk -F'\t' -v FE="$FE" -v LG="$LG" '
         # Accounts and Partners views bin/rpt-rollup.awk regroups it into
         print "NAV\t1|Endpoint|partners-in.html\t0|Accounts|partners-in-accounts.html\t0|Partners|partners-in-partners.html"
         # default sort Waiting (column 7) descending; the groups start at the
-        # Files In, Files Out, Pickup, Logons and Screening columns; the funnel
+        # Files In, Files Out, Logons and Screening columns; the funnel
         # counts keep their log-line drills
-        print "TABLE\tLogins\twide\tnofilter\trestint\tsort=7:-1\tgsep=2,4,6,9,13\tdrill=log line"
-        print "GHEAD\t@{colspan=2}\t@{colspan=2,class=gband gsep}Files In\t@{colspan=2,class=gband gsep}Files Out\t@{colspan=3,class=gband gsep}Pickup\t@{colspan=4,class=gband gsep}Logons\t@{colspan=6,class=gband gsep}Screening"
+        print "TABLE\tLogins\twide\tnofilter\trestint\tsort=7:-1\tgsep=2,4,9,13\tdrill=log line"
+        print "GHEAD\t@{colspan=2}\t@{colspan=2,class=gband gsep}Files In\t@{colspan=5,class=gband gsep}Files Out\t@{colspan=4,class=gband gsep}Logons\t@{colspan=6,class=gband gsep}Screening"
         print "HEAD\tLogin\tUse cases\tCount\tErrors\tCount\tErrors\tRetrieved\tWaiting\tExpired\tLogons\tCloud\tGateway\tPattern\tAllowed\tDisallowed\tAuthenticated\tBad key\tLocked\tAuth failed"
         print "KIND\tlogin\ttext\tnum\tnumfailed\tnum\tnumfailed\tnumprocessed\tnumwarn\tnumfailed\tnum\ttext\ttext\ttext\tnumprocessed\tnumfailed\tnumprocessed\tnumfailed\tnumwarn\tnumfailed"
         for (i = 1; i <= nr; i++) { k = toupper(NAME[i])

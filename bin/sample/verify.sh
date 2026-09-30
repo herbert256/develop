@@ -154,7 +154,7 @@ pm=$(awk -F'\t' 'FILENAME ~ /logon\.rpt$/ { if ($1 == "TABLE") t++; if (t == 1 &
     END { for (k in W) if (!(k in seen)) miss++; print nw + 0, ok + 0, miss + 0 }' data/server/reports/logon.rpt data/analyses/reports/partners-in.rpt 2>/dev/null)
 read -r pmn pmok pmmiss <<< "$pm"
 check $([ "${pmn:-0}" -gt 0 ] && [ "${pmok:-x}" = "$pmn" ] && [ "${pmmiss:-1}" = 0 ] && echo 0 || echo 1) "Partners in: ${pmok:-?} of ${pmn:-?} logon.rpt Incoming row(s) carry the same funnel cells (${pmmiss:-?} missing)"
-check $(awk -F'\t' '$1 == "GHEAD" { g = $0 } $1 == "HEAD" { h = $0 } END { print (g ~ /Files In/ && g ~ /Files Out/ && g ~ /Pickup/ && g ~ /Logons/ && g ~ /Screening/ && h !~ /\tNo account|\tKey failures|\tSession errors|\tRe-screens|\tFirst logon|\tOldest waiting|\tPickups|\tLast logon/) ? 0 : 1 }' data/analyses/reports/partners-in.rpt 2>/dev/null || echo 1) "partners-in.rpt lacks the Files In / Files Out / Pickup / Logons / Screening groups or still carries a removed column (No account, Key failures, Session errors, Re-screens, First logon, Oldest waiting, Pickups, Last logon)"
+check $(awk -F'\t' '$1 == "GHEAD" { g = $0 } $1 == "HEAD" { h = $0 } END { print (g ~ /Files In/ && g ~ /colspan=5,class=gband gsep}Files Out/ && g !~ /Pickup/ && g ~ /Logons/ && g ~ /Screening/ && h !~ /\tNo account|\tKey failures|\tSession errors|\tRe-screens|\tFirst logon|\tOldest waiting|\tPickups|\tLast logon/) ? 0 : 1 }' data/analyses/reports/partners-in.rpt 2>/dev/null || echo 1) "partners-in.rpt lacks the Files In / Files Out (5 columns, Pickup merged in) / Logons / Screening groups or still carries a removed column (No account, Key failures, Session errors, Re-screens, First logon, Oldest waiting, Pickups, Last logon)"
 n=$(ls docs/server/logons-incoming.html docs/server/logons-outgoing.html 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${n:-1}" = 0 ] && ! grep -rqs 'logons-incoming\.html\|logons-outgoing\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "the retired Logons Incoming / Outgoing tab pages are back or still linked"
 check $([ -f docs/server/logons-scanners.html ] && [ "$(command grep -c $'^TABLE\t' data/server/reports/logons.rpt 2>/dev/null)" = 3 ] && echo 0 || echo 1) "Logons is not Scanners · By account · By source IP (docs/server/logons-scanners.html + 3 tables)"
@@ -813,13 +813,19 @@ check $(grep -q 'data-restint' docs/transfer/duration-longest.html 2>/dev/null &
 # then Entities and Files; later that day "Partners: In / Out" after Files,
 # since the evening one "Partners" link -> analyses/partners-in.html, right
 # after Duration since the night)
-n=$(awk '/<span class="entgroup">/ && !a { a = NR } />Overview<\/a>/ && !o { o = NR } />Errors<\/a>/ && !r { r = NR } />Duration<\/a>/ && !d { d = NR } />Waiting\/Expired<\/a>/ && !w { w = NR } />Entities<\/a>/ && !e { e = NR } />Files<\/a>/ && !f { f = NR } /partners-in\.html">Partners<\/a>/ && !p { p = NR } /search\/search.html" title="Search"/ && !s { s = NR }
-    END { print (a && a <= o && o < r && r < d && d < p && p < w && w < e && e < f && f <= s) ? 1 : 0 }' docs/assets/topbar.js 2>/dev/null)
-check $([ "${n:-0}" = 1 ] && grep -q 'subscription-all.html">Entities</a>' docs/assets/topbar.js && grep -q 'search/all-files.html">Files</a>' docs/assets/topbar.js && grep -q "transfer/duration.html\">Duration</a>" docs/assets/topbar.js && grep -q "transfer/waiting-expired.html\">Waiting/Expired</a>" docs/assets/topbar.js && grep -q 'analyses/partners-in.html">Partners</a>' docs/assets/topbar.js && ! grep -q 'entpair' docs/assets/topbar.js && echo 0 || echo 1) "topbar.js lacks the Overview / Errors / Duration / Partners / Waiting/Expired / Entities / Files cluster in that order (Duration -> transfer/duration.html, Waiting/Expired -> transfer/waiting-expired.html, Files -> search/all-files.html, Partners -> analyses/partners-in.html)"
-# Errors is a top-bar link, not a Reports pulldown line
-check $(grep -oE 'reports:"([^"\\]|\\.)*"' docs/assets/topbar-data.js 2>/dev/null | grep -q 'analyses/failed.html' && echo 1 || echo 0) "the Reports pulldown still lists the Errors group"
+# (the night of 2026-09-30, user request: Security · Seen · Configuration · Use
+# cases · Patterns · Activity right after Waiting/Expired, replacing the
+# Reports pulldown) — the entlabel links of topbar.js in order, each with its
+# fixed target, then the search icon
+tbl=$(grep 'class="entlabel"' docs/assets/topbar.js 2>/dev/null | sed -E 's/.*">([^<]+)<\/a>.*/\1/' | tr '\n' '|')
+want='Overview|Errors|Duration|Partners|Waiting/Expired|Security|Seen|Configuration|Use cases|Patterns|Activity|Entities|Files|'
+ok=0; [ "$tbl" = "$want" ] || ok=1
+for lk in 'transfer/duration.html">Duration' 'analyses/partners-in.html">Partners' 'transfer/waiting-expired.html">Waiting/Expired' 'transfer/security-params.html">Security' 'analyses/first-seen.html">Seen' 'analyses/subscriptions.html">Configuration' 'analyses/use-cases.html">Use cases' 'transfer/file-journey-patterns.html">Patterns' 'transfer/activity-per-week.html">Activity' 'transfer/entities/subscription-all.html">Entities' 'search/all-files.html">Files'; do
+    grep -qF "$lk</a>" docs/assets/topbar.js 2>/dev/null || ok=1
+done
+check $ok "topbar.js cluster is '${tbl}', expected '${want}' with the fixed targets (Duration -> transfer/duration.html … Activity -> transfer/activity-per-week.html)"
+# Errors is a top-bar link (topbar-data.js errors:)
 check $(grep -q 'errors:"analyses/failed.html"' docs/assets/topbar-data.js 2>/dev/null && echo 0 || echo 1) "topbar-data.js lacks errors:\"analyses/failed.html\" (the runtime bar's Errors link)"
-check $(grep -oE 'reports:"([^"\\]|\\.)*"' docs/assets/topbar-data.js 2>/dev/null | grep -q 'partners-in.html' && echo 1 || echo 0) "the Reports pulldown still lists the Partners group (a top-bar link since 2026-09-30)"
 # the Implementation 1 | 2 tab row went with the File search pages
 # (2026-09-29): the all-files page is the only implementation left
 check $(grep -q 'Implementation 1, period' docs/search/all-files.html 2>/dev/null && echo 1 || echo 0) "search/all-files.html still carries the Implementation tab row"
@@ -980,7 +986,7 @@ done
 # the Protocol & Security group tables carry ONE Transfers column — the OK
 # legs — and no Error / OK pair (2026-09-13, user request): no green/red
 # cells on the protocol / security-params pages and their per-value pages,
-# the By protocol Transfers total = the caches' Processed legs
+# the Direction x action by OK transfers total = the caches' Processed legs
 n=$(awk -F'\t' '$1 == "HEAD" && (/\tOK\t|\tOK$|\tError\t|\tError$/) { n++ } END { print n + 0 }' data/transfer/reports/protocol.rpt data/transfer/reports/security-params.rpt data/transfer/reports/secparams/*.rpt 2>/dev/null)
 check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "protocol / security-params rpts still have $n table header(s) with an OK / Error column"
 # (security-params.html: its FIRST table only — the server log SSH tables
@@ -989,8 +995,11 @@ n=$( { grep -c 'class="num failed"\|class="num processed"' docs/transfer/protoco
        awk '/<\/table>/ { exit } { n += gsub(/class="num failed"|class="num processed"/, "") } END { print n + 0 }' docs/transfer/security-params.html 2>/dev/null; } | awk '{ s += $1 } END { print s + 0 }')
 check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n green/red (OK/Error) cells left on the Protocol & Security group pages"
 want=$(awk -F'\t' '{ s = $3; sub(/ Subtransmission$/, "", s); if (s == "Processed") n++ } END { print n + 0 }' "$T" 2>/dev/null)
-got=$(awk -F'\t' '$1 == "TABLE" && $2 == "Protocol × direction" { p = 1 } p && $1 == "TOTAL" { v = $3; sub(/^@\{[^}]*\}/, "", v); print v + 0; exit }' data/transfer/reports/protocol.rpt 2>/dev/null)
-check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "protocol Protocol × direction Transfers total is '${got:-absent}', the caches hold ${want:-?} Processed legs"
+got=$(awk -F'\t' '$1 == "TABLE" && $2 == "Direction x action by" { p = 1 } p && $1 == "TOTAL" { v = $3; sub(/^@\{[^}]*\}/, "", v); print v + 0; exit }' data/transfer/reports/protocol.rpt 2>/dev/null)
+check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "protocol Direction x action by OK transfers total is '${got:-absent}', the caches hold ${want:-?} Processed legs"
+# the Protocol × direction tab is GONE (2026-09-30, user request: "Delete report
+# transfer/protocol-protocol-direction.html")
+check $([ ! -f docs/transfer/protocol-protocol-direction.html ] && ! grep -rqs 'protocol-protocol-direction\.html' docs --include='*.html' --include='*.js' && [ "$(command grep -c $'^TABLE\t' data/transfer/reports/protocol.rpt 2>/dev/null)" = 2 ] && echo 0 || echo 1) "transfer/protocol-protocol-direction.html is back or still linked (or protocol.rpt is not the 2 tables Direction x action by + Mode)"
 
 # the Duration report holds BOTH per-day tables side by side (2026-09-13,
 # user request): percentiles first (the home page reads it by title), then
@@ -1202,22 +1211,14 @@ check $([ "${nz:-0}" -gt 0 ] && [ "$nz" = "$nl" ] && echo 0 || echo 1) "detail S
 check $([ "$(grep -o 'data-drill-cols="[^"]*"' docs/transfer/entities/subscription-all.html 2>/dev/null | grep -c 'ferr:')" = 0 ] && [ "$(grep -o 'data-drill-cols="[^"]*"' docs/transfer/entities/account-all.html 2>/dev/null | grep -c 'ferr:3:')" = 1 ] && echo 0 || echo 1) "Entities: the subscription pages still drill Files Error, or the account pages lost that drill"
 check $([ "$(grep -c 'function setupEntityErrorLinks' docs/assets/report.js 2>/dev/null)" = 1 ] && [ "$(grep -c 'setupEntityErrorLinks();' docs/assets/report.js 2>/dev/null)" = 1 ] && echo 0 || echo 1) "report.js does not define and run setupEntityErrorLinks"
 
-# ONE Reports pulldown (2026-09-29, user request — the Transfer reports /
-# Server reports / Analyses / Goodies four went): topbar-data.js carries the
-# one `reports` menu (Start page + one line per group), the three area start
-# pages are gone, docs/reports/index.html replaces them
+# NO Reports pulldown (2026-09-30, user request: "Remove the Reports
+# pulldown" — the ONE pulldown of 2026-09-29 had replaced the Transfer
+# reports / Server reports / Analyses / Goodies four): topbar-data.js carries
+# no menu, topbar.js renders no dropdown; the three area start pages stay
+# gone, docs/reports/index.html (reached from the sitemap) lists every group
 t=docs/assets/topbar-data.js
-check $(grep -q 'reports:"' "$t" 2>/dev/null && ! grep -qE '(transfer|server|analyses|goodies):"' "$t" && echo 0 || echo 1) "topbar-data.js lacks the reports menu or still carries a transfer / server / analyses / goodies menu"
-n=$(grep -oE 'reports:"([^"\\]|\\.)*"' "$t" 2>/dev/null | grep -o '<a ' | wc -l | tr -d ' ')
-# (2026-09-29, user request: Server log errors folded into Failures — 13
-# groups — and Entities left off the menu, the top bar's own Entities link
-# opens it; Failures renamed Errors the same day and taken off the menu too,
-# a top-bar link of its own; later that day the Cleanup group went and
-# Overview became a top-bar link too; Partners left the menu 2026-09-30)
-check $([ "${n:-0}" = 9 ] && echo 0 || echo 1) "the Reports menu has ${n:-0} line(s), expected 9 (Start page + 8 groups; Overview, Entities, Errors and Partners not listed)"
-check $(grep -oE 'reports:"([^"\\]|\\.)*"' "$t" 2>/dev/null | grep -q 'transfer/topview.html' && echo 1 || echo 0) "the Reports menu still lists the Overview group"
+check $(! grep -qE '(reports|transfer|server|analyses|goodies):"' "$t" 2>/dev/null && ! grep -q 'ddlabel\|class="dd"\|Reports ▾' docs/assets/topbar.js 2>/dev/null && echo 0 || echo 1) "topbar-data.js still carries a menu string or topbar.js still renders the Reports pulldown"
 check $(grep -q 'overview:"transfer/topview.html"' "$t" 2>/dev/null && echo 0 || echo 1) "topbar-data.js lacks overview:\"transfer/topview.html\" (the runtime bar's Overview link)"
-check $(grep -oE 'reports:"([^"\\]|\\.)*"' "$t" 2>/dev/null | grep -q 'transfer/entities/' && echo 1 || echo 0) "the Reports menu still lists the Entities group"
 check $(grep -q '>Server log errors<' docs/reports/index.html 2>/dev/null && echo 1 || echo 0) "reports/index.html still has a Server log errors group (folded into Failures)"
 check $([ -f docs/reports/index.html ] && [ ! -f docs/transfer/index.html ] && [ ! -f docs/server/index.html ] && [ ! -f docs/analyses/index.html ] && echo 0 || echo 1) "docs/reports/index.html missing, or a retired area start page (transfer / server / analyses index.html) still published"
 # the FIRST ROW links across directories: the Overview group joins both Top

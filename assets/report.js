@@ -4055,10 +4055,7 @@
     kbStamp(document);
     document.addEventListener("keydown", function (e) {
       var t = e.target;
-      if (e.key === "Escape") {                       // leave the Reports menu
-        if (t && t.closest && t.closest(".dd") && t.blur) t.blur();
-        return;
-      }
+      // (the Escape key left the Reports pulldown — gone 2026-09-30 with it)
       if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
       if (!t || !t.matches || !(t.matches(KB_SEL) || (t.getAttribute("role") === "button" && t.tagName === "SPAN"))) return;
       if (e.altKey || e.ctrlKey || e.metaKey) return;
