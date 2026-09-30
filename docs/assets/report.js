@@ -633,7 +633,7 @@
     return (ms / 3600000).toFixed(2) + " h";
   }
   // The grouped-Entities spellings (2026-09-13, user request; bin/transfer/reports/
-  // entities2.sh spells the baked cells the same way): bytes in WHOLE units,
+  // entities.sh spells the baked cells the same way): bytes in WHOLE units,
   // a duration as a whole number with a one-letter unit (s m h d), tinted by
   // its unit — s green (processed) · m amber (warn) · h/d red (failed). The
   // tint classes are the row-tint-proof ones (.failed / .processed keep their
@@ -688,7 +688,7 @@
   }
   // Per-day DURATION histograms (the Entities Duration group, 2026-09-13):
   // data-durdays = "date:q.c;q.c,date:…" — per date the humanDur display-grid
-  // value q (ms) and its count c, written by bin/transfer/reports/entities2.sh.
+  // value q (ms) and its count c, written by bin/transfer/reports/entities.sh.
   // aggDurDays merges the in-range days into one histogram, mergeDur folds
   // rows together (the TOTAL row), and pctlHist picks the nearest-rank
   // percentile the writers use — T[int((N-1)·P/100+0.5)+1] over the sorted
@@ -1165,12 +1165,13 @@
         orig = cell.getAttribute("data-orig"); if (orig === null) orig = cell.textContent;
         isNum = asPlain(orig) !== null; isBytes = !isNum && asBytes(orig) !== null;
         // the Search page's footer label counts BOTH sides, always:
-        // "N rows showed from a total of M rows" — M respects the type
+        // "N of M rows shown" (2026-09-30: "N rows showed from a total of M
+        // rows" before) — M respects the type
         // checkboxes (setupSearchConfig stamps data-typecount per apply)
         if (dataCol === 0 && table.getAttribute("data-esearch") && /^Totals?\b/.test(orig)) {
           var tot5 = parseInt(table.getAttribute("data-typecount"), 10);
           if (isNaN(tot5)) tot5 = drows.length;
-          cell.textContent = visible.length + " rows showed from a total of " + tot5 + " rows";
+          cell.textContent = visible.length + " of " + tot5 + (tot5 === 1 ? " row" : " rows") + " shown";
           dataCol += span; continue;
         }
         if (hiddenCount === 0) {
@@ -1317,7 +1318,7 @@
         tr.setAttribute("data-vhide", hide ? "1" : "0");
         applyRowVis(tr);
       });
-      // "N rows showed from a total of M": M is every entity of the selected
+      // "N of M rows shown": M is every entity of the selected
       // KINDS, not just the ones the current query built — so it is counted
       // over the whole data set (esTypes), never over the rows in the DOM.
       var elig = 0, all = esTypes();
@@ -2287,7 +2288,7 @@
   function setupDateFilter() {
     // The date list comes from a per-page <meta name="report-dates"> injected by
     // build.sh. The From/To selectors appear only when the page has at least
-    // one DATE-AWARE table: on a page with none (stale-accounts — its one
+    // one DATE-AWARE table: on a page with none (e.g. a nofilter-only page — its one
     // table is data-nofilter; av-scan-blocked when its only row is the
     // placeholder) the controls would change nothing locally, yet a selection
     // made there was SAVED to the shared per-area range and silently narrowed
@@ -3366,14 +3367,18 @@
         q = days[i].split(":");
         if (q.length === 4) cells.push([q[0], +q[1], +q[2], +q[3]]);
       }
-      if (cells.length) data[p[0]].push({ n: p[1], c: cells });
+      // p[3] = the detail-page slug ("" = no page, 2026-09-30) — the rebuilt
+      // rows link their names like the baked ones
+      if (cells.length) data[p[0]].push({ n: p[1], c: cells, s: p[3] || "" });
     });
+    var tbd = document.querySelector(".topbar"), dbase = tbd ? (tbd.getAttribute("data-b") || "") : "";
     // the five KPI cards, matched by their baked label (the K columns are
     // fixed: files, failed, volume, records, errors)
     var kpis = [];
     if (kdays.length) {
-      var kmap = { "Files transferred": "files", "File error rate": "fpct",
-                   "Volume moved": "vol", "Server records": "recs", "Server error rate": "epct" };
+      // the Overview KPI labels = the day pages labels (2026-09-30 audit D-06)
+      var kmap = { "Files": "files", "File error rate": "fpct",
+                   "Volume": "vol", "Server records": "recs", "Server error rate": "epct" };
       var kels = document.querySelectorAll(".kpi-row .kpi");
       for (var ke = 0; ke < kels.length; ke++) {
         var kl = kels[ke].querySelector(".kpi-lbl"), kv = kels[ke].querySelector(".kpi-val");
@@ -3455,7 +3460,7 @@
           if (v <= 0) continue;
           k = top.length;
           while (k >= 1 && (top[k - 1].v < v || (top[k - 1].v === v && top[k - 1].n > list[i].n))) k--;
-          top.splice(k, 0, { n: list[i].n, v: v });
+          top.splice(k, 0, { n: list[i].n, v: v, s: list[i].s });
           if (top.length > 5) top.length = 5;
         }
         if (!top.length) { card.sec.style.display = "none"; continue; }
@@ -3463,7 +3468,13 @@
         var rows = [];
         for (i = 0; i < top.length; i++) {
           var tr = document.createElement("tr"), td1 = document.createElement("td"), td2 = document.createElement("td");
-          td1.textContent = top[i].n;
+          if (top[i].s) {
+            var a1 = document.createElement("a");
+            a1.href = dbase + "details/" + (card.kind === "P" ? "partners/" : "subscriptions/") + top[i].s + ".html";
+            a1.textContent = top[i].n;
+            td1.className = "cl";
+            td1.appendChild(a1);
+          } else td1.textContent = top[i].n;
           td2.className = "num";
           td2.textContent = card.mi === 2 ? humanBytes(top[i].v) : String(top[i].v);
           tr.appendChild(td1); tr.appendChild(td2);
@@ -3782,6 +3793,12 @@
         par.insertBefore(link, node);
         if (before) par.insertBefore(document.createTextNode(before), link);
         if (after) { node.nodeValue = after; nodes.push(node); } else par.removeChild(node);   // a second id in the same text is scanned next
+        // a cell holding ONLY the id: the whole cell is the link's click
+        // target (the whole-cell rule, 2026-09-30 audit J-02 — wholeCellLinks
+        // ran before this pass and never saw the link); the ⧉ added after
+        // stays clickable above the stretched link (style.css .cpid)
+        if (!before && !after && par.tagName === "TD" && par.querySelectorAll("a").length === 1 &&
+            par.textContent.replace(/\s+/g, "") === m[0]) par.classList.add("cl");
         count++;
       }
     }
@@ -4073,7 +4090,7 @@
   // ONE link gets class `cl` — style.css stretches that link over the whole
   // cell, so the click target is the cell, not just its text. The renderer
   // bakes `cl` for link=/href=/entity cells (render_rpt.awk); this pass
-  // catches the hand-built tables (start pages, report finder, site map,
+  // catches the hand-built tables (start pages, site map,
   // index lists) and any writer that forgot. A cell with text beside its
   // link, or more than one element, is left alone; header cells too (their
   // click sorts). Runs before the data-origc snapshots, which copy className.

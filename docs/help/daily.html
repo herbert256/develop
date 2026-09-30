@@ -7,31 +7,30 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: Day page — Axway ST reports</title>
-<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/style.css?v=473594313">
 </head>
 <body>
-<div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="period" title="The data period: the first and last day of the transfer data">2026-06-23 / 2026-08-29</span><span class="entgroup"><a class="entlabel" href="../transfer/topview.html">Overview</a><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="entlabel" href="../analyses/failed.html">Errors</a><a class="entlabel" href="../search/all-files.html">Files</a><a class="searchbtn" href="../search/search.html" title="Search" aria-label="Search">&#128269;</a></span><nav class="nav"><div class="dd"><span class="ddlabel" tabindex="0" aria-haspopup="true">Reports ▾</span><div class="ddm"><a class="ddtop" href="../reports/index.html">Start page</a><a href="../analyses/use-cases.html">Use cases &amp; delivery</a><a href="../transfer/activity-per-week.html">Activity &amp; volume</a><a href="../transfer/duration.html">Performance</a><a href="../transfer/file-journey-patterns.html">Flow patterns</a><a href="../transfer/protocol-protocol-direction.html">Protocols &amp; security</a><a href="../server/logons-incoming.html">Logons &amp; connections</a><a href="../analyses/partners-in.html">Partners</a><a href="../analyses/subscriptions.html">Configuration</a><a href="../transfer/entity-coverage-accounts.html">Coverage</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><a class="dashlink" href="../dashboards/monitor.html">Monitor</a><span class="tr-group"><a class="searchbtn" href="../tools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/general.html" title="Help" aria-label="Help">?</a></span></div>
+<div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="period" title="The data period: the first and last day of the transfer data">2026-06-23 / 2026-08-29</span><span class="entgroup"><a class="entlabel" href="../transfer/topview.html">Overview</a><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="entlabel" href="../analyses/failed.html">Errors</a><a class="entlabel" href="../search/all-files.html">Files</a><a class="searchbtn" href="../search/search.html" title="Search" aria-label="Search">&#128269;</a></span><nav class="nav"><div class="dd"><span class="ddlabel" tabindex="0" aria-haspopup="true">Reports ▾</span><div class="ddm"><a class="ddtop" href="../reports/index.html">Start page</a><a href="../analyses/use-cases.html">Use cases &amp; delivery</a><a href="../transfer/activity-per-week.html">Activity &amp; volume</a><a href="../transfer/duration.html">Performance</a><a href="../transfer/file-journey-patterns.html">Flow patterns</a><a href="../transfer/protocol-protocol-direction.html">Protocols &amp; security</a><a href="../server/logons-incoming.html">Logons &amp; connections</a><a href="../analyses/partners-in.html">Partners</a><a href="../analyses/subscriptions.html">Configuration</a><a href="../transfer/entity-coverage-accounts.html">Coverage</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><a class="dashlink" href="../dashboards/monitor.html">Monitor</a><span class="tr-group"><a class="searchbtn" href="../tools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/general.html" title="Help" aria-label="Help">?</a></span></div><script>(function(){function f(){var b=document.querySelector(".topbar");if(!b||!document.body)return;var h=b.offsetHeight;document.body.style.paddingTop=h>48?(h+12)+"px":""}f();addEventListener("resize",f)})();</script>
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Day page</h1>
 <h2>What it shows</h2>
 <ul>
-<li>One data day of both logs, opened from a Date cell of the <a href="home.html">home page</a> or a dashboard slot; the arrows beside the title step a day.</li>
-<li><strong>KPI cards</strong> &mdash; Files, File error rate, Volume, Server lines, Server error rate, each with its change against the same weekday&rsquo;s average.</li>
-<li><strong>Graph</strong> &mdash; Duration, OK Files, Volume, Error % Files, Transfer errors, PeSIT, EventQueue, in 15-minute, 30-minute or 1-hour slots (see <a href="dashboards.html">Dashboard</a>): Duration = delivered Files, nearest rank; Transfer errors = every non-Processed leg.</li>
+<li>One data day of both logs, opened from a <a href="home.html">home page</a> Date cell or a dashboard slot; the arrows beside the title step a day.</li>
+<li><strong>KPI cards</strong> &mdash; Files, File error rate, Volume, Server records, Server error rate, each with its change against the same weekday&rsquo;s average.</li>
+<li><strong>Graph</strong> &mdash; Duration, OK Files, Volume, Error % Files, Transfer errors, PeSIT, EventQueue in 15-, 30- or 60-minute slots (see <a href="dashboards.html">Dashboard</a>).</li>
 <li><strong>Server log problems this day</strong> / <strong>Transfer log problems this day</strong> &mdash; one line per signal with its count, linking its report.</li>
-<li><strong>Remarkable facts</strong> &mdash; only what stands out: a dominating account, the longest transfer, the largest file, weekend activity&hellip;</li>
-<li><strong>Busiest this day</strong> &mdash; the top 5 partners and subscriptions by Files, Volume and Errors.</li>
+<li><strong>Remarkable facts</strong> &mdash; only what stands out (a dominating account, the longest transfer, weekend activity&hellip;).</li>
+<li><strong>Busiest this day</strong> &mdash; the top 5 partners and subscriptions by Files, Volume and Errors; a name opens its detail page.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
 <li>Transfer figures count Files, server figures log lines; both match the day&rsquo;s Top view rows.</li>
-<li>No From/To: the page is the day. KPI, graph and problem links open their report narrowed to the day where it can follow a date.</li>
+<li>No From/To: the page is the day; its links open their report narrowed to the day where it follows a date.</li>
 <li>Problem lines appear only when they apply. Server log: Server errors/warnings, Logon screening failures, Outbound logon failures, Connection failures, Route stopped, Event-feed errors, No remote dir, No remote files, Trouble after success.</li>
-<li>Transfer log: Files in error, One-legged Files, Went red, Never delivered, Waiting for pickup, Expired before pickup, Anomaly scan.</li>
+<li>Transfer log: Files in error (opens those Files), One-legged Files, Went red, Never delivered, Waiting for pickup, Expired before pickup, Anomaly scan.</li>
 <li>Partner figures count a File for every partner of its subscription; <strong>See more</strong> opens the Entities view narrowed to the day.</li>
-<li>The graph view and style follow you across days and from the dashboard.</li>
 </ul>
 </main>
 </body>

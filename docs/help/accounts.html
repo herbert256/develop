@@ -7,30 +7,30 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: Configured accounts — Axway ST reports</title>
-<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/style.css?v=473594313">
 </head>
 <body>
-<div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="period" title="The data period: the first and last day of the transfer data">2026-06-23 / 2026-08-29</span><span class="entgroup"><a class="entlabel" href="../transfer/topview.html">Overview</a><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="entlabel" href="../analyses/failed.html">Errors</a><a class="entlabel" href="../search/all-files.html">Files</a><a class="searchbtn" href="../search/search.html" title="Search" aria-label="Search">&#128269;</a></span><nav class="nav"><div class="dd"><span class="ddlabel" tabindex="0" aria-haspopup="true">Reports ▾</span><div class="ddm"><a class="ddtop" href="../reports/index.html">Start page</a><a href="../analyses/use-cases.html">Use cases &amp; delivery</a><a href="../transfer/activity-per-week.html">Activity &amp; volume</a><a href="../transfer/duration.html">Performance</a><a href="../transfer/file-journey-patterns.html">Flow patterns</a><a href="../transfer/protocol-protocol-direction.html">Protocols &amp; security</a><a href="../server/logons-incoming.html">Logons &amp; connections</a><a href="../analyses/partners-in.html">Partners</a><a href="../analyses/subscriptions.html">Configuration</a><a href="../transfer/entity-coverage-accounts.html">Coverage</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><a class="dashlink" href="../dashboards/monitor.html">Monitor</a><span class="tr-group"><a class="searchbtn" href="../tools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/general.html" title="Help" aria-label="Help">?</a></span></div>
+<div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="period" title="The data period: the first and last day of the transfer data">2026-06-23 / 2026-08-29</span><span class="entgroup"><a class="entlabel" href="../transfer/topview.html">Overview</a><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="entlabel" href="../analyses/failed.html">Errors</a><a class="entlabel" href="../search/all-files.html">Files</a><a class="searchbtn" href="../search/search.html" title="Search" aria-label="Search">&#128269;</a></span><nav class="nav"><div class="dd"><span class="ddlabel" tabindex="0" aria-haspopup="true">Reports ▾</span><div class="ddm"><a class="ddtop" href="../reports/index.html">Start page</a><a href="../analyses/use-cases.html">Use cases &amp; delivery</a><a href="../transfer/activity-per-week.html">Activity &amp; volume</a><a href="../transfer/duration.html">Performance</a><a href="../transfer/file-journey-patterns.html">Flow patterns</a><a href="../transfer/protocol-protocol-direction.html">Protocols &amp; security</a><a href="../server/logons-incoming.html">Logons &amp; connections</a><a href="../analyses/partners-in.html">Partners</a><a href="../analyses/subscriptions.html">Configuration</a><a href="../transfer/entity-coverage-accounts.html">Coverage</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><a class="dashlink" href="../dashboards/monitor.html">Monitor</a><span class="tr-group"><a class="searchbtn" href="../tools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/general.html" title="Help" aria-label="Help">?</a></span></div><script>(function(){function f(){var b=document.querySelector(".topbar");if(!b||!document.body)return;var h=b.offsetHeight;document.body.style.paddingTop=h>48?(h+12)+"px":""}f();addEventListener("resize",f)})();</script>
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Configured accounts</h1>
 <h2>What it shows</h2>
 <ul>
-<li>A configuration audit of the accounts, their logins and their communication profiles (one per endpoint), from the FlowManager export alone. Each check heading carries its count; 0 = nothing to fix.</li>
+<li>A configuration audit of the accounts, logins and communication profiles (one per endpoint) in the FlowManager export. Each check heading carries its count; 0 = nothing to fix.</li>
 <li><strong>Connection type</strong> / <strong>Protocol</strong> &mdash; profiles per type and per protocol.</li>
-<li><strong>Type &mdash; the name prefix</strong> / <strong>Authentication &mdash; the name suffix</strong> &mdash; profiles per prefix and suffix against the configured <code>type</code> and <code>clientAuthentication</code>.</li>
+<li><strong>Type &mdash; the name prefix</strong> / <strong>Authentication &mdash; the name suffix</strong> &mdash; profiles per prefix and suffix with their <strong>Meaning</strong>, against the configured <code>type</code> and <code>clientAuthentication</code> (<strong>Match auth</strong> / <strong>Mismatch</strong>).</li>
 <li><strong>Naming inconsistencies</strong> &mdash; a suffix contradicting the real authentication.</li>
 <li><strong>Not clear domain-application-partner</strong> &mdash; accounts whose logical flow lacks a part (Missing, Why); they drop out of that entity&rsquo;s figures.</li>
 <li><strong>FTP endpoints &mdash; insecure</strong> &mdash; clear-text profiles.</li>
-<li><strong>Incoming partners without IP whitelisting</strong> &mdash; CLIENT profiles with no <code>AllowIP</code> list.</li>
-<li><strong>Remote hosts with conflicting setup</strong> / <strong>Whitelisted IPs with conflicting incoming setup</strong> &mdash; one table per attribute that differs across one host&rsquo;s profiles, or one IP&rsquo;s partners.</li>
+<li><strong>Incoming partners without IP whitelisting</strong> &mdash; accounts with a CLIENT profile and no <code>AllowIP</code> list; <strong>Status</strong> = seen (last OK / Error) or never seen.</li>
+<li><strong>Remote hosts with conflicting setup</strong> / <strong>Whitelisted IPs with conflicting incoming setup</strong> &mdash; one table per attribute (each <strong>Value</strong>) that differs across one host&rsquo;s profiles, or one IP&rsquo;s accounts.</li>
 <li><strong>Account &amp; login checks</strong> &mdash; non-<code>FE&lt;digits&gt;</code> logins, a login on several accounts, a profile with several hosts, password profiles without a stored password, accounts with several profiles, <code>login</code> &ne; <code>loginName</code>.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
 <li>Profile names read <code>&lt;TYPE&gt;_&lt;partner&gt;_&lt;AUTH&gt;</code>: <code>SCP</code>/<code>SSCP</code> = server (ST connects out), <code>CCP</code> = client (the partner connects in); <code>PWD</code> = password, <code>KEY</code> = public key.</li>
-<li>Incoming account names separate parts with <code>-</code>, outgoing with <code>_</code>.</li>
+<li>Incoming account names separate parts with <code>-</code>, outgoing with <code>_</code>. Account, login and host names link their detail pages.</li>
 </ul>
 <h2>Tips</h2>
 <ul>

@@ -7,10 +7,10 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: Waiting — Axway ST reports</title>
-<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/style.css?v=473594313">
 </head>
 <body>
-<div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="period" title="The data period: the first and last day of the transfer data">2026-06-23 / 2026-08-29</span><span class="entgroup"><a class="entlabel" href="../transfer/topview.html">Overview</a><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="entlabel" href="../analyses/failed.html">Errors</a><a class="entlabel" href="../search/all-files.html">Files</a><a class="searchbtn" href="../search/search.html" title="Search" aria-label="Search">&#128269;</a></span><nav class="nav"><div class="dd"><span class="ddlabel" tabindex="0" aria-haspopup="true">Reports ▾</span><div class="ddm"><a class="ddtop" href="../reports/index.html">Start page</a><a href="../analyses/use-cases.html">Use cases &amp; delivery</a><a href="../transfer/activity-per-week.html">Activity &amp; volume</a><a href="../transfer/duration.html">Performance</a><a href="../transfer/file-journey-patterns.html">Flow patterns</a><a href="../transfer/protocol-protocol-direction.html">Protocols &amp; security</a><a href="../server/logons-incoming.html">Logons &amp; connections</a><a href="../analyses/partners-in.html">Partners</a><a href="../analyses/subscriptions.html">Configuration</a><a href="../transfer/entity-coverage-accounts.html">Coverage</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><a class="dashlink" href="../dashboards/monitor.html">Monitor</a><span class="tr-group"><a class="searchbtn" href="../tools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/general.html" title="Help" aria-label="Help">?</a></span></div>
+<div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="period" title="The data period: the first and last day of the transfer data">2026-06-23 / 2026-08-29</span><span class="entgroup"><a class="entlabel" href="../transfer/topview.html">Overview</a><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="entlabel" href="../analyses/failed.html">Errors</a><a class="entlabel" href="../search/all-files.html">Files</a><a class="searchbtn" href="../search/search.html" title="Search" aria-label="Search">&#128269;</a></span><nav class="nav"><div class="dd"><span class="ddlabel" tabindex="0" aria-haspopup="true">Reports ▾</span><div class="ddm"><a class="ddtop" href="../reports/index.html">Start page</a><a href="../analyses/use-cases.html">Use cases &amp; delivery</a><a href="../transfer/activity-per-week.html">Activity &amp; volume</a><a href="../transfer/duration.html">Performance</a><a href="../transfer/file-journey-patterns.html">Flow patterns</a><a href="../transfer/protocol-protocol-direction.html">Protocols &amp; security</a><a href="../server/logons-incoming.html">Logons &amp; connections</a><a href="../analyses/partners-in.html">Partners</a><a href="../analyses/subscriptions.html">Configuration</a><a href="../transfer/entity-coverage-accounts.html">Coverage</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><a class="dashlink" href="../dashboards/monitor.html">Monitor</a><span class="tr-group"><a class="searchbtn" href="../tools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/general.html" title="Help" aria-label="Help">?</a></span></div><script>(function(){function f(){var b=document.querySelector(".topbar");if(!b||!document.body)return;var h=b.offsetHeight;document.body.style.paddingTop=h>48?(h+12)+"px":""}f();addEventListener("resize",f)})();</script>
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
@@ -18,13 +18,13 @@
 <h2>What it shows</h2>
 <ul>
 <li>UC2 Files staged for the partner to collect: which are still waiting, how long, and how fast partners usually collect.</li>
-<li>A <strong>Waiting</strong> File&rsquo;s last leg is the Inbound routing leg into the pickup area, with no collect leg after it and its staged copy not yet deleted &mdash; not an error.</li>
+<li>A <strong>Waiting</strong> File ends on the Inbound routing leg into the pickup area, not collected and not yet deleted &mdash; not an error.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
 <li><strong>Waiting now</strong> (first table) &mdash; per subscription: <strong>Waiting Files</strong> (opens its list of staged Files), <strong>Oldest staged</strong>, <strong>Waiting for</strong>, <strong>Newest staged</strong>, <strong>Collected</strong>.</li>
-<li><strong>Files waiting the longest</strong> &mdash; the 50 oldest staged Files. Rows orange, the <a href="general.html#colours">File colour</a> of a Waiting File.</li>
-<li><strong>Pickup wait &mdash; collected files</strong> &mdash; median, average, max; within 1 h, 1&ndash;24 h, over 24 h.</li>
+<li><strong>Files waiting the longest</strong> &mdash; the 50 oldest staged Files (orange, the <a href="general.html#colours">File colour</a>).</li>
+<li><strong>Pickup wait &mdash; collected Files</strong> &mdash; median, average, max; within 1 h, 1&ndash;24 h, over 24 h.</li>
 <li><strong>Staged backlog over time</strong> &mdash; the uncollected inventory per day; its last day equals the Waiting count.</li>
 <li><strong>Will expire next</strong> &mdash; Waiting Files staged 9+ days: call the partner today.</li>
 <li><strong>Pickup wait percentiles per partner</strong> &mdash; median, <strong>p95</strong>, max, <strong>Waited over 8 days</strong> (near-misses).</li>
@@ -33,8 +33,8 @@
 <h2>Rules</h2>
 <ul>
 <li><strong>Waiting for</strong> runs from staging to the data&rsquo;s last record. The nightly retention sweep deletes a staged copy after ~11 days: the File becomes <a href="expired.html">Expired</a>.</li>
-<li>Pickup wait = staging end to the first collect; it is left out of the UC2 <a href="duration.html">Duration</a> figures. <strong>Collected</strong> = the delivered (Processed) Files with a pickup wait, in every table.</li>
-<li>A partner counts every File of its subscriptions, so partner totals can exceed the collected total.</li>
+<li>Pickup wait = staging end to the first collect, left out of the UC2 <a href="duration.html">Duration</a>. <strong>Collected</strong> (green) = the delivered Files with a pickup wait.</li>
+<li>A partner counts every File of its subscriptions, so partner totals can exceed Collected.</li>
 <li>Always the full period: Waiting is the state at the window end.</li>
 </ul>
 <h2>Tips</h2>

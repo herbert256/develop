@@ -7,39 +7,39 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: Entities — Axway ST reports</title>
-<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/style.css?v=473594313">
 </head>
 <body>
-<div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="period" title="The data period: the first and last day of the transfer data">2026-06-23 / 2026-08-29</span><span class="entgroup"><a class="entlabel" href="../transfer/topview.html">Overview</a><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="entlabel" href="../analyses/failed.html">Errors</a><a class="entlabel" href="../search/all-files.html">Files</a><a class="searchbtn" href="../search/search.html" title="Search" aria-label="Search">&#128269;</a></span><nav class="nav"><div class="dd"><span class="ddlabel" tabindex="0" aria-haspopup="true">Reports ▾</span><div class="ddm"><a class="ddtop" href="../reports/index.html">Start page</a><a href="../analyses/use-cases.html">Use cases &amp; delivery</a><a href="../transfer/activity-per-week.html">Activity &amp; volume</a><a href="../transfer/duration.html">Performance</a><a href="../transfer/file-journey-patterns.html">Flow patterns</a><a href="../transfer/protocol-protocol-direction.html">Protocols &amp; security</a><a href="../server/logons-incoming.html">Logons &amp; connections</a><a href="../analyses/partners-in.html">Partners</a><a href="../analyses/subscriptions.html">Configuration</a><a href="../transfer/entity-coverage-accounts.html">Coverage</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><a class="dashlink" href="../dashboards/monitor.html">Monitor</a><span class="tr-group"><a class="searchbtn" href="../tools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/general.html" title="Help" aria-label="Help">?</a></span></div>
+<div class="topbar"><a class="brand" href="../index.html">Sample</a><span class="period" title="The data period: the first and last day of the transfer data">2026-06-23 / 2026-08-29</span><span class="entgroup"><a class="entlabel" href="../transfer/topview.html">Overview</a><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="entlabel" href="../analyses/failed.html">Errors</a><a class="entlabel" href="../search/all-files.html">Files</a><a class="searchbtn" href="../search/search.html" title="Search" aria-label="Search">&#128269;</a></span><nav class="nav"><div class="dd"><span class="ddlabel" tabindex="0" aria-haspopup="true">Reports ▾</span><div class="ddm"><a class="ddtop" href="../reports/index.html">Start page</a><a href="../analyses/use-cases.html">Use cases &amp; delivery</a><a href="../transfer/activity-per-week.html">Activity &amp; volume</a><a href="../transfer/duration.html">Performance</a><a href="../transfer/file-journey-patterns.html">Flow patterns</a><a href="../transfer/protocol-protocol-direction.html">Protocols &amp; security</a><a href="../server/logons-incoming.html">Logons &amp; connections</a><a href="../analyses/partners-in.html">Partners</a><a href="../analyses/subscriptions.html">Configuration</a><a href="../transfer/entity-coverage-accounts.html">Coverage</a></div></div></nav><a class="dashlink" href="../dashboards/index.html">Dashboard</a><a class="dashlink" href="../dashboards/monitor.html">Monitor</a><span class="tr-group"><a class="searchbtn" href="../tools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a><a class="helpbtn" href="../help/general.html" title="Help" aria-label="Help">?</a></span></div><script>(function(){function f(){var b=document.querySelector(".topbar");if(!b||!document.body)return;var h=b.offsetHeight;document.body.style.paddingTop=h>48?(h+12)+"px":""}f();addEventListener("resize",f)})();</script>
 <main class="help-content">
 <a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
 <a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>Entities</h1>
 <h2>What it shows</h2>
 <ul>
-<li>The shared layout of the nine entity reports: one row per name in seven column groups; each entity&rsquo;s help says how a File is attributed.</li>
+<li>The layout of the nine entity reports: one row per name, seven column groups; each entity&rsquo;s help gives its attribution.</li>
 <li>Views: <strong>All</strong> = every configured and logged name; <strong>Seen</strong> = the names in the transfer log; <strong>Not seen</strong> = configured, never logged (name only); <strong>OK</strong> / <strong>Warning</strong> / <strong>Error</strong> = result green / orange / red.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Files</strong> &mdash; <strong>In</strong> / <strong>Out</strong> by movement direction (none known: the connection side, so In + Out = Files), <strong>Error</strong>, <strong>Error %</strong>.</li>
+<li><strong>Files</strong> &mdash; <strong>In</strong> / <strong>Out</strong> by movement (else connection side), <strong>Error</strong>, <strong>Error %</strong>.</li>
 <li><strong>Retry / Resubmit</strong> &mdash; <strong>Auto</strong> = OK Files with a failed leg, none resubmitted; <strong>Ok</strong> / <strong>Error</strong> = resubmitted Files by final outcome.</li>
-<li><strong>Duration</strong> &mdash; <strong>p90</strong> / <strong>p95</strong> / <strong>p99</strong> / <strong>p100</strong> wall-clock span of the delivered (Processed) Files only, nearest rank; seconds green, minutes amber, hours and days red.</li>
+<li><strong>Duration</strong> &mdash; <strong>p90</strong> &hellip; <strong>p100</strong> span of the delivered Files, nearest rank; seconds green, minutes amber, hours and days red.</li>
 <li><strong>Volume</strong> &mdash; <strong>Total</strong>, <strong>Avg</strong> per File.</li>
-<li><strong>Transfers</strong> &mdash; the legs of those Files: <strong>Ok</strong>, <strong>Error</strong>, <strong>Error %</strong>.</li>
+<li><strong>Transfers</strong> &mdash; their legs: <strong>Ok</strong>, <strong>Error</strong>, <strong>Error %</strong>.</li>
 <li><strong>State</strong> &mdash; <strong>Waiting</strong> (UC2, uncollected) and <strong>Expired</strong> (deleted unclaimed) Files.</li>
 <li><strong>Dates</strong> &mdash; <strong>First</strong>, <strong>Last</strong>, <strong>Days</strong> with traffic.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
 <li>Waiting counts as OK, Expired as Error. Figures follow From/To, except First and Last. Retry / Resubmit and State show only while a visible row has a value.</li>
-<li>Logical, Partners, Applications and BL can count a File for several names; their Total row counts it once, also under a narrowed date range while no search hides rows. OK / Warning / Error views sum their rows.</li>
-<li>Row tint = the name&rsquo;s result: green last File OK; red last File Failed, or server-log errors after it; orange never logged, or last File Expired; untinted not configured. Other entities roll up their subscriptions (<a href="general.html">Generic help</a>).</li>
+<li>Logical, Partners, Applications and BL can count a File for several names; their Total counts it once (while no search hides rows). OK / Warning / Error views sum their rows.</li>
+<li>Row tint = the name&rsquo;s result (<a href="general.html">Generic help</a>); untinted = not configured.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>A count opens its 10 newest Files; a Transfers cell the Files with a leg of that outcome; a Duration cell the delivered Files at or above that percentile.</li>
-<li>Your sort, every key of a multi-key sort, carries across the nine entities for an hour. Every view, Error included, has the cols picker.</li>
+<li>A count opens its 10 newest Files; a Transfers cell those with a leg of that outcome; a Duration cell those at or above it.</li>
+<li>Your sort carries across the nine entities for an hour.</li>
 </ul>
 </main>
 </body>
