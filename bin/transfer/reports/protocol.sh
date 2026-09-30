@@ -74,8 +74,7 @@ IFS='|' read -r _ tot_rec tot_failed tot_processed tot_bytes tot_human <<< "$(pr
 # table, not one per row): grep picks the tag, sort orders it, awk shapes the
 # ROW lines. `|| true` keeps a tag with no lines at all from tripping pipefail.
 {
-    printf 'TITLE\tProtocol, Direction & Mode\n'
-    printf 'DESC\tTransfers (the OK legs) by direction × action by, and the BINARY/ASCII transfer mode split — the per-leg dimensions on one page.\n'
+    printf 'TITLE\tDirection & Mode\n'   # "Protocol, Direction & Mode" until 2026-09-30 (its Protocol × direction tab went; audit A5-07)
 
     # TRANSFERS = the OK legs in every table (2026-09-13, user request: one
     # Transfers column, no Error / OK pair, no green/red cells, no drills) —

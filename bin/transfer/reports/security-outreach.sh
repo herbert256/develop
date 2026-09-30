@@ -62,7 +62,6 @@ n_d3=0; d3_legs=0; d3_still=0
 
 {
     printf 'TITLE\tSecurity outreach\n'
-    printf 'DESC\tThe partner call list for deprecated connection-security parameters: who still connects with ssh-rsa (SHA-1) keys or TLSv1.2, who already upgraded, and who runs a mixed fleet.\n'
 
     printf 'TABLE\tDeprecation outreach list\twide\tnofilter\n'
     printf 'HEAD\tPartner\tDeprecated parameter\tTransfers\tFirst seen\tLast seen\n'
@@ -112,5 +111,8 @@ n_d3=0; d3_legs=0; d3_still=0
         "$n_d1" "$d1_legs" "$n_d2" "$n_mixed" "$d3_legs" "$last_date"
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+# the ENTITY row tint (2026-09-30 audit A2-03: every row tints by its entity
+# result colour — bin/rpt-tint.awk, base cache col 3)
+awk -F'\t' -v TABLES="Deprecation outreach list|Upgrades in the window" -v BASE="$CONFIG_BASE/_partners.tsv" -v COL=2 -f "$ROOT/bin/rpt-tint.awk" "$OUT" > "$OUT.tint" && mv "$OUT.tint" "$OUT"
 
 echo "Data written to $OUT ($n_d1 outreach row(s), $n_d2 upgrade pair(s), $n_mixed mixed)." >&2

@@ -180,7 +180,6 @@ flow_rows() {
 
 {
     printf 'TITLE\tPer flow\n'   # = its Reports menu label (2026-09-29)
-    printf 'DESC\tServer-log ERROR messages classified by reason and attributed to the subscription each message names.\n'
 
     # DATE-AWARE since 2026-09-30 (user request: every Errors-group page gets
     # the From/To selection): Errors re-sums for the range from the per-day

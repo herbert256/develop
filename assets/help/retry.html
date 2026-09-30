@@ -6,17 +6,18 @@
 <h2>Tabs</h2>
 <ul>
 <li><strong>Failing flows</strong> &mdash; the top 60 Account + Subscription pairs, never-succeeded first: <strong>Fail days</strong>, <strong>Error</strong> / <strong>OK transfers</strong> (legs), <strong>Resubmitted</strong> legs, <strong>Last failure</strong>.</li>
-<li><strong>Legs before success</strong> &mdash; OK Files (Waiting included) by failed legs before success: <strong>Attempts</strong>, <strong>Files</strong>, <strong>% of OK Files</strong>.</li>
-<li><strong>Gave up</strong> &mdash; the same for Files ended Failed or Expired; its 0-failed-legs row is mostly Expired.</li>
+<li><strong>Legs before success</strong> &mdash; OK Files (Waiting included) by failed transfers (legs) before success: <strong>Attempts</strong>, <strong>Files</strong>, <strong>% of OK Files</strong>.</li>
+<li><strong>Gave up</strong> &mdash; the same for Files ended Failed or Expired; its 0-failed-transfers row is mostly Expired.</li>
 <li><strong>Retry spacing</strong> &mdash; a failed leg&rsquo;s start to the File&rsquo;s next leg: <strong>Gap</strong>, <strong>Retries</strong>, <strong>Files</strong>.</li>
-<li><strong>Failing side</strong> &mdash; <strong>Failed legs</strong> and <strong>Files</strong> per <strong>Direction</strong>: inbound = arrival at ST, outbound = delivery onward or partner pickup.</li>
-<li><strong>Resubmitted per day</strong> &mdash; <strong>Resubmitted legs</strong>, their own <strong>Error</strong> / <strong>OK</strong> status, <strong>Files</strong>.</li>
-<li><strong>Per subscription</strong> &mdash; <strong>Resubmitted legs</strong>, <strong>Files</strong>, <strong>First</strong>, <strong>Last</strong>.</li>
+<li><strong>Failing side</strong> &mdash; <strong>Failed transfers</strong> and <strong>Files</strong> per <strong>Direction</strong>: inbound = arrival at ST, outbound = delivery onward or partner pickup.</li>
+<li><strong>Resubmitted per day</strong> &mdash; <strong>Resubmitted transfers</strong>, their own <strong>Error transfers</strong> / <strong>OK transfers</strong>, <strong>Files</strong>.</li>
+<li><strong>Per subscription</strong> &mdash; <strong>Resubmitted transfers</strong>, <strong>Files</strong>, <strong>First</strong>, <strong>Last</strong>.</li>
 <li><strong>Resubmission outcomes</strong> &mdash; the server log&rsquo;s resubmit outcomes per day, <strong>Error</strong> and <strong>OK</strong>, including attempts that left no transfer-log leg.</li>
 <li><strong>Recovered files</strong> &mdash; <a href="recovered-files.html">its own help</a>.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
+<li>Failing flows and the Per subscription tables: rows tint by the subscription&rsquo;s result colour. A 0 is empty.</li>
 <li>Failing flows counts legs, not Files: a failed leg re-sent OK counts on both sides.</li>
 <li>Resubmitted = the transfer log&rsquo;s own flag, set only by a manual resubmission, never by an automatic retry.</li>
 <li>Under a narrowed date range the Files columns and First / Last stay full-period.</li>

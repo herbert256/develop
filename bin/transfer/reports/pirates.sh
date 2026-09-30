@@ -58,7 +58,6 @@ pd=$(printf '%s\n' "$agg" | awk -F'\t' '
 
 {
     printf 'TITLE\tOne-legged\n'   # = its Reports menu label (2026-09-29)
-    printf 'DESC\tFiles (CoreIds) with only ONE leg — an incomplete, one-sided crossing that never completed.\n'
 
     # ---- tab 1: Details — per-subscription rollup of the single-leg transfers ----
     if [ "$n_total" -eq 0 ]; then
@@ -123,5 +122,8 @@ pd=$(printf '%s\n' "$agg" | awk -F'\t' '
     printf 'SUMMARY\tOne-legged Files: %s\n' "$n_total"
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+# the ENTITY row tint (2026-09-30 audit A2-03: every row tints by its entity
+# result colour — bin/rpt-tint.awk, base cache col 3)
+awk -F'\t' -v TABLES="Details" -v BASE="$CONFIG_BASE/_subscriptions.tsv" -v COL=2 -f "$ROOT/bin/rpt-tint.awk" "$OUT" > "$OUT.tint" && mv "$OUT.tint" "$OUT"
 
 echo "Data written to $OUT ($n_total one-legged File(s))." >&2

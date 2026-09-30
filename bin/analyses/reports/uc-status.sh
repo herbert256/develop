@@ -24,4 +24,4 @@ for c in uc1-status uc2-status uc2-visits pickups uc3-status uc3-polling no-remo
     if [ "$c" = uc3-polling ] && [ ! -f "$REPORTS_DIR/uc3-status.rpt" ]; then continue; fi
     comps+=("$REPORTS_DIR/$c.rpt")
 done
-merge_rpt "$OUT" "UC status" "Every configured subscription of each use case in one status view per UC — healthy, failing, failing after a working history, or never seen — the result colour with the server-log polls, pickups and problems beside it." "${comps[@]}"
+merge_rpt "$OUT" "UC status" "${comps[@]}"

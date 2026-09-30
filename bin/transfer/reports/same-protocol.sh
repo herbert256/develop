@@ -102,7 +102,6 @@ nf=$(wc -l < "$TMP/files" | tr -d ' ')
 
 {
     printf 'TITLE\tInbound and Outbound same Protocol\n'
-    printf 'DESC\tFiles whose first inbound leg used the same protocol as their last outbound leg (for example an SFTP upload that also left over SFTP instead of going on to the CFT): per subscription and File by File.\n'
     printf 'TABLE\tPer subscription\twide\tnofilter\trestint\n'
     printf 'HEAD\tSubscription\tProtocol\tFiles\tOK\tError\tFirst\tLast\n'
     printf 'KIND\tsite\ttext\tnum\tnumprocessed\tnumfailed\ttext\ttext\n'
@@ -111,7 +110,10 @@ nf=$(wc -l < "$TMP/files" | tr -d ' ')
     printf 'TABLE\tFiles\twide\tpager=500\tsort=1:-1\trestint\n'
     printf 'HEAD\tSubscription\tDate/time\tProtocol\tFirst inbound\tLast outbound\tLegs\tOutcome\tCoreId\tFilename\n'
     printf 'KIND\tsite\ttext\ttext\ttext\ttext\tnum\ttext\ttext\ttext\n'
-    LC_ALL=C sort -t"$TAB" -k1,1r "$TMP/files" | cut -f2-
+    # the TOTAL row (2026-09-30 audit A2-04: every table carries one): the Files
+    # and their legs, the other columns not additive
+    LC_ALL=C sort -t"$TAB" -k1,1r "$TMP/files" | cut -f2- | awk -F'\t' '{ print; n++; l += $7 }
+        END { printf "TOTAL\tTotal (%d Files)\t\t\t\t\t@{class=num}%s\t\t\t\n", n + 0, (l + 0 > 0 ? l + 0 : "") }'
     printf 'SUMMARY\tFiles with the same inbound and outbound protocol: %s\n' "${nf:-0}"
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

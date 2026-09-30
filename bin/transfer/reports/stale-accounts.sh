@@ -107,5 +107,8 @@ rows=$(printf '%s\n' "$agg" | grep '^ACC|' | LC_ALL=C sort -t'|' -k2,2r -k3,3nr 
     printf 'TOTAL\tTotal (%s accounts)\t\t\t\t\t@{class=num failed}%s stale\t@{class=num failed}%s overdue\t@{class=num}%s\n' "$acct_count" "$stale_count" "$quiet_count" "$tot_records"
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+# the ENTITY row tint (2026-09-30 audit A2-03: every row tints by its entity
+# result colour — bin/rpt-tint.awk, base cache col 3)
+awk -F'\t' -v TABLES="Accounts by idle time vs own cadence" -v BASE="$CONFIG_BASE/_accounts.tsv" -v COL=2 -f "$ROOT/bin/rpt-tint.awk" "$OUT" > "$OUT.tint" && mv "$OUT.tint" "$OUT"
 
 echo "Data written to $OUT ($acct_count account(s), $stale_count stale)." >&2

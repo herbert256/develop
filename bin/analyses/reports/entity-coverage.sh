@@ -132,6 +132,7 @@ cov_view() {
         -v FCOL="$fcol" -v IDENT="$ident" "${SP_AWK_V[@]}" "$SP_AWK"'
         function stripattr(v) { sub(/^@\{[^}]*\}/, "", v); return v }
         function yn(b) { return b ? "@{class=processed}yes" : "@{class=failed}no" }
+        function z(v) { return (v + 0 == 0) ? "" : v + 0 }   # a 0 count shows blank (2026-09-30 audit A5-06)
         BEGIN {
             FS = "\t"
             while ((getline l < EB) > 0) { n = split(l, a, "\t"); if (n >= 2 && a[1] != "") { P[toupper(a[1])] = a[2]; DISP[toupper(a[1])] = a[1] } }
@@ -261,9 +262,9 @@ cov_view() {
                 res = cur ? "green" : "red"
                 rank = cur ? 0 : 1
                 dl = (dir == "in") ? "in" : (dir == "out") ? "out" : (dir == "both") ? "both" : "?"
-                printf "%d\t%s\tROW\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t@data:res=%s\n", \
-                    rank, p, DISP[p], dl, insub[p]+0, infile[p]+0, logons[p]+0, \
-                    outsub[p]+0, outfile[p]+0, polls[p]+0, yn(cur), yn(once), yn(okt), \
+                printf "%d\t%s\tROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s\n", \
+                    rank, p, DISP[p], dl, z(insub[p]), z(infile[p]), z(logons[p]), \
+                    z(outsub[p]), z(outfile[p]), z(polls[p]), yn(cur), yn(once), yn(okt), \
                     (reg ? "@{class=failed}regressed" : ""), res
                 tot++; if (cur) tg++; else tr++
                 if (once) to++; if (okt) tk++; if (reg) tx++
@@ -279,6 +280,7 @@ cov_view() {
         # the lowercased label in "Total N …" — except the acronym-like
         # BL and Logical, which keep their case (2026-09-30: "30 bl")
         function lcl(l) { return (l == "BL" || l == "Logical") ? l : tolower(l) }
+        function zt(v) { return (v + 0 == 0) ? "" : v + 0 }   # a 0 total shows blank
         $3 == "END" { tot = $4; tg = $5; tr = $6; to = $7; tk = $8; tx = $9
             printf "TABLE\t%s\twide\tgsep=2,5,8\n", LABEL
             printf "STAT\twhite\t%d\tTotal %s\n", tot+0, lcl(LABEL)
@@ -291,8 +293,8 @@ cov_view() {
             printf "HEAD\t%s\tDirection\tSubs\tFiles\tLogons\tSubs\tFiles\tPolls\tCurrent\tOnce\tOK transfers\tRegressed\n", (LABEL == "Logical" || LABEL == "BL" ? LABEL : substr(LABEL, 1, length(LABEL) - 1))
             printf "KIND\t%s\ttext\tnum\tnum\tnum\tnum\tnum\tnum\ttext\ttext\ttext\ttext\n", KIND
             for (i = 1; i <= nbuf; i++) print BUF[i]
-            printf "TOTAL\tTotal (%d %s)\t\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t@{class=num}%d\t\t\t\t\n", \
-                tot+0, lcl(LABEL), s3+0, s4+0, s5+0, s6+0, s7+0, s8+0
+            printf "TOTAL\tTotal (%d %s)\t\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t\t\t\t\n", \
+                tot+0, lcl(LABEL), zt(s3), zt(s4), zt(s5), zt(s6), zt(s7), zt(s8)
             next
         }
         $3 == "ROW" {
@@ -312,7 +314,6 @@ for _cp in "${_cpids[@]}"; do wait "$_cp" || _crc=$?; done
 
 {
 printf 'TITLE\tEntity coverage\n'
-printf 'DESC\tPer account, logical flow, partner, domain, application or BL: covered (green) or not (red) — each side proven by real transferred Files, successful SSH logons (In) or successful UC3 remote polls (Out); the Current, Once and OK-transfers verdicts side by side, the regressions marked.\n'
 for spec in "${SPECS[@]}"; do
     _key=${spec%%:*}
     [ -f "$TMPD/$_key.part" ] && cat "$TMPD/$_key.part"

@@ -53,8 +53,9 @@
 #   repeated-failure counter) and Locked (lockout). The quote style varies
 #   per family (single vs double, or none), so the user token is read as
 #   "whatever sits between the first quote character and its twin" where
-#   quoted. Each count carries its 5 most recent log lines
-#   (@data:drill-cell-<i> — Partners in re-keys them to its own columns).
+#   quoted. The counts Partners in shows carry their 5 most recent log
+#   lines (@data:drill-cell-1 2 3 5 7 — Partners in re-keys them to its own
+#   columns; a line longer than 200 characters ends with "…").
 #
 #   OUTGOING — "Authentication failure connecting to remote host H:P as
 #   user U: reason" (Error): this server failing to authenticate AT a
@@ -137,7 +138,20 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
     function book(side9, u9, d9, ts9, txt9) {
         cnt[side9 SUBSEP u9]++; tot[side9]++
         if (d9 ~ /^[0-9][0-9][0-9][0-9]-/) { bk[u9 SUBSEP d9 SUBSEP side9]++; days[u9 SUBSEP d9] = 1 }
-        addline(side9 SUBSEP u9, ts9, txt9)
+        # the drill lines of the sides a page shows only (partners-in: Allowed,
+        # Disallowed, Authenticated, Bad key, Locked — drill-cells 1 2 3 5 7);
+        # No account, Key failures, Re-screens and Session errors lost their
+        # drills 2026-09-30 with the audit: no reader
+        if (side9 != "N" && side9 != "K" && side9 != "R" && side9 != "X") addline(side9 SUBSEP u9, ts9, txt9)
+    }
+    # a log line for a drill, at most 200 characters: a longer one ends with
+    # "…", cut at the last space of its last 40 characters when it has one, so
+    # no token is cut in half (2026-09-30 audit, A5-12)
+    function cut200(s,   c, i) {
+        if (length(s) <= 200) return s
+        c = 200
+        for (i = 200; i > 160; i--) if (substr(s, i, 1) == " ") { c = i - 1; break }
+        return substr(s, 1, c) "\342\200\246"
     }
     $1 == "KA" { kacct[$2] = 1; next }                       # known-entity lists (first input)
     $1 == "KH" { khost[$2] = 1; next }
@@ -181,7 +195,7 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
                   (reason ~ /^530 Need certificate/ || reason ~ /^534 /) ? "c" : "o"
             if (cls == "p") { opw[k]++; opwT++ } else if (cls == "k") { oky[k]++; okyT++ } \
             else if (cls == "c") { ocr[k]++; ocrT++ } else { oot[k]++; ootT++ }
-            addline("O" SUBSEP k, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
+            addline("O" SUBSEP k, $1 " " $2, lvlname($3) " " compname($4) "  " cut200(m))
             # last-seen reason by TIMESTAMP, not cache order (robust whatever
             # the cache order — it is chronological since the sorted parse)
             osk = $1 " " $2
@@ -217,7 +231,7 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
             # ... nor the re-key bookkeeping "No session cycleId for file …
             # SENT will not get reported!" (see the header; = bin/logons.sh)
             if (index(m, "No session cycleId for file") > 0) next
-            if ($3 != "I" && $6 != "") { nxs++; XSs[nxs] = $6; XSd[nxs] = $1; XSt[nxs] = $1 " " $2; XSl[nxs] = lvlname($3) " " compname($4) "  " substr(m, 1, 200) }
+            if ($3 != "I" && $6 != "") { nxs++; XSs[nxs] = $6; XSd[nxs] = $1; XSt[nxs] = $1 " " $2; XSl[nxs] = lvlname($3) " " compname($4) "  " cut200(m) }
             next
         }
         if (u == "") next
@@ -247,14 +261,14 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
             # an authentication follows is a real screening whatever came
             # before it) is decided in END, when the last authentication of
             # the session is known
-            nrs++; RSu[nrs] = u; RSd[nrs] = $1; RSt[nrs] = $1 " " $2; RSs[nrs] = $6; RSl[nrs] = lvlname($3) " " compname($4) "  " substr(m, 1, 200)
+            nrs++; RSu[nrs] = u; RSd[nrs] = $1; RSt[nrs] = $1 " " $2; RSs[nrs] = $6; RSl[nrs] = lvlname($3) " " compname($4) "  " cut200(m)
             next
         }
         # (a No-account line of a name Flow Manager does not configure is
         # door-knocker evidence logged with the funnel wording, 2026-09-04 —
         # END moves such a name out of Incoming; its source address and drill
         # line fed the Scanners table until 2026-09-30)
-        book(side, u, $1, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
+        book(side, u, $1, $1 " " $2, lvlname($3) " " compname($4) "  " cut200(m))
     }
     END {
         # ---- the deferred Allowed lines: a genuine screening (A), or a ----
@@ -373,12 +387,13 @@ rows() {
         # for two days, which also shifted the cells reason-boxes.sh reads
         # by POSITION for its "login in" box: $4/$7/$8/$9 = Disallowed / Bad
         # key / Key failures / Locked are back in place). drill-cell-<i> binds
-        # cells positionally — 1 Allowed, 2 Disallowed, 3 Authenticated, 4 No
-        # account, 5 Bad key, 6 Key failures, 7 Locked, (8 Auth failed: no
-        # drill), 9 Session errors, 14 Re-screens — so the block must not shift
+        # cells positionally — 1 Allowed, 2 Disallowed, 3 Authenticated, 5 Bad
+        # key, 7 Locked (the only drills Partners in shows; 4 No account, 6 Key
+        # failures, 9 Session errors and 14 Re-screens went 2026-09-30 with the
+        # audit, 8 Auth failed never had one) — so the block must not shift
         # (partners-in.sh reads every cell by POSITION as well).
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:drill-cell-1=%s\t@data:drill-cell-2=%s\t@data:drill-cell-3=%s\t@data:drill-cell-4=%s\t@data:drill-cell-5=%s\t@data:drill-cell-6=%s\t@data:drill-cell-7=%s\t@data:drill-cell-9=%s\t@data:drill-cell-14=%s\n' \
-            "$user" "$a" "$d" "$t" "$n" "$b" "$k" "$l" "$af9" "$x" "$lgf" "$lgl" "$lgn" "$lgp" "$r" "$bkt" "$d1" "$d3" "$d2" "$d4" "$d5" "$d6" "$d7" "$d9" "$d8"
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:drill-cell-1=%s\t@data:drill-cell-2=%s\t@data:drill-cell-3=%s\t@data:drill-cell-5=%s\t@data:drill-cell-7=%s\n' \
+            "$user" "$a" "$d" "$t" "$n" "$b" "$k" "$l" "$af9" "$x" "$lgf" "$lgl" "$lgn" "$lgp" "$r" "$bkt" "$d1" "$d3" "$d2" "$d5" "$d7"
     done <<< "$(printf '%s\n' "$agg" | grep $'^R\t' | LC_ALL=C sort -t"$(printf '\t')" -k5,5nr -k6,6nr -k7,7nr -k9,9nr -k8,8nr -k3,3nr -k2,2 \
         | awk -F'\t' -v OFS='\t' -v LG="$LOGONS_TSV" '
             # the per-login logon summary join (details.sh _logons.tsv): four
@@ -457,7 +472,8 @@ out_rows() {
     # 6 No account, 7 Bad key, 8 Key failures, 9 Locked, 10 Auth failed, 11
     # Session errors, 12 First logon, 13 Last logon, 14 Logons, 15 Pattern,
     # 16 Re-screens, then @data:buckets (slots in the R-line order A T D N B
-    # K L R X — reason-boxes box 20) and the drill-cell lists (partners-in)
+    # K L R X — reason-boxes box 20) and the drill-cell lists 1 2 3 5 7
+    # (partners-in)
     printf 'TABLE\tIncoming\n'
     printf 'HEAD\tLogin\tAllowed\tDisallowed\tAuthenticated\tNo account\tBad key\tKey failures\tLocked\tAuth failed\tSession errors\tFirst logon\tLast logon\tLogons\tPattern\tRe-screens\n'
     rows

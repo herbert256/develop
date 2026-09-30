@@ -156,7 +156,7 @@ dshare=$(awk -v r="$tR" -v n="$dFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }
     printf 'STAT\twhite\t%s\tAutomatic\t@data:tok=sum\t@data:sb=%s\n' "$tA" "$sba"
     printf 'STAT\twhite\t%s\tManual\t@data:tok=sum\t@data:sb=%s\n' "$tM" "$sbm"
     printf 'STAT\twhite\t%s%%\tof all Files\t@data:tok=share\t@data:sb=%s\n' "$oshare" "$sbs"
-    printf 'STAT\twhite\t%s\tFailed legs healed\t@data:tok=sum\t@data:sb=%s\n' "$thl" "$sbh"
+    printf 'STAT\twhite\t%s\tFailed transfers healed\t@data:tok=sum\t@data:sb=%s\n' "$thl" "$sbh"
     printf 'STAT\twhite\t%s\tSubscriptions\t@data:tok=uniq\t@data:sb=%s\n' "$nsub" "$sbu"
     printf 'STAT\twhite\t%s\tProtocols\t@data:tok=uniq\t@data:sb=%s\n' "$nprot" "$sbp"
     printf 'STAT\twhite\t%s\tDays\t@data:tok=sum\t@data:sb=%s\n' "$ndays" "$sbd"
@@ -173,7 +173,7 @@ dshare=$(awk -v r="$tR" -v n="$dFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }
     printf 'TOTAL\tTotal\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num}%s\t@{class=num}%s%%\n' "$sR" "$sA" "$sM" "$sFC" "$sshare"
 
     printf 'TABLE\tPer protocol\tzerohide=0\ttab=recfiles\n'
-    printf 'HEAD\tProtocol\tRecovered\tAutomatic\tManual\tFailed legs healed\tFailed legs\tHealed %%\n'
+    printf 'HEAD\tProtocol\tRecovered\tAutomatic\tManual\tFailed transfers healed\tFailed transfers\tHealed %%\n'
     printf 'KIND\ttext\tnumwarn\tnumwarn\tnumwarn\tnum\tnum\tnum\n'
     printf 'RECALC\t-\ts0\ts1\ts2\ts3\ts4\tp3.4\n'
     printf '%s\n' "$agg" | grep '^PROTO|' | sort -t'|' -k3,3nr -k2,2 | awk -F'|' '
@@ -193,5 +193,8 @@ dshare=$(awk -v r="$tR" -v n="$dFC" 'BEGIN{ printf "%.1f", (n>0 ? r*100/n : 0) }
 
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+# the ENTITY row tint (2026-09-30 audit A2-03: every row tints by its entity
+# result colour — bin/rpt-tint.awk, base cache col 3)
+awk -F'\t' -v TABLES="Per subscription" -v BASE="$CONFIG_BASE/_subscriptions.tsv" -v COL=2 -f "$ROOT/bin/rpt-tint.awk" "$OUT" > "$OUT.tint" && mv "$OUT.tint" "$OUT"
 
 echo "Data written to $OUT ($tR recovered file(s))." >&2

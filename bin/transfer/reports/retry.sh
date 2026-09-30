@@ -102,8 +102,9 @@ n_rows=0; sum_failures=0; sum_successes=0; sum_resubs=0
         [ -z "$never" ] && continue                     # blank line guard
         [ -z "$account" ] && account="(no account)"     # blacklisted/blank entity — keep the flow
         [ -z "$site" ] && site="(no subscription)"      # blank subscription — keep the flow countable, like the account above
+        rs=$resubs; [ "${rs:-0}" -eq 0 ] && rs=""   # a 0 renders empty (2026-09-30 audit A5-06)
         printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n' \
-            "$account" "$site" "$faildays" "$failures" "$successes" "$resubs" "$lastfail" "$bk" "$ccf" "$ccp"
+            "$account" "$site" "$faildays" "$failures" "$successes" "$rs" "$lastfail" "$bk" "$ccf" "$ccp"
         n_rows=$((n_rows + 1))
         sum_failures=$((sum_failures + failures))
         sum_successes=$((sum_successes + successes)); sum_resubs=$((sum_resubs + resubs))
@@ -112,9 +113,13 @@ n_rows=0; sum_failures=0; sum_successes=0; sum_resubs=0
     # (distinct days with failures), which the client-side total aggregate
     # cannot recompute — a baked number there rewrites to 0 on any date change.
     # Blank is the house pattern for a/c/d/q/x-token total cells (cf. weekday).
-    printf 'TOTAL\tTotal (%d rows)\t\t\t@{class=num failed}%d\t@{class=num processed}%d\t@{class=num}%d\t\n' \
-        "$n_rows" "$sum_failures" "$sum_successes" "$sum_resubs"
+    tr=$sum_resubs; [ "${tr:-0}" -eq 0 ] && tr=""
+    printf 'TOTAL\tTotal (%d rows)\t\t\t@{class=num failed}%d\t@{class=num processed}%d\t@{class=num}%s\t\n' \
+        "$n_rows" "$sum_failures" "$sum_successes" "$tr"
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+# the ENTITY row tint (2026-09-30 audit A2-03: every row tints by its entity
+# result colour — bin/rpt-tint.awk, base cache col 3)
+awk -F'\t' -v TABLES="Failing flows" -v BASE="$CONFIG_BASE/_subscriptions.tsv" -v COL=3 -f "$ROOT/bin/rpt-tint.awk" "$OUT" > "$OUT.tint" && mv "$OUT.tint" "$OUT"
 
 echo "Data written to $OUT ($pair_count failing flow(s), $chronic_count never succeeded)." >&2

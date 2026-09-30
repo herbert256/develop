@@ -20,12 +20,13 @@
 # CHANGE A CONSUMER'S MESSAGE PATTERNS -> CHANGE ITS MARKERS HERE. The
 # markers are matched against the WHOLE line (a superset of the message).
 # A marker written "~text" matches CASE-INSENSITIVELY (text lowercase): for a
-# consumer that lower-cases the message before matching — connection-
-# diagnostics' tolower(m) ~ /performs test connection/ — where a list of
-# casings (three, until 2026-09-29) would miss any other one.
+# consumer that lower-cases the message before matching, where a list of
+# casings would miss any other one (its one user, connection-diagnostics'
+# tolower(m) ~ /performs test connection/, went 2026-09-30 with the
+# Connections page — no SPEC line uses it now).
 #
 # ONLY FOR RARE FAMILIES: round 2 also gave subsets to uc2/uc4-status,
-# logon, ssh-crypto, auth-activity and inbound-connections — but their
+# logon, ssh-crypto, auth-activity and inbound-connections (gone 2026-09-30) — but their
 # families (the SSH logon lines above all) are 20-45% of the production
 # cache, so the step wrote 5 GB and cost as much CPU as it saved; those six
 # read the whole cache again. A subset pays when it is a few % of the cache.
@@ -44,8 +45,11 @@ source "$SCRIPT_DIR/../ranges.sh"
 #               lines apart — every consumer acts only on lines holding one of
 #               ITS markers, and those are all here)
 #   event-queue event-queue (the PeSIT AgentEvent submit failures)
+#   site-failures  site-failures.sh (the E-level "Connection failure while"
+#               lines; the connection-diagnostics subset until 2026-09-30 —
+#               its other three markers served the removed Connections page)
 #   (MEASURED, NOT WORTH IT — 2026-09-30, single job on an 8x sample cache:
-#   an "inbound" subset for inbound-connections ("had initiated a connection
+#   an "inbound" subset for the former inbound-connections ("had initiated a connection
 #   over ", ~4-10 % of the cache) cost +1.0 CPU-s in this pass to save 0.3;
 #   a "day" subset for bin/day/reports.sh day_srv's problem signals — twelve
 #   short markers like "is locked" / "Login failed" in the gate — cost +2.6 to
@@ -56,7 +60,7 @@ source "$SCRIPT_DIR/../ranges.sh"
 SPEC='uc1	Could not send file	An error occurred while sending	finished with error	Connection failure while 	listing files from partner
 poll	Applying the search pattern	listing files from partner 	Connection failure while 	Remote folder of transfer site: 	Remote files pattern of transfer site	failure connecting to remote host 
 ssh-sessions	Channel is not active	No registered SSH session with ID	No SSH connection with ID	Network stream read/write error	Ignoring message for not active session
-connection-diagnostics	Connection failure while 	could not be established	Wrong server fingerprint: got	~performs test connection
+site-failures	Connection failure while 
 deploy-errors	Applying the search pattern	is used for incoming transfer	stop further route execution
 routing-errors	Could not send file	while publishing the file	post client action	stop further route execution
 event-queue	[Pesit Default] Unable to submit event AgentEvent'

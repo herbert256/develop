@@ -162,7 +162,7 @@
       l.textContent = label;
       var b = document.createElement("input");
       b.type = "text"; b.className = "search"; b.placeholder = ph;
-      b.title = "Wildcards: ? = one character, * = any run; several space-separated words must all match";
+      b.title = "Type to search; every word must match";   // (the wildcard wording went 2026-09-30 with the search-syntax hint, audit A6-12)
       bar.appendChild(l); bar.appendChild(b);
       return b;
     }

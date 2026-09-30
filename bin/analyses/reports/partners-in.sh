@@ -28,8 +28,9 @@
 #              failed — the funnel's counts with their cell drills (the 5
 #              newest log lines per count) re-keyed to the new positions
 # (The funnel's No account, Key failures, Session errors, Re-screens, First
-# logon and Last logon, the FE overview's Oldest waiting and Pickups stay in
-# their .rpt files for their other readers.)
+# logon and Last logon stay in logon.rpt — reason-boxes reads Key failures,
+# verify.sh's twin check Session errors / Re-screens; the FE overview's Error,
+# Oldest waiting and Pickups went 2026-09-30 with the audit: no reader.)
 #
 # Rows = the UNION: every fe-overview row in its baked order (the configured
 # logins + the old-gateway-only ones), then the funnel-only logins (seen
@@ -65,21 +66,21 @@ awk -F'\t' -v FE="$FE" -v LG="$LG" '
     # Cloud, Gateway, Pattern | Allowed, Disallowed, Authenticated, Bad key,
     # Locked, Auth failed (F = fe-overview fields, G = logon.rpt Incoming fields)
     function cells(k) {
-        return "\t" F[k, 3] "\t" F[k, 6] "\t" F[k, 14] "\t" F[k, 7] "\t" F[k, 15] "\t" F[k, 9] "\t" F[k, 10] "\t" F[k, 11] \
+        return "\t" F[k, 3] "\t" F[k, 6] "\t" F[k, 11] "\t" F[k, 7] "\t" F[k, 12] "\t" F[k, 8] "\t" F[k, 9] "\t" F[k, 10] \
                "\t" G[k, 14] "\t" F[k, 4] "\t" F[k, 5] "\t" G[k, 15] \
                "\t" G[k, 3] "\t" G[k, 4] "\t" G[k, 5] "\t" G[k, 7] "\t" G[k, 9] "\t" G[k, 10]
     }
     BEGIN {
         # fe-overview.rpt ROW: 2 login, 3 use cases, 4 Cloud, 5 Gateway, 6 Files
-        # in, 7 Files out, 8 Error, 9 Retrieved, 10 Waiting, 11 Expired, 12
-        # Oldest waiting, 13 Pickups, 14 Error in, 15 Error out, then
-        # @data:res= (field 16); TOTAL: 2 label, 3..15 the same cells
+        # in, 7 Files out, 8 Retrieved, 9 Waiting, 10 Expired, 11 Error in, 12
+        # Error out, then @data:res= (field 13); TOTAL: 2 label, 3..12 the same
+        # cells
         while ((getline l < FE) > 0) { n = split(l, a, "\t")
             if (a[1] == "ROW") { k = toupper(a[2]); if (!(k in IDX)) { IDX[k] = ++nr; NAME[nr] = a[2] }
-                for (i = 3; i <= 15; i++) F[k, i] = a[i]
-                for (i = 16; i <= n; i++) if (index(a[i], "@data:res=") == 1) FERES[k] = a[i]
+                for (i = 3; i <= 12; i++) F[k, i] = a[i]
+                for (i = 13; i <= n; i++) if (index(a[i], "@data:res=") == 1) FERES[k] = a[i]
                 nfe++ }
-            else if (a[1] == "TOTAL") { for (i = 3; i <= 15; i++) F["", i] = a[i] }
+            else if (a[1] == "TOTAL") { for (i = 3; i <= 12; i++) F["", i] = a[i] }
         } close(FE)
         # logon.rpt (pageless): its WARN lines, then the FIRST table
         # (Incoming) ROW: 2 login, 3 Allowed, 4 Disallowed, 5 Authenticated,
@@ -108,7 +109,6 @@ awk -F'\t' -v FE="$FE" -v LG="$LG" '
             else if (a[1] == "TOTAL") { for (i = 3; i <= 16; i++) G["", i] = a[i] }
         } close(LG)
         print "TITLE\tPartners in"
-        print "DESC\tEvery login a partner connects in with, on one line: its use cases, its Files in and out with their errors, the retrieved, Waiting and Expired ones, its logons (the last one here and on the old gateway, the pattern) and the SSH screening funnel — Allowed, Disallowed, Authenticated, Bad key, Locked, Auth failed."
         for (i = 1; i <= nw; i++) print W[i]
         # the view row (2026-09-30, user request): this Endpoint view, then the
         # Accounts and Partners views bin/rpt-rollup.awk regroups it into

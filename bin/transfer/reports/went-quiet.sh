@@ -92,7 +92,13 @@ rows=$(printf '%s\n' "$agg" | grep $'^ROW\t' \
     else
         printf '%s\n' "$rows"
     fi
+    # the TOTAL row (2026-09-30 audit A2-04: every table carries one) — the
+    # subscription count; days ago do not add up
+    printf 'TOTAL\tTotal (%s subscriptions)\t\n' "${n_quiet:-0}"
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+# the ENTITY row tint (2026-09-30 audit A2-03: every row tints by its entity
+# result colour — bin/rpt-tint.awk, base cache col 3)
+awk -F'\t' -v TABLES="Subscriptions with no recent traffic" -v BASE="$CONFIG_BASE/_subscriptions.tsv" -v COL=2 -f "$ROOT/bin/rpt-tint.awk" "$OUT" > "$OUT.tint" && mv "$OUT.tint" "$OUT"
 
 echo "Data written to $OUT (${n_quiet:-0} of ${n_tot:-0} subscription(s) quiet for more than $QUIET_DAYS days)." >&2

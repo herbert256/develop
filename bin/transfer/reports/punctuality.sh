@@ -111,7 +111,6 @@ n_rows=0
 
     printf 'TABLE\tArrival regularity per subscription\twide\tnofilter\n'
     printf 'HEAD\tSubscription\tActive days\tTypical arrival\tWindow\tClass\n'
-    printf 'KIND\tsite\tnum\ttext\ttext\ttext\n'
     while IFS='|' read -r _ co _spd site adays typ spread cls; do
         [ -z "$site" ] && continue
         printf 'ROW\t%s\t%s\t%s\t± %s min\t%s\n' \

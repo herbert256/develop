@@ -570,9 +570,10 @@ function env_ambient(   ci, jd, base, i, n, k, sid, lst) {
             S(base + 30000123, "I", "TM", sid, "[Ssh Default] Allowed user '" AL_L[2] "' from address '" AL_IP[2] "', corresponding account '" AL_A[2] "@" AL_L[2] "' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level.")
             S(base + 30000523, "E", "TM", sid, "[Ssh Default] Authentication failed using local.")
         }
-        # INBOUND CONNECTIONS OVER PESIT / FTP / OTHER (2026-09-30 audit S-14
-        # — the Connections per day PESIT / FTP / Other columns were always
-        # empty: every sampled connection line is SSH): a partner login
+        # INBOUND CONNECTIONS OVER PESIT / FTP / OTHER (2026-09-30 audit S-14,
+        # planted for the Connections per day PESIT / FTP / Other columns —
+        # that page went the same day; bin/logons.sh still reads them: a
+        # named login connecting IN is an inbound connection): a partner login
         # connecting IN (its login named) over PeSIT every day, over FTP once
         # a week and over HTTP (an "Other" protocol) every eleventh day, from
         # its own whitelisted address. Fixed times and sessions: no PRNG draw.
@@ -619,11 +620,10 @@ function env_ambient(   ci, jd, base, i, n, k, sid, lst) {
         if (jd % 7 == 4) {
             S(base + rint(86400000), "W", "TM", "", "Value of 'Server.ProtocolCommands.batchSize' is too low and may lead to performance degradation.")
             S(base + rint(86400000), "E", "TM", sesshex(), "Error during test connection. Connection refused")
-            # the admin-UI test connections themselves (2026-09-29 audit: the
-            # Connections Test connections table was always empty on the
-            # sample) — fixed times, no session: no PRNG draw
-            S(base + 36000000, "I", "TM", "", "Performs test connection for ssh protocol")
-            S(base + 50400000, "I", "TM", "", "Performs test connection for pesit protocol")
+            # (the admin-UI "Performs test connection for ssh / pesit protocol"
+            # lines, planted 2026-09-29 for the Connections Test connections
+            # table, went 2026-09-30 with that page — fixed times, no PRNG
+            # draw, so nothing else in the estate moved)
         }
         if (jd % 7 == 5)
             S(base + rint(86400000), "W", "TM", sesshex(), "Transfer site ID is not present in environment. Using host, port and user: sftp-legacy.acme.example:22:C208-MFT")

@@ -95,14 +95,14 @@ IFS='|' read -r _ srv_err srv_ok srv_peakd srv_peakn srv_okfirst <<< "$(printf '
     printf 'TITLE\tResubmissions\n'
 
     if [ -n "$emptym" ]; then
-        printf 'TABLE\tResubmitted legs per day\tnofilter\tnosort\n'
+        printf 'TABLE\tResubmitted transfers per day\tnofilter\tnosort\n'
     else
         # noagg=4: the Files column counts DISTINCT CoreIds (a File resubmitted
         # on several days appears once in the total but once per day in the
         # rows), so a filtered re-total must show "–", not the inflated row sum
-        printf 'TABLE\tResubmitted legs per day\tnoagg=4\n'
+        printf 'TABLE\tResubmitted transfers per day\tnoagg=4\n'
     fi
-    printf 'HEAD\tDate\tResubmitted legs\tError legs\tOK legs\tFiles\n'   # the legs' OWN status (2026-09-29 audit: named, so they never read as File outcomes — the Top view Resubmit Ok / Error are Files)
+    printf 'HEAD\tDate\tResubmitted transfers\tError transfers\tOK transfers\tFiles\n'   # the legs' OWN status (2026-09-29 audit: named, so they never read as File outcomes — the Top view Resubmit Ok / Error are Files)
     printf 'KIND\ttext\tnum\tnumfailed\tnumprocessed\tnum\n'
     # The placeholder row keeps its trailing newline, or the TOTAL line below
     # would glue onto it.
@@ -122,7 +122,7 @@ IFS='|' read -r _ srv_err srv_ok srv_peakd srv_peakn srv_okfirst <<< "$(printf '
     else
         printf 'TABLE\tPer subscription\tdrill=File\n'
     fi
-    printf 'HEAD\tSubscription\tResubmitted legs\tFiles\tFirst\tLast\n'
+    printf 'HEAD\tSubscription\tResubmitted transfers\tFiles\tFirst\tLast\n'
     printf 'KIND\tsite\tnum\tnum\ttext\ttext\n'
     printf 'RECALC\t-\ts0\t-\t-\t-\n'
     if [ -n "$emptym" ]; then
@@ -155,5 +155,8 @@ IFS='|' read -r _ srv_err srv_ok srv_peakd srv_peakn srv_okfirst <<< "$(printf '
 
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+# the ENTITY row tint (2026-09-30 audit A2-03: every row tints by its entity
+# result colour — bin/rpt-tint.awk, base cache col 3)
+awk -F'\t' -v TABLES="Per subscription" -v BASE="$CONFIG_BASE/_subscriptions.tsv" -v COL=2 -f "$ROOT/bin/rpt-tint.awk" "$OUT" > "$OUT.tint" && mv "$OUT.tint" "$OUT"
 
 echo "Data written to $OUT ($tot_legs resubmitted leg(s))." >&2

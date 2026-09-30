@@ -469,8 +469,11 @@ write_root_404() {
     # the RETIRED top-level dirs stay KNOWN, so an old bookmark into one still
     # finds the home link: errors/ (2026-09-21: its pages moved into files/),
     # latest/ (2026-09-29: the Latest files pages, now the subscription pages'
-    # Files table) and switches/ (2026-09-06: the home Red/Green switch pages)
-    dirs="${dirs:+$dirs|}errors|latest|switches"
+    # Files table), switches/ (2026-09-06: the home Red/Green switch pages) and
+    # reports/ (2026-09-30: the Reports start page) — and tools/, which holds
+    # only the build report now, written by bin/build.sh's EXIT trap AFTER
+    # this runs (the site map that created it here went 2026-09-30; audit A4-01)
+    dirs="${dirs:+$dirs|}errors|latest|switches|reports|tools"
     {
         printf '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         printf '<meta name="viewport" content="width=device-width, initial-scale=1">\n'

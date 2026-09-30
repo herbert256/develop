@@ -301,11 +301,20 @@ nfilep=$(wc -l < "$TMP/filepages" | tr -d ' ')
 # failed CoreId, the LAST leg's raw status ($TMP/lastst) — the reason pass
 # needs it for the unpaged Files (_failed-reasons.tsv) — and the paged-CoreId set
 # ($TMP/paged) the list writer marks its links by.
+# THE LEG'S OWN REMOTE HOST (2026-09-30 audit A4-11): _transfers.tsv col 16
+# is CoreId-group PROPAGATED (a leg that logged no host shows another leg's —
+# the partner source address on an outbound PeSIT leg), so the leg table
+# reads the leg's UNPROPAGATED value from _transfers0.tsv, joined on (CoreId,
+# transfer id — unique per leg): blank when the leg logged none. A leg the
+# raw cache holds under another CoreId (a re-keyed leg, session-sites) or
+# with no transfer id keeps the cache value. The facts table's Remote host
+# stays the File's endpoint (the first leg that carries one).
+RAW0="$CACHE_DIR/_transfers0.tsv"; [ -f "$RAW0" ] || RAW0=/dev/null
 LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" \
     -v TOPF="$TMP/all" -v EXTRAF="$TMP/extra" -v LASTF="$TMP/lastst" -v PAGEDF="$TMP/paged" \
     -v IDS="$TMP/ids" -v META="$TMP/meta" -v SESS="$TMP/sess" -v SUBRES="$CONFIG_BASE/_subscriptions.tsv" -v ACCRES="$CONFIG_BASE/_accounts.tsv" -v HSTRES="$CONFIG_BASE/_hosts.tsv" \
     -v LGNRES="$CONFIG_BASE/_logins.tsv" -v PTNRES="$CONFIG_BASE/_partners.tsv" -v SPMAP="$CONFIG_XREF/_subscriptions-partners.tsv" \
-    -v FILESF="$TMP/filepages" -v FILEDIR="$FILEDIR" "$AWKLIB"'
+    -v FILESF="$TMP/filepages" -v FILEDIR="$FILEDIR" -v RAW0F="$RAW0" "$AWKLIB"'
     # The SUBSCRIPTION result colour (bin/build/result.sh fills the third
     # column of the base cache), so a row carries the state of the flow it
     # belongs to: red = still failing, green = it has delivered OK since,
@@ -408,6 +417,9 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" \
         s = ""; for (i = 1; i <= n; i++) s = s R[i]
         return s
     }
+    # the UNPROPAGATED cache (read before the parse cache): the raw remote
+    # host of every leg of a paged CoreId, keyed CoreId + transfer id
+    FILENAME == RAW0F { if (($1 in WANT) && $23 != "") RAWH[$1 SUBSEP $23] = $16; next }
     # the parse cache: the last-leg raw status for every failed CoreId (the
     # cache is CoreId-sorted, legs in cache order — last write wins, the same
     # last row pagereason reads off a drill page)
@@ -429,10 +441,11 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" \
         # the legs CHRONOLOGICALLY (2026-09-09, user request — cache order is
         # inbound first, so a later outbound attempt used to precede an
         # earlier outbound routing leg); ties keep cache order
+        lh = ($23 != "" && (($1 SUBSEP $23) in RAWH)) ? RAWH[$1 SUBSEP $23] : $16   # the leg own host (see RAW0 above)
         NL[$1]++
         LEGK[$1, NL[$1]] = $13 sprintf("%06d", NL[$1])
         LEGR[$1, NL[$1]] = sprintf("ROW\t%s\t%s\t%s\t%s\t%s %s\t%s\t%s\t%s\n", \
-            esc($3), esc($2), esc($10), humanbytes($9), esc($11), esc($12), humandur($15), (isip4($16) ? "@{alink=incoming_connections/" $16 "}" $16 : esc($16)), esc($23))
+            esc($3), esc($2), esc($10), humanbytes($9), esc($11), esc($12), humandur($15), (isip4(lh) ? "@{alink=incoming_connections/" lh "}" lh : esc(lh)), esc($23))
         # every leg transfer_id -> its CoreId, for the server-log id join
         if ($23 != "" && !tid[$1, $23]++) print $23 "\t" $1 > IDS
         # every leg SESSION -> its CoreId (col 24, the technical connection):
@@ -510,7 +523,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" \
         }
         close(IDS); close(META); close(SESS)
     }
-' "$TMP/all" "$TMP/extra" "$TMP/filepages" "$PARSED"
+' "$TMP/all" "$TMP/extra" "$TMP/filepages" "$RAW0" "$PARSED"
 _flap "the failed Files, the drill + File pages"
 fi   # (full mode)
 # ---- The SERVER-FAILING set (2026-08) ---------------------------------------
@@ -1120,6 +1133,13 @@ mv "$EVID.tmp" "$EVID"
 #      for a paged file, from the $TMP/lastst sidecar for an unpaged one.
 #      Only when it is more specific than a bare "Failed": a
 #      reason must name a fault, never restate the outcome.
+#   An UNKNOWN File (subscription "Unknown" — no subscription at all) takes
+#   NO pair (3) and NO flow (4) verdict: "Unknown" is no flow, its Files are
+#   unrelated (2026-09-30 audit A5-10: all 127 sample Unknown Files read the
+#   "Connection failures" of one of them). When its own page and the last
+#   leg name nothing, its reason is the fact that failed it: "Unknown
+#   subscription" (an Unknown File has no movement, so it can never read
+#   Processed — parse.sh).
 # flip_reason() is the SHARED classifier (bin/flip-reason.awk).
 #      Still blank when no rule applies: better than a guess.
 LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -v LASTF="$TMP/lastst" -v CAND=8 \
@@ -1179,6 +1199,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -
         return classify(fn, fl, fm) }
     {   # $TMP/all: sortkey, coreid, site, legs, date, time, outcome, marks
         cid = $2; site = $3; legs = $4
+        unk = (site == "Unknown")
         LEGST = ""
         # an EXPIRED File (2026-09-29: the lists carry every File in error,
         # the site-wide Error rule) reads the Failed files wording
@@ -1197,7 +1218,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -
             # page — it donates its reason to the unpaged (older, off-window)
             # siblings of the pair below. Stored even when blank: an older
             # sibling page must not outvote the pair newest evidence.
-            if (!((site, legs) in PAIRR)) PAIRR[site, legs] = r6
+            if (!unk && !((site, legs) in PAIRR)) PAIRR[site, legs] = r6
         }
         else if (cid in FS9) {   # its own FILE page (never a pair donor)
             r6 = pagereason(cid)
@@ -1208,9 +1229,10 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -
         # rule 3, the PAIR borrow (unpaged files only — a paged file whose
         # own page classified nothing must not take a sibling verdict over
         # its own evidence)
-        if (r6 == "" && !(cid in PG) && ((site, legs) in PAIRR)) r6 = PAIRR[site, legs]
-        if (r6 == "") r6 = flowreason(site)
+        if (r6 == "" && !unk && !(cid in PG) && ((site, legs) in PAIRR)) r6 = PAIRR[site, legs]
+        if (r6 == "" && !unk) r6 = flowreason(site)
         if (r6 == "" && LEGST != "" && LEGST != "Processed" && LEGST != "Failed") r6 = LEGST
+        if (r6 == "" && unk) r6 = "Unknown subscription"
         print cid "\t" r6
     }
 ' "$TMP/all" > "$TMP/reasons"
@@ -1335,13 +1357,11 @@ LC_ALL=C awk -F'\t' -v RD="$REPORTS_DIR" \
                 if (s != "") SVSES[k] = ((SVSES[k] != "") ? SVSES[k] ", " : "") s } }
         close(SESSF)
         NP = split("sub-failing sub-all", PK, " ")
-        DSC["sub-failing"] = "Every failing subscription — the newest failed File of each, one row per subscription, plus the subscriptions failing in the server log only."
         for (i = 1; i <= NP; i++) {
             k = PK[i]
             f = RD "/" ((k == "sub-failing") ? "failed" : "failed-" k) ".rpt.tmp"
             F[k] = f
             printf "TITLE\tFailed Subscriptions\n" > f
-            if (k in DSC) printf "DESC\t%s\n", DSC[k] > f   # the Reports start page reads the DESC of failed.rpt only
             # Newest first is the page DEFAULT (Date/time, desc), not `nosort` —
             # the rows arrive by recency but must still be sortable by any
             # column. `restint` + the per-row @data:res: the row carries its

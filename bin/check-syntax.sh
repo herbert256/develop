@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # check-syntax.sh — `bash -n` over every bin/**/*.sh of this checkout (and a
-# mawk compile of every bin/**/*.awk, 2026-09-29)
+# mawk compile of every bin/**/*.awk, 2026-09-29; a node --check of every
+# assets/*.js, 2026-09-30)
 # (2026-09-27). WHY: macOS /bin/bash 3.2 exits 0 when a script that set an
 # EXIT trap (the common `trap 'rm -rf "$TMPD"' EXIT`) hits a SYNTAX error —
 # $? inside the trap is 0 too — so the report silently goes missing and the
@@ -41,8 +42,18 @@ if command -v mawk >/dev/null 2>&1; then
     done < <(find "$ROOT/bin" -name '*.awk' -type f -print0)
     rm -f "$awktmp"
 fi
+# the front-end scripts PARSE (2026-09-30 audit A6-07): a syntax error in an
+# assets/*.js would ship green and leave every page without its top bar and
+# table features. `node --check` parses without running; skipped when node is
+# not installed.
+if command -v node >/dev/null 2>&1; then
+    for f in "$ROOT"/assets/*.js; do
+        [ -f "$f" ] || continue
+        out=$(node --check "$f" 2>&1) || { bad=$((bad + 1)); printf '%s: %s\n' "$f" "$out" >&2; }
+    done
+fi
 if [ "$bad" -gt 0 ]; then
-    echo "check-syntax: $bad script(s) under $ROOT/bin have a bash or awk syntax error — nothing was run." >&2
+    echo "check-syntax: $bad script(s) under $ROOT/bin or $ROOT/assets have a bash, awk or JavaScript syntax error — nothing was run." >&2
     exit 1
 fi
 exit 0

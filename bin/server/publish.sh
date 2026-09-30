@@ -15,7 +15,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; defines the renderer
 
-ensure_assets   # topbar-data.js (the menus' data file)
+ensure_assets   # topbar-data.js (the top bar's data file)
 
 mkdir -p "$DOCS/server"
 rm -f "$DOCS"/server/*.html   # clear stale report pages (the index is rewritten by bin/build/publish.sh)
@@ -49,6 +49,6 @@ pub_wait
 
 echo "Rendered docs/server/ ($count report(s))." >&2
 
-# Every menu/sitemap/group-tab option must exist in this env: write an
+# Every group-tab option must exist in this env: write an
 # empty-report placeholder for each order-listed report without a .rpt here.
 render_missing_reports server

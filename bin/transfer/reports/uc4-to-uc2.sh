@@ -89,8 +89,11 @@ np=$(wc -l < "$TMP/pairs" | tr -d ' ')
     printf 'TABLE\tFiles\twide\tpager=500\ttab=uc4uc2\n'
     printf 'HEAD\tFile\tLogin\tUC4 subscription\tUC4 date/time\tUC2 subscription\tUC2 date/time\tGap\tUC4 CoreId\tUC2 CoreId\n'
     printf 'KIND\tfile\tlogin\tsite\ttext\tsite\ttext\ttext\ttext\ttext\n'
+    # + the TOTAL row (2026-09-30 audit A2-04: every table carries one) — the
+    # File count; no column adds up
     LC_ALL=C sort -t"$TAB" -k12,12r "$TMP/pairs" | awk -F'\t' "$AWKLIB"'
-        { printf "ROW\t%s\t%s\t%s\t%s %s\t%s\t%s %s\t%s\t@{class=mono}%s\t@{class=mono}%s\n", $4, $3, $1, $5, $6, $2, $7, $8, hdsecs($9), $10, $11 }'
+        { printf "ROW\t%s\t%s\t%s\t%s %s\t%s\t%s %s\t%s\t@{class=mono}%s\t@{class=mono}%s\n", $4, $3, $1, $5, $6, $2, $7, $8, hdsecs($9), $10, $11; n++ }
+        END { printf "TOTAL\tTotal (%d Files)\t\t\t\t\t\t\t\t\n", n + 0 }'
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

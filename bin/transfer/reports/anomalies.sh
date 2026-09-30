@@ -242,19 +242,24 @@ awk -F'\t' "$AWKLIB"'
     }
     BEGIN {
         printf "TITLE\tAnomalies\n"
-        printf "DESC\tDetected unusual hours and days: error-rate spikes, duration surges, file-count spikes, drops and silences, and volume bursts — each compared to its typical value across the window.\n"
         open_daily()
     }
+    # the SEVERITY ($12, red / orange) colours the metric CELL, not the row
+    # (2026-09-30 audit A2-05: a metric colours its own cell) — the "× typical"
+    # ratio, or the value itself on a Silence row, which has no ratio
+    function sev(s, v) { return (s == "red" ? "@{class=failed}" : "@{class=warn}") v }   # added to the column num class
     $1 == "2" {
         # (the Files and Error columns left 2026-09-05, user request — the
         # figures stay in the agg line for the thresholds)
-        if ($11 == "-") printf "ROW\t%s\t%s\t%s\t%s\t%s\t@data:res=%s\n", $2, $4, $6, $7, $8, $12
-        else printf "ROW\t@{href=../day/%s.html?axway_hero=%s}%s\t%s\t%s\t%s\t%s\t@data:res=%s\n", $2, $11, $2, $4, $6, $7, $8, $12
+        vc = ($8 == "") ? sev($12, $6) : $6; rc = ($8 == "") ? "" : sev($12, $8)
+        if ($11 == "-") printf "ROW\t%s\t%s\t%s\t%s\t%s\n", $2, $4, vc, $7, rc
+        else printf "ROW\t@{href=../day/%s.html?axway_hero=%s}%s\t%s\t%s\t%s\t%s\n", $2, $11, $2, $4, vc, $7, rc
         n2++
     }
     $1 == "1" {
         if (!t1) { close_daily(); open_hourly(); t1 = 1 }
-        printf "ROW\t@{href=../day/%s.html?axway_hero=%s}%s\t%s\t%s\t%s\t%s\t%s\t@data:res=%s\n", $2, $11, $2, $5, $4, $6, $7, $8, $12
+        vc = ($8 == "") ? sev($12, $6) : $6; rc = ($8 == "") ? "" : sev($12, $8)
+        printf "ROW\t@{href=../day/%s.html?axway_hero=%s}%s\t%s\t%s\t%s\t%s\t%s\n", $2, $11, $2, $5, $4, vc, $7, rc
         n1++
     }
     END {

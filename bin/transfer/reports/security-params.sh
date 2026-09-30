@@ -320,13 +320,20 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
     }
 ' \
   | LC_ALL=C sort -t$'\t' -k1,1n -k2,2n -k7,7nr \
-  | awk -F'\t' -v secdir="$secdir" '
+  | awk -F'\t' -v secdir="$secdir" -v SUBB="$CONFIG_BASE/_subscriptions.tsv" -v PTNB="$CONFIG_BASE/_partners.tsv" '
+    # the ENTITY row tints (2026-09-30 audit A5-01): the subscription table by the
+    # subscription result colour, the Partners table by the partner one (base
+    # cache col 3); "(none)" and unconfigured names stay untinted
+    BEGIN { while ((getline l < SUBB) > 0) { split(l, a, "\t"); if (a[1] != "" && a[3] != "") SRES[toupper(a[1])] = a[3] } close(SUBB)
+            while ((getline l < PTNB) > 0) { split(l, a, "\t"); if (a[1] != "" && a[3] != "") PRES[toupper(a[1])] = a[3] } close(PTNB) }
+    function stint(n) { return (toupper(n) in SRES) ? "\t@data:res=" SRES[toupper(n)] : "" }
+    function ptint(n) { return (toupper(n) in PRES) ? "\t@data:res=" PRES[toupper(n)] : "" }
     # close the Subscription table and open the Partners one: the partners on this
     # page (a subscription with >1 partner counts under each; subscriptions with
     # no configured partner -> "(none)")
     function subtotal() {
         printf "TOTAL\tTotal (%d subscription(s))\t\t@{class=num}%d\n", sn, sp > out
-        printf "TABLE\tPartners\n" > out
+        printf "TABLE\tPartners\trestint\n" > out
         printf "HEAD\tPartner\tSubscriptions\tOK transfers\n" > out
         printf "KIND\tptn\tnum\tnum\n" > out
         ptbl = 1
@@ -343,16 +350,19 @@ LC_ALL=C sort "$subfile" | awk -F'|' -v pairs="$pairfile" -v spx="$SPX" -v smap=
         out = secdir "/" $3 ".rpt"
         sn = sc = sf = sp = 0; pn = ps = pc = pf = pp = 0; ptbl = 0
         printf "TITLE\tSubscriptions using %s %s\n", $4, $5 > out
+        # the way back to the report (2026-09-30 audit A5-09): a value page is
+        # reached only from Security Parameters
+        printf "NAV\t0|Security Parameters|../security-params.html\n" > out
         printf "INTRO\tEvery subscription (and its partner) that used **%s: %s** on at least one transfer leg. Counts are OK transfers (legs), full period.\n", $4, $5 > out
-        printf "TABLE\t\n" > out                 # empty heading — the h1 names the page
+        printf "TABLE\t\trestint\n" > out        # empty heading — the h1 names the page
         printf "HEAD\tSubscription\tPartner\tOK transfers\n" > out
         printf "KIND\tsite\tptn\tnum\n" > out
         next
     }
-    $2 == 1 { printf "ROW\t%s\t%s\t%s\n", $3, $4, $7 > out
+    $2 == 1 { printf "ROW\t%s\t%s\t%s%s\n", $3, $4, $7, stint($3) > out
               sn++; sc += $5; sf += $6; sp += $7; next }
     { if (!ptbl) subtotal()
-      printf "ROW\t%s\t%s\t%s\n", $3, $4, $7 > out
+      printf "ROW\t%s\t%s\t%s%s\n", $3, $4, $7, ptint($3) > out
       pn++; ps += $4; pc += $5; pf += $6; pp += $7 }
     END { if (out != "") closepage() }
 '
@@ -378,7 +388,6 @@ emit_attr_rows() {   # $1 = attribute key
 
 {
     printf 'TITLE\tSecurity Parameters\n'   # = its Reports menu label (2026-09-29)
-    printf 'DESC\tThe cryptography in use: every SecurityParameters attribute of the transfer legs, then the server log SSH negotiations with weak algorithms flagged, deprecated-parameter warnings, PeSIT TLS and session problems.\n'   # (+ the SSH security tables since 2026-09-30, appended by bin/server/reports.sh)
     printf 'TABLE\t\tnoagg=2\n'
     printf 'HEAD\tAttribute\tValue\tOK transfers\n'
     printf 'KIND\ttext\ttext\tnum\n'

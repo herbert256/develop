@@ -16,9 +16,10 @@
 # subscription; THE selection lives there, so every listed File has its
 # docs/files/<coreid>.html page), ms descending, CoreId ascending on a tie;
 # the WHOLE row opens that page (the rowlink modifier + @data:href).
-# Columns: Duration (sorting by the exact milliseconds via @{sortval}), Start
-# Time, End Time (_files.tsv col 24, the latest leg end), File, Destination
-# Subscription, CoreId. Rows tint by the File colour (col 25).
+# Columns: Duration (sorting by the exact milliseconds via @{sortval}), Start,
+# End (_files.tsv col 24, the latest leg end), File, Subscription, CoreId
+# (headed "Start Time" / "End Time" / "Destination Subscription" until
+# 2026-09-30 — audit A2-06). Rows tint by the File colour (col 25).
 #
 # Usage:
 #   ./duration-longest.sh    # -> data/transfer/reports/duration-longest.rpt
@@ -60,7 +61,7 @@ slow_ok=$(top_list)
 n_ok=$(count_scope)
 shown_ok=$(printf '%s\n' "$slow_ok" | awk 'length($0) { n++ } END { print n+0 }')
 
-# rows: Duration (sortval = the exact ms) ⇥ Start Time ⇥ End Time ⇥ File ⇥
+# rows: Duration (sortval = the exact ms) ⇥ Start ⇥ End ⇥ File ⇥
 # Subscription ⇥ CoreId (2026-09-30: File and CoreId switched); every cell
 # but the subscription's opens the File page, and so does the whole row
 rows_of() {   # $1 the list
@@ -73,11 +74,10 @@ rows_of() {   # $1 the list
 }
 {
     printf 'TITLE\tLongest Files\n'
-    printf 'DESC\tThe %s longest delivered Files by wall-clock duration, at most %s per subscription.\n' "$TOP_N" "$PER_SUB"
     # rows tint by the File colour (2026-09-29): green, or orange after a
     # retry / resubmit; the whole row opens the File page (rowlink)
     printf 'TABLE\tTop %s longest Files by duration (at most %s per subscription)\twide\trestint\trowlink\n' "$TOP_N" "$PER_SUB"
-    printf 'HEAD\tDuration\tStart Time\tEnd Time\tFile\tDestination Subscription\tCoreId\n'
+    printf 'HEAD\tDuration\tStart\tEnd\tFile\tSubscription\tCoreId\n'
     printf 'KIND\ttext\ttext\ttext\tfile\tsite\tmono\n'
     rows_of "$slow_ok"
     printf 'TOTAL\tTop %s of %s Files\t\t\t\t\t\n' "$shown_ok" "$n_ok"

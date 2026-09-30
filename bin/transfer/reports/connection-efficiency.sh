@@ -95,7 +95,6 @@ agg=$(awk -F'\t' -v minsess="$MIN_SESS" -v marathon="$MARATHON" '
 if [ "$(printf '%s\n' "$agg" | awk 'NR==1 { print $1 }')" = "EMPTY" ]; then
     {
         printf 'TITLE\tConnection efficiency\n'
-        printf 'DESC\tHow the technical connections (Session IDs) are used: Files per connection per account, connection storms per minute, and the anatomy of failing sessions.\n'
         printf 'TABLE\tConnection efficiency\tnofilter\n'
         printf 'HEAD\tAccount\n'
         printf 'KIND\ttext\n'
@@ -134,7 +133,6 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }
 
 {
     printf 'TITLE\tConnection efficiency\n'
-    printf 'DESC\tHow the technical connections (Session IDs) are used: Files per connection per account, connection storms per minute, and the anatomy of failing sessions.\n'
 
     # noagg: the TOTAL is the PLATFORM-wide figure, not the sum of the listed
     # accounts — a search must not re-sum it (2026-09-29 audit)
@@ -179,4 +177,7 @@ nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }
         "$p_sess" "$p_ratio" "$p_sf" "$p_af"
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+# the ENTITY row tint (2026-09-30 audit A2-03: every row tints by its entity
+# result colour — bin/rpt-tint.awk, base cache col 3)
+awk -F'\t' -v TABLES="Files per connection|Connection storms (top $TOP_N accounts by peak starts per minute)|Session failure anatomy (top $TOP_N accounts by all-Error sessions)" -v BASE="$CONFIG_BASE/_accounts.tsv" -v COL=2 -f "$ROOT/bin/rpt-tint.awk" "$OUT" > "$OUT.tint" && mv "$OUT.tint" "$OUT"
 echo "Data written to $OUT ($p_sess sessions, $p_ratio Files/connection, $p_sf% single-File)." >&2

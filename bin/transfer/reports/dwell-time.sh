@@ -27,7 +27,6 @@ source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/duration-dwell.rpt"   # the page (transfer/duration-dwell.html)
 TOP_N=100
-DESC_TEXT="How long a file waits inside SecureTransport between its inbound and its outbound leg (the store-and-forward dwell): the distribution, the dwell per subscription and the gap per day."
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)
@@ -120,7 +119,6 @@ if [ "${n_meas:-0}" -eq 0 ]; then
     # page and exit 0, so the build's report pool does not abort.
     {
         printf 'TITLE\tStore-and-forward\n'   # = its Reports menu label (2026-09-30)
-        printf 'DESC\t%s\n' "$DESC_TEXT"
         printf 'TABLE\tStore-and-forward dwell\n'
         printf 'HEAD\tDwell\n'
         printf 'KIND\ttext\n'
@@ -154,7 +152,6 @@ site_rows=$(printf '%s\n' "$agg" | grep $'^P\t' | LC_ALL=C sort -t"$(printf '\t'
 
 {
     printf 'TITLE\tStore-and-forward\n'   # = its Reports menu label (2026-09-30)
-    printf 'DESC\t%s\n' "$DESC_TEXT"
 
     printf 'TABLE\tDwell-time distribution\n'
     printf 'HEAD\tDwell\tFiles\tShare\n'
@@ -255,5 +252,8 @@ awk -F'\t' '
     printf 'FOOT\n'
 } >> "$OUT.tmp"
 mv "$OUT.tmp" "$OUT"
+# the ENTITY row tint (2026-09-30 audit A2-03: every row tints by its entity
+# result colour — bin/rpt-tint.awk, base cache col 3)
+awk -F'\t' -v TABLES="Dwell by subscription" -v BASE="$CONFIG_BASE/_subscriptions.tsv" -v COL=2 -f "$ROOT/bin/rpt-tint.awk" "$OUT" > "$OUT.tint" && mv "$OUT.tint" "$OUT"
 
 echo "Data written to $OUT ($n_meas measurable, median $med, p95 $p95, max $mx)." >&2

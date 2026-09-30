@@ -12,4 +12,14 @@ comps=()
 for c in size-dist file-type duplicate-files top-transfers size-profile; do   # + Largest files and Size profile (2026-09-29: their own pages went)
     comps+=("$REPORTS_DIR/$c.rpt")
 done
-merge_rpt "$OUT" "Sizes & types" "Files bucketed by transfer size (plus the empty files delivered OK), split per file extension, the business filenames transferred more than once (any outcome), the 50 largest Files and the per-subscription size profile." "${comps[@]}"
+merge_rpt "$OUT" "Sizes & types" "${comps[@]}"
+# the ENTITY row tint (2026-09-30 audit A2-03: every row tints by its entity
+# result colour — bin/rpt-tint.awk, base cache col 3)
+awk -F'\t' -v TABLES="Empty files delivered OK" -v BASE="$CONFIG_BASE/_subscriptions.tsv" -v COL=2 -f "$ROOT/bin/rpt-tint.awk" "$OUT" > "$OUT.tint" && mv "$OUT.tint" "$OUT"
+# a size bucket with no Files keeps its row (the bucket ladder stays whole) but
+# shows empty cells, the 0 count rule (2026-09-30 audit A5-06): Files, Volume
+# and % of Files blank; the Error / OK zeros z-blank in the renderer
+awk -F'\t' 'BEGIN { OFS = "\t" }
+    $1 == "TABLE" { t = $2 }
+    t == "Files by size bucket" && $1 == "ROW" && $3 == "0" { $3 = ""; $6 = ""; $7 = "" }
+    { print }' "$OUT" > "$OUT.zero" && mv "$OUT.zero" "$OUT"

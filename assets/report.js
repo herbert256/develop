@@ -1258,7 +1258,7 @@
   // configuration just narrows what a search may match.
   // (The one-line search-syntax hint below the search boxes (wildcards,
   // quotes, and / or / not) went 2026-09-30, user request: "Remove below text everywhere on the
-  // site"; the search box tooltip still explains the syntax.)
+  // site"; the search syntax is on the help page, help/general.html)
   function setupSearchConfig() {
     var table = document.querySelector("table[data-esearch]");
     if (!table) return;
@@ -2055,7 +2055,7 @@
       // click on Error sorted ascending instead of "biggest first". Sample the
       // rows that are actually in the table when the header is clicked.
       var sample = origOrder.length ? origOrder : dataRows(table);
-      for (var i = 0; i < sample.length; i++) {   // no row cap: a count column whose top rows are all blank zeros (logon's No account) must still be detected numeric
+      for (var i = 0; i < sample.length; i++) {   // no row cap: a count column whose top rows are all blank zeros (a sparse error count) must still be detected numeric
         var c = sample[i].cells[col]; if (!c) break;
         var t = c.textContent.trim();
         if (t === "" || t === "-") {
@@ -3099,21 +3099,10 @@
       tr.setAttribute("data-shide", match ? "0" : "1");
       applyRowVis(tr);
     });
-    // group HEADING rows (a hand-built catalog's <tr><th colspan>, the Reports
-    // start page) follow their rows: a heading with no matching row under it
-    // hides (2026-09-29: a search left every heading standing over nothing)
-    (function () {
-      var hr0 = headerRow(table), all = table.rows, i, head = null, any = false, past = !hr0;
-      function close() { if (head) head.style.display = any ? "" : "none"; }
-      for (i = 0; i < all.length; i++) {
-        var r = all[i];
-        if (r === hr0) { past = true; continue; }
-        if (!past) continue;   // a GHEAD banner above the field header is no group heading
-        if (r.cells.length && !r.getElementsByTagName("td").length) { close(); head = r; any = false; continue; }
-        if (r.style.display !== "none") any = true;
-      }
-      close();
-    })();
+    // (The group-HEADING hide for a hand-built catalog — the Reports start
+    // page — went 2026-09-30 with that page, audit A6-01: its only target
+    // left was the First seen table's repeated bottom header row, which it
+    // hid for good after the first keystroke.)
     // A data-recalc table under a NARROWED date range must be re-aggregated for
     // that range, not text-summed: recalcTable only rewrites visible rows, so a
     // row hidden while the range was applied still holds full-period text —
@@ -3193,7 +3182,7 @@
       (function () {
         var box = document.createElement("input");
         box.type = "text"; box.className = "search"; box.placeholder = "Search this page…";
-        box.title = "Filters every table on this page. Wildcards: ? = one character, * = any run (e.g. FE?????, ab*cd). Keywords: and, or (e.g. RABO or SAP, ABC and XYZ). Quotes match a whole cell (e.g. \"UC1_FIN_BILLING\")";
+        box.title = "Filters every table on this page";   // (the wildcard wording went 2026-09-30 with the search-syntax hint, audit A6-12)
         var clear = document.createElement("span");
         clear.className = "search-clear"; clear.textContent = "×"; clear.title = "Clear search";
         function refresh() {                       // reflect the box: toggle ×, persist, sync the URL, filter
@@ -3701,15 +3690,15 @@
     var els = Array.prototype.slice.call(root.querySelectorAll("td, th, code, .coreid-item, dd, li"));
     if (root.matches && root.matches("td, th, code, .coreid-item, dd, li")) els.unshift(root);
     for (var e = 0; e < els.length; e++) {
-      var el = els[e], t = el.textContent;
-      if (t.length > 200 || t.indexOf("-") < 0) continue;
+      var el = els[e], t = el.textContent, lc = isLinesCell(el);
+      if ((!lc && t.length > 200) || t.indexOf("-") < 0) continue;
       ID_RE.lastIndex = 0; if (!ID_RE.test(t)) continue;
       if (el.closest && el.closest(".colpick, .topbar")) continue;
       // the text nodes carrying an id, one icon after each (after the node's
       // element when that element IS the id — <code>id</code>, <a>id</a>)
       var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), node, nodes = [], count = 0;
       while ((node = walker.nextNode())) { if (!isIcon(node.parentNode)) nodes.push(node); }
-      for (var k = 0; k < nodes.length && count < 4; k++) {
+      for (var k = 0; k < nodes.length && (lc || count < 4); k++) {
         node = nodes[k]; ID_RE.lastIndex = 0;
         var m = ID_RE.exec(node.nodeValue); if (!m) continue;
         var par = node.parentNode, anchor = node;
@@ -3775,6 +3764,12 @@
     }
     return /transfer\s*id/i.test(lbl);
   }
+  // a multi-line list cell (td.lines — KIND clines / clinks: the Patterns
+  // Last 5 Files, the drill-style lists) holds one id per line: the
+  // 200-character cap and the 4-ids cap of the two id passes skipped it
+  // whole, so its ids got no File Tracking link, ↗ or ⧉ (2026-09-30 audit
+  // A5-04) — such a cell is scanned in full
+  function isLinesCell(el) { return el.tagName === "TD" && (" " + el.className + " ").indexOf(" lines ") >= 0; }
   function addCoreIdLinks(root) {
     if (!root || root.nodeType !== 1) return;
     var tpl = coreidUrlTemplate(); if (!tpl) return;
@@ -3785,14 +3780,14 @@
     var els = Array.prototype.slice.call(root.querySelectorAll(SEL));
     if (root.matches && root.matches(SEL)) els.unshift(root);
     for (var e = 0; e < els.length; e++) {
-      var el = els[e], t = el.textContent, prose = /^(P|H1|H2|H3)$/.test(el.tagName);
-      if ((!prose && t.length > 200) || t.indexOf("-") < 0) continue;
+      var el = els[e], t = el.textContent, prose = /^(P|H1|H2|H3)$/.test(el.tagName), lc = isLinesCell(el);
+      if ((!prose && !lc && t.length > 200) || t.indexOf("-") < 0) continue;
       ID_RE.lastIndex = 0; if (!ID_RE.test(t)) continue;
       if (el.closest && el.closest(".colpick, .topbar")) continue;
       if (isTransferIdCell(el) || (el.tagName === "CODE" && el.parentNode && el.parentNode.closest && isTransferIdCell(el.parentNode.closest("td, dd") || el))) continue;
       var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), node, nodes = [], count = 0;
       while ((node = walker.nextNode())) { if (!isIcon(node.parentNode) && !isStGo(node.parentNode)) nodes.push(node); }
-      for (var k = 0; k < nodes.length && count < 4; k++) {
+      for (var k = 0; k < nodes.length && (lc || count < 4); k++) {
         node = nodes[k]; ID_RE.lastIndex = 0;
         var m = ID_RE.exec(node.nodeValue); if (!m) continue;
         var par = node.parentNode, a = par.closest ? par.closest("a") : null;
@@ -4018,8 +4013,8 @@
   // ONE link gets class `cl` — style.css stretches that link over the whole
   // cell, so the click target is the cell, not just its text. The renderer
   // bakes `cl` for link=/href=/entity cells (render_rpt.awk); this pass
-  // catches the hand-built tables (start pages, site map,
-  // index lists) and any writer that forgot. A cell with text beside its
+  // catches the hand-built tables (the index lists, the
+  // configuration pages) and any writer that forgot. A cell with text beside its
   // link, or more than one element, is left alone; header cells too (their
   // click sorts). Runs before the data-origc snapshots, which copy className.
   function wholeCellLinks(table) {
@@ -4038,9 +4033,7 @@
   // keyboard could not reach them: each gets a tab stop (and a span the button
   // role), and ONE delegated handler turns Enter / Space on it into the click
   // its own handler already listens for (shift kept: shift+Enter on a header
-  // adds a sort key like shift-click). The Reports menu label is focusable in
-  // its markup (assets/topbar.js): focus opens the menu through the
-  // CSS :focus-within, Tab walks its links, Escape leaves it. Engine scripts
+  // adds a sort key like shift-click). Engine scripts
   // that build such spans after init (sub-files.js) stamp their own.
   var KB_SEL = "span.tab, .csvbtn, .pickbtn, th.sortable";
   function kbStamp(root) {

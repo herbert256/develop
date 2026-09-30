@@ -40,6 +40,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # so calendar gaps become explicit "0" rows.
 CNTF=$(srv_counts)
 agg=$(awk -F'\t' -v CNTF="$CNTF" "$LOGLINES_AWK$AWKLIB"'
+    function zb(v) { return (v + 0 == 0) ? "" : v + 0 }   # a 0 count shows blank
     FILENAME == CNTF {   # C date hour level component count  |  T date first last
         if ($1 == "T") { first[$2] = $3; last[$2] = $4; next }
         d = $2; if (d == "") next                  # an undated line: no Top view day
@@ -69,10 +70,12 @@ agg=$(awk -F'\t' -v CNTF="$CNTF" "$LOGLINES_AWK$AWKLIB"'
                 w = int(rec[d] * 100 / maxr)
                 fi = first[d]; sub(/\.[0-9]+$/, "", fi); if (fi == "") fi = "-"
                 la = last[d];  sub(/\.[0-9]+$/, "", la); if (la == "") la = "-"
-                printf "ROW\t@{href=../day/%s.html}%s\t%d\t%d\t%d\t%d\t%d\t%s%%\t%d\t%d\t%d\t%s\t%s\t@data:loglines=%s\n", \
-                    d, d, rec[d], w, inf[d]+0, warn[d]+0, err[d]+0, ep, cT[d]+0, cP[d]+0, cS[d]+0, fi, la, lastlines(d)
+                # the component counts blank a 0 (2026-09-30 audit A5-06 — the
+                # transfer Top view rule; every reader adds +0)
+                printf "ROW\t@{href=../day/%s.html}%s\t%d\t%d\t%d\t%d\t%d\t%s%%\t%s\t%s\t%s\t%s\t%s\t@data:loglines=%s\n", \
+                    d, d, rec[d], w, inf[d]+0, warn[d]+0, err[d]+0, ep, zb(cT[d]), zb(cP[d]), zb(cS[d]), fi, la, lastlines(d)
             } else {
-                printf "ROW\t%s\t0\t0\t0\t0\t0\t0.0%%\t0\t0\t0\t-\t-\t@data:loglines=\n", d
+                printf "ROW\t%s\t0\t0\t0\t0\t0\t0.0%%\t\t\t\t-\t-\t@data:loglines=\n", d
             }
         }
         # noisiest component overall
@@ -93,12 +96,12 @@ IFS='|' read -r _ ndays busyd busyc worstd worste noisy noisyc kfrom kto <<< "$(
 
 {
     printf 'TITLE\tServer top view\n'   # = its Reports menu label (2026-09-29)
-    printf 'DESC\tThe whole server log at a glance: per day, the records, the Info/Warning/Error split and error rate, and how busy each component (TM, PESITD, SSHD) was.\n'
     printf 'TABLE\t\twide\ttotaltop\tdatereset\tpct=6:5:1\n'
     printf 'HEAD\tDate\tRecords\tLoad\tInfo\tWarnings\tErrors\tError %%\tTM\tPESITD\tSSHD\tFirst\tLast\n'
     printf 'KIND\ttext\tnum\tbar\tnum\tnumwarn\tnumfailed\tnum\tnum\tnum\tnum\ttext\ttext\n'
+    zb() { [ "${1:-0}" != 0 ] && printf '%s' "$1" || true; }   # a 0 component total shows blank (A5-06)
     printf 'TOTAL\t%s\t@{class=num}%s\t\t@{class=num}%s\t@{class=num warn}%s\t@{class=num failed}%s\t@{class=num}%s%%\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t\t\n' \
-        "$total_label" "$trec" "$tinf" "$twarn" "$terr" "$tep" "$tT" "$tP" "$tS"
+        "$total_label" "$trec" "$tinf" "$twarn" "$terr" "$tep" "$(zb "$tT")" "$(zb "$tP")" "$(zb "$tS")"
     printf '%s\n' "$rows"
     printf 'SUMMARY\tDays: %s  |  Records: %s  |  Errors: %s (%s%%)  |  Warnings: %s  |  Noisiest: %s\n' "$ndays" "$trec" "$terr" "$tep" "$twarn" "$noisy"
     printf 'FOOT\n'

@@ -77,7 +77,8 @@ while IFS= read -r _pg; do PAGES+=("$_pg"); done < "$TMP/pages"
 
 # ARGV order matters: 1 = the file set, 2 = topbar-data.js, 3.. = the pages.
 # (ARGIND is a gawk extension — the file index is counted on FNR==1 instead.)
-awk -v DOCS="$DOCS" '
+# (bin/date.awk in front: jdn / fromjdn for the chart slot dates, section 2c)
+awk -v DOCS="$DOCS" "$(cat bin/date.awk)"'
     function resolve(page, t,   base, full, n, parts, i, sp, stack, out) {
         sub(/[#?].*/, "", t)
         if (t == "") return ""
@@ -179,6 +180,30 @@ awk -v DOCS="$DOCS" '
                     for (i9 = 1; i9 <= n9; i9++) if (F9[i9] != "") edge(page, b9 "files/" F9[i9] ".html")
                 }
             }
+            # 2c. THE CHART LINKS (2026-09-30 audit A6-08): assets/slotchart.js
+            # links EVERY slot of a chart to its data-link, "{}" = the slot
+            # DATE — data or not — so every slot date of every series
+            # (data-iv<N>) is a STRICT edge: a date with no day page is a
+            # broken link. A data-link without "{}" is a plain edge.
+            if (index(txt, "data-link=\"") > 0) {
+                s = txt
+                while (match(s, /<div class="slotchart"[^>]*>/)) {
+                    tag = substr(s, RSTART, RLENGTH); s = substr(s, RSTART + RLENGTH)
+                    lp = attr(tag, "data-link"); if (lp == "") continue
+                    if (index(lp, "{}") == 0) { edge(page, lp); continue }
+                    split("", CD); ncd = 0; t2 = tag
+                    while (match(t2, /data-iv[0-9]+="[^"]*"/)) {
+                        a9 = substr(t2, RSTART, RLENGTH); t2 = substr(t2, RSTART + RLENGTH)
+                        iv9 = substr(a9, 8); sub(/=.*/, "", iv9)
+                        v9 = a9; sub(/^[^"]*"/, "", v9); sub(/"$/, "", v9)
+                        chart_dates(v9, iv9 + 0)
+                    }
+                    # in date order (the first-sighting example never rests on
+                    # awk hash order)
+                    for (i9 = 2; i9 <= ncd; i9++) { v = CDL[i9]; j9 = i9 - 1; while (j9 >= 1 && CDL[j9] > v) { CDL[j9 + 1] = CDL[j9]; j9-- } CDL[j9 + 1] = v }
+                    for (i9 = 1; i9 <= ncd; i9++) { h9 = lp; sub(/\{\}/, CDL[i9], h9); edge(page, h9) }
+                }
+            }
         }
         # 3. Entity Search: its rows live in search/search-data.js, not in the
         # page (the payload maps to search/search.html; its links carry ../,
@@ -252,6 +277,24 @@ awk -v DOCS="$DOCS" '
         print "STAT\tedges\t" nedge
         nrl = 0; for (rl in rootlink) nrl++   # POSIX awk: length(array) is a gawk/mawk extension
         print "STAT\troot\t" nrl
+    }
+    # the slot dates of ONE chart series into CD / CDL (ncd), the rule of
+    # assets/slotchart.js expandSeries + parse: a compact series
+    # "=S<YYYY-MM-DD>T<HHMM>~<o|d|m>|v|v…" steps iv minutes per slot from its
+    # start; the plain form "label:v…:date|…" names each slot date last
+    function chart_dates(v, iv,   n, seg, i, h, j0, m0, mm, p, P, dd) {
+        n = split(v, seg, "|")
+        h = seg[1]
+        if (substr(h, 1, 2) == "=S") {
+            if (iv <= 0 || h !~ /^=S[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9][0-9][0-9]~[odm]$/) return
+            j0 = jdn(substr(h, 3, 4) + 0, substr(h, 8, 2) + 0, substr(h, 11, 2) + 0)
+            m0 = substr(h, 14, 2) * 60 + substr(h, 16, 2)
+            for (i = 2; i <= n; i++) { mm = m0 + (i - 2) * iv; dd = fromjdn(j0 + int(mm / 1440))
+                if (!(dd in CD)) { CD[dd] = 1; CDL[++ncd] = dd } }
+            return
+        }
+        for (i = 1; i <= n; i++) { p = split(seg[i], P, ":"); dd = P[p]
+            if (dd ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ && !(dd in CD)) { CD[dd] = 1; CDL[++ncd] = dd } }
     }
     function attr(d, name,   m, v) {
         if (!match(d, name "=\"[^\"]*\"")) return ""

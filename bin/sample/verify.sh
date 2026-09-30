@@ -215,9 +215,12 @@ done
 # every Errors-group page has the From/To selection (2026-09-30, user request:
 # "Give all reports in the Errors group the date period selection"): at least
 # one table that is not nofilter and re-aggregates (data-recalc / data-heat /
-# rangehook / row buckets) or carries date cells — report.js isDateAware
+# rangehook / row buckets) or carries date cells — report.js isDateAware.
+# The pages are the ones carrying the Errors group tag (apply_report_groups),
+# not a hand-kept glob list, so a new Errors member is checked too (2026-09-30
+# audit A6-06)
 n=0; bad=""
-for pg in docs/analyses/failed.html docs/analyses/failed-sub-all.html docs/analyses/failing-reasons.html docs/transfer/failed-files.html docs/transfer/unknown-transfers.html docs/transfer/pirates-*.html docs/transfer/episodes.html docs/transfer/retries-*.html docs/transfer/failure-heatmap*.html docs/server/errors-*.html docs/server/failure-flows.html docs/server/io-errors.html docs/server/routing-errors.html; do
+for pg in $(grep -l 'class="grouptag">&larr; Errors<' docs/analyses/*.html docs/transfer/*.html docs/server/*.html 2>/dev/null); do
     [ -f "$pg" ] || continue; n=$((n + 1))
     awk 'BEGIN { RS = "<table" } NR > 1 { t = $0; sub(/<\/table>.*/, "", t); h = substr(t, 1, index(t, ">"))
             if (h ~ /data-nofilter/) next
@@ -245,6 +248,28 @@ n=$(find docs -type f \( -name '*.html' -o -name '*.js' \) ! -path 'docs/assets/
 check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n page(s) / payload(s) still show a time with milliseconds (hh:mm:ss.mmm)"
 # the search-syntax hint under the search boxes is GONE (2026-09-30, user request)
 check $(! grep -q 'Wildcards: ? = 1 character' docs/assets/report.js 2>/dev/null && echo 0 || echo 1) "report.js still renders the 'Wildcards: ? = 1 character …' search hint"
+# THE SECOND 2026-09-30 AUDIT: entity row tints (bin/rpt-tint.awk and the
+# writers' own), TOTAL rows, the list pages' way back, no DESC lines, the
+# anomalies cell colour, the io-errors account tint
+bad=""
+for pg in transfer/connection-efficiency transfer/episodes transfer/files-empty-files transfer/pirates-details transfer/retries-failing-flows transfer/retries-per-subscription transfer/went-quiet-accounts transfer/went-quiet-subscriptions transfer/security-outreach transfer/month-stats/this-subscription transfer/unknown-transfers; do
+    f="docs/$pg.html"
+    { [ -f "$f" ] && grep -q 'data-restint' "$f" && grep -q ' data-res="' "$f"; } || bad="$bad $pg"
+done
+check $([ -z "$bad" ] && echo 0 || echo 1) "entity-keyed table(s) without the result-colour row tint:$bad"
+bad=""
+for pg in transfer/same-protocol transfer/file-in-file-out-uc4-to-uc2 transfer/went-quiet-subscriptions; do
+    t=$(grep -o '<table' "docs/$pg.html" 2>/dev/null | wc -l | tr -d ' '); n=$(grep -o '<tr class="total"' "docs/$pg.html" 2>/dev/null | wc -l | tr -d ' ')
+    [ "${t:-0}" -gt 0 ] && [ "$n" = "$t" ] || bad="$bad $pg($n/$t)"
+done
+n=0; m=0; for f in docs/transfer/waiting/*.html docs/transfer/expired/*.html; do [ -f "$f" ] || continue; m=$((m + 1)); grep -q '<tr class="total"' "$f" && grep -q 'href="../waiting-expired.html"' "$f" && n=$((n + 1)); done
+check $([ -z "$bad" ] && [ "$m" -gt 0 ] && [ "$n" = "$m" ] && echo 0 || echo 1) "tables without a TOTAL row:${bad:- none}; waiting/ + expired/ list pages with TOTAL + the way back: $n of $m"
+n=0; m=0; for f in docs/transfer/secparams/*.html; do [ -f "$f" ] || continue; m=$((m + 1)); grep -q 'href="../security-params.html"' "$f" && n=$((n + 1)); done
+check $([ "$m" -gt 0 ] && [ "$n" = "$m" ] && echo 0 || echo 1) "secparams value pages linking back to Security Parameters: $n of $m"
+n=$(cat data/*/reports/*.rpt data/*/reports/*/*.rpt 2>/dev/null | command grep -c $'^DESC\t' || true)
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n DESC line(s) still written (nothing reads a DESC since 2026-09-30)"
+check $(! grep -q ' data-res="' docs/transfer/anomalies.html 2>/dev/null && grep -qE 'class="num (failed|warn)' docs/transfer/anomalies.html 2>/dev/null && echo 0 || echo 1) "anomalies.html: rows tinted by severity, or no coloured × typical cell"
+check $(awk -F'\t' '$1 == "TABLE" { t++ } t == 1 && $1 == "ROW" && !/@data:res=/ { n++ } END { print n + 0 }' data/server/reports/io-errors.rpt 2>/dev/null | grep -qx 0 && echo 0 || echo 1) "io-errors per-folder rows without the account tint"
 # the three partner study reports are GONE (2026-09-30, user request): no
 # writer, .rpt, page or help page may come back
 n=$(ls bin/analyses/reports/partner-scorecard.sh bin/analyses/reports/blast-radius.sh bin/analyses/reports/app-partners.sh data/analyses/reports/partner-scorecard.rpt data/analyses/reports/blast-radius.rpt data/analyses/reports/app-partners.rpt docs/analyses/partner-scorecard.html docs/analyses/blast-radius.html docs/analyses/app-partners.html docs/help/partner-scorecard.html docs/help/blast-radius.html docs/help/app-partners.html 2>/dev/null | wc -l | tr -d ' ')
@@ -311,11 +336,6 @@ n=$(awk -F'\t' '$1=="CD-PARCEL-BLUTH"' "data/flow-manager/xref/_accounts-logins.
 check $([ "${n:-0}" -eq 2 ] && echo 0 || echo 1) "CD-PARCEL-BLUTH has $n login(s), expected 2 (the multi-FE account)"
 st=$(awk -F'\t' '$1=="ROW" && index($0, "UC2_CD_PARCELX_BLUTH") { s=$2; sub(/^@\{[^}]*\}/, "", s); print s; exit }' "data/server/reports/uc2-status.rpt" 2>/dev/null)
 check $([ "$st" = "Nothing" ] && echo 0 || echo 1) "UC2_CD_PARCELX_BLUTH uc2-status is '${st:-absent}', expected Nothing (multi-FE login scoping)"
-# Partners in (2026-09-02): the pickup sidecar joins to LOGINS, once per
-# login and account — the multi-FE account's pickups land on FE186976
-# alone (FE624205 stays empty), and the 8-flow GLOBEX account's count
-# lands once on FE243615 (never the x8 per-subscription repeat)
-R="data/analyses/reports/fe-overview.rpt"; SC="data/server/reports/uc2-pickups.tsv"
 # the sample plants Disallowed lines for configured logins, so at least one
 # Partners in row carries a Disallowed count (the funnel column; the
 # FE overview's summed "Logon problems" column and its _logon-problems.tsv
@@ -323,14 +343,11 @@ R="data/analyses/reports/fe-overview.rpt"; SC="data/server/reports/uc2-pickups.t
 pc=$(awk -F'\t' '$1=="HEAD" { for (i=2;i<=NF;i++) if ($i=="Disallowed") c=i } $1=="ROW" && c { v=$c; sub(/^@\{[^}]*\}/, "", v); if (v+0 > 0) n++ } END { print n+0 }' "data/analyses/reports/partners-in.rpt" 2>/dev/null)
 check $([ "${pc:-0}" -ge 1 ] && echo 0 || echo 1) "Partners in has $pc row(s) with a Disallowed count, expected at least 1 (the planted Disallowed logins)"
 check $([ ! -e "data/server/reports/_logon-problems.tsv" ] && echo 0 || echo 1) "the retired data/server/reports/_logon-problems.tsv still exists"
-pk=$(awk -F'\t' '$1=="HEAD" { for (i = 2; i <= NF; i++) if ($i == "Pickups") c = i } $1=="ROW" && $2=="FE186976" { print $c+0; exit }' "$R" 2>/dev/null)
-sp=$(awk -F'\t' '$1=="UC2_CD_PARCEL_BLUTH" { print $5+0; exit }' "$SC" 2>/dev/null)
-check $([ "${pk:-0}" -gt 0 ] && [ "$pk" = "${sp:-x}" ] && echo 0 || echo 1) "fe-overview FE186976 pickups '${pk:-absent}' != sidecar UC2_CD_PARCEL_BLUTH '${sp:-absent}'"
-pk=$(awk -F'\t' '$1=="HEAD" { for (i = 2; i <= NF; i++) if ($i == "Pickups") c = i } $1=="ROW" && $2=="FE624205" { print $c+0; exit }' "$R" 2>/dev/null)
-check $([ "${pk:-1}" -eq 0 ] && echo 0 || echo 1) "fe-overview FE624205 pickups '${pk:-absent}', expected empty (multi-FE login scoping)"
-pk=$(awk -F'\t' '$1=="HEAD" { for (i = 2; i <= NF; i++) if ($i == "Pickups") c = i } $1=="ROW" && $2=="FE243615" { print $c+0; exit }' "$R" 2>/dev/null)
-sp=$(awk -F'\t' '$1=="STMT_EXPORT_GLOBEX_01" { print $5+0; exit }' "$SC" 2>/dev/null)
-check $([ "${pk:-0}" -gt 0 ] && [ "$pk" = "${sp:-x}" ] && echo 0 || echo 1) "fe-overview FE243615 pickups '${pk:-absent}' != sidecar STMT_EXPORT_GLOBEX_01 '${sp:-absent}' once (the 8-flow account double-counted?)"
+# the FE overview carries no Pickups / Oldest waiting / combined Error since
+# the 2026-09-30 audit (nothing showed them: Partners in dropped them), and
+# logon.rpt ships only the drill cells Partners in binds (1 2 3 5 7)
+check $(awk -F'\t' '$1 == "HEAD" { print ($0 ~ /\tPickups|\tOldest waiting|\tError\t/) ? 1 : 0; exit }' data/analyses/reports/fe-overview.rpt 2>/dev/null | grep -qx 0 && echo 0 || echo 1) "fe-overview.rpt still carries Error / Oldest waiting / Pickups"
+check $(awk -F'\t' '{ for (i = 1; i <= NF; i++) if ($i ~ /^@data:drill-cell-(4|6|9|14)=/) n++ } END { print n + 0 }' data/server/reports/logon.rpt 2>/dev/null | grep -qx 0 && echo 0 || echo 1) "logon.rpt still ships the unread drill-cells 4/6/9/14"
 # ... and entity-coverage: the quiet flow's own application PARCELX
 # must be NOT covered (red) — login A's logons are no In-side proof
 # for login B's flow — while PARCEL (flow A) is covered
@@ -729,7 +746,7 @@ check $([ -z "$(ls docs/search/file-search-* docs/assets/file-search.js docs/hel
 # (user request) — no page, no help page, no report.js code, no dark CSS
 check $([ -z "$(ls docs/tools/report-finder.html docs/help/report-finder.html 2>/dev/null)" ] && echo 0 || echo 1) "the Report finder (tools/report-finder.html or its help page) is still published"
 check $(grep -q 'setupPalette\|setupReportFinder\|setupTheme\|axway-theme' docs/assets/report.js 2>/dev/null && echo 1 || echo 0) "report.js still carries the palette / report finder / theme code"
-check $(grep -q 'data-theme="dark"\|axway-theme' docs/assets/style.css docs/help/index.html docs/index.html 2>/dev/null && echo 1 || echo 0) "the dark theme (CSS or head script) is still published"
+check $(grep -q 'data-theme="dark"\|axway-theme' docs/assets/style.css docs/help/general.html docs/index.html 2>/dev/null && echo 1 || echo 0) "the dark theme (CSS or head script) is still published"
 # THE TOP BAR is ONE implementation since 2026-09-30 (assets/topbar.js, on
 # every page — the help pages and the build report included; the baked
 # render_topbar copy went): every help page and the build report carry the
@@ -1492,7 +1509,7 @@ check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "resubmissions.rpt: the Resubmi
 
 # the four columns the sample left empty until the 2026-09-30 audit (S-14;
 # gen-events.awk plants each without a PRNG draw):
-# 1. Logons > Incoming "Auth failed" = every planted anonymous failure (the
+# 1. logon.rpt Incoming "Auth failed" = every planted anonymous failure (the
 #    one-second window attributes each to the login screened just before it)
 P=data/server/cache/_parse.tsv
 want=$(awk -F'\t' 'index($5, "[Ssh Default] Authentication failed using local.") { n++ } END { print n + 0 }' "$P" 2>/dev/null)

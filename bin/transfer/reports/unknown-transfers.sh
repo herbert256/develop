@@ -13,7 +13,10 @@
 #
 # Table 1, one row per File, newest first (_files.tsv, col 12 == "Unknown"):
 #   Date/time    col 4 + col 5, the File's start (the date filter reads it)
-#   Account      col 3   Login col 14   Remote host col 15 (entity links)
+#   Account      col 3   Login col 14   Remote host col 15 (entity links; a
+#                raw IPv4 — the in-side source address the parse keeps —
+#                opens its incoming connection page, like failed.sh hostcell,
+#                2026-09-30 audit A2-01)
 #   Side         col 16, the connection side (in / out) — an Unknown File has
 #                no movement (col 17 comes from the subscription config)
 #   Legs         col 10
@@ -26,6 +29,10 @@
 # Rows tint by the FILE colour (col 25: green / orange / red).
 # Table 2, one row per account: Files, OK, Error (the outcome policy: Error =
 # Failed or Expired), First / Last start.
+# The account rows tint by the ACCOUNT's result colour (base/_accounts.tsv
+# col 3; restint — 2026-09-30 audit A2-03). Default sorts: table 1 on
+# Date/time (column 0), table 2 on Files (column 1), descending (audit A2-02:
+# they pointed at Account and OK).
 #
 # Runs ONCE, in the transfer serial tail (bin/transfer/reports.sh, after the
 # pool). Its File-page links test _filepages.tsv — the published set,
@@ -50,11 +57,15 @@ trap 'rm -f "$pages"' EXIT
 : > "$pages"
 [ -f "$CACHE_DIR/_filepages.tsv" ] && cut -f1 "$CACHE_DIR/_filepages.tsv" > "$pages"
 FSRC="$FILES"; [ -f "$FSRC" ] || FSRC=/dev/null
+ACCB="$CONFIG_BASE/_accounts.tsv"; [ -f "$ACCB" ] || ACCB=/dev/null
 
 # "F <sortkey> <ROW…>" per File, "A <account> <ROW…>" per account, "~N <n>"
-agg=$(LC_ALL=C awk -F'\t' -v PAGES="$pages" "$AWKLIB"'
+agg=$(LC_ALL=C awk -F'\t' -v PAGES="$pages" -v ACCB="$ACCB" "$AWKLIB"'
     BEGIN { while ((getline l < PAGES) > 0) if (l != "") PG[l] = 1
-            close(PAGES) }
+            close(PAGES)
+            # the account result colours (the Per account row tint)
+            while ((getline l < ACCB) > 0) { split(l, a9, "\t"); if (a9[1] != "" && (a9[3] == "green" || a9[3] == "orange" || a9[3] == "red")) ARES[a9[1]] = a9[3] }
+            close(ACCB) }
     function nz(x) { return (x + 0 == 0) ? "" : x + 0 }
     function clean(s) { gsub(/[\t\r]/, " ", s); return s }
     # the per-day counts of an account in the DATED bucket form
@@ -71,9 +82,12 @@ agg=$(LC_ALL=C awk -F'\t' -v PAGES="$pages" "$AWKLIB"'
         st = ($2 == "Processed") ? "OK" : ($2 == "Failed") ? "Error" : $2
         if (cid in PG) st = "@{href=../files/" cid ".html}" st
         side = ($16 == "in" || $16 == "out") ? $16 : ""   # lowercase like every in / out value (2026-09-30: "In" / "Out" before)
+        # the remote host: a raw IPv4 opens its incoming connection page (no
+        # page = the renderer leaves it plain), a name keeps KIND host
+        hc = clean($15); if (hc ~ /^[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+$/) hc = "@{alink=incoming_connections/" hc "}" hc
         res = $25; tint = (res == "green" || res == "orange" || res == "red") ? "\t@data:res=" res : ""
         printf "F\t%s\tROW\t%s %s\t%s\t%s\t%s\t%s\t%s\t%s\t@{sortval=%d}%s\t@{class=mono}%s\t%s%s\n", \
-            $6, $4, $5, clean($3), clean($14), clean($15), side, $10 + 0, st, $8 + 0, hbytes0($8), cid, lit(clean($11)), tint
+            $6, $4, $5, clean($3), clean($14), hc, side, $10 + 0, st, $8 + 0, hbytes0($8), cid, lit(clean($11)), tint
         a = $3; err = ($2 == "Failed" || $2 == "Expired")
         if (!(a in AF)) AO[++na] = a
         AF[a]++; if (err) { AE[a]++; te++ } else { AK[a]++; tk++ }
@@ -88,7 +102,7 @@ agg=$(LC_ALL=C awk -F'\t' -v PAGES="$pages" "$AWKLIB"'
     }
     END {
         for (i = 1; i <= na; i++) { a = AO[i]
-            printf "A\t%s\tROW\t%s\t%d\t%s\t%s\t%s\t%s\t@data:buckets=%s\n", a, clean(a), AF[a], nz(AK[a]), nz(AE[a]), FT[a], LT[a], bkt(a) }
+            printf "A\t%s\tROW\t%s\t%d\t%s\t%s\t%s\t%s\t@data:buckets=%s%s\n", a, clean(a), AF[a], nz(AK[a]), nz(AE[a]), FT[a], LT[a], bkt(a), ((a in ARES) ? "\t@data:res=" ARES[a] : "") }
         # the totals of the additive columns (2026-09-29 audit: the TOTAL rows
         # left Legs, Volume, OK and Error blank)
         printf "~N\t%d\t%d\t%d\t%s\t%s\t%s\n", n + 0, na + 0, tl + 0, (tv > 0 ? hbytes0(tv) : ""), nz(tk), nz(te)
@@ -102,8 +116,7 @@ T=$(printf '\t')
 
 {
     printf 'TITLE\tUnknown transfers\n'
-    printf 'DESC\tEvery File no subscription could be found for (subscription Unknown), newest first: account, login, remote host, side, legs, state, volume, CoreId and file name, plus a per-account summary. A routing gap to investigate; subscription tables leave these Files out.\n'
-    printf 'TABLE\tFiles\twide\tsort=1:-1\tpager=500\trestint\n'
+    printf 'TABLE\tFiles\twide\tsort=0:-1\tpager=500\trestint\n'
     printf 'HEAD\tDate/time\tAccount\tLogin\tRemote host\tSide\tLegs\tState\tVolume\tCoreId\tFilename\n'
     printf 'KIND\ttext\tacct\tlogin\thost\ttext\tnum\ttext\tnum\ttext\ttext\n'
     if [ "${nf:-0}" -gt 0 ]; then
@@ -116,7 +129,7 @@ T=$(printf '\t')
     # the From/To selection): Files / OK / Error re-count for the range from
     # the per-day buckets; an account with none in the range hides; First /
     # Last stay full-period (the site rule)
-    if [ "${na:-0}" -gt 0 ]; then printf 'TABLE\tPer account\tsort=2:-1\n'; else printf 'TABLE\tPer account\tnofilter\tsort=2:-1\n'; fi
+    if [ "${na:-0}" -gt 0 ]; then printf 'TABLE\tPer account\tsort=1:-1\trestint\n'; else printf 'TABLE\tPer account\tnofilter\tsort=1:-1\n'; fi
     printf 'HEAD\tAccount\tFiles\tOK\tError\tFirst\tLast\n'
     printf 'KIND\tacct\tnum\tnumprocessed\tnumfailed\ttext\ttext\n'
     printf 'RECALC\t-\ts0\ts1\ts2\t-\t-\n'

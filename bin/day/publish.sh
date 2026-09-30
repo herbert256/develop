@@ -23,16 +23,43 @@ source "$SCRIPT_DIR/../dashboards/charts_lib.sh"   # kpi_card/card_open/svg_* + 
 DRPT="$DATA/day/reports"
 DDIR="$DOCS/day"
 CSSREL="../assets/style.css"
-ensure_assets   # topbar-data.js (the menus' data file)
+ensure_assets   # topbar-data.js (the top bar's data file)
 
 mkdir -p "$DDIR"
 rm -f "$DDIR"/*.html
 
 # esc + **bold** for H1/FACT prose (render_rpt.awk does the same for its
-# own INTRO/NOTE lines; the day header lines never pass through it)
+# own INTRO/NOTE lines; the day header lines never pass through it), plus
+# the two link tokens of the FACT lines (2026-09-30 audit A4-12 / A5-14):
+#   [[<sub>/<name>]]      an entity name -> its detail page, resolved through
+#                         data/transfer/reports/details/<sub>/_slugmap.tsv (no
+#                         entry = no page = the plain name) — render_rpt's
+#                         prose() rule
+#   [[files/<coreid>|<label>]]  a File page; bin/day/reports.sh emits it only
+#                         for a CoreId of the published set (_filepages.tsv)
 prose() {
-    printf '%s' "$1" | LC_ALL=C awk '{
-        gsub(/&/, "\\&amp;"); gsub(/</, "\\&lt;"); gsub(/>/, "\\&gt;"); gsub(/"/, "\\&quot;")
+    printf '%s' "$1" | LC_ALL=C awk -v SMD="$DATA/transfer/reports/details" '
+    function esc(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
+    function slugfor(sd, nm,   f, l, a) {
+        if (!(sd in LOADED)) { LOADED[sd] = 1; f = SMD "/" sd "/_slugmap.tsv"
+            while ((getline l < f) > 0) { split(l, a, "\t"); if (a[1] != "" && a[2] != "") SL[sd SUBSEP a[1]] = a[2] }
+            close(f) }
+        return ((sd SUBSEP nm) in SL) ? SL[sd SUBSEP nm] : ""
+    }
+    {
+        s = $0; out = ""
+        while ((i = index(s, "[[")) > 0) {
+            j = index(substr(s, i + 2), "]]"); if (j == 0) break
+            tok = substr(s, i + 2, j - 1); out = out esc(substr(s, 1, i - 1))
+            p = index(tok, "/"); sd = (p > 1) ? substr(tok, 1, p - 1) : ""; nm = (p > 1) ? substr(tok, p + 1) : tok
+            if (sd == "files" && (q = index(nm, "|")) > 1)
+                out = out "<a href=\"../files/" substr(nm, 1, q - 1) ".html\">" esc(substr(nm, q + 1)) "</a>"
+            else if (sd != "" && (sl = slugfor(sd, nm)) != "")
+                out = out "<a href=\"../details/" sd "/" sl ".html\">" esc(nm) "</a>"
+            else out = out esc(nm)
+            s = substr(s, i + j + 3)
+        }
+        $0 = out esc(s)
         while (match($0, /\*\*[^*]+\*\*/)) {
             inner = substr($0, RSTART + 2, RLENGTH - 4)
             $0 = substr($0, 1, RSTART - 1) "<strong>" inner "</strong>" substr($0, RSTART + RLENGTH)

@@ -66,7 +66,6 @@ BL:BL:bl:BL tag:_bl"
 nall=0
 {
     printf 'TITLE\tRanking\n'
-    printf 'DESC\tWhere each entity stands against the others of its own type — its position on Files, Volume, Errors, Duration and Throughput, with the value behind every position.\n'
 
     while IFS=: read -r ty head kind noun basef; do
         [ -n "$ty" ] || continue
@@ -76,7 +75,7 @@ nall=0
         # pair; gsep draws the divider that starts each pair
         # Duration / Throughput are averages over the OK LEGS, not Files
         # (details_lib perf()) — the banner says so (2026-09-29)
-        printf 'GHEAD\t\t@{colspan=2}Files\t@{colspan=2}Volume\t@{colspan=2}Errors\t@{colspan=2}Duration per leg\t@{colspan=2}Throughput per leg\n'
+        printf 'GHEAD\t\t@{colspan=2,class=gband gsep}Files\t@{colspan=2,class=gband gsep}Volume\t@{colspan=2,class=gband gsep}Errors\t@{colspan=2,class=gband gsep}Duration per leg\t@{colspan=2,class=gband gsep}Throughput per leg\n'
         printf 'HEAD\t%s\t#\tFiles\t#\tVolume\t#\tError %%\t#\tAverage\t#\tBytes/s\n' "$head"
         printf 'KIND\t%s\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\n' "$kind"
         # From/To re-aggregation. Each row carries its active days as

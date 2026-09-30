@@ -131,14 +131,14 @@ tot_legs=0
 
     # OK Files, not "delivered" (2026-09-29 audit): the outcome policy counts
     # a Waiting File OK, and the 91 Waiting ones sit in this table's total
-    printf 'TABLE\tOK Files — failed legs before success\tdrill=File\n'
+    printf 'TABLE\tOK Files — failed transfers before success\tdrill=File\n'
     printf 'HEAD\tAttempts\tFiles\t%% of OK Files\n'
     printf 'KIND\ttext\tnum\tnum\n'
     printf 'RECALC\t-\ts0\t%%0\n'
     mkrows SUC
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}100.0%%\n' "$tot_ok"
 
-    printf 'TABLE\tGave up — failed legs on Error / Expired Files\tdrill=File\n'
+    printf 'TABLE\tGave up — failed transfers on Error / Expired Files\tdrill=File\n'
     printf 'HEAD\tAttempts\tFiles\t%% of failed\n'
     printf 'KIND\ttext\tnum\tnum\n'
     printf 'RECALC\t-\ts0\t%%0\n'
@@ -157,7 +157,7 @@ tot_legs=0
     printf 'TOTAL\tTotal\t@{class=num}%s\t\n' "$tot_ret"
 
     printf 'TABLE\tWhich side fails\n'
-    printf 'HEAD\tDirection\tFailed legs\tFiles\n'
+    printf 'HEAD\tDirection\tFailed transfers\tFiles\n'
     printf 'KIND\ttext\tnum\tnum\n'
     printf 'RECALC\t-\ts0\t-\n'
     while IFS='|' read -r _ dir cnt nfl bk; do

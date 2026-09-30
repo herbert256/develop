@@ -34,6 +34,7 @@ source "$ROOT/bin/skiplist.sh"             # SKIPLIST_AWK (sl_load/sl_match) —
 
 awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S_SKIP" \
     -v outdir="$REPORTS_DIR" "$SKIPLIST_AWK"'
+    function z9(v) { return (v + 0 == 0) ? "" : v + 0 }   # a 0 count shows empty (2026-09-30 audit)
     # which skip RULE (1..nt) does value V match first? 0 = none. The rules come
     # from bin/skiplist.sh, so a value here is caught by exactly the rule that
     # dropped it at parse time — including a field-specific or regex rule, which
@@ -88,7 +89,6 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
         # report. ----
         main = outdir "/skipped.rpt.tmp"
         printf "TITLE\tSkipped\n" > main
-        printf "DESC\tThe accounts, subscriptions and logins ignored because their name matches the skip list (input/skip.txt), plus the transfer- and server-log records set aside for the same reason.\n" > main
         # totals across all values
         for (i = 1; i <= nt; i++) { TA += nacc[i]; TS += nsub[i]; TL += nlog[i]; TT += tcnt[i]; TV += scnt[i] }
         printf "STAT\twhite\t%d\tSkipped accounts\n", TA + 0 > main
@@ -101,10 +101,10 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
         printf "TABLE\tSkip rules\tnosort\tkeephead\n" > main
         printf "HEAD\tRule\tAccounts\tSubscriptions\tLogins\tTransfer log lines\tServer log lines\n" > main
         printf "KIND\ttext\tnum\tnum\tnum\tnum\tnum\n" > main
-        if (nt == 0) printf "ROW\t@{class=desc}(none — the skip list is empty)\t\t\t\t\t\n" > main
+        if (nt == 0) printf "ROW\t(none — the skip list is empty)\t\t\t\t\t\n" > main
         for (i = 1; i <= nt; i++)
-            printf "ROW\t%s\t%d\t%d\t%d\t%d\t%d\n", ORIG[i], nacc[i]+0, nsub[i]+0, nlog[i]+0, tcnt[i]+0, scnt[i]+0 > main
-        printf "TOTAL\tTotal (%d rule%s)\t%d\t%d\t%d\t%d\t%d\n", nt, (nt == 1 ? "" : "s"), TA+0, TS+0, TL+0, TT+0, TV+0 > main
+            printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\n", ORIG[i], z9(nacc[i]), z9(nsub[i]), z9(nlog[i]), z9(tcnt[i]), z9(scnt[i]) > main   # a 0 count blank (2026-09-30 audit)
+        printf "TOTAL\tTotal (%d rule%s)\t%s\t%s\t%s\t%s\t%s\n", nt, (nt == 1 ? "" : "s"), z9(TA), z9(TS), z9(TL), z9(TT), z9(TV) > main
         emit_kind(main, "accounts", "Account", nacc, ACC)
         emit_kind(main, "subscriptions", "Subscription", nsub, SUB)
         # the comm-profile logins a LOGIN rule dropped from the configuration
@@ -121,7 +121,7 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
         printf "KIND\ttext\ttext\n" > f
         n = 0
         for (i = 1; i <= nt; i++) for (j = 1; j <= cnt[i]; j++) { printf "ROW\t%s\t%s\n", NAME[i, j], ORIG[i] > f; n++ }
-        if (n == 0) printf "ROW\t@{class=desc}(none — no configured %s matched a rule)\t\n", tolower(head) > f
+        if (n == 0) printf "ROW\t(none — no configured %s matched a rule)\t\n", tolower(head) > f
         printf "TOTAL\tTotal (%d %s)\t\n", n, (n == 1 ? tolower(head) : plural) > f
     }
 ' </dev/null
@@ -186,7 +186,7 @@ awk -v rowsfile="$rows_tmp" -v nraw="$nraw" '
         n = 0
         while ((getline l < rowsfile) > 0) { print l; n++ }
         close(rowsfile)
-        if (n == 0) printf "ROW\t@{class=desc}(none — every CoreId got a subscription attributed, none ran over http and none was an empty outbound ssh probe)\t\t\t\t\t\t\t\t\t\n"
+        if (n == 0) printf "ROW\t(none — every CoreId got a subscription attributed, none ran over http and none was an empty outbound ssh probe)\t\t\t\t\t\t\t\t\t\n"
         printf "TOTAL\tTotal (%d record(s))\t\t\t\t\t\t\t\t\t\n", n
         spliced = 1
     }

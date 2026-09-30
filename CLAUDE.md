@@ -295,7 +295,8 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
 - **Server-cache subsets** (`bin/server/subsets.sh`, `srv_subset NAME` in `bin/server/lib.sh`): the
   RARE message families of uc1-status, the POLL families (`poll`: uc3-status, remote-poll,
   no-remote-dir, no-remote-files — one subset since 2026-09-30; the old uc3 / remote-poll pair were
-  72 lines apart), connection-diagnostics (its one consumer site-failures since 2026-09-30 — the subset keeps the name), ssh-sessions, deploy-errors (it keeps
+  72 lines apart), site-failures (the one marker `Connection failure while `; the `connection-diagnostics` subset until the
+  second 2026-09-30 audit), ssh-sessions, deploy-errors (it keeps
   the poll marker: its UC3 poll-recovery clear reads those lines), routing-errors and event-queue,
   copied once per cache. Every line a consumer acts on must contain one of its fixed-string
   MARKERS — change a consumer's patterns, change its markers. Two RULE subsets sit outside the
@@ -665,8 +666,8 @@ TABLE / HEAD / GHEAD / KIND / RECALC / ROW / TOTAL / NOTE / LINK / SUMMARY / FOO
   itself on its HELP page only) — `render_report` sets `RPT_NOPROSE=1` and render_rpt.awk skips
   the two directives; the report's HAND-WRITTEN help page (`assets/help/<slug>.html`, compact
   bullets — see the `docs/help/*.html` bullet under Publishing) carries those facts instead, so a
-  changed INTRO/NOTE means an updated help page; the Reports start page shows the
-  one-line `DESC`. The drill and record
+  changed INTRO/NOTE means an updated help page (no report writes a `DESC` line since 2026-09-30:
+  its readers, the Reports start page and the finder, are gone). The drill and record
   pages (files/ — the error and File pages, the record and value pages, the detail pages) keep their INTRO — there
   it states facts. `ALERT` → red banner (the
   RUNTIME register); `WARN` → amber (the CONFIGURATION register). `STAT⇥class⇥value⇥label` → info
@@ -1441,8 +1442,8 @@ sidecars `_inbound-addr.tsv` / the flat server `_subscriptions.tsv` deleted; nev
   still labels the Entities / cross rows and the placeholders.
 
 **Merged reports** (`bin/merge_rpt.sh`, run after the report pools) fold component `.rpt`s into
-one tabbed report (`merge_rpt OUT TITLE DESC COMP...` — no prose argument since the second
-2026-09-29 audit); the components stay on disk as unpublished intermediates (pageless: no order
+one tabbed report (`merge_rpt OUT TITLE COMP...` — no prose argument since the second
+2026-09-29 audit, no DESC argument since 2026-09-30); the components stay on disk as unpublished intermediates (pageless: no order
 list names them; `_merge_pad` pads a missing component with
 empty stubs — 0 for a component whose tables ride another one's tab via `tab=KEY`). The merge
 ends its component run with a `META merged` sentinel so the last component's trailing NOTE
@@ -1508,8 +1509,8 @@ both MANUAL.
   so the site works under any base path). The assets' `cksum` is the `?v=` cache-buster on
   every page (`ASSET_VER`), so an asset edit wants a full re-publish.
 - **To add a transfer report**: a script in `bin/transfer/reports/` sourcing `../lib.sh`,
-  aggregating `$PARSED` or `$FILES` into `$REPORTS_DIR/<name>.rpt` (TITLE on line 1, a one-line
-  DESC) — no freshness check (every build is fresh; see "No incremental machinery"). Add it to
+  aggregating `$PARSED` or `$FILES` into `$REPORTS_DIR/<name>.rpt` (TITLE on line 1; no DESC
+  line — nothing reads one since 2026-09-30) — no freshness check (every build is fresh; see "No incremental machinery"). Add it to
   `bin/transfer/reports.sh` and `transfer_order` (+ `report_tabs` if multi-table), put it in ONE
   group of `_report_groups` (without that: no first row, no h1 group tag;
   `group_of`/`member_label` matter only for Entities / Cross), and write its help page
@@ -1607,8 +1608,8 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
 - `td.bar span` has its own navy `#25405c` so load bars stay visible on tinted cells (the dark
   theme went 2026-09-29).
 - **Help**: the home page opens `help/home.html`; Failed files its own `failed-files.html`.
-- (The Reports start page, which described a report by its one-line DESC, went 2026-09-30; the DESC
-  line stays the report's one-line summary.)
+- (The Reports start page, which described a report by its one-line DESC, went 2026-09-30, and with
+  it every DESC line — the second 2026-09-30 audit removed them from all writers.)
 
 ## Rules from the second 2026-09-29 audit ("check every .rpt and every field … technical and logical")
 
@@ -1802,6 +1803,53 @@ front end) then four fix workers with disjoint files. The rules it left:
   Partners row by stem. verify.sh checks the rows, the names and the totals. A column change in a writer needs
   its RULES string changed in step (one rule per ROW field from field 3).
 
+## Rules from the second 2026-09-30 audit ("extreme deep analyse & audit … every .rpt file and every field …")
+
+Six read-only auditors (rpt/field usage, transfer, server + analyses, home/day/detail, layout in the
+browser, front end + gates), then four fix workers with disjoint files, each proven in a scratch clone.
+
+- **No DESC lines**: nothing read a DESC after the Reports start page went, so every writer's DESC is gone
+  and `merge_rpt` takes `OUT TITLE COMP...`. A new report writes TITLE + tables, no DESC.
+- **Entity row tints everywhere** — `bin/rpt-tint.awk` is the ONE row-tint pass: a writer runs it on its
+  finished .rpt with the TABLES to tint, the BASE cache and the name COLUMN (restint + `@data:res` from the
+  entity's result colour; an unknown name stays untinted). Users: connection-efficiency, dwell-time,
+  recovered, files (Empty files), size-profile, pirates, retry, resubmissions, recovered-files,
+  security-outreach (+ the secparams value pages), went-quiet, stale-accounts. Month stats (entities.sh),
+  Unknown transfers › Per account and io-errors per folder tint in their own writers. Anomalies colours the
+  "× typical" CELL (red failed / amber warn), never the row.
+- **Every table has a TOTAL row** — same-protocol and uc4-to-uc2 Files, went-quiet subscriptions, the
+  waiting/ and expired/ list pages, every Configured accounts check table (an empty check renders its empty
+  table, never prose).
+- **0 is blank** in: retries-failing-flows Resubmitted, AV Scan, Skipped rules, not-in-flow-manager's empty
+  TOTAL, files-by-size, handovers Size changed, io-errors Not logged, the server Top view component counts
+  and the Levels per component table, Entity coverage.
+- **Labels**: a leg count reads "transfers" (Retries / Recovered files / attempts: "Failed transfers", …);
+  Longest / Largest Files "Start · End · Subscription"; "Remote host" (sentence case) on Entities, Month
+  stats, host detail pages and Cross References (Entity Search keeps its internal Type key "Remote Host");
+  the Protocol report is "Direction & Mode"; First seen's date column "Date"; message columns KIND `prose`
+  (Top messages, Log reasons) so they get `.logline`; one-unit ages (`hage1`) also on the Waiting list pages
+  and UC2 › Pickups.
+- **Links**: Unknown transfers' IPv4 hosts and Configured accounts' whitelisted IPs link their
+  incoming_connections page; an incoming connection's Configured endpoint links the host page; detail pages'
+  Waiting / Expired counts link Waiting & Expired (`?axway_row=` on subscription pages); the list pages
+  (waiting/, expired/, secparams/) carry a NAV row back to their report; day-page facts carry
+  `[[accounts/NAME]]`, `[[subscriptions/NAME]]` and `[[files/COREID|label]]` tokens (a File only when it is in
+  `_filepages.tsv`), resolved by bin/day/publish.sh `prose()` through the details slugmaps; report.js links the
+  CoreIds of `td.lines` cells too (no 200-char / 4-id cap there).
+- **Logic**: an Unknown File never borrows a flow or pair reason ("Unknown subscription", or its own page's
+  evidence); a File page's leg Remote host is the leg's OWN logged value (`_transfers0.tsv` on CoreId +
+  transfer id; blank when it logged none); the day "Logon screening failures" = Disallowed + Bad key + Locked
+  + Auth failed (Partners in's Screening failures), "Event-feed errors" opens Errors › Top messages, the
+  Server error rate KPI is amber; the Use cases direction warning names its flows; Unknown transfers sorts
+  Date/time (Files) and Files (Per account). "Days red" stays exclusive (0 on the day a flow went red).
+- **Gates**: `bin/check-syntax.sh` also runs `node --check` on assets/*.js; linkcheck section 2c expands every
+  chart `data-link="…{}…"` over its series' slot dates (strict edges); verify.sh selects the Errors-group
+  pages by their group tag; the 404 page knows `reports/` and `tools/`.
+- **Gone as dead**: the catalog group-heading search code, `td.desc` / `.topbar .tright` CSS, the wildcard
+  wording of the search tooltips, the `waiting/_slugmap.tsv` copy, the Subscriptions rows' empty
+  `coreids-ferr`, group_home's Entities branch, the KIND lines of day.rpt / punctuality-src.rpt, the sample's
+  "Performs test connection" lines (input regenerated: 20 lines fewer).
+
 ## Rules from the ninth 2026-09-30 request ("Remove the 10 Logons & connections reports … Build on …")
 
 - **The Logons & connections group is GONE** (Logons: Scanners · By account · By source IP; Connections:
@@ -1839,8 +1887,8 @@ front end) then four fix workers with disjoint files. The rules it left:
 ## Rules from the sixth 2026-09-30 batch ("a few different things", user request)
 
 - **No search-syntax hint**: the "Wildcards: ? = 1 character, * = 0..n characters …" line under the search
-  boxes (report.js `SEARCH_HINT`, the `.essearchhint` / `.controlshint` rows) is GONE everywhere; the search
-  box tooltip still explains the syntax. Never bring the visible hint back.
+  boxes (report.js `SEARCH_HINT`, the `.essearchhint` / `.controlshint` rows) is GONE everywhere, and since the
+  second 2026-09-30 audit the wildcard wording of the search tooltips too. Never bring either back.
 - **NEVER SHOW MILLISECONDS** (site rule): a time shows as hh:mm:ss. `bin/build/display-rename.sh` (the build
   stage "display sweep") strips the ".mmm" after every hh:mm:ss in every page and data payload under docs/
   (not docs/assets/) — one perl per batch, writing a file back only when it changed (a parallel `grep -l`
@@ -1874,9 +1922,11 @@ front end) then four fix workers with disjoint files. The rules it left:
   Expired) | Logons (Logons · Cloud · Gateway · Pattern) | Screening (Allowed · Disallowed · Authenticated ·
   Bad key · Locked · Auth failed); Partners Out: Connections (Connections · Last connection) | Failed logons
   (User … Last). Partners in dropped Session errors, Re-screens, First logon, No account, Oldest waiting,
-  Pickups, Key failures and the combined Error (user request) — they stay in logon.rpt / fe-overview.rpt for
-  their other readers. fe-overview.rpt gained Error in / Error out (fields 14 / 15, the Failed Files by
-  movement; @data:res moved to field 16); Partners in Errors = Failed (Expired has its column). Partners Out
+  Pickups, Key failures and the combined Error (user request) — and the second 2026-09-30 audit removed them
+  from the producers too: fe-overview.rpt ROW = 2 login, 3 use cases, 4 Cloud, 5 Gateway, 6 Files in, 7 Files
+  out, 8 Retrieved, 9 Waiting, 10 Expired, 11 Error in, 12 Error out (the Failed Files by movement), @data:res
+  at 13 (no Error / Oldest waiting / Pickups, no uc2-pickups join); logon.rpt Incoming keeps every count field
+  position but ships only drill cells 1 2 3 5 7, its log lines cut at 200 characters on a space with "…"; Partners in Errors = Failed (Expired has its column). Partners Out
   Files = the Entities Remote Hosts rule (every distinct leg host of a dated OUT-connection File, In / Out by
   movement else connection side, Errors = Failed or Expired), computed by a pre-pass over the two caches.
   The funnel drills are re-keyed to 13-17 (Allowed · Disallowed · Authenticated · Bad key · Locked); the

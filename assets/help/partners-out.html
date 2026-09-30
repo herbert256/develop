@@ -1,24 +1,21 @@
 <h1>Partners Out</h1>
 <h2>What it shows</h2>
 <ul>
-<li>One row per <strong>host</strong> this server connects out to: every configured host, every host we failed to log on at, and every address we opened a connection to. Full period; no date filter. Laid out like <a href="partners-in.html">Partners in</a>.</li>
-<li><strong>Views</strong> &mdash; <strong>Endpoint</strong> (a row per host), <strong>Accounts</strong> and <strong>Partners</strong>: the same table per account / partner, over the hosts the configuration pairs it with. A host several accounts use counts for each of them (its failures too &mdash; <strong>User</strong> names the account that failed), so the rows can add up to more than the Total, which counts every host once; an address no host maps to is left out. Per entity: counts summed, Last connection / Last the newest, First the earliest, Reason the newest failure&rsquo;s.</li>
+<li>One row per <strong>host</strong> we connect out to: every configured host, every host we failed to log on at, every address we connected to. Full period; no date filter. Laid out like <a href="partners-in.html">Partners in</a>.</li>
+<li><strong>Views</strong> &mdash; <strong>Endpoint</strong> (per host), <strong>Accounts</strong>, <strong>Partners</strong>: the same table per entity the configuration pairs the hosts with. A host of several accounts counts for each (<strong>User</strong> names the account that failed), so rows can exceed the Total, which counts each host once; an unmapped address is left out.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Remote host</strong> &mdash; links its detail page; an address no host maps to shows as the address.</li>
-<li><strong>Use cases</strong> &mdash; the use cases of the host&rsquo;s subscriptions (UC1&ndash;UC4, a hybrid flow by its derived use case): the configured ones plus any whose failed attempt reached the host &mdash; the same cell as on <a href="partners-in.html">Partners in</a>.</li>
-<li><strong>Files In</strong> / <strong>Files Out</strong> &mdash; <strong>Count</strong>: the Files whose outgoing connection reached the host, by movement (the Entities Remote Hosts figures); <strong>Errors</strong>: those that failed or expired.</li>
-<li><strong>Connections</strong> &mdash; <strong>Connections</strong> / <strong>Last connection</strong>: the connections we opened (the &ldquo;had initiated a connection&rdquo; lines without a login name), over the host&rsquo;s name and addresses &mdash; the host page&rsquo;s figures.</li>
-<li><strong>Failed logons</strong> &mdash; <strong>User</strong>: the account(s) our failed logons used. <strong>Failures</strong> = <strong>Password</strong> + <strong>Key</strong> + <strong>Certificate</strong> + <strong>Other</strong>: our authentication failures at the host.</li>
-<li><strong>Reason (last seen)</strong> &mdash; the newest failure&rsquo;s reason; <strong>First</strong> / <strong>Last</strong> &mdash; the first and last failure day.</li>
+<li><strong>Remote host</strong> links its detail page. <strong>Use cases</strong>: those of the host&rsquo;s subscriptions, configured or seen trying.</li>
+<li><strong>Files In</strong> / <strong>Files Out</strong> &mdash; <strong>Count</strong> by movement (the Entities Remote Hosts figures), <strong>Errors</strong> the failed or expired ones.</li>
+<li><strong>Connections</strong> / <strong>Last connection</strong> &mdash; the connections we opened, over the host&rsquo;s name and addresses.</li>
+<li><strong>Failed logons</strong> &mdash; <strong>User</strong>, <strong>Failures</strong> = <strong>Password</strong> + <strong>Key</strong> + <strong>Certificate</strong> + <strong>Other</strong>, <strong>Reason</strong> of the newest, <strong>First</strong> / <strong>Last</strong> failure day.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Row tint = the host&rsquo;s result colour; an address or an unconfigured host stays untinted. A 0 renders empty.</li>
-<li>Sorted by Failures, then Connections.</li>
+<li>Row tint = the host&rsquo;s result colour; an address or unconfigured host stays untinted. A 0 is empty. Sorted by Failures, then Connections.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>Click a row with failures for its 10 newest failure lines. Inbound logons: <a href="partners-in.html">Partners in</a>.</li>
+<li>Click a row with failures for its 10 newest failure lines.</li>
 </ul>

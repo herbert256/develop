@@ -97,10 +97,9 @@ read -r w_tot w_fail w_pct <<< "$(lsum WD)"
 
 {
     printf 'TITLE\tFailure heatmap\n'   # = its Reports menu label (2026-09-29)
-    printf 'DESC\tWhen transfers fail — by hour of day, by weekday, and an hour × weekday failure heatmap. Surfaces recurring failure windows that a per-day view hides.\n'
 
     printf 'TABLE\tBy hour of day\tzerohide=1\tsxs=1\n'   # side by side with By weekday (2026-09-29, user request)
-    printf 'HEAD\tHour\tFiles\tError\tError %%\tFailures\n'
+    printf 'HEAD\tHour\tFiles\tError\tError %%\tDistribution\n'
     printf 'KIND\ttext\tnum\tnumfailed\tnum\tbar\n'
     printf 'RECALC\t-\ts0\ts1\tp1.0\tb1\n'
     # The Error % arrives with the row (the agg awk rounds it); the bar width is
@@ -116,7 +115,7 @@ read -r w_tot w_fail w_pct <<< "$(lsum WD)"
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s%%\t\n' "$h_tot" "$h_fail" "$h_pct"
 
     printf 'TABLE\tBy weekday\tzerohide=1\tsxs=1\n'
-    printf 'HEAD\tWeekday\tFiles\tError\tError %%\tFailures\n'
+    printf 'HEAD\tWeekday\tFiles\tError\tError %%\tDistribution\n'
     printf 'KIND\ttext\tnum\tnumfailed\tnum\tbar\n'
     printf 'RECALC\t-\ts0\ts1\tp1.0\tb1\n'
     while IFS='|' read -r _ w tot fail pct bk drill; do
@@ -127,7 +126,7 @@ read -r w_tot w_fail w_pct <<< "$(lsum WD)"
     done <<< "$(printf '%s\n' "$agg" | grep '^WD|')"
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s%%\t\n' "$w_tot" "$w_fail" "$w_pct"
 
-    printf 'TABLE\tHour × weekday failure heatmap\theat\n'
+    printf 'TABLE\tHour × weekday Error heatmap\theat\n'
     printf 'HEAD\tHour\tMonday\tTuesday\tWednesday\tThursday\tFriday\tSaturday\tSunday\n'
     printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\tnum\tnum\n'
     printf '%s\n' "$heat_rows"

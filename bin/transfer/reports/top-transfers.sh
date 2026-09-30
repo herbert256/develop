@@ -64,7 +64,7 @@ hum_bytes() { awk -v b="$1" 'BEGIN{ split("B KB MB GB TB PB",u," "); i=1; v=b+0;
     printf 'TITLE\tLargest Files\n'
 
     printf 'TABLE\tTop %s largest Files\twide\trestint\n' "$TOP_N"   # rows tint by the File colour (2026-09-29)
-    printf 'HEAD\tSize\tThroughput\tStart Time\tAccount\tDestination Subscription\tOutcome\tFile\n'
+    printf 'HEAD\tSize\tThroughput\tStart\tAccount\tSubscription\tOutcome\tFile\n'
     printf 'KIND\tnum\tnum\ttext\tacct\tsite\ttext\tfile\n'
     while IFS='|' read -r _ bytes human ts account dsite outcome file tp clr; do
         [ -z "$human" ] && continue

@@ -13,4 +13,4 @@ comps=()
 for c in unknown-sites unknown-accounts unknown-hosts unknown-whitelisting unknown-logins; do
     comps+=("$REPORTS_DIR/$c.rpt")
 done
-merge_rpt "$OUT" "Missing entities" "Entity values referenced in server-log messages but absent from the transfer logs — subscriptions, accounts, hosts, whitelisted addresses and logins, one tab each." "${comps[@]}"
+merge_rpt "$OUT" "Missing entities" "${comps[@]}"

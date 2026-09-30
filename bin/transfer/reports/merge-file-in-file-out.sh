@@ -14,4 +14,4 @@ source "$SCRIPT_DIR/../lib.sh"
 source "$SCRIPT_DIR/../../merge_rpt.sh"
 OUT="$REPORTS_DIR/file-in-file-out.rpt"
 comps=("$REPORTS_DIR/file-in-file-out-src.rpt" "$REPORTS_DIR/uc4-to-uc2.rpt")
-merge_rpt "$OUT" "File in - File out" "Files that arrive on one subscription and leave on another: the partner-to-partner handovers, and the UC4 deliveries collected back through the same-named UC2 subscription." "${comps[@]}"
+merge_rpt "$OUT" "File in - File out" "${comps[@]}"

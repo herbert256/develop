@@ -480,7 +480,7 @@ write_first_seen_page() {
         # NOT class="index": index tables get report.js whole-row links, which
         # would make the Date cell navigate to the row's first cell page.
         printf '<div class="tablewrap"><table class="fit" data-nosort="1">\n'
-        local thead='<tr><th></th><th class="num">Logical</th><th class="num">Partners</th><th class="num">Subscriptions</th><th class="num">Accounts</th><th class="num">Logins</th><th class="num">Hosts</th></tr>'
+        local thead='<tr><th>Date</th><th class="num">Logical</th><th class="num">Partners</th><th class="num">Subscriptions</th><th class="num">Accounts</th><th class="num">Logins</th><th class="num">Hosts</th></tr>'
         printf '%s\n' "$thead"
         # the Total row renders TWICE — above the Not seen row and as the
         # footer — so the column totals are in view from the top
@@ -637,7 +637,7 @@ write_use_cases_page() {
         printf '<h1>Use cases</h1>\n'
         printf '<div class="tablewrap"><table class="index fit" data-nosearch="1">\n'
         printf '<tr><th>Use Case</th><th>Direction</th><th>Trigger</th><th>We are</th><th>We</th><th class="num">Total</th><th class="num">Seen</th><th class="num">Error</th><th class="num">Warning</th><th class="num">Ok</th><th>Description</th></tr>\n'
-        local uc t ns er okc dout din doth sn mm Tt=0 Tns=0 Ter=0 Tok=0 Tsn=0 Tmm=0
+        local uc t ns er okc dout din doth sn mm Tt=0 Tns=0 Ter=0 Tok=0 Tsn=0 Tmm=0 ucexp=""
         while IFS=$'\t' read -r uc t ns er okc dout din doth sn; do
             [ -n "$uc" ] || continue
             local ucfrom ucto weare we human exp trigger
@@ -647,6 +647,7 @@ write_use_cases_page() {
             IFS=$'\036' read -r ucfrom ucto weare we human exp trigger <<< "$(uc_meta "$uc" | tr '\t' '\036')"
             sn=${sn:-0}   # Seen = in the transfer log (the coverage flag), NOT Error + Ok
             mm=0; case $exp in out) mm=$((din + doth)) ;; in) mm=$((dout + doth)) ;; esac
+            case $exp in out|in) ucexp+="$uc$(printf '\t')$exp"$'\n' ;; esac   # the expected direction per use case (the warning below names the flows)
             Tmm=$((Tmm + mm))
             printf '<tr>'
             esc "$uc"; printf '<td>%s</td>' "$ESC"
@@ -668,7 +669,25 @@ write_use_cases_page() {
             "$(dotify "$Tt")" "$(dotify "$Tsn")" "$(dotify "$Ter")" "$(dotify "$Tns")" "$(dotify "$Tok")"
         printf '</table></div>\n'
         # the direction-vs-use-case consistency check: only when it finds something
-        [ "$Tmm" -gt 0 ] && printf '<p class="range"><strong>&#9888; %d subscription(s)</strong> are configured with a direction that disagrees with their use case &mdash; a naming or configuration error.</p>\n' "$Tmm"
+        # — naming the flows, each linked to its detail page (2026-09-30 audit
+        # A3-07: the count alone left the reader to find them)
+        if [ "$Tmm" -gt 0 ]; then
+            local mmlist
+            mmlist=$(awk -F'\t' -v SM="$DATA/transfer/reports/details/subscriptions/_slugmap.tsv" -v EXPS="$ucexp" -v UF="$ucdf" "$AWKLIB"'
+                BEGIN { while ((getline l < SM) > 0) { split(l, a, "\t"); if (a[1] != "") SL[toupper(a[1])] = a[2] } close(SM)
+                        n9 = split(EXPS, X9, "\n"); for (i = 1; i <= n9; i++) if (split(X9[i], y9, "\t") == 2) EXP[y9[1]] = y9[2] }
+                FILENAME == UF { if ($1 != "" && $2 != "") UCD[toupper($1)] = $2; next }
+                $1 != "" {
+                    uc = "(none)"
+                    if (match($1, /^UC[0-9]+/)) uc = substr($1, RSTART, RLENGTH)
+                    else if (toupper($1) in UCD) uc = UCD[toupper($1)]
+                    if (!(uc in EXP) || $2 == EXP[uc]) next
+                    nm = html_esc($1); k = toupper($1)
+                    if (k in SL) nm = "<a href=\"../details/subscriptions/" SL[k] ".html\">" nm "</a>"
+                    print $1 "\t" nm " (" ($2 == "" ? "no direction" : html_esc($2)) ", " uc " expects " EXP[uc] ")"
+                }' "$ucdf" "$subs" | LC_ALL=C sort | cut -f2 | awk 'NR > 1 { printf ", " } { printf "%s", $0 }')
+            printf '<p class="range"><strong>&#9888; %d subscription(s)</strong> are configured with a direction that disagrees with their use case &mdash; a naming or configuration error: %s.</p>\n' "$Tmm" "$mmlist"
+        fi
         # the FlowManager flow templates behind the use cases (xref/_templates.tsv):
         # Route = the template's flowPatternName; Subscriptions = the configured
         # subscriptions created from it, joined on patternName
@@ -1256,6 +1275,11 @@ write_accounts_page() {
         printf '<tr class="total"><td>Total</td><td class="num">%s</td></tr>\n' "$(dotify "$total")"
         printf '</table></div></div>\n'
         printf '</div>\n'
+        # (every table below carries its TOTAL row and, when it has no rows,
+        # stays an empty table — report.js says "No rows…" — instead of a prose
+        # line: the site standard, 2026-09-30 audit A5-02 / A5-08)
+        local npfx
+        npfx=$(printf '%s\n' "$prefix_rows" | awk -F'\t' 'NF >= 2 { n++ } END { print n + 0 }')
         printf '<h2>Type &mdash; the name prefix</h2>\n<div class="tablewrap"><table class="index fit">\n'
         printf '<tr><th>Prefix</th><th>Meaning</th><th class="num">Profiles</th><th>Configured type</th></tr>\n'
         printf '%s\n' "$prefix_rows" | tr '\t' '\036' | while IFS=$'\036' read -r tok n typ; do
@@ -1264,6 +1288,7 @@ write_accounts_page() {
             esc "$tok"; te=$ESC; esc "$typ"; tye=$ESC
             printf '<tr><td>%s</td><td>%s</td><td class="num">%s</td><td>%s</td></tr>\n' "$te" "$mean" "$(dotify "$n")" "$tye"
         done
+        printf '<tr class="total"><td>Total (%s prefixes)</td><td></td><td class="num">%s</td><td></td></tr>\n' "$npfx" "$(dotify "$total")"
         printf '</table></div>\n'
         printf '<h2>Authentication &mdash; the name suffix</h2>\n<div class="tablewrap"><table class="index fit">\n'
         printf '<tr><th>Suffix</th><th>Meaning</th><th class="num">Profiles</th><th class="num">Match auth</th><th class="num">Mismatch</th></tr>\n'
@@ -1279,22 +1304,25 @@ write_accounts_page() {
                     "$( [ "$mmc" -gt 0 ] && printf '<td class="num st-err">%s</td>' "$(dotify "$mmc")" || printf '<td class="num"></td>' )"
             fi
         done
+        local sfx_m sfx_mm
+        read -r sfx_m sfx_mm <<< "$(printf '%s\n' "$suffix_rows" | awk -F'\t' '$4 != "-" && NF >= 4 { m += $4; mm += $3 - $4 } END { print m + 0, mm + 0 }')"
+        printf '<tr class="total"><td>Total</td><td></td><td class="num">%s</td><td class="num">%s</td><td class="num">%s</td></tr>\n' \
+            "$(dotify "$total")" "$( [ "$sfx_m" -gt 0 ] && dotify "$sfx_m" )" "$( [ "$sfx_mm" -gt 0 ] && dotify "$sfx_mm" )"
         printf '</table></div>\n'
         printf '<h2>Naming inconsistencies (%s)</h2>\n' "$nmm"
+        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Communication profile</th><th>Suffix says</th><th>Actual authentication</th></tr>\n'
         if [ "$nmm" -gt 0 ]; then
-            printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Communication profile</th><th>Suffix says</th><th>Actual authentication</th></tr>\n'
             printf '%s\n' "$mm_rows" | while IFS=$'\t' read -r nm suf auth; do
                 [ -n "$nm" ] || continue
                 esc "$nm"; nme=$ESC; esc "$suf"; sfe=$ESC; esc "$auth"; ae=$ESC
                 printf '<tr data-res="red"><td><code>%s</code></td><td>%s</td><td>%s</td></tr>\n' "$nme" "$sfe" "$ae"
             done
-            printf '</table></div>\n'
-        else
-            printf '<p class="range">No inconsistencies &mdash; every profile&rsquo;s auth suffix matches its configured authentication.</p>\n'
         fi
+        printf '<tr class="total"><td>Total (%s profile(s))</td><td></td><td></td></tr>\n' "$(dotify "$nmm")"
+        printf '</table></div>\n'
         printf '<h2>Not clear domain-application-partner (%s)</h2>\n' "$(dotify "${pda_bad:-0}")"
+        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Domain</th><th>Application</th><th>Partner</th><th>Missing</th><th>Why</th></tr>\n'
         if [ "${pda_bad:-0}" -gt 0 ]; then
-            printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Domain</th><th>Application</th><th>Partner</th><th>Missing</th><th>Why</th></tr>\n'
             # \037, not TAB: a TAB is IFS whitespace, so consecutive empty
             # fields (a missing domain/application/partner is exactly that)
             # collapse on read and shift every later column.
@@ -1308,10 +1336,9 @@ write_accounts_page() {
                 printf '<tr data-res="%s"><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n' \
                     "${res:-orange}" "${G}accounts${F}c${F}${nme}${G}" "${dme:-&mdash;}" "${ape:-&mdash;}" "${pte:-&mdash;}" "$mse" "$whe"
             done
-            printf '</table></div>\n'
-        else
-            printf '<p class="range">All %s accounts resolve to a domain, an application and a partner.</p>\n' "$(dotify "${pda_ok:-0}")"
         fi
+        printf '<tr class="total"><td>Total (%s account(s))</td><td></td><td></td><td></td><td></td><td></td></tr>\n' "$(dotify "${pda_bad:-0}")"
+        printf '</table></div>\n'
         printf '<h2>FTP endpoints (%s) &mdash; insecure</h2>\n' "$(dotify "$nftp")"
         printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Communication profile</th><th>Name suffix</th><th>Authentication</th></tr>\n'
         printf '%s\n' "$ftp_rows" | tr '\t' '\036' | while IFS=$'\036' read -r nm suf auth; do
@@ -1319,10 +1346,11 @@ write_accounts_page() {
             esc "$nm"; nme=$ESC; esc "$suf"; sfe=$ESC; esc "$auth"; ae=$ESC
             printf '<tr data-res="red"><td><code>%s</code></td><td>%s</td><td>%s</td></tr>\n' "$nme" "$sfe" "$ae"
         done
+        printf '<tr class="total"><td>Total (%s profile(s))</td><td></td><td></td></tr>\n' "$(dotify "$nftp")"
         printf '</table></div>\n'
         printf '<h2>Incoming partners without IP whitelisting (%s)</h2>\n' "$(dotify "$niw")"
+        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Protocol</th><th>Authentication</th><th>Status</th></tr>\n'
         if [ "$niw" -gt 0 ]; then
-            printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Protocol</th><th>Authentication</th><th>Status</th></tr>\n'
             printf '%s\n' "$iw_rows" | tr '\t' '\036' | while IFS=$'\036' read -r p proto auth; do
                 [ -n "$p" ] || continue
                 res=$(awk -F'\t' -v n="$p" 'toupper($1)==toupper(n){print $3; exit}' $DATA/flow-manager/base/_accounts.tsv)
@@ -1330,10 +1358,9 @@ write_accounts_page() {
                 esc "$p"; pe=$ESC; esc "$proto"; pre=$ESC; esc "$auth"; ae=$ESC; esc "$st"; ste=$ESC
                 printf '<tr data-res="red"><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n' "${G}accounts${F}${F}${pe}${G}" "$pre" "$ae" "$ste"
             done
-            printf '</table></div>\n'
-        else
-            printf '<p class="range">Every incoming (CLIENT) partner has an <code>AllowIP</code> whitelist &mdash; no unrestricted inbound access.</p>\n'
         fi
+        printf '<tr class="total"><td>Total (%s account(s))</td><td></td><td></td><td></td></tr>\n' "$(dotify "$niw")"
+        printf '</table></div>\n'
         printf '<h2>Hosts with conflicting setup</h2>\n'
         if [ -n "$hc_stream" ]; then
             local aspec arows anh prevh
@@ -1352,10 +1379,13 @@ write_accounts_page() {
                     esc "$v"; ve=$ESC; esc "$pf"; pfe=$ESC
                     printf '<tr data-res="red"><td>%s</td><td>%s</td><td>%s</td></tr>\n' "$hcell" "$ve" "$pfe"
                 done
+                printf '<tr class="total"><td>Total (%s host(s))</td><td></td><td></td></tr>\n' "$(dotify "$anh")"
                 printf '</table></div>\n'
             done
         else
-            printf '<p class="range">Every remote host used by more than one profile is configured identically &mdash; no conflicts.</p>\n'
+            # no conflict: the empty table, the standard way (report.js: "No rows…")
+            printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Remote host</th><th>Value</th><th>Profiles</th></tr>\n'
+            printf '<tr class="total"><td>Total (0 host(s))</td><td></td><td></td></tr>\n</table></div>\n'
         fi
         printf '<h2>Whitelisted IPs with conflicting incoming setup</h2>\n'
         if [ -n "$wc_stream" ]; then
@@ -1370,77 +1400,87 @@ write_accounts_page() {
                 previp=""
                 printf '%s\n' "$warows" | tr '\t' '\036' | while IFS=$'\036' read -r ip v pf; do
                     [ -n "$ip" ] || continue
-                    if [ "$ip" = "$previp" ]; then ic=""; else esc "$ip"; ic="<code>$ESC</code>"; previp="$ip"; fi
+                    # the address links its incoming-connection page when there is
+                    # one (2026-09-30 audit A3-01: plain <code> before)
+                    if [ "$ip" = "$previp" ]; then ic=""; else esc "$ip"; ic="${G}incoming_connections${F}c${F}${ESC}${G}"; previp="$ip"; fi
                     esc "$v"; ve=$ESC; esc "$pf"; pfe=$ESC
                     printf '<tr data-res="orange"><td>%s</td><td>%s</td><td>%s</td></tr>\n' "$ic" "$ve" "${G}accounts${F}l${F}${pfe}${G}"
                 done
+                printf '<tr class="total"><td>Total (%s IP(s))</td><td></td><td></td></tr>\n' "$(dotify "$wanh")"
                 printf '</table></div>\n'
             done
         else
-            printf '<p class="range">Every whitelisted IP shared by multiple incoming partners is configured identically &mdash; no conflicts.</p>\n'
+            printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Whitelisted IP</th><th>Value</th><th>Accounts</th></tr>\n'
+            printf '<tr class="total"><td>Total (0 IP(s))</td><td></td><td></td></tr>\n</table></div>\n'
         fi
         # ---- Account & login checks ------------------------------------------
         printf '<h2>Account &amp; login checks</h2>\n'
         # 1. non-standard login names
         printf '<h3>Non-standard login names (%s)</h3>\n' "$(dotify "$nnsl")"
+        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th>Login</th></tr>\n'
         if [ "$nnsl" -gt 0 ]; then
-            printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th>Login</th></tr>\n'
             printf '%s\n' "$nsl_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a p l; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$p"; pe=$ESC; esc "$l"; le=$ESC
                 printf '<tr data-res="orange"><td>%s</td><td><code>%s</code></td><td>%s</td></tr>\n' "${G}accounts${F}${F}${ae}${G}" "$pe" "${G}logins${F}c${F}${le}${G}"
             done
-            printf '</table></div>\n'
-        else printf '<p class="range">Every incoming login is a standard <code>FE&lt;digits&gt;</code> name.</p>\n'; fi
+        fi
+        printf '<tr class="total"><td>Total (%s login(s))</td><td></td><td></td></tr>\n' "$(dotify "$nnsl")"
+        printf '</table></div>\n'
         # 2. one login on more than one account
         printf '<h3>Login used by more than one account (%s)</h3>\n' "$(dotify "$nshl")"
+        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Login</th><th class="num">Accounts</th><th>On</th></tr>\n'
         if [ "$nshl" -gt 0 ]; then
-            printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Login</th><th class="num">Accounts</th><th>On</th></tr>\n'
             printf '%s\n' "$shl_rows" | while IFS=$'\t' read -r l n ac; do
                 [ -n "$l" ] || continue; esc "$l"; le=$ESC; esc "$ac"; ace=$ESC
                 printf '<tr data-res="orange"><td>%s</td><td class="num">%s</td><td>%s</td></tr>\n' "${G}logins${F}c${F}${le}${G}" "$n" "${G}accounts${F}l${F}${ace}${G}"
             done
-            printf '</table></div>\n'
-        else printf '<p class="range">Every login belongs to a single account.</p>\n'; fi
+        fi
+        printf '<tr class="total"><td>Total (%s login(s))</td><td class="num">%s</td><td></td></tr>\n' "$(dotify "$nshl")" "$( [ "$nshl" -gt 0 ] && dotify "$(printf '%s\n' "$shl_rows" | awk -F'\t' 'NF { s += $2 } END { print s + 0 }')" )"
+        printf '</table></div>\n'
         # 3. communication profiles with more than one host
         printf '<h3>Communication profiles with more than one host (%s)</h3>\n' "$(dotify "$nmh")"
+        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th class="num">Hosts</th><th>Host list</th></tr>\n'
         if [ "$nmh" -gt 0 ]; then
-            printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th class="num">Hosts</th><th>Host list</th></tr>\n'
             printf '%s\n' "$mh_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a p n hl; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$p"; pe=$ESC; esc "$hl"; hle=$ESC
                 printf '<tr data-res="orange"><td>%s</td><td><code>%s</code></td><td class="num">%s</td><td>%s</td></tr>\n' "${G}accounts${F}${F}${ae}${G}" "$pe" "$n" "${G}hosts${F}l${F}${hle}${G}"
             done
-            printf '</table></div>\n'
-        else printf '<p class="range">Every communication profile resolves to a single host.</p>\n'; fi
+        fi
+        printf '<tr class="total"><td>Total (%s profile(s))</td><td></td><td class="num">%s</td><td></td></tr>\n' "$(dotify "$nmh")" "$( [ "$nmh" -gt 0 ] && dotify "$(printf '%s\n' "$mh_rows" | awk -F'\t' 'NF { s += $3 } END { print s + 0 }')" )"
+        printf '</table></div>\n'
         # 4. incoming password profiles with no stored password
         printf '<h3>Incoming password profiles with no stored password (%s)</h3>\n' "$(dotify "$nnpw")"
+        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th>Login</th></tr>\n'
         if [ "$nnpw" -gt 0 ]; then
-            printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th>Login</th></tr>\n'
             printf '%s\n' "$npw_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a p l; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$p"; pe=$ESC; esc "$l"; le=$ESC
                 printf '<tr data-res="orange"><td>%s</td><td><code>%s</code></td><td>%s</td></tr>\n' "${G}accounts${F}${F}${ae}${G}" "$pe" "${G}logins${F}c${F}${le}${G}"
             done
-            printf '</table></div>\n'
-        else printf '<p class="range">Every incoming password profile has a stored password.</p>\n'; fi
+        fi
+        printf '<tr class="total"><td>Total (%s profile(s))</td><td></td><td></td></tr>\n' "$(dotify "$nnpw")"
+        printf '</table></div>\n'
         # 5. accounts with more than one communication profile
         printf '<h3>Accounts with more than one communication profile (%s)</h3>\n' "$(dotify "$nmcp")"
+        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th class="num">Profiles</th><th>Communication profiles</th></tr>\n'
         if [ "$nmcp" -gt 0 ]; then
-            printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th class="num">Profiles</th><th>Communication profiles</th></tr>\n'
             printf '%s\n' "$mcp_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a n ps; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$ps"; pse=$ESC
                 printf '<tr data-res="orange"><td>%s</td><td class="num">%s</td><td><code>%s</code></td></tr>\n' "${G}accounts${F}${F}${ae}${G}" "$n" "$pse"
             done
-            printf '</table></div>\n'
-        else printf '<p class="range">Every account has exactly one communication profile.</p>\n'; fi
+        fi
+        printf '<tr class="total"><td>Total (%s account(s))</td><td class="num">%s</td><td></td></tr>\n' "$(dotify "$nmcp")" "$( [ "$nmcp" -gt 0 ] && dotify "$(printf '%s\n' "$mcp_rows" | awk -F'\t' 'NF { s += $2 } END { print s + 0 }')" )"
+        printf '</table></div>\n'
         # 6. login vs loginName mismatch
         printf '<h3>Login / login-name mismatch (%s)</h3>\n' "$(dotify "$nlnm")"
+        printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th>login</th><th>loginName</th></tr>\n'
         if [ "$nlnm" -gt 0 ]; then
-            printf '<div class="tablewrap"><table class="index fit">\n<tr><th>Account</th><th>Communication profile</th><th>login</th><th>loginName</th></tr>\n'
             printf '%s\n' "$lnm_rows" | tr '\t' '\036' | while IFS=$'\036' read -r a p l ln; do
                 [ -n "$a" ] || continue; esc "$a"; ae=$ESC; esc "$p"; pe=$ESC; esc "$l"; le=$ESC; esc "$ln"; lne=$ESC
                 printf '<tr data-res="orange"><td>%s</td><td><code>%s</code></td><td>%s</td><td>%s</td></tr>\n' "${G}accounts${F}${F}${ae}${G}" "$pe" "${G}logins${F}c${F}${le}${G}" "${G}logins${F}c${F}${lne}${G}"
             done
-            printf '</table></div>\n'
-        else printf '<p class="range">Every <code>login</code> matches its <code>loginName</code>.</p>\n'; fi
+        fi
+        printf '<tr class="total"><td>Total (%s profile(s))</td><td></td><td></td><td></td></tr>\n' "$(dotify "$nlnm")"
+        printf '</table></div>\n'
         printf '</body>\n</html>\n'
     } | _acc_links > "$out"
 }
@@ -1449,7 +1489,7 @@ write_accounts_page() {
 # stdin = the page with its markers, stdout = the page with links
 _acc_links() {
     local d="$DATA/transfer/reports/details" maps=() sm
-    for sm in accounts logins hosts partners domains applications; do
+    for sm in accounts logins hosts partners domains applications incoming_connections; do   # + the whitelisted-IP pages (2026-09-30 audit A3-01)
         [ -f "$d/$sm/_slugmap.tsv" ] && maps+=("$d/$sm/_slugmap.tsv")
     done
     awk -F'\t' '

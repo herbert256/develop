@@ -159,4 +159,7 @@ IFS=$'\t' read -r s_n s_f s_s s_share <<< "$s_tot"
 
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+# the ENTITY row tint (2026-09-30 audit A2-03: every row tints by its entity
+# result colour — bin/rpt-tint.awk, base cache col 3)
+awk -F'\t' -v TABLES="Size regime changed|Stub shippers" -v BASE="$CONFIG_BASE/_subscriptions.tsv" -v COL=2 -f "$ROOT/bin/rpt-tint.awk" "$OUT" > "$OUT.tint" && mv "$OUT.tint" "$OUT"
 echo "Data written to $OUT ($t_prof profiled, $d_n regime changes, $s_n stub shippers)." >&2

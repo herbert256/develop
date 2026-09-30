@@ -76,6 +76,10 @@ RRUN="$DATA/transfer/reports/_red-run.tsv"   # red-run.sh: 1 subscription, 2 kin
 # link their detail page (2026-09-30 audit D-02 / L-03)
 SLGP="$DATA/transfer/reports/details/partners/_slugmap.tsv"
 SLGS="$DATA/transfer/reports/details/subscriptions/_slugmap.tsv"
+# the published File-page set (bin/transfer/filepages.sh, final before this
+# runs): the Longest / Most legs / Largest File facts link a File page only
+# for a CoreId in it (2026-09-30 audit A5-14)
+FPSET="$DATA/transfer/cache/_filepages.tsv"
 PSLOTS="$DATA/server/reports/pesit-slots.tsv"   # pesit.sh's 30-min direction split (date slot out in) — the PeSIT hero view
 EQSLOTS="$DATA/server/reports/event-queue-slots.tsv"   # event-queue.sh's 30-min line counts (date slot lines) — the EventQueue hero view (2026-09-14)
 
@@ -146,7 +150,7 @@ _dylap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  day reports: %s\n' "$(
 _dylap "setup (the per-day counts)"
 if [ -f "$TF" ] && [ -n "$tdays" ]; then
 awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v udays="$udays" -v PS="$PSLOTS" -v EQF="$EQSLOTS" \
-    -v gtrc="$gtrc" -v oredc="$oredc" -v anomc="$anomc" -v SLGP="$SLGP" -v SLGS="$SLGS" -v SPMAP="$SP_MAP" "$SP_AWK$AWKLIB$DAY_FN_AWK"'
+    -v gtrc="$gtrc" -v oredc="$oredc" -v anomc="$anomc" -v SLGP="$SLGP" -v SLGS="$SLGS" -v FPSET="$FPSET" -v SPMAP="$SP_MAP" "$SP_AWK$AWKLIB$DAY_FN_AWK"'
     function humandur(ms,   s,m,h){ ms+=0; if(ms<1000)return int(ms) "ms"; s=int(ms/1000); if(s<60)return s "s"; m=int(s/60); s=s%60; if(m<60)return m "m " s "s"; h=int(m/60); m=m%60; return h "h " m "m" }
     # unpack a "date:count …" string (daycount) into a per-day array
     # ONE File into ONE hero-slot resolution (15/30/60 minutes). The three are
@@ -213,7 +217,9 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         dcload(gtrc, GTRC); dcload(oredc, OREDC); dcload(anomc, ANOMC)
         # the two slugmaps (name TAB slug) — a missing map = no links
         if (SLGP != "") { while ((getline sl < SLGP) > 0) { n = split(sl, sz, "\t"); if (n >= 2 && sz[2] != "") SLG["P" SUBSEP sz[1]] = sz[2] } close(SLGP) }
-        if (SLGS != "") { while ((getline sl < SLGS) > 0) { n = split(sl, sz, "\t"); if (n >= 2 && sz[2] != "") SLG["S" SUBSEP sz[1]] = sz[2] } close(SLGS) } }
+        if (SLGS != "") { while ((getline sl < SLGS) > 0) { n = split(sl, sz, "\t"); if (n >= 2 && sz[2] != "") SLG["S" SUBSEP sz[1]] = sz[2] } close(SLGS) }
+        # the published File-page CoreIds (col 1) — a missing file = no File links
+        if (FPSET != "") { while ((getline fl < FPSET) > 0) { split(fl, fz, "\t"); if (fz[1] != "") FPG[fz[1]] = 1 } close(FPSET) } }
     FNR == 1 { fno++ }
     fno == 1 {   # _files.tsv
         d = $4; if (d == "") next
@@ -227,9 +233,9 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         if (dv9 == "in") IN[d]++; else if (dv9 == "out") OUT[d]++
         # the longest DELIVERED File (dur_ms) — the site-wide duration rule
         # (2026-09-29 audit: a Failed File retry span won on 58 of 64 days)
-        if ($2 == "Processed" && $9 + 0 > MAXD[d] + 0) { MAXD[d] = $9 + 0; MAXDA[d] = $3 }
+        if ($2 == "Processed" && $9 + 0 > MAXD[d] + 0) { MAXD[d] = $9 + 0; MAXDA[d] = $3; MAXDC[d] = $1 }
         if ($8 + 0 == 0) Z[d]++           # zero-byte files
-        if ($10 + 0 > MAXR[d] + 0) { MAXR[d] = $10 + 0; MAXRF[d] = $11; MAXRA[d] = $3 }   # most legs (retries) in one transfer
+        if ($10 + 0 > MAXR[d] + 0) { MAXR[d] = $10 + 0; MAXRF[d] = $11; MAXRA[d] = $3; MAXRC[d] = $1 }   # most legs (retries) in one transfer
         if ($10 + 0 == 1) PIR[d]++   # single-leg (pirate) transfers -> Problems this day
         # UC2 staged files, by the day they were STAGED -> Problems this day
         if ($2 == "Waiting") WAI[d]++; else if ($2 == "Expired") XPD[d]++
@@ -258,7 +264,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             if (amax[a] == "" || d > amax[a]) amax[a] = d
         }
         # the largest file of the day (the "Largest file" remarkable fact)
-        if (bfnm[d] == "" || $8 + 0 > bfsz[d] + 0) { bfsz[d] = $8; bfnm[d] = $11; bfac[d] = $3 }
+        if (bfnm[d] == "" || $8 + 0 > bfsz[d] + 0) { bfsz[d] = $8; bfnm[d] = $11; bfac[d] = $3; bfcid[d] = $1 }
         next
     }
     fno == 2 {   # _transfers.tsv
@@ -340,11 +346,11 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             if (F[d] == 0 && C[d] > 0)
                 printf "FACT\tA **clean day**: every one of the %d Files was delivered OK.\n", C[d] >> out
             if (brkn[d] != "")
-                printf "FACT\tA **broken flow** — every one of **%s**'"'"'s %d Files failed%s.\n", brkn[d], brkm[d], (brkc[d] > 1 ? sprintf(" (and %d other flow%s failed completely)", brkc[d]-1, (brkc[d]-1 == 1 ? "" : "s")) : "") >> out
+                printf "FACT\tA **broken flow** — every one of **[[subscriptions/%s]]**'"'"'s %d Files failed%s.\n", brkn[d], brkm[d], (brkc[d] > 1 ? sprintf(" (and %d other flow%s failed completely)", brkc[d]-1, (brkc[d]-1 == 1 ? "" : "s")) : "") >> out
             if (Z[d] + 0 >= 20)
                 printf "FACT\t**%d zero-byte Files** — empty transfers (failed or placeholder uploads).\n", Z[d] >> out
             if (C[d] >= 50 && tac >= 0.50 * C[d])
-                printf "FACT\tOne account, **%s**, drove **%.0f%%** of the day'"'"'s Files (%d of %d).\n", tan, tac * 100 / C[d], tac, C[d] >> out
+                printf "FACT\tOne account, **%s**, drove **%.0f%%** of the day'"'"'s Files (%d of %d).\n", accl(tan), tac * 100 / C[d], tac, C[d] >> out
             if (C[d] >= 50 && phc >= 0.50 * C[d])
                 printf "FACT\t**%.0f%%** of the day'"'"'s Files arrived in a single hour, **%s:00** (%d Files).\n", phc * 100 / C[d], ph, phc >> out
             if (io >= 50 && IN[d] >= 0.75 * io)
@@ -354,11 +360,11 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             if (dprt >= 50 && dprc >= 0.70 * dprt)
                 printf "FACT\t**%s** carried **%.0f%%** of the day'"'"'s transfer legs.\n", toupper(dprn), dprc * 100 / dprt >> out
             if (MAXD[d] + 0 >= 1800000)
-                printf "FACT\tLongest delivered File took **%s** — account %s.\n", humandur(MAXD[d]), MAXDA[d] >> out
+                printf "FACT\tLongest delivered File took **%s** — account %s.\n", filel(MAXDC[d], humandur(MAXD[d])), accl(MAXDA[d]) >> out
             if (MAXR[d] + 0 >= 15)
-                printf "FACT\tOne transfer logged **%d** legs — repeated retries of %s (account %s).\n", MAXR[d], MAXRF[d], MAXRA[d] >> out
+                printf "FACT\tOne transfer logged **%d** legs — repeated retries of %s (account %s).\n", MAXR[d], filel(MAXRC[d], MAXRF[d]), accl(MAXRA[d]) >> out
             if (bfnm[d] != "")
-                printf "FACT\tLargest file: **%s** (**%s**, account %s).\n", bfnm[d], hbytes2(bfsz[d]), bfac[d] >> out
+                printf "FACT\tLargest file: **%s** (**%s**, account %s).\n", filel(bfcid[d], bfnm[d]), hbytes2(bfsz[d]), accl(bfac[d]) >> out
             nnew = pickacc(d, amin, L6)
             if (nnew > 0 && d != D[1])
                 printf "FACT\t**%d account(s) first seen** on this day: %s%s.\n", nnew, joins(L6, nnew), (nnew > 6 ? ", …" : "") >> out
@@ -529,10 +535,17 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         }
         return n
     }
+    # the FACT-line link tokens, resolved by bin/day/publish.sh prose()
+    # (2026-09-30 audit A4-12 / A5-14): an account name -> its detail page
+    # ([[accounts/NAME]], slugmap-resolved there, no page = plain), a File
+    # -> its File page ([[files/COREID|LABEL]]) only when the CoreId is in
+    # the published set, else the plain label
+    function accl(a) { return (a == "") ? "" : "[[accounts/" a "]]" }
+    function filel(c, lbl) { return (c != "" && (c in FPG)) ? "[[files/" c "|" lbl "]]" : lbl }
     function joins(L, n,   i, r, m) {
         m = (n < 6) ? n : 6
         r = ""
-        for (i = 1; i <= m && L[i] != ""; i++) r = r (r == "" ? "" : ", ") L[i]
+        for (i = 1; i <= m && L[i] != ""; i++) r = r (r == "" ? "" : ", ") accl(L[i])   # the account lists: each name its link
         return r
     }
 ' "$TF" "$TP"
@@ -604,11 +617,14 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
         if ($5 ~ /^Connection failure while /) CF[d]++                                              # the Per flow connection-failure rows (site-failures until 2026-09-28)
         if ($5 ~ /^Authentication failure connecting to remote host /) LGO[d]++                     # Partners Out (us failing AT the partner)
         if (index($5, "stop further route execution")) DEP[d]++                                     # deploy-errors (ARSP0001 route abandoned)
+        # the incoming screening FAILURES — the Screening failure columns of Partners in
+        # (2026-09-30 audit A4-05: Disallowed · Bad key · Locked · Auth failed; the
+        # Key failures family is no column there any more)
         if ($4 == "T" && index($5, "[Ssh Default]")) {                                              # incoming logon funnel
             if ($5 ~ /\[Ssh Default\] Disallowed user /) LGF[d]++                                   #   Disallowed
             else if (index($5, "no certificate is found for user ")) LGF[d]++                       #   Bad key
-            else if ($5 ~ /\[Ssh Default\] User [A-Za-z0-9_.-]+ failed to login successfully/) LGF[d]++   # Key failures
             else if (index($5, "[Ssh Default] User ") && (index($5, "is locked") || index($5, "locked due to too many failed login"))) LGF[d]++   #   Locked (+ the lockout itself, 2026-09-28 — as logon.sh)
+            else if (index($5, "[Ssh Default] Authentication failed using local.")) LGF[d]++      #   Auth failed (the anonymous failure)
         }
         if (index($5, "Unable to submit event") || index($5, "Error sending event")) EVE[d]++       # event-feed errors
         # ERROR message shapes (digits folded to N) — the dominant-error fact
@@ -695,7 +711,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             cov = (FI[d] != "" && FI[d] != "-" && LA[d] != "" && LA[d] != "-") ? FI[d] "–" LA[d] : "log messages"
             wd = wdname(d)      # same-weekday means for the KPI deltas
             printf "KPI\t%d\tServer records\t%s\tpurple\t../server/topview.html" q "\t%s\n", REC[d]+0, cov, pctd(REC[d], wdc[wd] ? aRec[wd]/wdc[wd] : 0) >> out
-            printf "KPI\t%.1f%%\tServer error rate\terrors ÷ records\tblue\t../server/topview.html" q "\t%s\n", ep, pctd(ep, aRec[wd] ? aErr[wd]*100/aRec[wd] : 0) >> out
+            printf "KPI\t%.1f%%\tServer error rate\terrors ÷ records\tamber\t../server/topview.html" q "\t%s\n", ep, pctd(ep, aRec[wd] ? aErr[wd]*100/aRec[wd] : 0) >> out
             # ---- PROBLEM links: this day problem reports, dated (?axway_date),
             #      surfaced in the combined day page "Problems this day" section ----
             if (ERR[d] + 0 > 0 || WRN[d] + 0 > 0)
@@ -704,7 +720,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             # Incoming / Outgoing tabs until 2026-09-30) — FULL-PERIOD pages,
             # so no ?axway_date= (like the Went red / Never delivered lines)
             if (LGF[d] + 0 > 0)
-                printf "PROBLEM\tserver\t../analyses/partners-in.html\tLogon screening failures\t**%d** disallowed / bad-key / key-failure / locked SSH logons — the incoming screening funnel\n", LGF[d] >> out
+                printf "PROBLEM\tserver\t../analyses/partners-in.html\tLogon screening failures\t**%d** disallowed / bad-key / locked / auth-failed SSH logons — the incoming screening funnel\n", LGF[d] >> out
             if (LGO[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../analyses/partners-out.html\tOutbound logon failures\t**%d** failed authentications AT remote hosts — us being refused by the partner (expired password, refused key, certificate policy)\n", LGO[d] >> out
             if (CF[d] + 0 > 0)
@@ -714,7 +730,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             if (DEP[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../server/routing-errors.html" q "\tRoute stopped\t**%d** route-abandon errors (ARSP0001) — a routing step failed and its configuration stopped the rest of the route\n", DEP[d] >> out
             if (EVE[d] + 0 > 0)
-                printf "PROBLEM\tserver\t../server/errors-log-reasons.html" q "\tEvent-feed errors\t**%d** monitoring-feed delivery errors (unable to submit / error sending event)\n", EVE[d] >> out
+                printf "PROBLEM\tserver\t../server/errors-top-messages.html" q "\tEvent-feed errors\t**%d** monitoring-feed delivery errors (unable to submit / error sending event)\n", EVE[d] >> out
             if (NRDE[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../analyses/uc-status-uc3.html" q "\tNo remote dir\t**%d** failed listing(s) on **%d** subscription(s) whose configured remote directory does not exist — the partner answered \"No such file\", so no transfer was ever started\n", NRDE[d], NRDS[d] >> out
             if (NRFP[d] + 0 > 0)

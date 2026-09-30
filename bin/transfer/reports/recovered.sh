@@ -129,5 +129,8 @@ n_rows=0; sum_out=0; sum_ff=0; sum_ok=0
         "$n_rows" "$sum_out" "$sum_ff" "$sum_ok"
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+# the ENTITY row tint (2026-09-30 audit A2-03: every row tints by its entity
+# result colour — bin/rpt-tint.awk, base cache col 3)
+awk -F'\t' -v TABLES="Subscriptions back to green after a red episode" -v BASE="$CONFIG_BASE/_subscriptions.tsv" -v COL=2 -f "$ROOT/bin/rpt-tint.awk" "$OUT" > "$OUT.tint" && mv "$OUT.tint" "$OUT"
 
 echo "Data written to $OUT ($n_rec of $n_green green subscription(s) recovered from a red episode)." >&2

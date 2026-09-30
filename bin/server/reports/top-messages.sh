@@ -108,7 +108,7 @@ rows() {
     printf 'TITLE\tTop Warning & Error Messages\n'
     printf 'TABLE\tMost repeated message shapes\twide\tsort=1:-1\n'
     printf 'HEAD\tLevel\tCount\tFirst\tLast\tMessage shape\n'
-    printf 'KIND\ttext\tnum\ttext\ttext\tfile\n'
+    printf 'KIND\ttext\tnum\ttext\ttext\tprose\n'   # prose: a log message never wraps (.logline, 2026-09-30 audit A3-06)
     printf 'RECALC\t-\ts0\t-\t-\t-\n'
     rows
     printf 'TOTAL\tTop %s of %s shapes\t@{class=num}%s\t\t\t\n' "$shown" "$shape_count" "$shown_msgs"

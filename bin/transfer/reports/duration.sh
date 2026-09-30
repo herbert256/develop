@@ -69,10 +69,10 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # ---- build one scope (one output, two tables side by side) -------------------
 # Parameters via the calls below: OKONLY (1 = Processed only), OUT (the .rpt
-# of this scope), NAVLINE (the OK/All button row), and the scope words for
-# the DESC (the start page reads the default view's).
+# of this scope) and NAVLINE (the OK/All button row). (The scope words for
+# the DESC went 2026-09-30 with the DESC lines: nothing read them.)
 build_view() {   # ONE output per scope since 2026-09-13: the percentiles table and the min/avg/max table side by side
-    local OKONLY=$1 OUT=$2 NAVLINE=$3 SCOPE_DESC=$4
+    local OKONLY=$1 OUT=$2 NAVLINE=$3
 
     # main pass: per-day stats. Tagged col 1: 1=per-day (min/avg/max and
     # the percentiles on one line), O=overall, B=one duration band (the
@@ -199,7 +199,6 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
     if [ -z "$agg" ]; then
         {
             printf 'TITLE\tDuration\n'
-            if [ "$OKONLY" = 1 ]; then printf 'DESC\tHow long transfers take — per-day percentiles and min / avg / median / max (the longest Files and the distribution have their own pages). %s\n' "$SCOPE_DESC"; fi   # the start page reads duration.rpt's DESC only
             printf '%s\n' "$NAVLINE"
             printf 'TABLE\tTransfer duration\n'
             printf 'HEAD\tDuration\n'
@@ -246,7 +245,6 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
         local OUT=$1 NAVLINE=$2
     {
         printf 'TITLE\tDuration\n'
-        if [ "$OKONLY" = 1 ]; then printf 'DESC\tHow long transfers take — per-day average, median and percentiles beside the duration distribution (the longest Files have their own page). %s\n' "$SCOPE_DESC"; fi   # the start page reads duration.rpt's DESC only
         printf '%s\n' "$NAVLINE"
 
         # Files keeps an explicit @{class=num}; the duration cells arrive
@@ -292,6 +290,5 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
 NAV_OK=$'NAV\t1|Delivered Files|duration.html\t0|All Files|duration-all.html'
 NAV_ALL=$'NAV\t0|Delivered Files|duration.html\t1|All Files|duration-all.html'
 
-build_view 1 "$REPORTS_DIR/duration.rpt" "$NAV_OK" \
-    "Delivered (Processed) Files only — the default; use the All Files button to include failures."
-build_view 0 "$REPORTS_DIR/duration-all.rpt" "$NAV_ALL" ""
+build_view 1 "$REPORTS_DIR/duration.rpt" "$NAV_OK"
+build_view 0 "$REPORTS_DIR/duration-all.rpt" "$NAV_ALL"

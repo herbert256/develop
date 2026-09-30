@@ -151,7 +151,7 @@ week_rows() {
     printf 'TITLE\tTransfer Error Reasons\n'
     printf 'TABLE\tLog lines by reason\twide\ttab=reasons\n'
     printf 'HEAD\tReason\tErrors\tShare\tExample message\n'
-    printf 'KIND\ttext\tnumfailed\tnum\tfile\n'
+    printf 'KIND\ttext\tnumfailed\tnum\tprose\n'   # prose: a log message never wraps (.logline, 2026-09-30 audit A3-06)
     printf 'RECALC\t-\ts0\t%%0\t-\n'
     rows
     printf 'TOTAL\tTotal (%s reason(s))\t@{class=num failed}%s\t@{class=num}100.0%%\t\n' "$nreasons" "$tot_err"

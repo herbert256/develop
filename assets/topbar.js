@@ -4,8 +4,8 @@
  * AXWAY_ENVLINKS / fit scripts are gone).
  * Every page bakes only a placeholder `<div class="topbar" data-b=…
  * [data-help=…]></div>` and loads, in this order, assets/topbar-data.js
- * (window.AXWAY_TB — the data: the ONE Reports menu string with its "@"
- * docs-root placeholder, the Errors / Overview hrefs, the CoreId URL
+ * (window.AXWAY_TB — the data: the Errors / Overview hrefs (the Reports
+ * menu string went 2026-09-30 with the pulldown), the CoreId URL
  * template, the environment label + key and the four site URLs of the
  * environment switch (the data period went 2026-09-30, user request); written by publish_lib ensure_assets) and
  * this file, before report.js — so the bar exists before report.js runs.

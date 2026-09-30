@@ -362,10 +362,16 @@ function last_error_table(   i, F9, cid, res) {
 # Features block: login_feat_row pairs the two on the LOGIN pages, the UC2
 # Pickup table joins the Activity per day | Features row before it on the
 # SUBSCRIPTION pages (publish-details.sh)
-function we_table(   i) {
+# the Waiting / Expired counts LINK Waiting & Expired (2026-09-30 audit A4-07,
+# the Entities cells rule): a subscription page opens it on its own row
+# (?axway_row=<the subscription>, its Subscriptions table key), every other
+# type the page itself
+function we_table(   i, href) {
     if (nwe == 0) return
     emitl("TABLE\tWaiting/Expired\trestint\tnosearch"); emitl("HEAD\tState\tFiles\tFirst staged\tLast staged"); emitl("KIND\ttext\tnum\ttext\ttext")
-    for (i = 1; i <= nwe; i++) emitl(WE[i])
+    href = "../../transfer/waiting-expired.html" ((pend_t == "SITE") ? "?axway_row=" uenc(pend_e) : "")
+    for (i = 1; i <= nwe; i++)
+        emitl(sprintf("ROW\t%s files\t%s\t%s\t%s\t@data:res=%s", WES[i], (WEN[i] + 0 > 0 ? "@{href=" href "}" WEN[i] : WEN[i]), WEF[i], WEL[i], (WES[i] == "Expired") ? "red" : "orange"))
 }
 function emit_intro(   ucd, nca, i, CA, dupacct) {
     if (intro_done == 1) return
@@ -599,7 +605,7 @@ function start_table(s,   WEH, WEK) {
     # joins them into the Domains/Applications flex row; no restint — these
     # rows carry no result payload, seenrows tints green/red alone
     else if (s == "3") dim_table("Login", "login", "seenrows\tsxs=5", "Logins")
-    else if (s == "4") dim_table("Remote Host", "host", "seenrows\tsxs=5", "Hosts")
+    else if (s == "4") dim_table("Remote host", "host", "seenrows\tsxs=5", "Hosts")
 }
 
 # ===== section buffering (BOTHMODE) ==========================================
@@ -830,7 +836,7 @@ function fold_single_dims(   pass9, i, j, t0, t1, hl, lbl, nr9, name9, fe0, fe1,
             else if (index(hl, "HEAD\tPartner\t") == 1)     lbl = "Partner"
             else if (index(hl, "HEAD\tBL\t") == 1)          lbl = "BL"
             else if (trio9 && index(hl, "HEAD\tLogin\t") == 1)       lbl = "Login"   # the trio pages' Logins/Hosts tables (2026-08-29)
-            else if (trio9 && index(hl, "HEAD\tRemote Host\t") == 1) lbl = "Host"
+            else if (trio9 && index(hl, "HEAD\tRemote host\t") == 1) lbl = "Host"
             else continue
             t1 = blk_end(i)
             nr9 = 0; name9 = ""
@@ -1282,7 +1288,7 @@ function reset_entity() {
     x_perf = ""; x_ip = ""; x_dtrank = ""; x_pday = ""; dirv = "unknown"; BOTHMODE = 0; perf_done = 0
     split("", bk_f); split("", bk_e); split("", bk_b); split("", bk_ord); nbk = 0
     split("", LE); nle = 0
-    split("", WE); nwe = 0
+    split("", WES); split("", WEN); split("", WEF); split("", WEL); nwe = 0
     busy_day = "-"; busy_cnt = 0
     x_grpfold = ""
     x_oneacct = ""; x_onedom = ""; x_oneapp = ""; x_oneptn = ""; x_onelgc = ""; x_onebl = ""
@@ -1299,7 +1305,7 @@ BEGIN {
     if      (TYPE == "ACC")   { label = "Account";      typenoun = "accounts";      sdir = "accounts";      bt = "account";      rk = "accounts" }
     else if (TYPE == "SITE")  { label = "Subscription"; typenoun = "subscriptions"; sdir = "subscriptions"; bt = "subscription"; rk = "subscriptions" }
     else if (TYPE == "LOGIN") { label = "Login";        typenoun = "logins";        sdir = "logins";        bt = "login";        rk = "logins" }
-    else if (TYPE == "HOST")  { label = "Remote Host";  typenoun = "remote hosts";  sdir = "hosts";         bt = "host";         rk = "hosts" }
+    else if (TYPE == "HOST")  { label = "Remote host";  typenoun = "remote hosts";  sdir = "hosts";         bt = "host";         rk = "hosts" }
     else if (TYPE == "LGC")   { label = "Logical";      typenoun = "logical flows"; sdir = "";              bt = "logical";      rk = "logical" }
     else if (TYPE == "PTN")   { label = "Partner";      typenoun = "partners";      sdir = "";              bt = "partner";      rk = "partners" }
     else if (TYPE == "APP")   { label = "Application";  typenoun = "applications";  sdir = "";              bt = "application";  rk = "applications" }
@@ -1456,7 +1462,7 @@ NF < 4 { next }
     if (sec == "0.9") {
         split($5, W9, "|")
         HAS_WE = 1
-        nwe++; WE[nwe] = sprintf("ROW\t%s files\t%s\t%s\t%s\t@data:res=%s", W9[1], W9[2], W9[3], W9[4], (W9[1] == "Expired") ? "red" : "orange")
+        nwe++; WES[nwe] = W9[1]; WEN[nwe] = W9[2]; WEF[nwe] = W9[3]; WEL[nwe] = W9[4]   # rows built in we_table (the count links)
         next
     }
     ensure_file()

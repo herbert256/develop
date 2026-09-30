@@ -6,17 +6,18 @@
 </ul>
 <h2>Files</h2>
 <ul>
-<li><strong>Date/time</strong> &mdash; the File&rsquo;s start. <strong>Account</strong>, <strong>Login</strong>, <strong>Remote host</strong> link their detail pages.</li>
+<li><strong>Date/time</strong> &mdash; the File&rsquo;s start. <strong>Account</strong>, <strong>Login</strong>, <strong>Remote host</strong> link their detail pages (a partner source address its incoming connection page).</li>
 <li><strong>Side</strong> &mdash; the connection side (in / out); an Unknown File has no movement direction.</li>
 <li><strong>Legs</strong>, <strong>State</strong> (OK / Error / Waiting / Expired; opens the File&rsquo;s own page when it has one), <strong>Volume</strong>, <strong>CoreId</strong> (links SecureTransport File Tracking), <strong>Filename</strong>.</li>
 <li>Rows tint by the File colour: green, orange after a retry or resubmit, red for Error / Expired. Newest first, 500 rows per page.</li>
 </ul>
 <h2>Per account</h2>
 <ul>
-<li><strong>Files</strong>, <strong>OK</strong>, <strong>Error</strong> (Failed or Expired), <strong>First</strong> and <strong>Last</strong> start per account. From/To re-counts Files, OK and Error for the range (an account with none in it hides); First / Last stay full-period.</li>
+<li><strong>Files</strong>, <strong>OK</strong>, <strong>Error</strong> (Failed or Expired), <strong>First</strong> and <strong>Last</strong> start per account, most Files first; rows tint by the account&rsquo;s result colour. From/To re-counts Files, OK and Error for the range (an account with none in it hides); First / Last stay full-period.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
 <li>Most rows need one config fix: give the account (or its login) the subscription it should run, or check the route the server log names on the File&rsquo;s page.</li>
+<li>An Unknown File whose own page shows no error reads the Reason <strong>Unknown subscription</strong> (on its File page and Failed files): with no subscription it can never read OK.</li>
 <li>These Files do not colour their account, login or host; the <a href="skipped.html">Skipped</a> report lists the records without even an account.</li>
 </ul>

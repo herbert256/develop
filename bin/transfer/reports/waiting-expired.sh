@@ -46,12 +46,6 @@ OUT="$REPORTS_DIR/waiting-expired.rpt"
 WSUB="$REPORTS_DIR/waiting"
 XSUB="$REPORTS_DIR/expired"
 SUBRES="$CONFIG_BASE/_subscriptions.tsv"; [ -f "$SUBRES" ] || SUBRES=/dev/null
-# hdur() — a wait in seconds as d h / h m / min / s (the Waiting for cells)
-WT_HDUR_AWK='function hdur(s){ s=int(s); if (s<0) s=0
-    if (s>=86400) return int(s/86400) "d " int(s%86400/3600) "h"
-    if (s>=3600)  return int(s/3600) "h " int(s%3600/60) "m"
-    if (s>=60)    return int(s/60) " min"
-    return s " s" }'
 
 TMPD=$(mktemp -d "${TMPDIR:-/tmp}/axwe.XXXXXX")
 trap 'rm -rf "$TMPD"' EXIT
@@ -64,7 +58,7 @@ trap 'rm -rf "$TMPD"' EXIT
 #                                                 each Waiting File (its list page)
 #   X|site|staged|expired|coreid|file             each Expired File (its list page)
 #   TOT|lastdt
-awk -F'\t' "$COREIDS_AWK$AWKLIB$WT_HDUR_AWK"'
+awk -F'\t' "$COREIDS_AWK$AWKLIB"'
     function tsec(d,t){ split(d,p,"-"); return jdn(p[1]+0,p[2]+0,p[3]+0)*86400 + substr(t,1,2)*3600 + substr(t,4,2)*60 + substr(t,7,2) }
     $2 == "Waiting" || $2 == "Expired" {
         if ($4 != "") {   # the Summary: every dated Waiting / Expired File
@@ -106,7 +100,7 @@ awk -F'\t' "$COREIDS_AWK$AWKLIB$WT_HDUR_AWK"'
             m = split(FL[i], a, "|")
             fn = a[8]; for (j = 9; j <= m; j++) fn = fn "|" a[j]   # a file name may hold "|"
             ws = int(g_lastsec - a[1]); if (ws < 0) ws = 0
-            printf "F|%s|%s|%s|%s|%s|%s|%s|%d|%s|%s\n", a[1], a[2], a[3], a[4], a[5], a[6], hdur(ws), ws, a[7], fn
+            printf "F|%s|%s|%s|%s|%s|%s|%s|%d|%s|%s\n", a[1], a[2], a[3], a[4], a[5], a[6], hage1(ws), ws, a[7], fn
         }
         printf "TOT|%s\n", g_lastdt
     }
@@ -128,19 +122,23 @@ awk -F'|' '$1 == "S" && $4 + 0 > 0 { print $2 }' "$TMPD/agg" | mkslugs > "$TMPD/
 # ---- the Waiting File lists: longest waiting first (the page's declared sort
 # on the Waiting for sortval), ties by CoreId; every row ORANGE (a Waiting
 # File's colour). Staged in waiting.new/ and swapped in before the main .rpt.
+# Each list page (and its Expired twin below) carries a NAV row back to
+# Waiting & Expired and a TOTAL row "Total (N Files)" (2026-09-30 audit
+# A5-09 / A5-02: the pages had no way back and no total); the Waiting for
+# cell is the one-unit age of fmt.awk hage1 ("37d"), the sortval the seconds.
 rm -rf "$WSUB.new"; mkdir -p "$WSUB.new"
-cp "$TMPD/wslugs" "$WSUB.new/_slugmap.tsv"
 awk -F'|' '$1 == "F"' "$TMPD/agg" | LC_ALL=C sort -t'|' -k4,4 -k2,2n -k10,10 | awk -F'|' \
     -v slugs="$TMPD/wslugs" -v dir="$WSUB.new" -v lastdt="$last_dt" "$AWKLIB"'
     BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
     function clean(s) { gsub(/[\t\r]/, " ", s); return s }
-    function finish() { if (out == "") return; printf "FOOT\n" > out; close(out) }
+    function finish() { if (out == "") return; printf "TOTAL\tTotal (%d Files)\t\t\t\n", nr > out; printf "FOOT\n" > out; close(out) }
     ($4 "") != cur {
-        finish(); cur = $4; out = ""
+        finish(); cur = $4; out = ""; nr = 0
         if (!($4 in SL)) next
         out = dir "/" SL[$4] ".rpt"
         printf "TITLE\tWaiting Files: %s\n", $4 > out
         printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] the partner has not collected yet — still collectable until the nightly File Maintenance retention sweep (~11 days) deletes them. **Waiting for** counts from the staging moment to the last record of the data (%s). Longest waiting first.\n", $4, lastdt > out
+        printf "NAV\t0|Waiting & Expired|../waiting-expired.html\n" > out
         printf "TABLE\tWaiting Files\twide\tnofilter\tsort=1:-1\tpager=25\trestint\n" > out
         printf "HEAD\tStart\tWaiting for\tFile name\tCoreId\n" > out
         printf "KIND\ttext\ttext\tmono\tmono\n" > out
@@ -148,6 +146,7 @@ awk -F'|' '$1 == "F"' "$TMPD/agg" | LC_ALL=C sort -t'|' -k4,4 -k2,2n -k10,10 | a
     out != "" {
         fn = $11; for (j = 12; j <= NF; j++) fn = fn "|" $j
         printf "ROW\t%s\t@{sortval=%d}%s\t%s\t%s\t@data:res=orange\n", $3, $9, $8, lit(clean(fn)), $10 > out
+        nr++
     }
     END { finish() }'
 rm -rf "$WSUB"; mv "$WSUB.new" "$WSUB"
@@ -159,25 +158,25 @@ awk -F'|' -v OFS='\t' '$1 == "X" { fn = $6; for (j = 7; j <= NF; j++) fn = fn "|
     | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k3,3r -k2,2r -k5,5 | awk -F'\t' \
     -v slugs="$TMPD/xslugs" -v dir="$XSUB.new" "$AWKLIB"'
     BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
-    function finish() { if (out == "") return; printf "FOOT\n" > out; close(out) }
+    function finish() { if (out == "") return; printf "TOTAL\tTotal (%d Files)\t\t\t\n", nr > out; printf "FOOT\n" > out; close(out) }
     ($1 "") != cur {
-        finish(); cur = $1; out = ""
+        finish(); cur = $1; out = ""; nr = 0
         if (!($1 in SL)) next
         out = dir "/" SL[$1] ".rpt"
         printf "TITLE\tExpired Files: %s\n", $1 > out
         printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] that the nightly File Maintenance retention sweep deleted before the partner collected them — never delivered. Last expired first.\n", $1 > out
+        printf "NAV\t0|Waiting & Expired|../waiting-expired.html\n" > out
         printf "TABLE\tExpired Files\twide\tnofilter\tsort=1:-1\tpager=25\trestint\n" > out
         printf "HEAD\tStart\tExpired\tFile name\tCoreId\n" > out
         printf "KIND\ttext\ttext\tmono\tmono\n" > out
     }
-    out != "" { printf "ROW\t%s\t%s\t%s\t%s\t@data:res=red\n", $2, $3, lit($4), $5 > out }
+    out != "" { printf "ROW\t%s\t%s\t%s\t%s\t@data:res=red\n", $2, $3, lit($4), $5 > out; nr++ }
     END { finish() }'
 rm -rf "$XSUB"; mv "$XSUB.new" "$XSUB"
 
 # ---- the report ---------------------------------------------------------------
 {
     printf 'TITLE\tWaiting & Expired\n'   # = its Reports menu label
-    printf 'DESC\tUC2 Files staged for pickup: per day how many are still waiting and how many the retention sweep deleted before any pickup, and per subscription its waiting, expired and collected Files.\n'
 
     # Summary — per START day, newest first; the counts drill to the day's Files
     # (an Expired 0 goes out as "0": the renderer z-blanks it, so a day without an

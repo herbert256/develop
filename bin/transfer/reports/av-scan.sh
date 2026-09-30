@@ -145,7 +145,6 @@ avon_disp=$(printf '%s\n' "$agg" | awk -F'|' '$1 == "AVON" { print $2 }')
 # the ROW lines.
 {
     printf 'TITLE\tAV Scan\n'   # = its Reports menu label (2026-09-29)
-    printf 'DESC\tAnti-virus scan outcomes on the first Inbound leg of every File — the scan runs when a file enters the system.\n'
 
     printf 'TABLE\tScan outcome breakdown\n'
     printf 'HEAD\tOutcome\tFiles\tShare\n'
@@ -159,15 +158,19 @@ avon_disp=$(printf '%s\n' "$agg" | awk -F'|' '$1 == "AVON" { print $2 }')
         }' || true                       # no first-inbound leg at all: no rows, not a failure
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}100.0%%\n' "$tot_all"
 
+    # a 0 total renders empty like the 0 cells (2026-09-30 audit A5-06)
+    z_notperf=$tot_notperf; [ "${z_notperf:-0}" -eq 0 ] && z_notperf=""
+    z_other=$tot_other; [ "${z_other:-0}" -eq 0 ] && z_other=""
     printf 'TABLE\tScan outcomes per day\n'
     printf 'HEAD\tDate\tAllowed\tBlocked\tNot performed\tOther\tTotal\n'
     printf 'KIND\ttext\tnumprocessed\tnumfailed\tnum\tnum\tnum\n'
     # Per-day rows (chronological); every numeric cell carries its own drill list.
     printf '%s\n' "$agg" | grep '^DAY|' | LC_ALL=C sort -t'|' -k2,2 | awk -F'|' '
+        function z(v) { return (v + 0 == 0) ? "" : v }   # a 0 count renders empty (2026-09-30 audit A5-06; Allowed / Blocked z-blank in the renderer)
         $2 != "" { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t@data:drill-cell-1=%s\t@data:drill-cell-2=%s\t@data:drill-cell-3=%s\t@data:drill-cell-4=%s\t@data:drill-cell-5=%s\n", \
-                          $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12 }' || true
+                          $2, $3, $4, z($5), z($6), z($7), $8, $9, $10, $11, $12 }' || true
     printf 'TOTAL\tTotal\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\n' \
-        "$tot_allowed" "$tot_blocked" "$tot_notperf" "$tot_other" "$tot_all"
+        "$tot_allowed" "$tot_blocked" "$z_notperf" "$z_other" "$tot_all"
 
     printf 'TABLE\tScan outcomes per protocol\n'
     printf 'HEAD\tProtocol\tAllowed\tBlocked\tNot performed\tOther\tTotal\n'
@@ -179,10 +182,11 @@ avon_disp=$(printf '%s\n' "$agg" | awk -F'|' '$1 == "AVON" { print $2 }')
     # which is 0 on every row, so the order fell through to the alphabetical
     # whole-line tie-break and read smallest-first.
     printf '%s\n' "$agg" | grep '^PRO|' | LC_ALL=C sort -t'|' -k7,7nr | awk -F'|' '
+        function z(v) { return (v + 0 == 0) ? "" : v }
         $2 != "" { printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:drill-cell-1=%s\t@data:drill-cell-2=%s\t@data:drill-cell-3=%s\t@data:drill-cell-4=%s\t@data:drill-cell-5=%s\n", \
-                          $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13 }' || true
+                          $2, $3, $4, z($5), z($6), z($7), $8, $9, $10, $11, $12, $13 }' || true
     printf 'TOTAL\tTotal\t@{class=num processed}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\n' \
-        "$tot_allowed" "$tot_blocked" "$tot_notperf" "$tot_other" "$tot_all"
+        "$tot_allowed" "$tot_blocked" "$z_notperf" "$z_other" "$tot_all"
 
     # Blocked detail: every first-inbound Blocked leg individually, newest first.
     printf 'TABLE\tBlocked transfers\twide\n'
@@ -219,6 +223,9 @@ avon_disp=$(printf '%s\n' "$agg" | awk -F'|' '$1 == "AVON" { print $2 }')
             if (r == 3) return "Oversized (>= 1 MB)"
             return "Other"
         }
+        # a reason at 0 keeps its row (a new skip reason must be noticed) with
+        # empty cells, the 0 count rule (2026-09-30 audit A5-06)
+        $2 != "" && $3 + 0 == 0 { printf "ROW\t%s\t\t\t@data:buckets=%s\t@data:coreids=%s\n", nplabel($2 + 0), $4, $5; next }
         $2 != "" { printf "ROW\t%s\t%s\t%s%%\t@data:buckets=%s\t@data:coreids=%s\n", \
                           nplabel($2 + 0), $3, (tot > 0 ? sprintf("%.1f", $3 * 100 / tot) : "0.0"), $4, $5 }'
     printf 'TOTAL\tTotal\t@{class=num}%s\t@{class=num}100.0%%\n' "$tot_notperf"

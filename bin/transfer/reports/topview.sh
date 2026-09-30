@@ -142,7 +142,6 @@ IFS='|' read -r _ tC tP tRVF tF tfp tT tTP tTF ttp wP wF wW wX ndays tRVA tRVM t
 
 {
     printf 'TITLE\tTransfer top view\n'   # = its Reports menu label (2026-09-29)
-    printf 'DESC\tThe whole transfer log at a glance, per day: logical Files (per CoreId) with their Count / Ok / Error split and error rate, the physical Transfers (log rows) with the same Ok/Error split, the same Files by their final state — Processed, Failed, Waiting and Expired — and, per day, the Recovered Files (automatic or manual) and the resubmitted Files (Ok or Error).\n'
     # 0-based columns (six groups, 2026-09-12; the First / Last columns went
     # 2026-09-30, user request): Date0 | Files: Count1 Ok2 Error3 Error%4 |
     # Recovered: Automatic5 Manual6 | Resubmit: Ok7 Failed8 | Transfers:

@@ -18,8 +18,9 @@
 #                   line = the stamp as written) through the subscription ->
 #                   login xref; several logins join ", "-separated
 #   Oldest waiting  how long the subscription's OLDEST staged, uncollected
-#                   File has been waiting — "5 days", "12 hours", "45
-#                   minutes", "10 seconds" (one unit, truncated) — from the
+#                   File has been waiting — "5d", "16h", "14m", "40s" (one
+#                   unit, one letter, bin/fmt.awk hage1 — "5 days" until
+#                   2026-09-30, the Waiting & Expired wording since) — from the
 #                   transfer files cache, aged against the NEWEST File in the
 #                   whole cache (the data's "now", the Waiting report's
 #                   anchor: a wall clock would make an unchanged export age
@@ -65,15 +66,8 @@ rows=$(LC_ALL=C sort -t$'\t' -k5,5nr -k1,1f "$PICKUPS" | awk -F'\t' -v SL="$SL" 
     function trim(s) { sub(/^[ \t\r]+/, "", s); sub(/[ \t\r]+$/, "", s); return s }
     function z(v) { return (v + 0 == 0) ? "" : v }   # a 0 count shows empty (2026-09-02, user request); the outcome columns z-blank themselves
     function tsec(d,t){ split(d,p,"-"); return jdn(p[1]+0,p[2]+0,p[3]+0)*86400 + substr(t,1,2)*3600 + substr(t,4,2)*60 + substr(t,7,2) }
-    # one unit, truncated, singular/plural: "5 days", "12 hours", "45 minutes", "10 seconds"
-    function hage(s,   n, u) {
-        s = int(s); if (s < 0) s = 0
-        if (s >= 86400)    { n = int(s / 86400); u = "day" }
-        else if (s >= 3600) { n = int(s / 3600); u = "hour" }
-        else if (s >= 60)   { n = int(s / 60); u = "minute" }
-        else                { n = s; u = "second" }
-        return n " " u (n == 1 ? "" : "s")
-    }
+    # (the age: bin/fmt.awk hage1 — one unit, one letter, "5d" / "16h" / "14m",
+    # the Waiting & Expired wording since 2026-09-30; "5 days" until then)
     # the Last Gateway cell: the stamps of the subscription'"'"'s logins, in
     # xref order, deduplicated; an em dash when none is known
     function gateway(s,   n, L, i, k, o) {
@@ -88,7 +82,7 @@ rows=$(LC_ALL=C sort -t$'\t' -k5,5nr -k1,1f "$PICKUPS" | awk -F'\t' -v SL="$SL" 
     function oldest(s,   k, a) {
         k = toupper(s); if (!(k in WOLD)) return ""
         a = NEWEST - WOLD[k]
-        return "@{sortval=" int(a < 0 ? 0 : a) "}" hage(a)
+        return "@{sortval=" int(a < 0 ? 0 : a) "}" hage1(a)
     }
     BEGIN {
         while ((getline l < SL) > 0) { n = split(l, a, "\t"); if (n < 2 || a[1] == "" || a[2] == "") continue
@@ -121,7 +115,7 @@ rows=$(LC_ALL=C sort -t$'\t' -k5,5nr -k1,1f "$PICKUPS" | awk -F'\t' -v SL="$SL" 
         if (!(pkk in PKS)) { PKS[pkk] = 1; tp += $5 }
         tw += $6; tf += $7; twt += $14; txp += $15; nr++
     }
-    END { printf "TOTFOOT\t%d\t%d\t%d\t%d\t%d\t%d\t%s\n", nr+0, tp+0, tw+0, tf+0, twt+0, txp+0, (GOLD >= 0 ? hage(GOLD) : "") }
+    END { printf "TOTFOOT\t%d\t%d\t%d\t%d\t%d\t%d\t%s\n", nr+0, tp+0, tw+0, tf+0, twt+0, txp+0, (GOLD >= 0 ? hage1(GOLD) : "") }
 ')
 tot=$(printf '%s\n' "$rows" | grep $'^TOTFOOT\t')
 rows=$(printf '%s\n' "$rows" | grep -v $'^TOTFOOT\t' || true)

@@ -182,7 +182,6 @@ awk -F'\t' -v HB="$HB" -v HS="$HS" -v UCDF="$UCDF" -v LGH="$LGH" -v IPM="$IPM" -
             while (j >= 1 && before(v, ORD[j])) { ORD[j + 1] = ORD[j]; j-- }
             ORD[j + 1] = v }
         print "TITLE\tPartners Out"
-        print "DESC\tEvery host this server connects out to: the use cases of its subscriptions, its Files in and out with their errors, our connections and the last one, and our failed logons there — Password, Key, Certificate and Other with the newest reason and the first and last day."
         # the view row (2026-09-30, user request): this Endpoint view, then the
         # Accounts and Partners views bin/rpt-rollup.awk regroups it into
         print "NAV\t1|Endpoint|partners-out.html\t0|Accounts|partners-out-accounts.html\t0|Partners|partners-out-partners.html"

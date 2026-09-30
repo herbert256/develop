@@ -182,11 +182,13 @@ IFS=' ' read -r nroutes ncross <<< "$(printf '%s\n' "$route_rows" | awk -F'\t' '
     printf 'KIND\tsite\tsite\ttext\tnum\tnum\tptn\tptn\ttext\ttext\ttext\tnum\tnum\n'
     # the sorted rows first, then the TOTAL summed off the same stream as it
     # passes by (the route figures all survive into the ROW line)
-    printf '%s\n' "$route_rows" | awk -F'\t' '$1=="R"{
+    # a 0 Same size / Size changed count renders empty (2026-09-30 audit A5-06)
+    printf '%s\n' "$route_rows" | awk -F'\t' 'function z(v) { return (v + 0 == 0) ? "" : v }
+        $1=="R"{
         printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
-               $2,$3,$13,$4,$5,$9,$10,$6,$7,$8,$11,$12 }' | LC_ALL=C sort -t"$(printf '\t')" -k5,5nr \
+               $2,$3,$13,$4,$5,$9,$10,$6,$7,$8,z($11),z($12) }' | LC_ALL=C sort -t"$(printf '\t')" -k5,5nr \
         | awk -F'\t' '{ print; n++; f+=$5; nf+=$6; s+=$12; c+=$13 }
-            END{printf "TOTAL\tTotal (%d route(s))\t\t\t@{class=num}%d\t@{class=num}%d\t\t\t\t\t\t@{class=num}%d\t@{class=num}%d\n", n+0, f+0, nf+0, s+0, c+0}'
+            END{printf "TOTAL\tTotal (%d route(s))\t\t\t@{class=num}%d\t@{class=num}%d\t\t\t\t\t\t@{class=num}%s\t@{class=num}%s\n", n+0, f+0, nf+0, (s + 0 > 0 ? s + 0 : ""), (c + 0 > 0 ? c + 0 : "")}'
 
     printf 'TABLE\tLatest handovers\twide\ttab=fifo\n'
     printf 'HEAD\tFile\tFirst time\tFirst\tSecond time\tSecond\tDirection\tGap\tSize first\tSize second\n'

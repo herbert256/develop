@@ -135,7 +135,6 @@ awk -F'\t' \
         split("Account|Subscription|Login|Host|Whitelist|Logical|Partner|Application|Domain|BL", TL, "|")
         split("accounts|subscriptions|logins|hosts||logicals|partners|applications|domains|bl", SD, "|")
         printf "TITLE\tNot in Flow Manager\n"
-        printf "DESC\tEvery entity value seen in the transfer logs that the current FlowManager configuration does not know — all ten entity lists checked.\n"
         printf "TABLE\tLogged but not configured\twide\tgroup\n"
         printf "HEAD\tType\tName\tFiles\tError\tOK\tVolume\tFirst seen\tLast seen\n"
         printf "KIND\ttext\ttext\tnum\tnumfailed\tnumprocessed\tnum\ttext\ttext\n"
@@ -149,7 +148,9 @@ awk -F'\t' \
         rows++; tf += $2; te += $4; to += $5; tb += $6
     }
     END {
-        printf "TOTAL\tTotal (%d rows)\t\t@{class=num}%d\t@{class=num failed}%d\t@{class=num processed}%d\t@{class=num}%s\t\t\n", rows+0, tf+0, te+0, to+0, hbytes2(tb+0)
+        # an EMPTY table totals blank, not "0" / "0 B" (2026-09-30 audit A5-06; the
+        # failed / processed zeros z-blank in the renderer)
+        printf "TOTAL\tTotal (%d rows)\t\t@{class=num}%s\t@{class=num failed}%d\t@{class=num processed}%d\t@{class=num}%s\t\t\n", rows+0, (tf + 0 > 0 ? tf + 0 : ""), te+0, to+0, (tb + 0 > 0 ? hbytes2(tb+0) : "")
         printf "SUMMARY\tUnconfigured values: %d  |  Files touched: %d  |  Volume: %s\n", rows+0, tf+0, hbytes2(tb+0)
         printf "FOOT\n"
     }

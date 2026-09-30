@@ -59,7 +59,6 @@ rows=$(printf '%s\n' "$sorted_stats" | awk -F'|' "$AWKLIB"'
     printf 'TITLE\tPer Day\n'
     printf 'TABLE\tPer day\n'
     printf 'HEAD\tDate\tLast Time\n'
-    printf 'KIND\ttext\ttext\n'
     printf '%s\n' "$rows"
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

@@ -84,7 +84,6 @@ nff=$(printf '%s\n' "$agg" | awk -F'\t' '$1 == "~N" { print $2 }')
 
 {
     printf 'TITLE\tFailed files\n'
-    printf 'DESC\tEvery File that ended in error (Failed or Expired), newest first: its subscription, start date/time, error reason, CoreId and file name. The Files the home page Error cells count; a cell opens this page narrowed to its day.\n'
     printf 'TABLE\t\twide\tsort=1:-1\tpager=500\trestint\n'
     printf 'HEAD\tSubscription\tDate/time\tError reason\tCoreId\tFilename\n'
     printf 'KIND\tsite\ttext\ttext\ttext\ttext\n'

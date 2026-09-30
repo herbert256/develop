@@ -83,6 +83,9 @@ IFS='|' read -r _ tot_rec tot_info tot_warn tot_err tot_pct day_count <<< "$(pri
 comp_rows() {
     while IFS='|' read -r _ comp info warn err total bk lines; do
         [ -z "$comp" ] && continue
+        # a 0 count shows empty, like the Top view per-day cells (2026-09-30 audit;
+        # the Warnings / Errors kinds z-blank themselves)
+        [ "$info" = 0 ] && info=""; [ "$total" = 0 ] && total=""
         printf 'ROW\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$comp" "$info" "$warn" "$err" "$total" "$bk" "$lines"
     done <<< "$(printf '%s\n' "$agg" | grep '^COMP|' | sort -t'|' -k6,6nr)"
 }

@@ -1,7 +1,8 @@
 # merge_rpt.sh — sourced by the MERGED report scripts (2026-07 catalog cleanup).
 #
-# merge_rpt OUT TITLE DESC COMP.rpt...
-#   (the INTRO and KEYWORDS arguments went 2026-09-29: a report page renders no
+# merge_rpt OUT TITLE COMP.rpt...
+#   (the INTRO and KEYWORDS arguments went 2026-09-29, the DESC argument
+#   2026-09-30 — nothing read a DESC any more: a report page renders no
 #   INTRO — its help page explains it — and the Report finder, the one
 #   KEYWORDS reader, is gone)
 #
@@ -28,7 +29,7 @@ _merge_pad() {
         resubmissions) echo 3 ;;   # resubmissions 2->3 (2026-08: + server-log outcomes); dwell-time.sh writes duration-dwell.rpt itself (merge-duration-dwell.sh went 2026-09-30)
         size-profile) echo 2 ;;   # a Sizes component (the Trends components trend / duration-trend went with their page, 2026-09-29)
         # errors-day 2->1 and error-timing 3->1 (2026-09-28: the per-day table = the Top view; hour + weekday folded into the heatmap)
-        attempts|logon) echo 4 ;;         # logon 2->4 (2026-08: + the door-knocker tables)
+        attempts) echo 4 ;;               # (logon, 2->4 in 2026-08, is merged no more: logon.rpt is pageless since 2026-09-30)
         size-dist) echo 2 ;;
         # (ssh-crypto: merged no more since 2026-09-30 — its tables are
         # APPENDED to Security Parameters, append_rpt_tables -f)
@@ -37,13 +38,12 @@ _merge_pad() {
     esac
 }
 merge_rpt() {
-    local out=$1 title=$2 desc=$3; shift 3
+    local out=$1 title=$2; shift 2
     local have=0 c i n
     for c in "$@"; do [ -f "$c" ] && have=1; done
     if [ "$have" = 0 ]; then rm -f "$out"; echo "merge_rpt: no components for $out — skipped." >&2; return 0; fi
     {
         printf 'TITLE\t%s\n' "$title"
-        printf 'DESC\t%s\n' "$desc"
         for c in "$@"; do
             if [ -f "$c" ]; then
                 awk -F'\t' '

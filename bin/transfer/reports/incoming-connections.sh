@@ -61,10 +61,8 @@ args+=( f=files "$FILES" )
 npages=$(LC_ALL=C awk -F'\t' \
     -v outdir="$OUTDIR" -v slugmap="$SLUGMAP.tmp" "$AWKLIB"'
     # (lit() — a raw name kept literal, audit 2026-09-29 F07 — comes from bin/fmt.awk via $AWKLIB)
-    function hb(b) { if (b >= 1073741824) return sprintf("%.1f GB", b/1073741824)
-                     if (b >= 1048576)    return sprintf("%.1f MB", b/1048576)
-                     if (b >= 1024)       return sprintf("%.1f KB", b/1024)
-                     return b " B" }
+    # (the byte cells: fmt.awk hbytes1 — a local hb() copy of it until the
+    # 2026-09-30 audit, A4-09)
 
     # the address -> endpoint map: ip -> host (bin/ip.sh)
     f == "rev" { if ($1 != "" && $2 != "") ptrmap[$1] = tolower($2); next }
@@ -90,7 +88,7 @@ npages=$(LC_ALL=C awk -F'\t' \
         if (fd[ip] == "" || d < fd[ip]) fd[ip] = d
         if (ld[ip] == "" || d > ld[ip]) ld[ip] = d
         # bounded latest-10 by sortkey (col 6), newest first
-        line = $4 "\t" $5 "\t" $3 "\t" $12 "\t" $11 "\t" hb(sz) "\t" $2 "\t" $25   # 8 = the File colour (col 25)
+        line = $4 "\t" $5 "\t" $3 "\t" $12 "\t" $11 "\t" hbytes1(sz) "\t" $2 "\t" $25   # 8 = the File colour (col 25)
         k = $6
         if (nt[ip] < 10 || k > tk[ip, 10]) {
             if (nt[ip] < 10) nt[ip]++
@@ -127,12 +125,14 @@ npages=$(LC_ALL=C awk -F'\t' \
             printf "HEAD\tMetric\tValue\n" > out
             printf "KIND\ttext\ttext\n" > out
             printf "ROW\tIP address\t%s\n", ip > out
-            if (ptr != "") printf "ROW\tConfigured endpoint\t%s\n", ptr > out
+            # the endpoint links its host detail page (2026-09-30 audit A4-08;
+            # alink resolves through the hosts slugmap — no page, no link)
+            if (ptr != "") printf "ROW\tConfigured endpoint\t@{alink=hosts/%s}%s\n", ptr, ptr > out
             printf "ROW\tResult\t%s\n", rlabel > out
             printf "ROW\tWhitelisted by\t%d account(s)\n", nacc > out
             if (nn) {
                 printf "ROW\tFiles\t%d (%d OK, %d Error)\n", nn, ok[ip]+0, ko[ip]+0 > out
-                printf "ROW\tVolume\t%s\n", hb(vol[ip]) > out
+                printf "ROW\tVolume\t%s\n", hbytes1(vol[ip]) > out
                 printf "ROW\tFirst seen\t%s\n", fd[ip] > out
                 printf "ROW\tLast seen\t%s\n", ld[ip] > out
             }
@@ -146,9 +146,9 @@ npages=$(LC_ALL=C awk -F'\t' \
                 printf "HEAD\tDate\tFiles\tError\tOK\tVolume\n" > out
                 printf "KIND\ttext\tnum\tnumfailed\tnumprocessed\tnum\n" > out
                 for (i = 1; i <= nd[ip]; i++) { d = sd[i]
-                    printf "ROW\t%s\t%d\t%s\t%s\t%s\n", d, df[ip, d], (((ip, d) in dfd) ? dfd[ip, d] : ""), (((ip, d) in dp) ? dp[ip, d] : ""), hb(dv[ip, d] + 0) > out }
+                    printf "ROW\t%s\t%d\t%s\t%s\t%s\n", d, df[ip, d], (((ip, d) in dfd) ? dfd[ip, d] : ""), (((ip, d) in dp) ? dp[ip, d] : ""), hbytes1(dv[ip, d] + 0) > out }
                 # the Error / OK totals keep their column tint and show no 0 (2026-09-29)
-                printf "TOTAL\tTotal (%d days)\t@{class=num}%d\t@{class=num failed}%s\t@{class=num processed}%s\t%s\n", nd[ip], nn, (ko[ip] + 0 > 0 ? ko[ip] + 0 : ""), (ok[ip] + 0 > 0 ? ok[ip] + 0 : ""), hb(vol[ip]) > out
+                printf "TOTAL\tTotal (%d days)\t@{class=num}%d\t@{class=num failed}%s\t@{class=num processed}%s\t%s\n", nd[ip], nn, (ko[ip] + 0 > 0 ? ko[ip] + 0 : ""), (ok[ip] + 0 > 0 ? ok[ip] + 0 : ""), hbytes1(vol[ip]) > out
                 printf "TABLE\tLatest %d Files\trestint\n", nt[ip] > out   # rows tint by the File colour (2026-09-29)
                 printf "HEAD\tDate\tTime\tAccount\tSubscription\tFile\tSize\tOutcome\n" > out
                 printf "KIND\ttext\ttext\tacct\tsite\tfile\tnum\ttext\n" > out

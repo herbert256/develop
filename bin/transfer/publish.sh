@@ -24,7 +24,7 @@ source "$SCRIPT_DIR/../publish_lib.sh"   # cd's to the repo root; defines the re
 
 [ $# -eq 0 ] || { printf 'usage: bin/transfer/publish.sh (no arguments)\n' >&2; exit 2; }
 
-ensure_assets   # topbar-data.js (the menus' data file)
+ensure_assets   # topbar-data.js (the top bar's data file)
 
 # laps (2026-09-27): TIME lines on the build console
 _tp0=$(date +%s)
@@ -220,7 +220,7 @@ render_month_stats transfer
 
 echo "Rendered docs/transfer/ ($count report(s))." >&2
 
-# Every menu/sitemap/group-tab option must exist in this env: write an
+# Every group-tab option must exist in this env: write an
 # empty-report placeholder for each order-listed report without a .rpt here.
 render_missing_reports transfer
 

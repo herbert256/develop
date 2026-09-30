@@ -95,7 +95,6 @@ LC_ALL=C awk -F'\t' -v VOC="$TMP/vocab" -v OUT="$OUT.tmp" '
         # the MAIN list
         f = OUT
         printf "TITLE\tError reasons\n" > f
-        printf "DESC\tEvery error Reason that occurs — how many Files in error (Failed or Expired) carry it and the newest occurrence; a row opens the Failed files page filtered to it.\n" > f
         # DATE-AWARE since 2026-09-30 (user request: every Errors-group page
         # gets the From/To selection): each row carries its per-day counts
         # (@data:buckets) and Count re-sums for the range (RECALC s0); a reason

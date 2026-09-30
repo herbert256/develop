@@ -58,7 +58,7 @@ ENTS="acct login site host lgc ptn app dom bl"
 
 ent_rpt()   { case $1 in acct) echo cross-account;; login) echo cross-login;; site) echo cross-subscription;; host) echo cross-host;; lgc) echo cross-logical;; ptn) echo cross-partner;; app) echo cross-application;; dom) echo cross-domain;; bl) echo cross-bl;; esac }
 ent_tab()   { case $1 in acct) echo "Accounts";; login) echo "Logins";; site) echo "Subscriptions";; host) echo "Hosts";; lgc) echo "Logical";; ptn) echo "Partners";; app) echo "Applications";; dom) echo "Domains";; bl) echo "BL";; esac }
-ent_col()   { case $1 in acct) echo "Account";; login) echo "Login";; site) echo "Subscription";; host) echo "Remote Host";; lgc) echo "Logical";; ptn) echo "Partner";; app) echo "Application";; dom) echo "Domain";; bl) echo "BL";; esac }
+ent_col()   { case $1 in acct) echo "Account";; login) echo "Login";; site) echo "Subscription";; host) echo "Remote host";; lgc) echo "Logical";; ptn) echo "Partner";; app) echo "Application";; dom) echo "Domain";; bl) echo "BL";; esac }
 ent_kind()  { case $1 in acct) echo acct;; login) echo login;; site) echo site;; host) echo host;; lgc) echo lgc;; ptn) echo ptn;; app) echo app;; dom) echo dom;; bl) echo bl;; esac }   # every entity type links to its detail pages
 ent_xref()  { case $1 in acct) echo accounts;; login) echo logins;; site) echo subscriptions;; host) echo hosts;; lgc) echo logicals;; ptn) echo partners;; app) echo apps;; dom) echo domains;; bl) echo bl;; esac }   # data/flow-manager/xref item names
 ent_base()  { case $1 in acct) echo _accounts;; login) echo _logins;; site) echo _subscriptions;; host) echo _hosts;; lgc) echo _logicals;; ptn) echo _partners;; app) echo _apps;; dom) echo _domains;; bl) echo _bl;; esac }   # base cache (name/direction/result) per entity
@@ -138,7 +138,7 @@ for e in $ENTS; do
     TABS="$TABS|$(ent_tab "$e")"; COLS="$COLS|$c"; UNKS="$UNKS|$(ent_unk "$e")"
 done
 XREFS=${XREFS# }; KINDS=${KINDS# }; BASES=${BASES# }
-TABS=${TABS#|}; COLS=${COLS#|}; UNKS=${UNKS#|}   # |-joined: "Remote Host" has a space, ent_unk is empty for ptn/app/dom
+TABS=${TABS#|}; COLS=${COLS#|}; UNKS=${UNKS#|}   # |-joined: "Remote host" has a space, ent_unk is empty for ptn/app/dom
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/xref.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT

@@ -349,7 +349,7 @@ fmt_dim() {
         account)      title="Accounts";      chead="Account";      nkind=acct;  noun="account" ;;
         subscription) title="Subscriptions"; chead="Subscription"; nkind=site;  noun="subscription" ;;
         login)        title="Logins";        chead="Login";        nkind=login; noun="login" ;;
-        remote-host)  title="Hosts";         chead="Remote Host";  nkind=host;  noun="remote host" ;;
+        remote-host)  title="Hosts";         chead="Remote host";  nkind=host;  noun="remote host" ;;
         logical)      title="Logical";       chead="Logical";      nkind=lgc;   noun="logical" ;;
         partner)      title="Partners";      chead="Partner";      nkind=ptn;   noun="partner" ;;
         application)  title="Applications";  chead="Application";  nkind=app;   noun="application" ;;
@@ -365,6 +365,7 @@ fmt_dim() {
     # p100) · Volume · Transfers · State · Dates — 22 cells, the Dates LAST
     # NOFERR: the Subscriptions view's Error cell links Failed files (its
     # drillcols leave ferr out), so its ferr list is not shipped (2026-09-29 audit)
+    # — nor the empty attribute itself since the 2026-09-30 audit (A1-09)
     # THE WAITING / EXPIRED CELLS LINK (2026-09-30, user request: "clicking
     # on a Expired or Waiting cell must go to /transfer/expired.html or
     # /transfer/waiting.html with the row highlighted that is the right
@@ -386,11 +387,11 @@ fmt_dim() {
         BEGIN { for (i = 1; i < 256; i++) HX[sprintf("%c", i)] = i }
         $3 == "" { next }
         { files = $4 + 0; tok = $8 + 0; ter = $9 + 0; fe = $12 + 0; bytes = $18 + 0
-          printf "ROW\t%s\t%s\t%s\t%d\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d\t@data:buckets=%s\t@data:coreids-tok=%s\t@data:coreids-terr=%s\t@data:coreids-fin=%s\t@data:coreids-fout=%s\t@data:coreids-ferr=%s\t@data:coreids-rauto=%s\t@data:coreids-rmok=%s\t@data:coreids-rmerr=%s\t@data:durdays=%s\t@data:coreids-d90=%s\t@data:coreids-d95=%s\t@data:coreids-d99=%s\t@data:coreids-d100=%s\n", \
+          printf "ROW\t%s\t%s\t%s\t%d\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%d\t@data:buckets=%s\t@data:coreids-tok=%s\t@data:coreids-terr=%s\t@data:coreids-fin=%s\t@data:coreids-fout=%s%s\t@data:coreids-rauto=%s\t@data:coreids-rmok=%s\t@data:coreids-rmerr=%s\t@data:durdays=%s\t@data:coreids-d90=%s\t@data:coreids-d95=%s\t@data:coreids-d99=%s\t@data:coreids-d100=%s\n", \
               $3, nz($10), nz($11), fe, pr(fe, files), $13, $14, $15, \
               dcell($30), dcell($31), dcell($32), dcell($33), hbytes0(bytes), hbytes0(files > 0 ? bytes / files : 0), \
               tok, ter, pr(ter, tok + ter), stcell($16, "waiting-expired", $3), stcell($17, "waiting-expired", $3), $5, $6, $7, \
-              $19, $20, $21, $22, $23, (NOFERR ? "" : $24), $25, $26, $27, $34, $35, $36, $37, $38 }')
+              $19, $20, $21, $22, $23, (NOFERR ? "" : "\t@data:coreids-ferr=" $24), $25, $26, $27, $34, $35, $36, $37, $38 }')
     tot_line=$(awk -F'|' "$FMT_AWK"'BEGIN { tc = ARGV[1]; ttok = ARGV[2]; tter = ARGV[3]; tfe = ARGV[4]; tv = ARGV[5]; tin = ARGV[6]; tout = ARGV[7]
         printf "%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\037%s\n", pr(tter, ttok + tter), pr(tfe, tc), hbytes0(tv), hbytes0(tc > 0 ? tv / tc : 0), nz(tin), nz(tout), dcell(ARGV[8]), dcell(ARGV[9]), dcell(ARGV[10]), dcell(ARGV[11]); exit }' \
         "$tc" "$ttok" "$tter" "$tfe" "$tv" "$tin" "$tout" "$tp90" "$tp95" "$tp99" "$tp100")
@@ -400,7 +401,6 @@ fmt_dim() {
     IFS=$'\037' read -r tterp tfep tvh tavg tinz toutz td90 td95 td99 td100 <<< "$tot_line"
     {
         printf 'TITLE\t%s\n' "$title"
-        printf 'DESC\tOne row per %s: its Files in and out with the error rate, retries and resubmits, duration percentiles, volume, transfer legs, waiting and expired Files, and first and last day — every configured and logged name, in six views (All, Seen, Not seen, OK, Warning, Error).\n' "$noun"
         # the Files group Error cell drills to its 10 newest Files on every entity page but the SUBSCRIPTION ones, where
         # it opens transfer/failed-files.html for that subscription and the active From/To (report.js
         # setupEntityErrorLinks, 2026-09-15 user request) — so its drill is left out there
@@ -478,7 +478,7 @@ classic_dim() {
 # per File for the rest — the classic rule month-stats.sh had), the name count
 # the names with a File in the month.
 month_stats() {
-    local MSA="$MSDIR/.agg.tmp" which mon dim title chead nkind noun OUT rows hstate kstate tstate
+    local MSA="$MSDIR/.agg.tmp" which mon dim title chead nkind noun OUT rows hstate kstate tstate bf bfp
     local tc tin tout tfe tra tmo tme twt tex ns
     local aggs=() d
     for d in $DIMS; do [ -f "$AGG.$d" ] && aggs+=("$AGG.$d"); done
@@ -515,32 +515,39 @@ month_stats() {
         [ "$which" = this ] && mon=$MS_THIS || mon=$MS_PREV
         for dim in $DIMS; do
             case $dim in
-                account)      title="Accounts";      chead="Account";      nkind=acct;  noun="account" ;;
-                subscription) title="Subscriptions"; chead="Subscription"; nkind=site;  noun="subscription" ;;
-                login)        title="Logins";        chead="Login";        nkind=login; noun="login" ;;
-                remote-host)  title="Hosts";         chead="Remote Host";  nkind=host;  noun="remote host" ;;   # title = the menu label
-                logical)      title="Logical";       chead="Logical";      nkind=lgc;   noun="logical" ;;
-                partner)      title="Partners";      chead="Partner";      nkind=ptn;   noun="partner" ;;
-                application)  title="Applications";  chead="Application";  nkind=app;   noun="application" ;;
-                domain)       title="Domains";       chead="Domain";       nkind=dom;   noun="domain" ;;
-                bl)           title="BL";            chead="BL";           nkind=bl;    noun="BL" ;;
+                account)      title="Accounts";      chead="Account";      nkind=acct;  noun="account";  bf=_accounts ;;
+                subscription) title="Subscriptions"; chead="Subscription"; nkind=site;  noun="subscription";  bf=_subscriptions ;;
+                login)        title="Logins";        chead="Login";        nkind=login; noun="login";  bf=_logins ;;
+                remote-host)  title="Hosts";         chead="Remote host";  nkind=host;  noun="remote host";  bf=_hosts ;;   # title = the menu label
+                logical)      title="Logical";       chead="Logical";      nkind=lgc;   noun="logical";  bf=_logicals ;;
+                partner)      title="Partners";      chead="Partner";      nkind=ptn;   noun="partner";  bf=_partners ;;
+                application)  title="Applications";  chead="Application";  nkind=app;   noun="application";  bf=_apps ;;
+                domain)       title="Domains";       chead="Domain";       nkind=dom;   noun="domain";  bf=_domains ;;
+                bl)           title="BL";            chead="BL";           nkind=bl;    noun="BL";  bf=_bl ;;
             esac
             OUT="$MSDIR/$which-$dim.rpt"
             IFS='|' read -r _ _ _ tc tin tout tfe tra tmo tme twt tex ns \
                 <<< "$({ grep "^T|$mon|$dim|" "$MSA" || true; } | awk 'NR == 1')"
             : "${tc:=0}" "${tin:=0}" "${tout:=0}" "${tfe:=0}" "${tra:=0}" "${tmo:=0}" "${tme:=0}" "${twt:=0}" "${tex:=0}" "${ns:=0}"
+            # the ROW TINT (2026-09-30 audit A2-03: every entity-keyed row tints by
+            # the entity's result colour): base/<bf>.tsv col 3, matched
+            # case-insensitively; an unconfigured name stays untinted (restint)
+            bfp="$CONFIG_BASE/$bf.tsv"; [ -f "$bfp" ] || bfp=/dev/null
             # rows busiest first (Files desc, name tiebreak); no count cell
             # ever shows a 0 (2026-09-29: only In / Out were blanked)
-            rows=$({ grep "^S|$mon|$dim|" "$MSA" || true; } | LC_ALL=C sort -t'|' -k5,5nr -k4,4f -k4,4 | awk -F'|' '
+            rows=$({ grep "^S|$mon|$dim|" "$MSA" || true; } | LC_ALL=C sort -t'|' -k5,5nr -k4,4f -k4,4 | awk -F'|' -v BF="$bfp" '
+                BEGIN { while ((getline l < BF) > 0) { n9 = split(l, a9, "\t"); if (n9 >= 3 && a9[1] != "" && (a9[3] == "green" || a9[3] == "orange" || a9[3] == "red")) RES[toupper(a9[1])] = a9[3] }
+                        close(BF) }
                 function nz(x) { return (x + 0 == 0) ? "" : x + 0 }
                 $4 == "" { next }
-                { printf "ROW\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", $4, $5, nz($6), nz($7), nz($8), nz($9), nz($10), nz($11), nz($12), nz($13) }')
+                { r9 = toupper($4); printf "ROW\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\n", $4, $5, nz($6), nz($7), nz($8), nz($9), nz($10), nz($11), nz($12), nz($13), ((r9 in RES) ? "\t@data:res=" RES[r9] : "") }')
             # the HOST pages have no Waiting / Expired columns (2026-09-29 audit):
             # a host counts OUT-connection Files, and Waiting / Expired are UC2
             # pickups — Files the partner connects IN for — so the two were blank
             # on every row (the Entities host views drop that State group too)
             if [ "$dim" = remote-host ]; then
-                rows=$(printf '%s\n' "$rows" | awk -F'\t' -v OFS='\t' 'NF { NF = 9; print }')
+                # (the tint cell rides behind the counts: keep it past the cut)
+                rows=$(printf '%s\n' "$rows" | awk -F'\t' 'NF { t9 = (index($NF, "@data:res=") == 1) ? $NF : ""; o = $1; for (i = 2; i <= 9; i++) o = o "\t" $i; if (t9 != "") o = o "\t" t9; print o }')
                 hstate=""; kstate=""; tstate=""
             else
                 hstate=$'\tWaiting\tExpired'; kstate=$'\tnumwarn\tnumfailed'
@@ -551,7 +558,7 @@ month_stats() {
                 # the month label: publish_lib render_month_stats reads it from the
                 # two subscription files only (the tab row), so only they carry it
                 [ "$dim" = subscription ] && printf 'META\tmonth\t%s\n' "$mon"
-                printf 'TABLE\t%s — Files started in %s\twide\tsort=1:-1\n' "$title" "$mon"
+                printf 'TABLE\t%s — Files started in %s\twide\tsort=1:-1\trestint\n' "$title" "$mon"
                 # the site words (2026-09-30 audit T-10): Files · Error · Ok, as the
                 # Entities groups and the Top view ("Total files", "Errors" and
                 # "Resubmit OK" until then)

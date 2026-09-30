@@ -183,7 +183,7 @@ CUR_DATES=""
 
 
 # Ordered report basenames per area (defines index order; the .rpt files are the
-# actual catalog — labels/descriptions come from each file's TITLE/DESC).
+# actual catalog — a page's title comes from its file's TITLE).
 transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out same-protocol activity cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage skipped not-in-flow-manager ranking files failed episodes failed-files unknown-transfers waiting-expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell duration-all)
 server_order=(topview errors failure-flows io-errors routing-errors uc-status polling missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab); site-failures one since 2026-09-28 (its rows = the Per flow connection-failure rows); routing-errors = the 2026-09-28 merge of could-not-send, publish-failed and post-client-action
 
@@ -209,7 +209,7 @@ is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
 
 # (The BOXES-ONLY reports — pirates, waiting, expired (one Waiting & Expired report since 2026-09-30), went-quiet, went-kaput,
 # 2026-07..09-29, reached only from the Boxes pages — are ordinary members of
-# their report groups since the one Reports pulldown, 2026-09-29.)
+# their report groups since 2026-09-29.)
 
 # (The PAGELESS reports — merged-report components and the data producers
 # whose rows ride another page or none (day, deploy-errors, missing-cronjobs, punctuality-src, fe-overview, the
@@ -265,8 +265,8 @@ report_tabs() {
 # THE REPORT GROUPS (2026-09-29, user request: "just one pulldown named
 # Reports, create logical groups, have all reports in the same group link to
 # each other with the first selection buttons") live in _report_groups below
-# — ONE table for the Reports menu, the reports start page, the sitemap, the
-# h1 group tags and the ROW-1 buttons,
+# — ONE table for the h1 group tags and the ROW-1 buttons (the Reports menu,
+# start page and sitemap it also fed went 2026-09-30),
 # whichever directory a member's page renders into. The functions here are
 # what is left of the per-AREA groups (Transfer / Server, 2026-07..09-29): the
 # two groups whose pages build their OWN first row at render time —
@@ -310,7 +310,7 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         failure-flows) echo "Per flow" ;; io-errors) echo "IO errors" ;; routing-errors) echo "Routing errors" ;;
         partners-in) echo "Partners in" ;; partners-out) echo "Partners Out" ;;   # 2026-09-30, user request (Partner scorecard, Blast radius and Application dependencies went the same day)
         errors) echo "Errors" ;;
-        missing-entities) echo "Missing entities" ;;   # (ssh-security: SSH security went 2026-09-30 — its tables ride Security Parameters)
+        missing-entities) echo "Missing entities" ;;
         uc-status) echo "UC status" ;; polling) echo "Polling" ;;
         anomalies) echo "Anomalies" ;;
         account) echo "Accounts" ;; login) echo "Logins" ;; subscription) echo "Subscriptions" ;;
@@ -326,7 +326,7 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         files) echo "Sizes & types" ;;   # the MERGED report (size-dist + file-type + duplicate-files): its own group tab was an EMPTY span until 2026-09-13 (user report)
         failed) echo "Failed Subscriptions" ;; failing-reasons) echo "Error reasons" ;; episodes) echo "Recovered flows" ;; waiting-expired) echo "Waiting & Expired" ;; pirates) echo "One-legged" ;; went-quiet) echo "Went quiet" ;; failure-heatmap) echo "Failure heatmap" ;; not-in-flow-manager) echo "Not in Flow Manager" ;;
         file-in-file-out) echo "File in - File out" ;;
-        protocol) echo "Protocol, Direction & Mode" ;;
+        protocol) echo "Direction & Mode" ;;   # "Protocol, Direction & Mode" until 2026-09-30
         ranking) echo "Ranking" ;;
         duration|duration-all) echo "Duration" ;; duration-longest) echo "Longest Files" ;;
         duration-dwell) echo "Store-and-forward" ;;   # "Distribution & Store-and-forward" until 2026-09-30 (its Duration distribution table moved to Duration)
@@ -347,13 +347,14 @@ first_page() {
     else local fl; IFS='|' read -r fl _ <<< "$labels"; echo "$1-$(slugify "$fl").html"; fi
 }
 
-# Landing page of a GROUP's index/dropdown entry — the first member's first
-# page, unless overridden (the cross-reference entry opens on Account × Subscriptions).
+# Landing page of the cross-reference group (rg_landing's analyses/xref case):
+# it opens on Account × Subscriptions. (The account-login-site branch — the
+# Entities landing — went 2026-09-30, audit A1-10: nothing called it; the top
+# bar links Entities by a fixed path.)
 group_home() {   # $1 group id
     case $1 in
         cross)        echo "xref/cross-account-subscriptions.html" ;;   # the cross pages live in docs/analyses/xref/ (analyses-relative href)
-        account-login-site) first_page subscription ;;   # Entities DEFAULTS to Subscriptions / All — the same member the tab bar leads with
-    esac   # (the two render-time groups only — every other group lands through rg_landing)
+    esac
 }
 
 # ---- helpers ----------------------------------------------------------------
@@ -465,8 +466,8 @@ FMT_AWKF="$PWD/bin/fmt.awk"
 FILEPAGES_F="$PWD/data/transfer/cache/_filepages.tsv"; [ -f "$FILEPAGES_F" ] || FILEPAGES_F=""
 
 # value of directive $1 in file $2. ONE awk with an early exit, not grep|cut: it
-# is called a few hundred times per publish (the start page, the area indexes,
-# the day pages) and halving two processes to one is worth ~0.3 s a run.
+# is called a few hundred times per publish (the area publishes, the day
+# pages) and halving two processes to one is worth ~0.3 s a run.
 # (field2 — two directives in one awk — went 2026-09-29 with What is new, its
 # one caller.)
 field1() { LC_ALL=C awk -F'\t' -v k="$1" '$1 == k { i = index($0, "\t"); print (i ? substr($0, i + 1) : ""); exit }' "$2" 2>/dev/null || true; }
@@ -546,9 +547,10 @@ topbar_placeholder() {   # $1 = the docs-root prefix  $2 = the help slug ("" = n
 }
 
 # (The site-wide fixed FOOTER BAR was removed 2026-07, with its "Build report"
-# link and build timestamp. The build report is reachable from the SITE MAP,
-# which links the report of the run that built the site — see write_sitemap in
-# bin/build/publish.sh. Nothing bakes a build identity into a page any more.)
+# link and build timestamp. The build report is reachable from the home
+# page's "Build on …" line (2026-09-30, bin/build/publish.sh
+# write_root_index) and help/general.html — the site map that linked it went
+# 2026-09-30.)
 
 # ---- report page renderer ---------------------------------------------------
 
@@ -762,7 +764,7 @@ member_page_for_label() {   # $1 member  $2 current table label ("" = first page
 
 # render_missing_reports AREA — write an "empty report" placeholder page for
 # every order-listed report whose .rpt is absent in this checkout (a small
-# estate skips many). The menus, sitemap and group tab rows list ALL
+# estate skips many). The group tab rows list ALL
 # options unconditionally (2026-07), so every listed page must exist: a
 # data-less report shows a page saying so, never a 404. EVERY tab page of a
 # split report is written (2026-08 — formerly only the first): the group
@@ -1933,7 +1935,7 @@ entry_label() {   # $1 area  $2 basename
     if [ -n "$g" ]; then group_label "$g"; return; fi
     t=""
     [ -f "$DATA/$area/reports/$name.rpt" ] && t=$(field1 TITLE "$DATA/$area/reports/$name.rpt")
-    # no .rpt in this env (the menus/sitemap list ALL reports, 2026-07):
+    # no .rpt in this env (the group rows list ALL reports, 2026-07):
     # fall back to the static member label, else the basename
     if [ -z "$t" ]; then
         t=$(member_label "$name")
@@ -1944,7 +1946,7 @@ entry_label() {   # $1 area  $2 basename
 # ---- Month stats (2026-09-13, user request) ---------------------------------
 # The 18 pages of the month stats (bin/transfer/reports/entities.sh's
 # month_stats part; month-stats.sh until 2026-09-30) — {this,previous} × the
-# nine entities — under docs/<area>/month-stats/, the Reports pulldown's
+# nine entities — under docs/<area>/month-stats/, a member of the
 # Activity & volume group (retired and brought back 2026-09-29). Two tab rows: the MONTH (Current month · Previous month, each
 # with its yyyy-mm from the .rpt META) and the ENTITY (the Entities order).
 # No date filter (a page IS one month); no prose (help page month-stats).
@@ -1982,13 +1984,13 @@ render_month_stats() {   # $1 area
     echo "Rendered docs/$area/month-stats/ ($n page(s))." >&2
 }
 
-# ---- THE REPORT GROUPS: one "Reports" pulldown (2026-09-29, user request) ---
+# ---- THE REPORT GROUPS (2026-09-29, user request; no pulldown since 2026-09-30) ---
 # "Reorganise Transfer Reports and Server Reports and Analyses and Goodies,
 # just one pulldown named Reports, create logical groups, have all reports in
 # the same group link to each other with the first selection buttons." The
 # four dropdowns (Transfer reports / Server reports / Analyses / Goodies) and
-# their three start pages are gone: the Reports pulldown lists these groups,
-# each line landing on the group's FIRST member, and every page of every
+# their three start pages are gone (the one Reports pulldown that listed
+# these groups went 2026-09-30 too), and every page of every
 # member carries the group's members as its FIRST row of buttons (injected by
 # bin/build/publish.sh apply_report_groups — Entities keeps its native
 # members | views row). THE SINGLE SOURCE OF TRUTH for the h1 group tags
@@ -2007,15 +2009,14 @@ render_month_stats() {   # $1 area
 #         pages are <dir>/<stem>.html and <dir>/<stem>-*.html (its tabs and
 #         views), a LONGER member stem in the same dir winning (duration vs
 #         duration-longest / duration-dwell)
-# A report in no group has no row and no menu line — every published report
+# A report in no group has no row and no h1 group tag — every published report
 # belongs to one (the former boxes-only reports included). The "Server log
 # errors" group was folded into Failures (2026-09-29, user request), and
 # Failures was renamed ERRORS the same day (user request: "Rename Failures to
-# Errors") — out of the pulldown, a top-bar link of its own (assets/topbar.js).
+# Errors") — a top-bar link of its own (assets/topbar.js).
 _report_groups() {
-    # Performance is the FIRST pulldown line (2026-09-30, user request "Have
-    # Performance as first row in the Reports pulldown"): Overview, Entities
-    # and Errors above it are top-bar links, not menu lines.
+    # the group ORDER (the pulldown order until it went, 2026-09-30): Overview,
+    # Entities and Errors first, then Performance
     printf '%s\n' \
         "Overview|transfer/topview=Transfer top view|server/topview=Server top view" \
         "Entities|transfer/entities/subscription=Subscriptions|transfer/entities/logical=Logical|transfer/entities/partner=Partners|transfer/entities/account=Accounts|transfer/entities/login=Logins|transfer/entities/remote-host=Hosts|transfer/entities/domain=Domains|transfer/entities/application=Applications|transfer/entities/bl=BL" \
@@ -2024,7 +2025,7 @@ _report_groups() {
         "Use cases & delivery|analyses/use-cases=Use cases|analyses/uc-status=UC status|analyses/polling=Polling|transfer/waiting-expired=Waiting & Expired|transfer/went-quiet=Went quiet" \
         "Activity & volume|transfer/activity=Activity|transfer/ranking=Ranking|transfer/files=Sizes & types|transfer/month-stats/this=Month stats" \
         "Flow patterns|transfer/file-journey=File journey|transfer/file-in-file-out=File in - File out|transfer/same-protocol=Inbound and Outbound same Protocol" \
-        "Protocols & security|transfer/protocol=Protocol, Direction & Mode|transfer/security-params=Security Parameters|transfer/security-outreach=Security outreach|transfer/av-scan=AV Scan|transfer/connection-efficiency=Connection efficiency" \
+        "Protocols & security|transfer/protocol=Direction & Mode|transfer/security-params=Security Parameters|transfer/security-outreach=Security outreach|transfer/av-scan=AV Scan|transfer/connection-efficiency=Connection efficiency" \
         "Partners|analyses/partners-in=Partners in|analyses/partners-out=Partners Out" \
         "Configuration|analyses/subscriptions=Configured subscriptions|analyses/accounts=Configured accounts|analyses/logical-detection=Logical detection|analyses/xref/cross=Cross References" \
         "Coverage|analyses/first-seen=First seen|transfer/entity-coverage=Entity coverage|transfer/not-in-flow-manager=Not in Flow Manager|transfer/skipped=Skipped|server/missing-entities=Missing entities"
@@ -2072,7 +2073,7 @@ rg_rel() {
 # THE REPORTS PULLDOWN IS GONE (2026-09-30, user request: "Remove the Reports
 # pulldown"): the top bar links the groups it opened as fixed paths in
 # assets/topbar.js (Duration, Partners, Security, Seen, Configuration, Use
-# cases, Patterns, Activity, Logons, …; the Reports start page and the
+# cases, Patterns, Activity, …; the Reports start page and the
 # sitemap went the same night, so the bar is the way in). Two top-bar links stay DATA — the Errors and Overview
 # groups' landing pages (ERRORS_HREF / OVERVIEW_HREF, topbar-data.js
 # `errors` / `overview`), computed from _report_groups here.

@@ -131,7 +131,7 @@ agg=$(awk -F'\t' -v IOF="$TMP" -v FILES="$FILES" -v TRANSFERS="$TRANSFERS" \
     function canon(map, v) { return (toupper(v) in map) ? map[toupper(v)] : v }
     BEGIN {
         while ((getline l < FPF) > 0) { split(l, a, "\t"); if (a[1] != "") FP[a[1]] = 1 } close(FPF)
-        while ((getline l < ACCB) > 0) { split(l, a, "\t"); if (a[1] != "") ACC[toupper(a[1])] = a[1] } close(ACCB)
+        while ((getline l < ACCB) > 0) { split(l, a, "\t"); if (a[1] != "") { ACC[toupper(a[1])] = a[1]; ACR[toupper(a[1])] = a[3] } } close(ACCB)   # + the result colour: the per-folder rows tint by their ACCOUNT (2026-09-30 audit A5-01)
         while ((getline l < LOGB) > 0) { split(l, a, "\t"); if (a[1] != "") LOG[toupper(a[1])] = a[1] } close(LOGB)
     }
     FILENAME == IOF {
@@ -218,9 +218,12 @@ agg=$(awk -F'\t' -v IOF="$TMP" -v FILES="$FILES" -v TRANSFERS="$TRANSFERS" \
             bk = ""
             for (x in b_n) { split(x, y, SUBSEP); if (y[1] != a[1] || y[2] != a[2]) continue
                 bk = bk (bk == "" ? "" : ",") y[3] ":" b_n[x] ":" (b_err[x] + 0) ":" (b_ok[x] + 0) ":" (b_nl[x] + 0) }
-            printf "FLD\t%s\t%d\t%s\tROW\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n", \
+            # the row tints by the account result colour; "Not logged" 0 shows blank
+            # (2026-09-30 audit A5-01 / A3-02)
+            r9 = ACR[toupper(a[1])]; r9 = (r9 ~ /^(green|orange|red)$/) ? "\t@data:res=" r9 : ""
+            printf "FLD\t%s\t%d\t%s\tROW\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%s\t%d\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s%s\n", \
                 F_lsk[k], F_n[k], a[1], F_last[k], a[1], a[2], sj, \
-                F_n[k], F_files[k] + 0, F_err[k] + 0, F_ok[k] + 0, F_nl[k] + 0, F_days[k], F_first[k], F_fold[k], bk, lastlines("F" SUBSEP k)
+                F_n[k], F_files[k] + 0, F_err[k] + 0, F_ok[k] + 0, (F_nl[k] + 0 > 0 ? F_nl[k] : ""), F_days[k], F_first[k], F_fold[k], bk, lastlines("F" SUBSEP k), r9
         }
         for (d in D_n) { ND++; printf "DAY\t%s\tROW\t%s\t%d\t%d\t%d\n", d, d, D_n[d], D_f[d], D_b[d] + 0 }
         printf "TOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%s\n", T_n + 0, NF_ + 0, NA + 0, NB + 0, T_err + 0, T_ok + 0, T_nl + 0, ND + 0, T_first, T_last
@@ -240,15 +243,14 @@ day_rows() { printf '%s\n' "$agg" | grep $'^DAY\t' | sort -t"$TAB" -k2,2 | cut -
 
 {
     printf 'TITLE\tIO errors\n'
-    printf 'DESC\tThe platform failing to read (or write) a file on its own storage — "IO Error reading file /data/FlowManager/<account>@<login>/<file>" — per folder, per line and per day, each line joined to the File it concerns and its outcome.\n'
 
-    printf 'TABLE\tIO errors per folder\twide\n'
+    printf 'TABLE\tIO errors per folder\twide\trestint\n'
     printf 'HEAD\tLast\tAccount\tLogin\tSubscriptions\tIO errors\tFiles\tError\tOK\tNot logged\tDays\tFirst\tFolder\n'
     printf 'KIND\ttext\tacct\tlogin\ttext\tnumfailed\tnum\tnumfailed\tnumprocessed\tnum\tnum\ttext\tmono\n'
-    printf 'RECALC\t-\t-\t-\t-\ts0\tk\ts1\ts2\ts3\tc\t-\t-\n'
+    printf 'RECALC\t-\t-\t-\t-\ts0\tk\ts1\ts2\tS3\tc\t-\t-\n'   # S3: a 0 Not logged stays blank on a narrowed range too
     [ "${n_lines:-0}" -gt 0 ] && fld_rows
     printf 'TOTAL\t@{colspan=4}Total (%s folder(s))\t@{class=num failed}%s\t%s\t@{class=num failed}%s\t@{class=num processed}%s\t%s\t%s\t\t\n' \
-        "${n_fold:-0}" "${n_lines:-0}" "${n_files:-0}" "${n_err:-0}" "${n_ok:-0}" "${n_nl:-0}" "${n_days:-0}"
+        "${n_fold:-0}" "${n_lines:-0}" "${n_files:-0}" "${n_err:-0}" "${n_ok:-0}" "$( [ "${n_nl:-0}" -gt 0 ] && printf '%s' "$n_nl" || true )" "${n_days:-0}"
 
     printf 'TABLE\tIO error lines\twide\tpager=100\n'   # two cells (2026-09-28 fix: one "wide pager=100" cell matched neither modifier)
     printf 'HEAD\tDate\tTime\tAccount\tLogin\tSubscription\tFile\tOperation\tState\tTransfer\n'
