@@ -1534,6 +1534,24 @@ done
 CUR_DATES=$_fsaved_dates
 _aplap "failed pages"
 
+# The Partners in / Partners Out VIEW pages (2026-09-30, user request: the view
+# row Endpoint · Accounts · Partners): partners-{in,out}-{accounts,partners}.rpt,
+# written by partners-in.sh / partners-out.sh beside the Endpoint view that
+# render_subs_group_pages just rendered — reached through that view row, with
+# the Endpoint view's help page; their own report key (a login searched on the
+# Endpoint view matches no account). Their group row comes from
+# bin/build/publish.sh apply_report_groups (stem partners-in / partners-out).
+_psaved_dates=${CUR_DATES:-}; CUR_DATES=$TRANSFER_DATES
+for _prpt in "$DATA"/analyses/reports/partners-in-accounts.rpt "$DATA"/analyses/reports/partners-in-partners.rpt \
+             "$DATA"/analyses/reports/partners-out-accounts.rpt "$DATA"/analyses/reports/partners-out-partners.rpt; do
+    [ -f "$_prpt" ] || continue
+    _pname=${_prpt##*/}; _pname=${_pname%.rpt}
+    RPT_NOPROSE=1 render_rpt "$_prpt" "$ADIR/$_pname.html" "../assets/style.css" "index.html" \
+        "" 1 "${_pname%-*}" "$_pname"
+done
+CUR_DATES=$_psaved_dates
+_aplap "partners view pages"
+
 # (The Error reasons DRILL pages, failing-reasons-<slug>.html, went
 # 2026-09-29: a reason row opens the Failed files page searched on it.)
 

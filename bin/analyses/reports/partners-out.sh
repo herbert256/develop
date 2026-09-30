@@ -53,7 +53,7 @@ LG="$DATA/server/reports/logon.rpt"
 
 if [ ! -f "$HB" ]; then
     echo "partners-out: no $HB (config not extracted) — page not published." >&2
-    rm -f "$OUT"
+    rm -f "$OUT" "$REPORTS_DIR/partners-out-accounts.rpt" "$REPORTS_DIR/partners-out-partners.rpt"
     exit 0
 fi
 # the logon summary: bin/build.sh builds it before the server reports; a manual
@@ -155,6 +155,9 @@ awk -F'\t' -v HB="$HB" -v HS="$HS" -v UCDF="$UCDF" -v LGH="$LGH" -v IPM="$IPM" -
             ORD[j + 1] = v }
         print "TITLE\tPartners Out"
         print "DESC\tEvery host this server connects out to: the use cases of its subscriptions, our connections and the last one, and our failed logons there — Password, Key, Certificate and Other with the newest reason and the first and last day."
+        # the view row (2026-09-30, user request): this Endpoint view, then the
+        # Accounts and Partners views bin/rpt-rollup.awk regroups it into
+        print "NAV\t1|Endpoint|partners-out.html\t0|Accounts|partners-out-accounts.html\t0|Partners|partners-out-partners.html"
         print "TABLE\tHosts\twide\tnofilter\trestint\tgsep=2,4\tdrill=log line"
         print "HEAD\tRemote host\tUse cases\tConnections\tLast connection\tUser\tFailures\tPassword\tKey\tCertificate\tOther\tReason (last seen)\tFirst\tLast"
         print "KIND\thost\ttext\tnum\ttext\ttext\tnumfailed\tnumfailed\tnumfailed\tnumfailed\tnumfailed\ttext\ttext\ttext"
@@ -189,3 +192,25 @@ awk -F'\t' -v HB="$HB" -v HS="$HS" -v UCDF="$UCDF" -v LGH="$LGH" -v IPM="$IPM" -
 ' /dev/null > "$OUT.tmp" 2> "$OUT.stat" && mv "$OUT.tmp" "$OUT"
 IFS=$'\t' read -r n_all n_conn n_fail < "$OUT.stat"; rm -f "$OUT.stat"
 echo "Data written to $OUT ($n_all host(s): $n_conn outbound connection(s), $n_fail failed logon(s))." >&2
+
+# THE ACCOUNTS AND PARTNERS VIEWS (2026-09-30, user request: "Accounts &
+# Partners must give the same reports, but now with the Entities Accounts &
+# Partners"): partners-out-<view>.rpt = this table regrouped per entity
+# through the configured host pairs (xref/_hosts-accounts.tsv /
+# _hosts-partners.tsv) by bin/rpt-rollup.awk (its header: the union rule, the
+# cell rules); a raw address is in neither view. Rules per cell: Use cases and
+# User the union · Connections and the failure counts summed · Last connection
+# / Last the newest, First the oldest · Reason the newest failure's. Baked
+# order Failures, Connections, name — the Endpoint view's.
+PO_RULES="uc sum max list sum sum sum sum sum stamp min max"
+for v in accounts:acct:Account:Accounts partners:ptn:Partner:Partners; do
+    IFS=: read -r vk kind headl tname <<< "$v"
+    m="$DATA/flow-manager/xref/_hosts-$vk.tsv"; [ -f "$m" ] || m=/dev/null
+    b="$DATA/flow-manager/base/_$vk.tsv"; [ -f "$b" ] || b=/dev/null
+    vout="$REPORTS_DIR/partners-out-$vk.rpt"
+    awk -F'\t' -v MAP="$m" -v BASE="$b" -v KIND="$kind" -v HEADL="$headl" -v TNAME="$tname" -v NOUN="$vk" \
+        -v ACTIVE="$tname" -v RULES="$PO_RULES" -v ORDER="7 4" -v DCAP=5 -v LCAP=10 \
+        -f "$ROOT/bin/rpt-rollup.awk" "$OUT" > "$vout.tmp" 2> "$vout.stat" && mv "$vout.tmp" "$vout"
+    IFS=$'\t' read -r n_v n_drop < "$vout.stat"; rm -f "$vout.stat"
+    echo "Data written to $vout ($n_v $vk; $n_drop host row(s) in no $vk view)." >&2
+done

@@ -174,6 +174,31 @@ read -r n m <<< "$(awk -F'\t' 'function strip(c) { sub(/^@\{[^}]*\}/, "", c); re
 check $([ "${m:-0}" -gt 0 ] && [ "${n:-x}" = "$m" ] && echo 0 || echo 1) "Partners Out: ${n:-?} of ${m:-?} (host, use case) pair(s) of the UC-named configured subscriptions in the Use cases column (or column 2 is not Use cases)"
 n=$(awk -F'\t' '$1 == "ROW" && $4 != "" { n++ } END { print n + 0 }' data/analyses/reports/partners-out.rpt 2>/dev/null)
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "Partners Out: no host carries Connections"
+# the view row Endpoint · Accounts · Partners on both Partners pages
+# (2026-09-30, user request; bin/rpt-rollup.awk): every view page exists and
+# carries the row with its own view current, every entity view has rows, each
+# a name of its base list, and its TOTAL sums equal the Endpoint view's over
+# the mapped endpoints (each counted once — here: every endpoint the map names)
+for pv in partners-in partners-out; do
+    for v in "" -accounts -partners; do
+        pg="docs/analyses/$pv$v.html"
+        case $v in "") cur=Endpoint ;; -accounts) cur=Accounts ;; *) cur=Partners ;; esac
+        # the current view is the active span, the other two are links
+        ok=0; [ -f "$pg" ] && grep -q "<span class=\"tab active\">$cur</span>" "$pg" || ok=1
+        for w in "" -accounts -partners; do [ "$w" = "$v" ] && continue; grep -q "href=\"$pv$w.html\"" "$pg" 2>/dev/null || ok=1; done
+        check $ok "$pg missing or without the Endpoint / Accounts / Partners view row ($cur current)"
+    done
+    for v in accounts partners; do
+        case $pv in partners-in) ep=logins ;; *) ep=hosts ;; esac
+        read -r nrow nbad tv te <<< "$(awk -F'\t' 'function strip(c) { while (index(c, "@{") == 1) sub(/^@\{[^}]*\}/, "", c); return c }
+            FILENAME ~ /\/base\// { B[$1] = 1; next }
+            FILENAME ~ /\/xref\// { if ($2 != "" && $2 != "Unknown") MP[toupper($1)] = 1; next }
+            FILENAME ~ /-(accounts|partners)\.rpt$/ { if ($1 == "ROW") { n++; if (!(strip($2) in B)) bad++ } else if ($1 == "TOTAL") tv = strip($6); next }
+            $1 == "ROW" && (toupper(strip($2)) in MP) { te += strip($(ep == "hosts" ? 7 : 6)) }
+            END { print n + 0, bad + 0, tv + 0, te + 0 }' ep="$ep" data/flow-manager/base/_$v.tsv data/flow-manager/xref/_$ep-$v.tsv data/analyses/reports/$pv-$v.rpt data/analyses/reports/$pv.rpt 2>/dev/null)"
+        check $([ "${nrow:-0}" -gt 0 ] && [ "${nbad:-1}" = 0 ] && [ "${tv:-x}" = "${te:-y}" ] && echo 0 || echo 1) "$pv-$v.rpt: ${nrow:-?} row(s), ${nbad:-?} not in base/_$v.tsv, TOTAL ${tv:-?} != the mapped $ep' Endpoint sum ${te:-?} (Files in / Failures)"
+    done
+done
 # the three partner study reports are GONE (2026-09-30, user request): no
 # writer, .rpt, page or help page may come back
 n=$(ls bin/analyses/reports/partner-scorecard.sh bin/analyses/reports/blast-radius.sh bin/analyses/reports/app-partners.sh data/analyses/reports/partner-scorecard.rpt data/analyses/reports/blast-radius.rpt data/analyses/reports/app-partners.rpt docs/analyses/partner-scorecard.html docs/analyses/blast-radius.html docs/analyses/app-partners.html docs/help/partner-scorecard.html docs/help/blast-radius.html docs/help/app-partners.html 2>/dev/null | wc -l | tr -d ' ')

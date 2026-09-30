@@ -1781,6 +1781,18 @@ front end) then four fix workers with disjoint files. The rules it left:
   checks the order and that the `.entpair` pair is gone).
 - The day pages' "Logon screening failures" / "Outbound logon failures" lines open Partners in / Partners Out
   WITHOUT ?axway_date (full-period pages).
+- **The view row Endpoint · Accounts · Partners** (the same evening, user request: "Accounts & Partners must give
+  the same reports, but now with the Entities Accounts & Partners"): each writer emits the NAV row in its
+  Endpoint .rpt (`partners-in.html` / `partners-out.html`, unchanged URLs) and writes `partners-{in,out}-accounts.rpt`
+  + `-partners.rpt` by **`bin/rpt-rollup.awk`** — the Endpoint .rpt read BACK and regrouped per entity through the
+  configured pairs (`xref/_logins-{accounts,partners}.tsv`, `xref/_hosts-{accounts,partners}.tsv`), one rule per cell
+  (sum / max / min / age / uc / list / stamp / best:N — its header), drills merged (newest DCAP / LCAP kept), tint =
+  the entity's result colour. UNION attribution (a login / host paired with two accounts counts for both), so
+  the TOTAL counts every mapped endpoint row ONCE (the distinct total); an unmapped endpoint (raw address,
+  old-gateway-only login) is in no entity view. `bin/analyses/publish.sh` renders the four view pages after
+  `render_subs_group_pages` (the Endpoint help page, their own report key); `apply_report_groups` gives them the
+  Partners row by stem. verify.sh checks the rows, the names and the totals. A column change in a writer needs
+  its RULES string changed in step (one rule per ROW field from field 3).
 
 ## Rules from the third 2026-09-30 "few little things" batch (user request)
 

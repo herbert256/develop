@@ -42,7 +42,7 @@ LG="$DATA/server/reports/logon.rpt"
 
 if [ ! -f "$FE" ]; then
     echo "partners-in: no $FE (fe-overview.sh wrote nothing) — page not published." >&2
-    rm -f "$OUT"
+    rm -f "$OUT" "$REPORTS_DIR/partners-in-accounts.rpt" "$REPORTS_DIR/partners-in-partners.rpt"
     exit 0
 fi
 [ -f "$LG" ] || LG=/dev/null
@@ -94,6 +94,9 @@ awk -F'\t' -v FE="$FE" -v LG="$LG" '
         print "TITLE\tPartners in"
         print "DESC\tEvery login a partner connects in with, on one line: its use cases, the last logon here and on the old gateway, its Files in and out with the retrieved, Waiting and Expired ones and the oldest wait, its pickups, and the whole SSH screening funnel — Allowed, Disallowed, Authenticated, No account, Bad key, Key failures, Locked, Auth failed, Session errors, Re-screens — with the first logon, the logon count and the pattern."
         for (i = 1; i <= nw; i++) print W[i]
+        # the view row (2026-09-30, user request): this Endpoint view, then the
+        # Accounts and Partners views bin/rpt-rollup.awk regroups it into
+        print "NAV\t1|Endpoint|partners-in.html\t0|Accounts|partners-in-accounts.html\t0|Partners|partners-in-partners.html"
         # default sort Waiting (column 8) descending; group dividers before
         # Cloud, Files in, Files out, Oldest waiting, Pickups, the funnel
         # (Allowed) and the logon summary (First logon); the funnel counts
@@ -112,3 +115,23 @@ awk -F'\t' -v FE="$FE" -v LG="$LG" '
 ' /dev/null > "$OUT.tmp" 2> "$OUT.stat" && mv "$OUT.tmp" "$OUT"
 IFS=$'\t' read -r n_all n_fe n_only < "$OUT.stat"; rm -f "$OUT.stat"
 echo "Data written to $OUT ($n_all login(s): $n_fe from the FE overview, $n_only funnel-only)." >&2
+
+# THE ACCOUNTS AND PARTNERS VIEWS (2026-09-30, user request: "Accounts &
+# Partners must give the same reports, but now with the Entities Accounts &
+# Partners"): partners-in-<view>.rpt = this table regrouped per entity through
+# the configured login pairs (xref/_logins-accounts.tsv / _logins-partners.tsv)
+# by bin/rpt-rollup.awk (its header: the union rule, the cell rules). Rules per
+# cell: Use cases union · Cloud / Gateway newest · the counts summed · Oldest
+# waiting the largest · First logon the oldest · Pattern the busiest login's.
+PI_RULES="uc max max sum sum sum sum sum sum age sum sum sum sum sum sum sum sum sum sum sum min sum best:25"
+for v in accounts:acct:Account:Accounts partners:ptn:Partner:Partners; do
+    IFS=: read -r vk kind headl tname <<< "$v"
+    m="$DATA/flow-manager/xref/_logins-$vk.tsv"; [ -f "$m" ] || m=/dev/null
+    b="$DATA/flow-manager/base/_$vk.tsv"; [ -f "$b" ] || b=/dev/null
+    vout="$REPORTS_DIR/partners-in-$vk.rpt"
+    awk -F'\t' -v MAP="$m" -v BASE="$b" -v KIND="$kind" -v HEADL="$headl" -v TNAME="$tname" -v NOUN="$vk" \
+        -v ACTIVE="$tname" -v RULES="$PI_RULES" -v ORDER="" -v DCAP=5 -v LCAP=10 \
+        -f "$ROOT/bin/rpt-rollup.awk" "$OUT" > "$vout.tmp" 2> "$vout.stat" && mv "$vout.tmp" "$vout"
+    IFS=$'\t' read -r n_v n_drop < "$vout.stat"; rm -f "$vout.stat"
+    echo "Data written to $vout ($n_v $vk; $n_drop login row(s) in no $vk view)." >&2
+done
