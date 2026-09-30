@@ -1256,9 +1256,9 @@
   // "IP" box covers both IP row types (resolved-host aliases and whitelisted
   // IPs). Rows only appear once a search term is typed (start-empty), the
   // configuration just narrows what a search may match.
-  // The search-syntax hint shown below the search box on Entity Search AND on
-  // the ordinary report pages (setupSearch) — one source of truth.
-  var SEARCH_HINT = "Wildcards: ? = 1 character, * = 0..n characters. \"…\" = the whole cell. A space means AND; operators: and / or / not";
+  // (The one-line search-syntax hint below the search boxes (wildcards,
+  // quotes, and / or / not) went 2026-09-30, user request: "Remove below text everywhere on the
+  // site"; the search box tooltip still explains the syntax.)
   function setupSearchConfig() {
     var table = document.querySelector("table[data-esearch]");
     if (!table) return;
@@ -1357,8 +1357,6 @@
       var inp = srow.querySelector("input.search");
       if (inp) { inp.placeholder = ""; }
     }
-    var hint = document.createElement("span"); hint.className = "searchhint";
-    hint.textContent = SEARCH_HINT;
     var row = document.createElement("div"); row.className = "cfgtypes";
     TYPES.forEach(function (t) {
       var lab = document.createElement("label");
@@ -1384,9 +1382,6 @@
     cline.appendChild(row);
     box.appendChild(cline);
     box.appendChild(srow);  // row 2: the search input, alone on its line
-    var hrow = document.createElement("p"); hrow.className = "essearchhint";
-    hrow.appendChild(hint); // row 4: the syntax hint, on its OWN line below the box
-    box.appendChild(hrow);
     // insert right after the title (a report page renders no intro)
     var h1 = document.getElementsByTagName("h1")[0];
     if (h1 && h1.parentNode) h1.parentNode.insertBefore(box, h1.nextSibling);
@@ -3251,14 +3246,6 @@
             anchor = anchor.previousElementSibling;
           if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(wrap, anchor);
           ctr = wrap;
-        }
-        // The search-syntax hint on its OWN line below the controls (like the
-        // Search page). NOT on Entity Search — setupSearchConfig renders its own.
-        if (ctr && !document.querySelector("table[data-esearch]")) {
-          var hrow = document.createElement("p"); hrow.className = "controlshint";
-          var hnt = document.createElement("span"); hnt.className = "searchhint"; hnt.textContent = SEARCH_HINT;
-          hrow.appendChild(hnt);
-          if (ctr.parentNode) ctr.parentNode.insertBefore(hrow, ctr.nextSibling);
         }
         if (stored) { box.value = stored; clear.style.display = "block"; }
         syncSearchUrl(box.value);   // the address bar reflects the search that actually applies (also strips a stale empty param)
