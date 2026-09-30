@@ -117,6 +117,31 @@
     return { ns: 1, col: [CR], name: ["Error % Files"], empty: "no Files in this slot", fmt: function (x) { return (+x).toFixed(1) + "%"; } };
   }
 
+  // The COMPACT series (2026-09-30, lean round 3): the publish (charts_lib
+  // rc_cards) ships a contiguous series as
+  //   =S<YYYY-MM-DD>T<HHMM>~<fmt>|<values>|<values>|…
+  // — the labels and dates follow from the start and the interval (the tag
+  // of its data-iv<MINUTES> attribute). This rebuilds the original
+  // "label:values:date|…" string EXACTLY (fmt o "MM-DD HHh", d "MM-DD",
+  // m "HHhMM"); a series the encoder could not prove derivable arrives
+  // verbatim and passes through.
+  function expandSeries(s, iv) {
+    if (!s || s.charAt(0) !== "=" || s.charAt(1) !== "S") return s;
+    var seg = s.split("|"), h = /^=S(\d{4})-(\d\d)-(\d\d)T(\d\d)(\d\d)~([odm])$/.exec(seg[0]);
+    if (!h || !(iv > 0)) return s;
+    var t0 = Date.UTC(+h[1], +h[2] - 1, +h[3], +h[4], +h[5]), fmt = h[6], out = [], i, t, d, lab;
+    function p2(n) { return (n < 10 ? "0" : "") + n; }
+    for (i = 1; i < seg.length; i++) {
+      t = new Date(t0 + (i - 1) * iv * 60000);
+      d = t.getUTCFullYear() + "-" + p2(t.getUTCMonth() + 1) + "-" + p2(t.getUTCDate());
+      lab = fmt === "o" ? d.slice(5) + " " + p2(t.getUTCHours()) + "h"
+          : fmt === "d" ? d.slice(5)
+          : p2(t.getUTCHours()) + "h" + p2(t.getUTCMinutes());
+      out.push(lab + ":" + seg[i] + ":" + d);
+    }
+    return out.join("|");
+  }
+
   // "label:v1[:v2[:v3]]:date|…" -> [{lab, v:[…], dt, has}]
   function parse(data, ns) {
     var out = [], seg = data ? data.split("|") : [], i, p, s;
@@ -427,7 +452,7 @@
       h._d = {};
       for (var a = 0; a < h.attributes.length; a++) {
         var an = h.attributes[a].name, m = /^data-iv(\d+)$/.exec(an);
-        if (m) h._d[m[1]] = h.attributes[a].value;
+        if (m) h._d[m[1]] = expandSeries(h.attributes[a].value, +m[1]);
       }
       h._slots = {};
       cards.push(h);
