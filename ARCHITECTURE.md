@@ -611,10 +611,12 @@ count IS that figure** (columns Entity · Total · Seen · OK · Error · Warnin
 Transfer/Server columns and the "including server log" switch went with the blue result,
 2026-09-27): Total links `<e>-all`, Seen `<e>-seen`, the counts their result views; the
 percentage columns link too; a 0 renders as an empty cell (inert). The
-five Logical/PDA/BL **Total** cells link the coverage cell pages
+five Logical/PDA/BL **Entity labels** link the coverage cell pages
 `docs/coverage/<member>-configured.html` (written by `bin/analyses/reports/coverage.sh` +
-`render_coverage_pages`, help slug `coverage`). `check_status_consistency` verifies every figure
-against the tinted (`data-res`) row count of its target view. The "configured names actually SEEN"
+`render_coverage_pages`, help slug `coverage`) and their **Total** the `<e>-all` view like the
+classic four (2026-09-30, user request — until then the other way round). `check_status_consistency` verifies every figure
+against the tinted (`data-res`) row count of its target view, and each coverage page against its
+row's Total. The "configured names actually SEEN"
 figure comes from `bin/analyses/reports/home.sh` → `home.rpt` (nine `SEEN⇥member⇥count` lines;
 the derived Logical/PDA members re-run their both-ways merge over `coverage/<member>.tsv`), consumed by
 `_status_table`.

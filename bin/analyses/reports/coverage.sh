@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
 # coverage.sh — the coverage cell lists: one .rpt per member of the home
-# page's Logical, Partners, Domains, Applications & BL table — its CONFIGURED
-# (Total) cell, holding exactly the items that cell counts.
+# page's Logical, Partners, Domains, Applications & BL table — the page its
+# ENTITY label links, holding exactly the items its Total counts.
 #
 #   -> data/coverage/<member>-configured.rpt   (logicals / partners / applications / domains / bl)
 #

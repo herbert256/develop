@@ -272,7 +272,7 @@ _status_table() {
             seenp=$(( (100 * seen + n / 2) / n ))
             okp=$(( (100 * g + n / 2) / n ))
         fi
-        # Every Entity label (the classic four AND the PDA trio) links its
+        # Every Entity label of the classic four links its
         # Entities ALL view (transfer/entities/<name>-all.html — every Entities
         # view carries datereset, so it opens at the full date range even when a
         # From/To is active). The former PDA ENTITY HOME pages
@@ -287,8 +287,19 @@ _status_table() {
             domains) ebase=domain ;;            bl) ebase=bl ;;
         esac
         local ent="${cov%coverage/}transfer/entities/$ebase"
-        if [ -n "$ebase" ] && [ -f "docs/$ent-all.html" ]; then
-            printf '<tr><td><a href="%s">%s</a></td>' "$ent-all.html" "$ESC"
+        # ...EXCEPT the Logical + four PDA rows (2026-09-30, user request —
+        # the Entity and Total links SWITCHED): their label links the
+        # configured-side COVERAGE CELL page (falls back to the Entities All
+        # view when that page is absent), and Total links the Entities All
+        # view (below).
+        local elink=""
+        [ -n "$ebase" ] && [ -f "docs/$ent-all.html" ] && elink="$ent-all.html"
+        case $member in
+            logicals|partners|applications|domains|bl)
+                [ -f "docs/$cov$member-configured.html" ] && elink="$cov$member-configured.html" ;;
+        esac
+        if [ -n "$elink" ]; then
+            printf '<tr><td><a href="%s">%s</a></td>' "$elink" "$ESC"
         else
             printf '<tr><td>%s</td>' "$ESC"
         fi
@@ -303,17 +314,9 @@ _status_table() {
         local h_tot h_seen h_err h_warn h_ok
         if [ -n "$ebase" ]; then
             h_tot="$ent-all.html"
-            # ...EXCEPT the Logical + three PDA rows, whose Total keeps its own
-            # COVERAGE CELL page (restored 2026-07): the configured logical
-            # flows / partners / applications / domains with their direction, member accounts,
-            # result and last transfer. The Entities All view is a different
-            # list — it counts what the logs carry — so Total needs the
-            # configured-side page. Falls back to the Entities view when the
-            # cell page is absent (an env with no PDA coverage TSVs).
-            case $member in
-                logicals|partners|applications|domains|bl)
-                    [ -f "docs/$cov$member-configured.html" ] && h_tot="$cov$member-configured.html" ;;
-            esac
+            # (The Logical + four PDA rows' Total linked their COVERAGE CELL
+            # page 2026-07..09-30; that page is now their Entity label's
+            # link, see above.)
             h_seen="$ent-seen.html"
             h_err="$ent-error.html"
             h_warn="$ent-warning.html"
@@ -636,8 +639,9 @@ write_root_index() {
 }
 
 # The home status tables' figures are CALCULATED (base caches + analyses
-# rpts) while their cells link a LIST page — a Transfer > Entities view, or a
-# coverage cell page for the five derived Totals — two INDEPENDENT
+# rpts) while their cells link a LIST page — a Transfer > Entities view, or
+# (the five derived members' Entity label) a coverage cell page whose rows the
+# row's Total counts — two INDEPENDENT
 # derivations that must agree.
 # Verify every linked figure against its page's row count (the cell rpt's ROW
 # lines / the rendered view's "Total (N …)" footer) and warn LOUDLY on any
@@ -678,12 +682,14 @@ check_status_consistency() {
             echo "CONSISTENCY WARNING: home shows $num for $href but the page's Total footer says $foot — an untinted (unconfigured) row leaked into the view: ${leak:-(name not extracted)}" >&2
             mism=$((mism+1))
         fi
-    done < <(perl -ne 'while (m{<a href="((?:transfer/entities|coverage)/[a-z0-9-]+)\.html">([\d.]+)</a>}g) { print "$1\t$2\n" }' docs/index.html 2>/dev/null)
-    # (the coverage/ alternation, 2026-08-31 audit: the five derived Totals —
+    done < <(perl -ne 'while (m{<a href="((?:transfer/entities|coverage)/[a-z0-9-]+)\.html">([\d.]+)</a>}g) { print "$1\t$2\n" }
+        while (m{<tr><td><a href="(coverage/[a-z0-9-]+)\.html">[^<]*</a></td><td class="num"><a href="[^"]*">([\d.]+)</a>}g) { print "$1\t$2\n" }' docs/index.html 2>/dev/null)
+    # (the coverage/ pages, 2026-08-31 audit: the five derived members —
     # Logical / Partners / Domains / Applications / BL — link a coverage cell
-    # page instead of an Entities view and escaped this gate; their pages
-    # carry the same tinted rows + "Total (N)" footer, so the comparison
-    # above applies unchanged)
+    # page and escaped this gate; their pages carry the same tinted rows +
+    # "Total (N)" footer, so the comparison above applies unchanged. Since
+    # 2026-09-30 that page is the ENTITY LABEL's link, not the Total's: the
+    # second perl match pairs it with the row's Total figure)
     if [ "$mism" -gt 0 ]; then
         echo "CONSISTENCY WARNING: $mism home status figure(s) disagree with their linked pages — investigate, do not mask." >&2
     else
