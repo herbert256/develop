@@ -53,6 +53,22 @@ mkdir -p "$CACHE_DIR" "$REPORTS_DIR"
 PARSED="$CACHE_DIR/_transfers.tsv"
 FILES="$CACHE_DIR/_files.tsv"   # one row per logical transfer (CoreId); built by parse.sh alongside PARSED
 
+# use_newest_caches — point PARSED_NEWEST / FILES_NEWEST at the NEWEST-FIRST
+# copies (bin/build/newest-caches.sh, 2026-09-30: File start descending,
+# CoreId ascending, legs kept per CoreId) when a copy exists and is NEWER than
+# its canonical cache, else at the canonical cache (a manual re-parse after a
+# build, or a checkout without the step: the output is the same, only
+# slower). Called by the order-INSENSITIVE top-10 ring readers only (details.sh,
+# entities.sh, duration.sh, duplicate-files.sh) — an order-sensitive report
+# must keep the canonical caches. `find -newer` compares nanoseconds.
+use_newest_caches() {
+    PARSED_NEWEST=$PARSED; FILES_NEWEST=$FILES
+    local d="$CACHE_DIR/newest"
+    if [ -s "$d/_transfers.tsv" ] && [ -n "$(find "$d/_transfers.tsv" -newer "$PARSED" 2>/dev/null)" ]; then PARSED_NEWEST="$d/_transfers.tsv"; fi
+    if [ -s "$d/_files.tsv" ] && [ -n "$(find "$d/_files.tsv" -newer "$FILES" 2>/dev/null)" ]; then FILES_NEWEST="$d/_files.tsv"; fi
+    return 0
+}
+
 # COREIDS_AWK — shared awk helpers for the click-to-expand Failed/Processed
 # drill-down. Inject in front of a report's awk program:
 #     awk -F'\t' "$COREIDS_AWK"' … main … ' "$file"

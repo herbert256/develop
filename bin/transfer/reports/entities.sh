@@ -70,6 +70,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 source "$ROOT/bin/pda-union.sh"   # SP_AWK: the File attribution UNION (sp_union / ap_union / lg_union / bl_union)
+# both caches NEWEST-FIRST (bin/build/newest-caches.sh, 2026-09-30): the top-10
+# drill rings fill with their newest Files first (the cheap addtop reject) —
+# output byte-identical, ~-20 % CPU at production scale
+use_newest_caches; PARSED=$PARSED_NEWEST; FILES=$FILES_NEWEST
 
 shopt -s nullglob
 files=("$INPUT_DIR"/*.csv)

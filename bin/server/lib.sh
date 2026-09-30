@@ -139,37 +139,45 @@ LOGLINES_AWK='
         return x }
     # addline keeps the 10 greatest keys (sk SUBSEP msg) of p, newest first;
     # a key equal to one kept goes after it. A 10-slot ring per p: element
-    # i of the list is slot (_LLh[p] + i - 1) % 10 (2026-09-27: the cache is
+    # i of the list is slot (_LLh[id] + i - 1) % 10 (2026-09-27: the cache is
     # chronological, so nearly every call puts a new FIRST element — O(1)
     # here, where the former joined string was split, shifted and re-joined
-    # on every call; the rare middle insert still does exactly that)
-    function addline(p, sk, msg,   key, n, h, a2, i, pos, m) { key = sk SUBSEP msg
-        n = _LLn[p] + 0
-        if (n == 0) { _LLn[p] = 1; _LLh[p] = 0; _LLr[p, 0] = key; _LLf[p] = key; _LLl[p] = key; return }
-        h = _LLh[p]
-        if (key > _LLf[p]) {                                  # a new first element
-            h = (h + 9) % 10; _LLh[p] = h; _LLr[p, h] = key; _LLf[p] = key
-            if (n < 10) _LLn[p] = n + 1
-            else _LLl[p] = _LLr[p, (h + 9) % 10]
+    # on every call; the rare middle insert still does exactly that). The
+    # per-p state lives in INTEGER-indexed arrays since 2026-09-30 (_LLi[p] =
+    # its id: ONE string-hash lookup per call instead of six to eight
+    # (p, slot) subscripts; the same ring, the same order — -9..-13 % CPU in
+    # the SSH readers at scale). Test membership with (p in _LLi).
+    function addline(p, sk, msg) { addkey(p, sk SUBSEP msg) }
+    # addkey(p, key): addline with the "sk SUBSEP msg" key built by the caller
+    # (a line booked under several keys builds it once)
+    function addkey(p, key,   id, n, h, b, a2, i, pos, m) {
+        if (!(p in _LLi)) { id = ++_LLc; _LLi[p] = id
+            _LLn[id] = 1; _LLh[id] = 0; _LLr[id * 10] = key; _LLf[id] = key; _LLl[id] = key; return }
+        id = _LLi[p]; n = _LLn[id]; h = _LLh[id]; b = id * 10
+        if (key > _LLf[id]) {                                 # a new first element
+            h = (h + 9) % 10; _LLh[id] = h; _LLr[b + h] = key; _LLf[id] = key
+            if (n < 10) _LLn[id] = n + 1
+            else _LLl[id] = _LLr[b + (h + 9) % 10]
             return
         }
-        if (!(key > _LLl[p])) {                               # at or below the last
+        if (!(key > _LLl[id])) {                              # at or below the last
             if (n == 10) return
-            _LLr[p, (h + n) % 10] = key; _LLn[p] = n + 1; _LLl[p] = key
+            _LLr[b + (h + n) % 10] = key; _LLn[id] = n + 1; _LLl[id] = key
             return
         }
-        for (i = 1; i <= n; i++) a2[i] = _LLr[p, (h + i - 1) % 10]
+        for (i = 1; i <= n; i++) a2[i] = _LLr[b + (h + i - 1) % 10]
         pos = n + 1
         for (i = 1; i <= n; i++) if (key > a2[i]) { pos = i; break }
         for (i = (n < 10 ? n : 9); i >= pos; i--) a2[i+1] = a2[i]
         a2[pos] = key; m = (n < 10) ? n + 1 : 10
-        for (i = 1; i <= m; i++) _LLr[p, i - 1] = a2[i]
-        _LLh[p] = 0; _LLn[p] = m; _LLf[p] = a2[1]; _LLl[p] = a2[m] }
+        for (i = 1; i <= m; i++) _LLr[b + i - 1] = a2[i]
+        _LLh[id] = 0; _LLn[id] = m; _LLf[id] = a2[1]; _LLl[id] = a2[m] }
     # the kept keys of p, first to last, _US-joined ("" when none)
-    function loglist(p,   n, h, i, out) { n = _LLn[p] + 0; h = _LLh[p] + 0
-        out = ""; for (i = 1; i <= n; i++) out = out (i > 1 ? _US : "") _LLr[p, (h + i - 1) % 10]
+    function loglist(p,   id, n, h, b, i, out) { if (!(p in _LLi)) return ""
+        id = _LLi[p]; n = _LLn[id]; h = _LLh[id]; b = id * 10
+        out = ""; for (i = 1; i <= n; i++) out = out (i > 1 ? _US : "") _LLr[b + (h + i - 1) % 10]
         return out }
-    function lastlines(p,   n, a3, i, f, s) { n = (p in _LLn) ? split(loglist(p), a3, _US) : 0
+    function lastlines(p,   n, a3, i, f, s) { n = (p in _LLi) ? split(loglist(p), a3, _US) : 0
         s = ""; for (i = 1; i <= n; i++) { split(a3[i], f, SUBSEP); s = s (s == "" ? "" : _US) f[1] "  " f[2] }
         return s }
 '

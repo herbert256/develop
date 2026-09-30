@@ -129,7 +129,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK$AWKL
         if (algo == "") return
         k = cat SUBSEP algo
         cnt[k]++
-        addline(k, $1 " " $2, lvlname($3) " " compname($4) "  " substr($5, 1, 200))
+        addkey(k, LK)                     # LK: the drill key, built once per line by the caller (2026-09-30)
         if (d != "") {
             cd[k SUBSEP d]++
             if (!(k in fst) || d < fst[k]) fst[k] = d
@@ -166,6 +166,7 @@ agg=$(awk -F'\t' -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK$AWKL
 
             neg++
             pc[proto]++; if (d != "") pcd[proto SUBSEP d]++
+            LK = $1 " " $2 SUBSEP lvlname($3) " " compname($4) "  " substr($5, 1, 200)   # the drill key, ONCE for the four acc() calls
             acc("H", cph, d); acc("K", kex, d); acc("M", mac, d); acc("U", pk, d)
             next
         }

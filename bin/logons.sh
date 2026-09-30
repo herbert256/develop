@@ -129,7 +129,9 @@ ensure_logons() {   # $1 = the server cache dir; writes $1/_logons.tsv + $1/_log
             }
             # second-of-era with the millisecond fraction (the anon-failure
             # window is sub-second work; a double carries this exactly)
-            function secof(d, t) { return jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 86400 + substr(t,1,2) * 3600 + substr(t,4,2) * 60 + substr(t,7) + 0 }
+            # (a one-entry day-number cache, like date.awk minof — 2026-09-30)
+            function secof(d, t) { if (!_SOFS || (d "") != _SOFD) { _SOFS = 1; _SOFD = d ""; _SOFJ = jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 86400 }
+                return _SOFJ + substr(t,1,2) * 3600 + substr(t,4,2) * 60 + substr(t,7) + 0 }
             $5 ~ /User with login name "/ && $5 ~ /successfully authenticated/ {
                 if (!match($5, /login name "[^"]*"/)) next
                 u = substr($5, RSTART + 12, RLENGTH - 13)

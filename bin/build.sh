@@ -911,6 +911,13 @@ run_step "server log -> transfer: settle failed Files by ok bookend"      bin/bo
 # the newest OK File and the three newest Failed Files get a docs/files/
 # page) — the outcomes are final now; every page writer and linker reads it
 run_step "transfer: the published File pages (newest OK + 3 errors per subscription)" bin/transfer/filepages.sh
+# THE NEWEST-FIRST CACHE COPIES (2026-09-30, the lean round): the transfer
+# caches are final now (expire-files + the bookend settle rewrote _files.tsv
+# above); the copies feed the top-10 ring readers (details.sh, entities.sh,
+# duration.sh, duplicate-files.sh — bin/transfer/lib.sh use_newest_caches).
+# In background slot 3 beside result.sh / kaput-evidence, which only READ the
+# caches; waited for right before details.sh and the phase-1 pool start.
+bg3_step_start "transfer: the newest-first cache copies"                    bin/build/newest-caches.sh
 bg2_step_wait   # the mention caches: result.sh reads them
 run_step "result: subscription outcomes -> base caches"                   bin/build/result.sh
 # result.sh (discover_logged) may APPEND transfer-log-discovered names to the
@@ -952,6 +959,7 @@ run_step "kaput evidence (early — the failed/details Reason evidence)"    bin/
 # were it ever still running, ensure_logons would compute it again, slower but
 # identical. bg2 is free here: the mention caches were waited for before
 # result.sh, and dashboards + day start in it only after this wait.)
+bg3_step_wait   # the newest-first copies: details.sh and the phase-1 pool read them
 bg2_step_start "report: detail pages .rpt files"                          env AXWAY_WAIT_FAILED=1 bin/transfer/reports/details.sh
 run_step "report: transfer .rpt files (phase 1)"                          bin/transfer/reports.sh phase1
 bg_step_wait   # the logon summary: logon.sh (server reports) + fe-overview.sh (analyses) read it

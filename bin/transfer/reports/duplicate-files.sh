@@ -18,6 +18,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
+# _files.tsv NEWEST-FIRST (bin/build/newest-caches.sh, 2026-09-30): the drill
+# rings fill with their newest Files first — output byte-identical, less CPU
+use_newest_caches; FILES=$FILES_NEWEST
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/duplicate-files.rpt"
 TOP_N=200

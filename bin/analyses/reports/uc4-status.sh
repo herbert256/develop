@@ -72,7 +72,7 @@ ALF="$CONFIG_XREF/_accounts-logins.tsv";      [ -f "$ALF" ] || ALF=/dev/null
 #   A <TAB> stc <TAB> <sub cell> <TAB> files <TAB> ok <TAB> err <TAB> last-file
 #           <TAB> logons <TAB> arrivals <TAB> problems <TAB> last-log <TAB> loglines
 #   TOT <TAB> n0..n3 <TAB> files <TAB> ok <TAB> err <TAB> logons <TAB> arrivals <TAB> problems
-agg=$(awk -F'\t' -v UC=UC4 -v sb="$SUBB" -v xf="$XREF" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -v slf="$SLF" -v alf="$ALF" -v SL="$SLOTS_OUT" "$LOGLINES_AWK$LINK_AWK$AWKLIB$UCS_AWK"'
+agg=$(awk -F'\t' -v UC=UC4 -v sb="$SUBB" -v xf="$XREF" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -v slf="$SLF" -v alf="$ALF" -v SL="$SLOTS_OUT" "$LOGLINES_AWK$LINK_AWK$AWKLIB$UCS_AWK$(cat "$ROOT/bin/ssh-family.awk")"'
     # MULTI-FE ACCOUNTS (2026-08-31, user report): when the account carries
     # SEVERAL configured logins, a logon or refusal that NAMES one is credited
     # only to the flows configured for THAT login — each login is a different
@@ -81,7 +81,9 @@ agg=$(awk -F'\t' -v UC=UC4 -v sb="$SUBB" -v xf="$XREF" -v tf="$FILESC" -v rfv="$
     # account-wide union.
     BEGIN { while ((getline ucl < slf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[1] != "" && uca[2] != "") SUBL[toupper(uca[1])] = SUBL[toupper(uca[1])] SUBSEP toupper(uca[2]) } close(slf)
             while ((getline ucl < alf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[1] != "") aln[uca[1]]++ } close(alf) }
-    function acctof(m,   a) { a=""; if (match(m, /[A-Za-z0-9_.-]+@FE[0-9]+/)) { a=substr(m,RSTART,RLENGTH); sub(/@.*/,"",a) } return a }
+    # (acctof — the account of the "ACCOUNT@FE<digits>" token — comes from
+    # bin/ssh-family.awk since 2026-09-30: an exact index()-based twin of the
+    # regex this script and uc4-status.sh each carried)
     # (the server lines are ACCOUNT-keyed here — no key() name matching)
     FILENAME == xf {                                         # account -> its UC4 subscription(s), ALL of them
         if (($2 ~ /^UC4/ || (toupper($2) in ucd)) && (toupper($2) in res)) asub[$1] = asub[$1] SUBSEP toupper($2)

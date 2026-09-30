@@ -15,4 +15,10 @@ function fromjdn(j,   a, b, c, dd, e, mm, day, mon, yr) { a = j + 32044; b = int
     yr = 100 * b + dd - 4800 + int(mm / 10); return sprintf("%04d-%02d-%02d", yr, mon, day) }
 
 # the minute number of an ISO date + "hh:mm…" time (day number × 1440 + minutes)
-function minof(d, t) { return jdn(substr(d, 1, 4) + 0, substr(d, 6, 2) + 0, substr(d, 9, 2) + 0) * 1440 + substr(t, 1, 2) * 60 + substr(t, 4, 2) + 0 }
+# (a ONE-ENTRY cache of the last date's day number, 2026-09-30: the callers
+# walk chronological data, so the jdn() arithmetic runs once per DATE, not per
+# line — exact, the same integer either way; _MOFS marks the cache as set, and
+# the comparison is forced to a STRING one: an empty date on the first call
+# would otherwise equal the uninitialised cache and skip the jdn())
+function minof(d, t) { if (!_MOFS || (d "") != _MOFD) { _MOFS = 1; _MOFD = d ""; _MOFJ = jdn(substr(d, 1, 4) + 0, substr(d, 6, 2) + 0, substr(d, 9, 2) + 0) * 1440 }
+    return _MOFJ + substr(t, 1, 2) * 60 + substr(t, 4, 2) + 0 }

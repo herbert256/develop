@@ -90,7 +90,7 @@ rm -rf "$SUBDIR"; mkdir -p "$SUBDIR"
 _t0=$(date +%s)
 
 # the GATE: one regex over every marker — a line matching none (most of the
-# cache) costs one test; the per-consumer index() checks run only on the rest.
+# cache) costs one test; the per-consumer regexes run only on the rest.
 # Built here, metacharacters escaped (a "~" marker's letters as [xX] pairs),
 # and handed over via ENVIRON (a -v value would have its backslashes eaten).
 SUBSET_GATE=$(printf '%s\n' "$SPEC" | cut -f2- | tr '\t' '\n' | LC_ALL=C sort -u \
@@ -110,20 +110,30 @@ part() {   # $1 = part index: its range of line starts is [lo, hi)
     local lo hi
     lo=$(rng_lo "$SRVSZ" "$NJ" "$1"); hi=$(rng_hi "$SRVSZ" "$NJ" "$1")
     rng_feed "$SRV" "$lo" | awk -v OUTP="$SUBDIR/" -v PART="$1" -v RANGEF=/dev/stdin -v RLO="$lo" -v RHI="$hi" -v ROFF="$(rng_off "$lo")" '
+        # per consumer ONE regex of its markers, built once (2026-09-30, lean
+        # round 3b: the per-line loop of ~30 index() calls with two-key
+        # lookups, plus a tolower($0) copy for the "~" marker, was 2/3 of this
+        # pass) — the letters of a "~" marker as [xX] pairs, the rest escaped
+        # with the set the GATE uses, so the regex of a consumer matches exactly
+        # the lines one of its markers is in (ASCII case folding, as tolower did)
+        function rex(m, ci,   o, k, c) { o = ""; for (k = 1; k <= length(m); k++) { c = substr(m, k, 1)
+                if (ci && c ~ /[A-Za-z]/) o = o "[" tolower(c) toupper(c) "]"
+                else if (index("][\\.^$*+?(){}|/", c)) o = o "\\" c
+                else o = o c }
+            return o }
         BEGIN { G = ENVIRON["SUBSET_GATE"]
             nc = split(ENVIRON["SUBSET_SPEC"], L, "\n")
-            for (i = 1; i <= nc; i++) { nm = split(L[i], F, "\t"); C[i] = F[1]; NM[i] = nm - 1
+            for (i = 1; i <= nc; i++) { nm = split(L[i], F, "\t"); C[i] = F[1]; CRE[i] = ""
                 for (j = 2; j <= nm; j++) {
-                    if (substr(F[j], 1, 1) == "~") { MK[i, j - 1] = tolower(substr(F[j], 2)); CI[i, j - 1] = 1 }
-                    else MK[i, j - 1] = F[j] } } }
+                    ci = (substr(F[j], 1, 1) == "~")
+                    CRE[i] = CRE[i] (j > 2 ? "|" : "") rex(ci ? tolower(substr(F[j], 2)) : F[j], ci) } } }
         RANGEF != "" && FILENAME == RANGEF { if (!_rs) { _rs = 1; _off = ROFF + 0 } _lo = _off; _off += length($0) + 1; if (_lo < RLO + 0) next; if (_lo >= RHI + 0) exit }
         $0 ~ G {
-            lz = ""   # tolower($0), computed once, only for a "~" marker
-            for (i = 1; i <= nc; i++) for (j = 1; j <= NM[i]; j++) if (((i, j) in CI) ? index((lz != "") ? lz : (lz = tolower($0)), MK[i, j]) : index($0, MK[i, j])) {
+            for (i = 1; i <= nc; i++) if ($0 ~ CRE[i]) {
                 # through cat (2026-09-28, speed round 25): awk writes a regular
                 # file in 4 KB chunks, ten parts at once; closed in END
                 if (!(i in OC)) OC[i] = "cat > \"" OUTP C[i] ".p" PART "\""
-                print | OC[i]; break }
+                print | OC[i] }
         }
         # the RULE subsets (see SPEC_EXTRA), on every line
         {   # the four leading fields (date, time, level, component) from the

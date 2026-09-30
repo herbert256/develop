@@ -721,8 +721,10 @@ if [ -f "$SRVLOG" ] && [ -s "$TMP/meta" ]; then
             # the ID join: every UUID the message carries, in whatever words;
             # idc = the pages this line reached by id (a line can name the ids
             # of several files — one row per page, never two for one)
-            split("", idc); s = m
-            while (match(s, UUID)) {
+            # (the index() gate, 2026-09-30: every UUID holds a "-", so a
+            # message without one skips the regex scan — exact, ~20 % of it)
+            split("", idc); s = (index(m, "-") > 0) ? m : ""
+            while (s != "" && match(s, UUID)) {
                 id = substr(s, RSTART, RLENGTH); s = substr(s, RSTART + RLENGTH)
                 if ((id in idmap) && !(idmap[id] in idc)) {
                     mc = idmap[id]; idc[mc] = 1; hit[mc] = 1; emit(mc, "I", "id")

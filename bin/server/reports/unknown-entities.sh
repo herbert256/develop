@@ -284,7 +284,7 @@ while read -r lo hi; do
         END {
             for (k in cnt) { split(k, kp, SUBSEP)
                 print "C\t" kp[1] "\t" kp[2] "\t" cnt[k]
-                nl = (k in _LLn) ? split(loglist(k), le, _US) : 0
+                nl = (k in _LLi) ? split(loglist(k), le, _US) : 0   # (_LLi: the ring id map, bin/server/lib.sh)
                 for (i = 1; i <= nl; i++) { split(le[i], lf, SUBSEP)
                     print "R\t" kp[1] "\t" kp[2] "\t" lf[1] "\t" lf[2] } }
             for (k in cd) { nd = split(k, kp, SUBSEP)

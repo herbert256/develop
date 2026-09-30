@@ -53,6 +53,10 @@ source "$SCRIPT_DIR/../lib.sh"
 source "$ROOT/bin/uc-cases.sh"   # uc_meta(): the shared UC<n> description
 source "$ROOT/bin/logons.sh"     # ensure_logons(): the per-login logon summary
 source "$SCRIPT_DIR/../details_lib.sh"   # the rendering machinery (every helper the writer loop calls)
+# the legs NEWEST-FIRST (bin/build/newest-caches.sh, 2026-09-30): every top-10
+# drill ring fills with its newest Files first, so later Files hit the cheap
+# addtop reject — ~-25 % CPU at production scale, output byte-identical
+use_newest_caches; PARSED=$PARSED_NEWEST
 
 # PHASE TIMINGS (2026-09-27): one "TIME Ns  details: <phase>" line per phase
 # on stderr (name + duration only, never data). This script runs as a

@@ -142,7 +142,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # (the account rides along as the row KEY — the guard below tests it — but it is
 # not rendered; only the subscription cell reaches the table)
 #   TOT <TAB> nnever <TAB> ncollects <TAB> total-expired <TAB> total-expired-never
-agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -v slf="$SLF" -v alf="$ALF" -v SL="$SLOTS_OUT" -v PKF="$PICKUPS_OUT" "$LOGLINES_AWK$LINK_AWK$AWKLIB$CADENCE_AWK"'
+agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -v slf="$SLF" -v alf="$ALF" -v SL="$SLOTS_OUT" -v PKF="$PICKUPS_OUT" "$LOGLINES_AWK$LINK_AWK$AWKLIB$CADENCE_AWK$(cat "$ROOT/bin/ssh-family.awk")"'
     BEGIN { while ((getline ucl < ucdf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[2] == "UC2") ucd[toupper(uca[1])] = 1 } close(ucdf)
             # MULTI-FE ACCOUNTS (2026-08-31, user report: new in production —
             # one account carries SEVERAL FE logins, each serving its own
@@ -156,7 +156,9 @@ agg=$(awk -F'\t' -v tf="$TFILES" -v tt="$TTRANS" -v xf="$XREF" -v ucdf="$UCDF" -
             # Single-login accounts keep the account rule, output-identical.
             while ((getline ucl < slf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[1] != "" && uca[2] != "") SUBL[toupper(uca[1])] = SUBL[toupper(uca[1])] SUBSEP toupper(uca[2]) } close(slf)
             while ((getline ucl < alf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[1] != "") aln[uca[1]]++ } close(alf) }
-    function acctof(m,   a) { a=""; if (match(m, /[A-Za-z0-9_.-]+@FE[0-9]+/)) { a=substr(m,RSTART,RLENGTH); sub(/@.*/,"",a) } return a }
+    # (acctof — the account of the "ACCOUNT@FE<digits>" token — comes from
+    # bin/ssh-family.awk since 2026-09-30: an exact index()-based twin of the
+    # regex this script and uc4-status.sh each carried)
     # the per-(account,login) GROUP classification: the same visit rules as
     # the per-account loop in END, over the group own logon / delivery /
     # collect minutes (multi-FE accounts only — groups register only there)

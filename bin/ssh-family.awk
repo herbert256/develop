@@ -3,7 +3,8 @@
 # bin/logons.sh (the logon summary behind the detail pages and the
 # partners-in page) carried it twice, with the rule "a change to either
 # matcher belongs in both". Both inject this file into their awk program
-# (awk ... "$(cat bin/ssh-family.awk)"'program') — keep it function-only.
+# (awk ... "$(cat bin/ssh-family.awk)"'program') — keep it function-only. Also
+# injected into uc2-status.sh + uc4-status.sh for acctof() (2026-09-30).
 #
 # ssh_family(m) -> the family letter of message m, "" when it is none of them;
 # the username it names in the global SSH_U ("" when the line names none):
@@ -51,5 +52,30 @@ function ssh_family(m,   u) {
         if (u == "" && match(m, /Username: /)) u = qtok(substr(m, RSTART + RLENGTH))
         SSH_U = u; return "L" }
     SSH_U = ""
+    return ""
+}
+
+# acctof(m) -> the ACCOUNT of the first "ACCOUNT@FE<digits>" token in message
+# m, "" when there is none — EXACTLY what the regex extraction
+#   match(m, /[A-Za-z0-9_.-]+@FE[0-9]+/) then sub(/@.*/, "")
+# returns (2026-09-30, ONE copy for uc2-status.sh + uc4-status.sh, which each
+# had that regex, tried at every position of every logon line: ~2 us a line at
+# scale). The leftmost "@FE<digit>" preceded by a class char ends the leftmost
+# match — a class run cannot hold "@", so the runs are disjoint and the first
+# valid occurrence has the earliest run — and the account is that class run:
+# index() + one split(). NB mawk's index(s, "") is 1, so the digit test checks
+# the character is non-empty (an "@FE" at the end of a message is no match).
+function acctof(m,   off, p, r, c, n, W) {
+    off = 0
+    while ((r = index(substr(m, off + 1), "@FE")) > 0) {
+        p = off + r
+        c = substr(m, p + 3, 1)
+        if (c != "" && index("0123456789", c) > 0 && p > 1 && \
+            index("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.-", substr(m, p - 1, 1)) > 0) {
+            n = split(substr(m, 1, p - 1), W, /[^A-Za-z0-9_.-]/)
+            return W[n]
+        }
+        off = p
+    }
     return ""
 }

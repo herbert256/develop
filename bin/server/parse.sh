@@ -82,8 +82,17 @@ SKIPOUT="$DATA/server/_skipped.tsv"     # skipped _parse.tsv rows (verbatim)
 MERGE_SKIP_PROG="$SKIPLIST_AWK"'
     BEGIN { sl_load(skipfile) }
     { r = substr($0, index($0, "\t") + 1)
-      if (SL_N > 0 && sl_hit("message", $6)) print r >> sc; else { print r; kept++ } }
-    END { print kept + 0 > cf }
+      if (SL_N > 0 && sl_hit("message", $6)) print r >> sc
+      else { print r; kept++
+          # the TRANSFER-ENDED session ids of the KEPT rows (2026-09-30, lean
+          # round 3b: collected here, in cache order, first seen per group —
+          # the mention step grepped the whole cache for them again; the exact
+          # test of build_entity_tsvs, the message = $6 / session = $7 here).
+          # Without a skip list nothing has split the fields yet: an index()
+          # of the TAB-led literal over the line gates the split (exact — a $6
+          # that starts with it follows a TAB); with one, $6 is split already
+          if (ef != "" && (SL_N > 0 || index($0, "\t{\"message\":\"Transfer end logged.")) && index($6, "{\"message\":\"Transfer end logged.") == 1 && $7 != "" && index($7, "50455253495354454e542d53455353494f4e2d") != 1 && !($7 in es)) { es[$7] = 1; print $7 > ef } } }
+    END { print kept + 0 > cf; if (ef != "") close(ef) }
 '
 
 # Collect input files: every *.csv in the input/ directory.
@@ -505,7 +514,16 @@ BEGIN { rn_load(RNF)
         # subscription or old name (SMIN), and the smaller of the two (WMIN)
         NMIN = SMIN = 1e9
         for (rk in RN_S) if (length(rk) < SMIN) SMIN = length(rk)
-        WMIN = SMIN }
+        WMIN = SMIN
+        # THE MESSAGE MEMO (2026-09-30, lean round 3b): the (type, name) hits
+        # of a record are a function of its MESSAGE and the config alone — the
+        # tokenize below reads nothing else — and most messages repeat (polls,
+        # logons): a message seen before REPLAYS its recorded hit() calls in
+        # the same order (so the per-record dedupe and both rings get exactly
+        # the same calls) instead of being split into words again. Bounded:
+        # at most MEMO_MAX distinct messages per job are remembered (~150
+        # bytes each), later new messages are simply tokenized.
+        MEMO_MAX = 150000 }
 function minlen(v, m) { return (length(v) < m) ? length(v) : m }
 # BYTE-RANGE MODE (ent_range, 2026-09-27): the job scans only the lines of the
 # cache RANGEF that START at an offset in [RLO, RHI) and stops after them —
@@ -527,6 +545,7 @@ RANGEF != "" && FILENAME == RANGEF { if (!_rs) { _rs = 1; _off = ROFF + 0 } _lo 
 # the line is not a server-log error and never raises the after-last-transfer
 # banner, red flip or server-failing verdict; it stays in the all-level ring.
 function hit(ty, w,   k) {
+    if (REC) RECS = RECS ty w "\036"   # recording for the message memo
     k = ty SUBSEP w
     if (seen[k] == NR) return
     seen[k] = NR
@@ -547,7 +566,10 @@ FILENAME ~ /_hosts\.tsv$/         { if ($1 != "") hstU[toupper($1)] = $1; next }
 # and the drill pages) name the account and the file of every leg — kept OUT
 # of the mention rings, which would otherwise fill up with them
 index($5, "{\"message\":") == 1 { next }
+# a remembered message: replay its hits (see MEMO_MAX in BEGIN)
+($5 in MEMO) { nrep++; nm9 = split(MEMO[$5], MH, "\036"); for (q9 = 1; q9 < nm9; q9++) hit(substr(MH[q9], 1, 1), substr(MH[q9], 2)); next }
 {
+    nnew++; REC = (nmemo < MEMO_MAX); RECS = ""
     k = split($5, tok, /[^A-Za-z0-9._-]+/)   # dots kept: hostnames/IPs stay one token
     # (2026-09-27: the regex trims/tests run only on a token that holds a dot,
     # the SERVER/CLIENT match only on one holding the marker, and the rename
@@ -571,6 +593,7 @@ index($5, "{\"message\":") == 1 { next }
         }
         if (length(w) >= WMIN) name_hit(w)
     }
+    if (REC) { MEMO[$5] = RECS; nmemo++; REC = 0 }
 }
 # the account / login / subscription tests of one word (never empty). The
 # LENGTH GATES are exact: a hit needs the word itself (accounts, logins) — or
@@ -614,6 +637,7 @@ function name_hit(w2,   pf, p, cand, c2) {
 # Emit this chunk's rings, newest first (the chunk is a contiguous slice of
 # the ascending-by-date+time cache, so the ring holds ITS newest 10).
 END {
+    if (memout != "") { print (nrep + 0) "\t" (nnew + 0) > memout; close(memout) }   # the memo counters (the TIME line)
     for (k in cnt) {
         split(k, a, SUBSEP)
         m = (cnt[k] < 25) ? cnt[k] : 25
@@ -667,6 +691,7 @@ ent_one() {   # $1 = cache line chunk, $2 = 4-digit part index
     awk -F'\t' \
         -v ringout="$ENT_CHUNK_DIR/rings.$2" \
         -v ewout="$ENT_CHUNK_DIR/ewrings.$2" \
+        -v memout="$ENT_CHUNK_DIR/memo.$2" \
         -v RNF="$RENAMES_FILE" \
         "$RENAMES_AWK$ENT_PROG" ${ENT_CFG_SRCS[@]+"${ENT_CFG_SRCS[@]}"} "$1"
 }
@@ -674,6 +699,7 @@ ent_range() {   # $1 = the cache, $2/$3 = the byte range [lo, hi) of line starts
     rng_feed "$1" "$2" | awk -F'\t' \
         -v ringout="$ENT_CHUNK_DIR/rings.$4" \
         -v ewout="$ENT_CHUNK_DIR/ewrings.$4" \
+        -v memout="$ENT_CHUNK_DIR/memo.$4" \
         -v RNF="$RENAMES_FILE" -v RANGEF=/dev/stdin -v RLO="$2" -v RHI="$3" -v ROFF="$(rng_off "$2")" \
         "$RENAMES_AWK$ENT_PROG" ${ENT_CFG_SRCS[@]+"${ENT_CFG_SRCS[@]}"} /dev/stdin
 }
@@ -816,7 +842,10 @@ build_entity_tsvs() {
     # order, and the awk still applies the exact test, so the output is the same
     # COMPUTED ONCE PER CACHE (2026-09-27, speed round 6): the list is a
     # function of the cache alone, so the appended-names rescan reuses the one
-    # the first scan wrote; a tokenize removes it with the old cache.
+    # the first scan wrote; a tokenize removes it with the old cache. Since
+    # 2026-09-30 (lean round 3b) the full parse's MERGE writes it (it sees
+    # every kept row) — the grep below is the fallback for a cache without it
+    # (a config-only estate, a hand-run mentions-only scan after a removal).
     if [ -f "$ENDED_TSV" ]; then :
     else
     # (line_par, 2026-09-28, speed round 19: the grep runs over line-aligned
@@ -876,6 +905,10 @@ build_entity_tsvs() {
         fi
     fi
     _slap "mentions: scan ($nparts parts)"
+    # the MESSAGE MEMO rate (a TIME line: a background step replays only those)
+    # — how many records replayed a remembered message instead of a tokenize
+    cat "$ENT_CHUNK_DIR"/memo.* 2>/dev/null | awk -F'\t' '{ r += $1; n += $1 + $2 }
+        END { printf "TIME %5ds  server parse: mentions: memo replay %d of %d records\n", 0, r, n }' >&2
     # The all-level rings (cap 25 -> <name>.tsv) and, alongside them, the
     # Error/Warn rings (cap 10 -> <name>_err_warn.tsv). Both are collected
     # newest-chunk-first and merged by the SAME RING_PROG (cap + suffix vary).
@@ -1150,11 +1183,11 @@ tokenize_batch() {   # tokenize every argument file into its own chunk
     # (| cat: awk writes a regular file in 4 KB chunks — the parallel groups
     # spent more kernel time on that than the merge itself; 2026-09-28)
     merge_group() {   # $1 = 4-digit group index; its keys, in key order, in .grp.$1
-        : > "$PART_DIR/out.$1"; : > "$PART_DIR/skip.$1"
+        : > "$PART_DIR/out.$1"; : > "$PART_DIR/skip.$1"; : > "$PART_DIR/ended.$1"
         { while IFS= read -r k; do
               LC_ALL=C sort -m -u $SORT_CHUNK_FLAGS "$CHUNK_DIR"/chunk.*.d"$k"
           done < "$CHUNK_DIR/.grp.$1"; } \
-            | awk -F'\t' -v skipfile="$SKIPFILE" -v sc="$PART_DIR/skip.$1" -v cf="$PART_DIR/n.$1" "$MERGE_SKIP_PROG" | cat > "$PART_DIR/out.$1"
+            | awk -F'\t' -v skipfile="$SKIPFILE" -v sc="$PART_DIR/skip.$1" -v cf="$PART_DIR/n.$1" -v ef="$PART_DIR/ended.$1" "$MERGE_SKIP_PROG" | cat > "$PART_DIR/out.$1"
     }
     # key <TAB> bytes, in key order (LC_ALL=C — the order the keys sort in the
     # cache; "" = the no-date part, first), then the greedy grouping. The
@@ -1181,6 +1214,12 @@ tokenize_batch() {   # tokenize every argument file into its own chunk
     rm -f "$CHUNK_DIR/.lpt" "$CHUNK_DIR"/.grp.*
     cat "$PART_DIR"/out.*  > "$OUT"
     cat "$PART_DIR"/skip.* > "$SKIPOUT"
+    # the TRANSFER-ENDED sessions (build_entity_tsvs reads them): the groups'
+    # first-seen lists joined in GROUP order (= cache order) and deduped again
+    # — the first occurrence in the whole cache, exactly the list the former
+    # full-cache grep + dedupe wrote (2026-09-30, lean round 3b)
+    { cat "$PART_DIR"/ended.* 2>/dev/null || true; } | awk '!($0 in s) { s[$0] = 1; print }' > "$ENDED_TSV.tmp" && mv "$ENDED_TSV.tmp" "$ENDED_TSV"
+    rm -f "$PART_DIR"/ended.*
     ENT_PARTS=("$PART_DIR"/out.*)   # build_entity_tsvs consumes these in place
     skipped_n=$(wc -l < "$SKIPOUT" | tr -d ' ')
     n_out=$(cat "$PART_DIR"/n.* 2>/dev/null | awk '{ s += $1 } END { print s + 0 }')   # the groups' kept-row counts

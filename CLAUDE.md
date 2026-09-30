@@ -225,7 +225,8 @@ before result.sh) and the logon summary (`bin/build/logon-summary.sh`, backgroun
 right before the server reports since 2026-09-28) — `bin/session-sites.sh` (its re-derive is
 `AXWAY_DERIVE_ONLY=1` transfer `parse.sh`), `bin/expire-files.sh`, `bin/bookend-ok.sh settle`
 (its `extract` half runs in background slot 3 beside the two before it, 2026-09-29),
-`bin/transfer/filepages.sh` (the published File-page set),
+`bin/transfer/filepages.sh` (the published File-page set), `bin/build/newest-caches.sh` (the
+newest-first cache copies, background slot 3, waited for before details.sh and phase 1),
 `bin/build/result.sh`, a server-mention rescan (`AXWAY_MENTIONS_ONLY=1` again) when
 `data/server/cache/.rescan-mentions` exists (skipped inside when no cache line holds an appended
 name — see BUILD SPEED; a rescan that RAN leaves `data/server/cache/.rescanned`, and `result.sh`
@@ -301,7 +302,33 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
   `subsets/.done`) falls back to the whole cache (`srv_counts` builds the set). **Measured, not
   worth it (2026-09-30):** an `inbound` subset for inbound-connections (+1.0 CPU-s for 0.3 saved)
   and a `day` marker subset for day_srv (+2.6 for 1.1) — only long, rare markers pay; the gate
-  regex runs on every character of every line.
+  regex runs on every character of every line. Each consumer's markers are ONE regex, built in
+  BEGIN (the letters of a `~` marker as `[xX]` pairs, the rest escaped with the gate's set), tested
+  once per gate-matched line (2026-09-30, lean round 3b: the per-line `index()` loop plus a
+  `tolower($0)` copy was two-thirds of the pass; −55 % at scale).
+- **The mention scan's MESSAGE MEMO** (2026-09-30, `ENT_PROG` in `bin/server/parse.sh`): a
+  record's hits are a function of its message and the config alone, so a repeated message replays
+  its recorded `hit()` calls in order instead of being tokenized again (at most `MEMO_MAX` = 150k
+  distinct messages per job; the console line `TIME … mentions: memo replay N of M records` shows
+  the repetition rate). A change to the matching must keep hits a pure function of `$5` + the
+  config, or the memo must go. (The inline 3-char gate of round 3 gave nothing — the memo paid.)
+- **The TRANSFER-ENDED sessions** (`_sessions-ended.tsv`) are collected by the full parse's MERGE
+  (`MERGE_SKIP_PROG`, per group, first seen, joined in group order, deduped) since 2026-09-30; the
+  mention step's full-cache `grep -F` is only the fallback for a cache without the list. The merge
+  test is gated (`index($0, TAB literal)` before a field split, the direct `$6` test when a skip
+  list split the fields) — testing `$6` ungated cost +0.70 CPU-s at 30×.
+- **Newest-first cache copies** (2026-09-30): `bin/build/newest-caches.sh` writes
+  `data/transfer/cache/newest/_files.tsv` (col 6 desc, CoreId asc, `sort -s`) and
+  `newest/_transfers.tsv` (legs by their File's start desc, CoreId asc, stable), in slot 3 after
+  filepages.sh, waited for before details.sh and phase 1. The top-10 ring readers take them through
+  `transfer/lib.sh use_newest_caches` (a copy only when newer than its canonical cache, else the
+  canonical one): details.sh (legs), entities.sh (both), duration.sh + duplicate-files.sh (Files)
+  — the rings fill with their newest Files first, so later Files hit the cheap addtop reject
+  (details −21 %, entities −14 %, duration −24 %, duplicate-files −25 % at production scale,
+  byte-identical, for 2.3 CPU-s of copying; the old "−5 %, the sort costs as much" predates the
+  per-key drill rings). ORDER-SENSITIVE readers (dwell-time, recovered-files, file-type, retry,
+  resubmissions, size-dist, failure-heatmap) keep the canonical caches. The copies keep the
+  canonical basenames: readers dispatch on `FILENAME ~ /_files\.tsv$/`.
 - **Key-aligned and line-aligned slices** (2026-09-28, `bin/ranges.sh`): `grp_cuts FILE N` cuts a
   file SORTED on its first TAB field into byte slices that never split a run of equal keys (blank
   included), `grp_par FILE OUT N CMD…` runs CMD per slice in parallel (slice on stdin, `GRP_PART`
@@ -422,9 +449,7 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
   slices; the build report escapes / groups digits with bash builtins (`esc_v`, `hnum_v`)
   instead of ~400 forks per render. **Measured, no gain — do not retry:** the same
   `index()` prefilter for the whitelisted IPs (~100 IPs: slower than the regex walk);
-  feeding entities.sh its Files newest-first so `addtop` rejects early (-5 %, the sort costs
-  as much — the cost is the per-File arithmetic; `addtop` is 13 % of details.sh); a
-  parallel offset-write assembly of `_parse.tsv` (`cat` copies ~7 GB/s — the merge's tail
+  a parallel offset-write assembly of `_parse.tsv` (`cat` copies ~7 GB/s — the merge's tail
   is its last groups). **Still open:** logon / ssh-crypto / uc2-status / uc4-status /
   auth-activity each scan the whole cache for SSH families (20-45 % of it — per-consumer
   subsets lost, 2026-09-27); ONE shared union subset might pay, but it needs an exact marker
@@ -1498,7 +1523,8 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   key as existing — test EMPTINESS, not membership, when assigning to the same key — and a
   numeric-looking FIELD compares NUMERICALLY with an uninitialized variable (`$2 != cur` is FALSE
   for `$2 == "00"` and unset `cur`: 0 == 0), so a group-change tracker silently merges the "00"
-  group — force the string comparison with `($2 "") != cur`.
+  group — force the string comparison with `($2 "") != cur`. And mawk's `index(s, "")` returns 1,
+  so an `index("0123456789", c)` test on a possibly empty `substr` checks `c != ""` first.
 - **No Python or other interpreters** — bash + awk + `sort`/`sed`/`date` + `jq`.
 - **Tolerate CRLF and LF in the input CSVs** — strip a trailing `\r` during awk parsing so it
   never leaks into a field value, filename or sort key.
@@ -1746,6 +1772,14 @@ front end) then four fix workers with disjoint files. The rules it left:
   `_files` + `_transfers` col 19 feeds both reports. reason-boxes builds its newest-OK-END map once
   (`$TMPD/lok.tsv`) for boxes 14 / 20 / 21 / 15. (A cross-script `_lastok-end.tsv` was NOT made:
   result.sh / kaput-evidence / filepages / details.sh use DIFFERENT rules.)
+- **SSH readers** (lean round 3b): `bin/ssh-family.awk` also holds `acctof(m)` — the account of the
+  first `ACCOUNT@FE<digits>` token, an exact `index()` twin of
+  `match(m, /[A-Za-z0-9_.-]+@FE[0-9]+/)` + `sub(/@.*/, "")` — injected into uc2-status + uc4-status
+  (never paste the regex back). `LOGLINES_AWK`'s drill ring keeps its per-key state in
+  integer-indexed arrays (`_LLi[p]` = the id): test membership with `(p in _LLi)`, never `_LLn`; a
+  line booked under several keys builds the key once and calls `addkey(p, key)`. `date.awk minof`
+  and `logons.sh secof` keep a one-entry day-number cache (a set flag + a STRING comparison
+  `(d "") != cache` — an empty or numeric-looking date against the unset cache compared equal).
 - **Measured, not worth it** (do not retry): an `inbound` server subset, a `day` marker subset for
   day_srv, sharing the three `_files.tsv` subscription sorts (<0.5 CPU-s), one shared SSH subset for
   the logon family readers (breaks even), `grep -F` prefilters (slower than mawk).
@@ -1962,6 +1996,7 @@ bin/session-sites.sh    Unknown groups -> real subscription via the server log's
 bin/build/result.sh              fill the base result columns
 bin/build/publish.sh             index pages + the home; run LAST
 bin/build/logon-summary.sh       the logon summary, once per build (background slot 1)
+bin/build/newest-caches.sh       the newest-first copies of _files.tsv / _transfers.tsv (data/transfer/cache/newest/) for the top-10 ring readers
 bin/build/display-rename.sh      the display-rename sweep (input/rename.txt); the last page-touching step
 bin/build/linkcheck.sh           every link resolves + every page is reachable — a MANUAL gate (verify.sh runs it), build.sh never does
 
