@@ -25,13 +25,11 @@
 _merge_pad() {
     case $(basename "$1" .rpt) in
         hourly|legs-count) echo 2 ;;   # (protocol-journey 2->1: its last-leg table went 2026-09-29)   # (error-reasons stays 1: its 2026-09-28 second table, Reasons over time, rides its tab — tab=reasons)
-        resubmissions|auth-activity) echo 3 ;;   # resubmissions 2->3 (2026-08: + server-log outcomes); dwell-time.sh writes duration-dwell.rpt itself (merge-duration-dwell.sh went 2026-09-30)
+        resubmissions) echo 3 ;;   # resubmissions 2->3 (2026-08: + server-log outcomes); dwell-time.sh writes duration-dwell.rpt itself (merge-duration-dwell.sh went 2026-09-30)
         size-profile) echo 2 ;;   # a Sizes component (the Trends components trend / duration-trend went with their page, 2026-09-29)
         # errors-day 2->1 and error-timing 3->1 (2026-09-28: the per-day table = the Top view; hour + weekday folded into the heatmap)
         attempts|logon) echo 4 ;;         # logon 2->4 (2026-08: + the door-knocker tables)
         size-dist) echo 2 ;;
-        connection-diagnostics) echo 4 ;;   # connection-diagnostics 3->5 (2026-08), 5->4 (2026-09-28: Whitelist usage + Test outcomes gone)
-        inbound-connections) echo 3 ;;      # 5->4 (2026-09-28), 4->3 (2026-09-29: Connections by protocol gone)
         # (ssh-crypto: merged no more since 2026-09-30 — its tables are
         # APPENDED to Security Parameters, append_rpt_tables -f)
         uc3-polling|uc2-visits|pickups|no-remote-dir|no-remote-files) echo 0 ;;   # ride the UC2 / UC3 tabs (2026-09-29)            # RIDES the UC3 tab (its tables carry tab=uc3, 2026-09-05): a missing one contributes NO tab page

@@ -185,7 +185,7 @@ CUR_DATES=""
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — labels/descriptions come from each file's TITLE/DESC).
 transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out same-protocol activity cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage skipped not-in-flow-manager ranking files failed episodes failed-files unknown-transfers waiting-expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell duration-all)
-server_order=(topview errors failure-flows io-errors routing-errors uc-status polling logons connections missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab); site-failures one since 2026-09-28 (its rows = the Per flow connection-failure rows); routing-errors = the 2026-09-28 merge of could-not-send, publish-failed and post-client-action
+server_order=(topview errors failure-flows io-errors routing-errors uc-status polling missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab); site-failures one since 2026-09-28 (its rows = the Per flow connection-failure rows); routing-errors = the 2026-09-28 merge of could-not-send, publish-failed and post-client-action
 
 # ---- the analyses-housed area reports ---------------------------------------
 # The reports whose PAGES live in docs/analyses/ — whatever area their DATA
@@ -248,8 +248,6 @@ report_tabs() {
         file-in-file-out) echo "Handovers|UC4 to UC2" ;;   # 2026-09-29: + uc4-to-uc2 (each component's two tables on one tab)
         errors)        echo "Log reasons|Heatmap|Top messages" ;;   # 2026-09-29: "Log reasons" — server-log LINES by reason, not the Files in error the analyses Error reasons page counts   # 2026-09-29: Per component (the levels per component) rides the server Top view   # 2026-09-28: Per day went (= the Top view), By hour / By weekday folded into the Heatmap, Reasons carries the per-week table (tab=reasons)
         missing-entities) echo "Subscriptions|Accounts|Hosts|Whitelist|Logins" ;;   # the five unknown-* tables (retired and brought back 2026-09-29, user request)
-        connections)   echo "Per day|By account|By address|Failure reasons|By remote host|Test connections|Host keys" ;;   # 2026-09-29: By protocol went (= the Per day column totals)   # 2026-08: + connection-diagnostics tables 4-5; 2026-09-28: Whitelist usage (= Incoming Allowed + Re-screens) and Test outcomes (empty by construction) gone
-        logons)        echo "Scanners|By account|By source IP" ;;   # Incoming / Outgoing went 2026-09-30, user request (-> Partners in / Partners Out, analyses/)   # Near misses + Certificates went 2026-09-30, user request   # 2026-08: + the door-knocker tables (logon component tables 3-4); 2026-09-28: the ssh-key-auth tabs went (Key mismatches = Incoming Bad key, Lockouts now in Incoming Locked, Outbound key failures = a subset of Outgoing)
         uc-status)     echo "UC1|UC2|UC3|UC4" ;;
         protocol)      echo "Direction × action by|Mode" ;;   # 2026-09-30: the Protocol × direction tab went (user request); 2026-09-29: the one-dimension tables (By protocol / By direction / By action by) went — the subtotals of the crosstabs   # the 2026-07 merge: + direction-action's Action By/Crosstab tables + the Mode split
         av-scan)       echo "Breakdown|Per day|Per protocol|Blocked|Not performed|Not first inbound" ;;
@@ -311,7 +309,7 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         connection-efficiency) echo "Connection efficiency" ;;
         failure-flows) echo "Per flow" ;; io-errors) echo "IO errors" ;; routing-errors) echo "Routing errors" ;;
         partners-in) echo "Partners in" ;; partners-out) echo "Partners Out" ;;   # 2026-09-30, user request (Partner scorecard, Blast radius and Application dependencies went the same day)
-        errors) echo "Errors" ;; connections) echo "Connections" ;; logons) echo "Logons" ;;
+        errors) echo "Errors" ;;
         missing-entities) echo "Missing entities" ;;   # (ssh-security: SSH security went 2026-09-30 — its tables ride Security Parameters)
         uc-status) echo "UC status" ;; polling) echo "Polling" ;;
         anomalies) echo "Anomalies" ;;
@@ -892,8 +890,6 @@ help_slug_for() {   # $1 area (transfer|server)  $2 report basename
         retries)             echo "retry" ;;
         file-journey)        echo "patterns" ;;
         errors)              echo "server-errors-day" ;;
-        connections)         echo "server-inbound-connections" ;;
-        logons)              echo "server-logon" ;;
         uc-status)           echo "server-uc1-status" ;;
         files)               echo "size-dist" ;;
         episodes)            echo "recovered" ;;   # 2026-09-29: its Episodes tab went — the report IS Recovered flows
@@ -2029,7 +2025,6 @@ _report_groups() {
         "Activity & volume|transfer/activity=Activity|transfer/ranking=Ranking|transfer/files=Sizes & types|transfer/month-stats/this=Month stats" \
         "Flow patterns|transfer/file-journey=File journey|transfer/file-in-file-out=File in - File out|transfer/same-protocol=Inbound and Outbound same Protocol" \
         "Protocols & security|transfer/protocol=Protocol, Direction & Mode|transfer/security-params=Security Parameters|transfer/security-outreach=Security outreach|transfer/av-scan=AV Scan|transfer/connection-efficiency=Connection efficiency" \
-        "Logons & connections|server/logons=Logons|server/connections=Connections" \
         "Partners|analyses/partners-in=Partners in|analyses/partners-out=Partners Out" \
         "Configuration|analyses/subscriptions=Configured subscriptions|analyses/accounts=Configured accounts|analyses/logical-detection=Logical detection|analyses/xref/cross=Cross References" \
         "Coverage|analyses/first-seen=First seen|transfer/entity-coverage=Entity coverage|transfer/not-in-flow-manager=Not in Flow Manager|transfer/skipped=Skipped|server/missing-entities=Missing entities"

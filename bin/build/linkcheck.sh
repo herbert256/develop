@@ -21,7 +21,7 @@
 #     transfer/entities/subscription-all.html (the site map icon went 2026-09-30),
 #     transfer/duration.html + transfer/waiting-expired.html (the Duration and
 #     Waiting/Expired links, 2026-09-30), analyses/partners-in.html (the
-#     Partners link, 2026-09-30), server/logons-scanners.html (Logons), transfer/security-params.html,
+#     Partners link, 2026-09-30), transfer/security-params.html,
 #     analyses/first-seen.html, analyses/subscriptions.html,
 #     analyses/use-cases.html, transfer/file-journey-patterns.html and
 #     transfer/activity-per-week.html (Security · Seen · Configuration · Use
@@ -154,7 +154,6 @@ awk -v DOCS="$DOCS" '
                     edge(page, b "transfer/duration.html")          # the Duration link (2026-09-30)
                     edge(page, b "transfer/waiting-expired.html")   # the Waiting/Expired link (2026-09-30)
                     edge(page, b "analyses/partners-in.html")      # the Partners link (2026-09-30)
-                    edge(page, b "server/logons-scanners.html")    # the Logons link (2026-09-30)
                     # the six links that replaced the Reports pulldown (2026-09-30)
                     edge(page, b "transfer/security-params.html")
                     edge(page, b "analyses/first-seen.html")

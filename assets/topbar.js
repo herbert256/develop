@@ -47,7 +47,7 @@
   // 1 the brand — its TEXT is the environment label (input/environment.txt;
   // "Axway ST" without one), or on a runtime checkout the pair "Acceptance /
   // Production", the active one bold and yellow (.envcur) linking the home
-  // page · 2 Overview · Errors · Duration · Partners · Logons · Waiting/Expired ·
+  // page · 2 Overview · Errors · Duration · Partners · Waiting/Expired ·
   // Security · Seen · Configuration · Use cases · Patterns · Activity ·
   // Entities · Files + the search icon (ONE cluster, 2026-09-29; since
   // 2026-09-30, user request, Errors right after Overview, Duration ->
@@ -58,7 +58,7 @@
   // like Duration, right after Duration since the night; the six links after
   // Waiting/Expired replaced the Reports pulldown the same night) · 3 the
   // Dashboard link · 4 the help icon (the site map icon went 2026-09-30 with
-  // the site map; Logons, after Partners, the same night).
+  // the site map; Logons, after Partners, went again with its reports).
   function buildTopbar() {
     var tb = document.querySelector("div.topbar");
     if (!tb || tb.firstChild) return;
@@ -84,9 +84,6 @@
       (M.errors ? '<a class="entlabel" href="' + b + esc(M.errors) + '">Errors</a>' : "") +
       '<a class="entlabel" href="' + b + 'transfer/duration.html">Duration</a>' +
       '<a class="entlabel" href="' + b + 'analyses/partners-in.html">Partners</a>' +
-      // (2026-09-30, with the site map and the Reports start page gone: the
-      // Logons & connections group's only way in — its first page, Logons)
-      '<a class="entlabel" href="' + b + 'server/logons-scanners.html">Logons</a>' +
       '<a class="entlabel" href="' + b + 'transfer/waiting-expired.html">Waiting/Expired</a>' +
       // (2026-09-30, user request, with the Reports pulldown gone: the
       // groups it opened, as fixed paths right after Waiting/Expired)

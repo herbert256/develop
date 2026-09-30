@@ -49,8 +49,10 @@ pool_run "$SCRIPT_DIR/../analyses/reports/uc4-status.sh"
 # LAST job and, six workers wide, the one that ran on alone at the end of
 # the stage (11 s on production); an early start folds it into the busy part
 pool_run "$SCRIPT_DIR/reports/unknown-entities.sh"   # ONE map-reduce pass -> all five unknown-* rpts (2026-07)
-pool_run "$SCRIPT_DIR/reports/auth-activity.sh"
-pool_run "$SCRIPT_DIR/reports/inbound-connections.sh"   # the whole cache (an "inbound" subset measured a loss, 2026-09-30 — bin/server/subsets.sh)
+pool_run "$SCRIPT_DIR/reports/auth-activity.sh"   # PAGELESS since 2026-09-30: entity-coverage reads auth-activity.rpt + auth-logins.tsv
+# (inbound-connections.sh and connection-diagnostics.sh — the Connections
+# page — and the merges connections.sh / logons.sh went 2026-09-30, user
+# request: "Remove the 10 Logons & connections reports (and the builds for it)")
 # (bin/build/kaput-evidence.sh — went-kaput.sh here until 2026-09-30 — is not in this pool: bin/build.sh runs it once, early — right
 # after result.sh — because failed.sh and details.sh read its evidence sidecar)
 # (transfer-site-missing.sh — the "Transfer site missing" report — was removed
@@ -79,7 +81,6 @@ pool_run "$SCRIPT_DIR/reports/error-reasons.sh"
 pool_run "$SCRIPT_DIR/reports/failure-flows.sh"
 pool_run "$SCRIPT_DIR/reports/io-errors.sh"          # "IO Error reading file /data/FlowManager/…" — the srv-errors group's third member (2026-09-06)
 pool_run "$SCRIPT_DIR/reports/routing-errors.sh"     # "Advanced Routing errors" — the AR0074 / ARPA0001 / ARRC0009 lines in one table (2026-09-28: was could-not-send, publish-failed, post-client-action)
-pool_run "$SCRIPT_DIR/reports/connection-diagnostics.sh"
 pool_run "$SCRIPT_DIR/../analyses/reports/uc1-status.sh"
 pool_run "$SCRIPT_DIR/reports/deploy-errors.sh"
 pool_run "$SCRIPT_DIR/reports/remote-poll.sh"
@@ -98,8 +99,6 @@ pool_wait
 append_rpt_tables "$REPORTS_DIR/topview.rpt" "$REPORTS_DIR/errors-day.rpt"
 "$SCRIPT_DIR/reports/errors.sh"
 "$SCRIPT_DIR/reports/missing-entities.sh"   # the five unknown-* tables as one tabbed page (retired and brought back 2026-09-29, user request)
-"$SCRIPT_DIR/reports/connections.sh"
-"$SCRIPT_DIR/reports/logons.sh"
 # (the "Operations & Capacity" group — Platform health, Capacity & sessions,
 # EventQueue — was removed 2026-09-27, user request: its merges and the
 # cluster-health / stuck-events / scheduler-overruns / file-cleanup

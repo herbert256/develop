@@ -12,8 +12,8 @@
 #                      buckets, Outgoing host + loglines + Last) and
 #                      bin/sample/verify.sh. No TABLE modifiers, KIND or
 #                      RECALC — no page renders them; HEAD stays as the legend.
-#   logon-scanners.rpt the Scanners table — a component of the merged Logons
-#                      report (logons.sh)
+#   (logon-scanners.rpt — the Scanners table, the Logons page — went
+#   2026-09-30 with the Logons & connections group, user request)
 #
 #   INCOMING — the logon funnel per login, from the TM "[Ssh Default]" lines:
 #     [Ssh Default] Allowed user 'U' from address 'IP'          (Info)
@@ -65,7 +65,7 @@
 #
 # Usage:
 #   ./logon.sh    # reads the server parse cache, writes data/server/reports/
-#                 # logon.rpt + logon-scanners.rpt
+#                 # logon.rpt
 #
 set -euo pipefail
 
@@ -75,7 +75,6 @@ source "$SCRIPT_DIR/../../logons.sh"   # ensure_logons(): the per-login logon su
 source "$SCRIPT_DIR/../../blacklist.sh"   # the platform-internal pseudo-logins stay out of the Incoming/door-knocker rows
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/logon.rpt"
-SCAN_OUT="$REPORTS_DIR/logon-scanners.rpt"
 
 # Entity cross-links (outbound table): known account / remote-host names from
 # the transfer-side reports (ROW field 2 of each report's FIRST table). A user
@@ -117,8 +116,6 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # Emits TAB-separated:
 #   R   <TAB> user <TAB> a t d n b k l r x <TAB> buckets <TAB> 9 drill fields
 #   OUT <TAB> count <TAB> host <TAB> user <TAB> pw key cert other <TAB> reason <TAB> first <TAB> last <TAB> sessions (\037) <TAB> loglines
-#   SC  <TAB> name <TAB> count <TAB> nips <TAB> ips (", "-joined, "-" = none) <TAB> first <TAB> last <TAB> buckets <TAB> loglines  (scanner door knockers)
-#   DKT <TAB> total <TAB> nnames
 #   TOT <TAB> a t d n b k l totals <TAB> outbound_total
 # The drill fields are \x1f-joined "date time  Level Component  message"
 # entries; empty middle fields use the "-" sentinel (the bash loop reads the
@@ -128,16 +125,6 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # the ONE copy bin/logons.sh (the logon summary) shares (2026-09-30)
 agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$(cat "$ROOT/bin/ssh-family.awk")"'
     BEGIN { bl_load(BLF) }
-    # sortjoin(s): a SUBSEP-joined set as a ", "-separated SORTED list —
-    # sorted so the output never depends on awk hash order (the scanner IPs
-    # column, 2026-08-31, user request)
-    function sortjoin(s,   n9, A9, i9, j9, v9, o9) {
-        n9 = split(s, A9, SUBSEP)
-        for (i9 = 2; i9 <= n9; i9++) { v9 = A9[i9]; j9 = i9 - 1; while (j9 >= 1 && A9[j9] > v9) { A9[j9+1] = A9[j9]; j9-- } A9[j9+1] = v9 }
-        o9 = ""
-        for (i9 = 1; i9 <= n9; i9++) o9 = o9 (o9 == "" ? "" : ", ") A9[i9]
-        return o9
-    }
     function last5(p,   s, a4, n, i, out) {
         s = lastlines(p); n = split(s, a4, _US); out = ""
         for (i = 1; i <= n && i <= 5; i++) out = out (out == "" ? "" : _US) a4[i]
@@ -166,22 +153,9 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
             # keep the Allowed-coverage window intact: a prefixed line is an
             # [Ssh Default] line and used to feed fss before this block existed
             if (index(m, "[Ssh Default]") > 0 && $1 ~ /^[0-9][0-9][0-9][0-9]-/ && (fss == "" || $1 < fss)) fss = $1
-            u2 = ""
-            if (match(m, /User "[^"]*"/)) u2 = substr(m, RSTART + 6, RLENGTH - 7)
-            if (u2 == "") next
-            # the platform logs *nobody (and kin) as its OWN placeholder for
-            # an unusable client name — a blacklisted pseudo-login is not a
-            # door knocker row (the probing evidence stays in the raw log)
-            if (bl_blank("login", u2)) next
-            ip2 = m; sub(/^.*Remote address: */, "", ip2); sub(/[. ]*$/, "", ip2); sub(/^\//, "", ip2)
-            dkc[u2]++; dkT++
-            if (!((u2 SUBSEP ip2) in dkip)) { dkip[u2 SUBSEP ip2] = 0; dkips[u2]++ }
-            dkip[u2 SUBSEP ip2]++
-            d2 = substr($1, 1, 10)
-            if (d2 ~ /^[0-9][0-9][0-9][0-9]-/) { dkd[u2 SUBSEP d2]++
-                if (dkf[u2] == "" || d2 < dkf[u2]) dkf[u2] = d2
-                if (d2 > dkl[u2]) dkl[u2] = d2 }
-            addline("DK" SUBSEP u2, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
+            # (the Scanners row of the knocker — attempts, source IPs, days, drill
+            # lines — went 2026-09-30 with the Logons page, user request; the
+            # line still never reaches the funnel)
             next
         }
         # OUTGOING: us failing to authenticate at a partner
@@ -276,17 +250,10 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
             nrs++; RSu[nrs] = u; RSd[nrs] = $1; RSt[nrs] = $1 " " $2; RSs[nrs] = $6; RSl[nrs] = lvlname($3) " " compname($4) "  " substr(m, 1, 200)
             next
         }
-        if (side == "N") {
-            # a No-account line of a name Flow Manager does not configure is
-            # door-knocker evidence logged with the funnel wording (2026-09-04,
-            # user request): its source address and drill line are kept so
-            # END can move such a name into the knocker tables
-            ipn = ""
-            if (match(m, /Remote address: *[^ ]+/)) { ipn = substr(m, RSTART, RLENGTH); sub(/^Remote address: */, "", ipn); sub(/[. ]*$/, "", ipn); sub(/^\//, "", ipn) }
-            else if (match(m, /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/)) ipn = substr(m, RSTART, RLENGTH)
-            if (ipn != "") nip[u SUBSEP ipn]++
-            addline("DK" SUBSEP u, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
-        }
+        # (a No-account line of a name Flow Manager does not configure is
+        # door-knocker evidence logged with the funnel wording, 2026-09-04 —
+        # END moves such a name out of Incoming; its source address and drill
+        # line fed the Scanners table until 2026-09-30)
         book(side, u, $1, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
     }
     END {
@@ -309,8 +276,7 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
         # find account with username"), not a login of ours (2026-09-04, user
         # request — it sat on Incoming as the one row without a detail page):
         # no Incoming row, its count leaves the No account total, and it
-        # joins the knocker tables, folded with any "not associated" lines
-        # of the same name (its drill lines already sit under the DK key)
+        # counted nowhere else (the knocker Scanners table went 2026-09-30)
         for (u in users) {
             if (u in klog) continue
             if ((cnt["N" SUBSEP u] + 0) == 0) continue
@@ -320,19 +286,7 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
             moved[u] = 1
             tot["N"] -= cnt["N" SUBSEP u]
             tot["X"] -= cnt["X" SUBSEP u] + 0   # the session errors of a knocker leave with it
-            dkc[u] += cnt["N" SUBSEP u]; dkT += cnt["N" SUBSEP u]
         }
-        for (x in nip) { split(x, a6, SUBSEP)
-            if (!(a6[1] in moved)) continue
-            if (!(x in dkip)) { dkip[x] = 0; dkips[a6[1]]++ }
-            dkip[x] += nip[x] }
-        for (k in days) { split(k, a6, SUBSEP)
-            if (!(a6[1] in moved)) continue
-            n6 = bk[k SUBSEP "N"] + 0
-            if (n6 == 0) continue
-            dkd[k] += n6
-            if (dkf[a6[1]] == "" || a6[2] < dkf[a6[1]]) dkf[a6[1]] = a6[2]
-            if (a6[2] > dkl[a6[1]]) dkl[a6[1]] = a6[2] }
         # per-user per-day buckets (entry order is hash order — report.js
         # consumes @data:buckets as a set, the one accepted variance)
         for (k in days) { split(k, a, SUBSEP)
@@ -365,22 +319,6 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
                    opw[k]+0, oky[k]+0, ocr[k]+0, oot[k]+0, \
                    orsn[k], ofst[k], olst[k], (oss[k] == "" ? "-" : substr(oss[k], 2)), lastlines("O" SUBSEP k)
         }
-        # ---- door knockers ----
-        for (x in dkd) { split(x, a5, SUBSEP); dkb[a5[1]] = dkb[a5[1]] (dkb[a5[1]] == "" ? "" : ",") a5[2] ":" dkd[x] }
-        # the scanner names distinct source ADDRESSES, ", "-joined per name
-        # (the IPs column — 2026-08-31, user request); collected here in hash
-        # order, sortjoin() below makes the list deterministic
-        for (x in dkip) { split(x, a5, SUBSEP)
-            if (a5[1] !~ /^FE[0-9]+$/) scip[a5[1]] = scip[a5[1]] (scip[a5[1]] == "" ? "" : SUBSEP) a5[2] }
-        nkn = 0
-        # (the FE-namespace knockers had their own near-miss table until
-        # 2026-09-30, user request — they stay out of Incoming, listed nowhere)
-        for (u in dkc) { nkn++
-            if (u !~ /^FE[0-9]+$/)
-                printf "SC\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t%s\n", u, dkc[u], dkips[u]+0, (scip[u] == "" ? "-" : sortjoin(scip[u])), dkf[u], dkl[u], \
-                    (dkb[u] == "" ? "-" : dkb[u]), lastlines("DK" SUBSEP u)
-        }
-        printf "DKT\t%d\t%d\n", dkT+0, nkn+0
         line = "TOT"
         for (i = 1; i <= ns; i++) line = line "\t" (tot[S[i]]+0)
         print line "\t" (ototal+0) "\t" (opwT+0) "\t" (okyT+0) "\t" (ocrT+0) "\t" (ootT+0)
@@ -393,7 +331,7 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
 
 if [ -z "$agg" ]; then
     echo "No usable records found." >&2
-    rm -f "$OUT" "$SCAN_OUT"   # no data for this ENV — nothing published (an env-split legitimate state)
+    rm -f "$OUT"   # no data for this ENV — nothing published (an env-split legitimate state)
     exit 0
 fi
 
@@ -462,23 +400,6 @@ rows() {
               else          print $0, af9, "\342\200\224", "\342\200\224", "-", "Never" }')"
 }
 
-# ---- door knockers (2026-08): the scanner table's row writer. Capped at 25
-# rows (awk NR guard, never head), it totals the SHOWN rows only, per the
-# top-N convention. The table is emitted UNCONDITIONALLY (a placeholder row
-# when the family is absent): logon-scanners.rpt is a merged component of
-# Logons, whose tab bar enumerates tables, so the TABLE count must not vary.
-IFS=$'\t' read -r _ dk_tot dk_names <<< "$(printf '%s\n' "$agg" | grep $'^DKT\t' || printf 'DKT\t0\t0\n')"
-n_scan=0; scan_att=0
-scan_rows() {
-    while IFS=$'\t' read -r _ name count nips ips fst lst bkt lines; do
-        [ -n "$name" ] || continue
-        [ "$bkt" = "-" ] && bkt=""
-        [ "$ips" = "-" ] && ips=""
-        n_scan=$((n_scan + 1)); scan_att=$((scan_att + count))
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' \
-            "$name" "$count" "$nips" "$ips" "$fst" "$lst" "$bkt" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^SC\t' | LC_ALL=C sort -t"$(printf '\t')" -k3,3nr -k2,2 | awk 'NR <= 25')"
-}
 
 n_pairs=0
 # The SUBSCRIPTION of an Outgoing pair (2026-09-30, user request): the
@@ -557,27 +478,4 @@ out_rows() {
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
-# logon-scanners.rpt — the Scanners table, a component of the merged Logons
-# report (logons.sh: its first tab since 2026-09-30)
-{
-    printf 'TITLE\tLogon scanners\n'
-    # ---- door knockers: the scanner top 25 (2026-08; the near-miss table went
-    # 2026-09-30, user request)
-    if [ "${dk_tot:-0}" -gt 0 ]; then
-        printf 'TABLE\tDoor knockers — scanner names\twide\tnoagg=2,3\tdrill=log line\n'
-    else
-        printf 'TABLE\tDoor knockers — scanner names\tnofilter\tnosort\n'
-    fi
-    printf 'HEAD\tUsername\tAttempts\tSource IPs\tIPs\tFirst\tLast\n'
-    printf 'KIND\tmono\tnumfailed\tnum\ttext\ttext\ttext\n'
-    printf 'RECALC\t-\ts0\t-\t-\t-\t-\n'
-    if [ "${dk_tot:-0}" -gt 0 ]; then
-        scan_rows
-    else
-        printf 'ROW\t@{colspan=6}No door-knocker lines in this data window.\n'
-    fi
-    printf 'TOTAL\tTotal (top %s of %s name(s))\t@{class=num failed}%s\t\t\t\t\n' "$n_scan" "${dk_names:-0}" "$scan_att"
-    printf 'FOOT\n'
-} > "$SCAN_OUT.tmp" && mv "$SCAN_OUT.tmp" "$SCAN_OUT"
-
-echo "Data written to $OUT + logon-scanners.rpt ($nrows login(s): $atot allowed, ${rtot:-0} re-screen(s), $ttot authenticated, $dtot disallowed, $ntot no-account, $btot bad-key, $ktot key-failure, $ltot locked, $xtot session error(s); $ototal outbound failure(s))." >&2
+echo "Data written to $OUT ($nrows login(s): $atot allowed, ${rtot:-0} re-screen(s), $ttot authenticated, $dtot disallowed, $ntot no-account, $btot bad-key, $ktot key-failure, $ltot locked, $xtot session error(s); $ototal outbound failure(s))." >&2

@@ -504,6 +504,16 @@ write_root_index() {
         esc "$title"; printf '<h1>%s</h1>\n' "$ESC"
         HOME_ENV_DATA="data"
         write_home_block
+        # the BUILD STAMP at the bottom (2026-09-30, user request: "Have at the
+        # bottom of the home page a link \"Build on yyyy-mm-dd hh:mm:ss\" that
+        # points to the build.html page") — the build's start, bin/build.sh
+        # AXWAY_BUILD_START; a publish run on its own knows no build and says so
+        if [ -n "${AXWAY_BUILD_START:-}" ]; then
+            esc "Build on $AXWAY_BUILD_START"
+        else
+            esc "Build report"
+        fi
+        printf '<p class="buildstamp"><a href="tools/build.html">%s</a></p>\n' "$ESC"
         printf '</body>\n</html>\n'
     } > "$out"
 }

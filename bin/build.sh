@@ -670,6 +670,7 @@ export LC_COLLATE=C
 # subscription page's Files table — the cache-buster of its day list
 # docs/search/all/s/<slug>.js, which is written after the pages render
 export AXWAY_BUILD_ID="$BUILD_T0"
+export AXWAY_BUILD_START="$BUILD_START"   # the home page's "Build on …" link (bin/build/publish.sh, 2026-09-30)
 
 # bg_step_start LABEL COMMAND [ARG...] / bg_step_wait — one step running in
 # the background beside the foreground run_steps: output goes to its own log

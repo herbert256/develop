@@ -295,7 +295,7 @@ then → ~3:18 in rounds 15-27 (2026-09-28); every round byte-identical on a dev
 - **Server-cache subsets** (`bin/server/subsets.sh`, `srv_subset NAME` in `bin/server/lib.sh`): the
   RARE message families of uc1-status, the POLL families (`poll`: uc3-status, remote-poll,
   no-remote-dir, no-remote-files — one subset since 2026-09-30; the old uc3 / remote-poll pair were
-  72 lines apart), connection-diagnostics (+ site-failures), ssh-sessions, deploy-errors (it keeps
+  72 lines apart), connection-diagnostics (its one consumer site-failures since 2026-09-30 — the subset keeps the name), ssh-sessions, deploy-errors (it keeps
   the poll marker: its UC3 poll-recovery clear reads those lines), routing-errors and event-queue,
   copied once per cache. Every line a consumer acts on must contain one of its fixed-string
   MARKERS — change a consumer's patterns, change its markers. Two RULE subsets sit outside the
@@ -1388,8 +1388,8 @@ the top bar links the groups by FIXED paths in assets/topbar.js — Overview · 
 Duration · Partners · Waiting/Expired · Security (`transfer/security-params.html`) · Seen
 (`analyses/first-seen.html`) · Configuration (`analyses/subscriptions.html`) · Use cases
 (`analyses/use-cases.html`) · Patterns (`transfer/file-journey-patterns.html`) · Activity
-(`transfer/activity-per-week.html`) · Entities · Files, and Logons (`server/logons-scanners.html`, after
-Partners) since the Reports start page and the sitemap went the same night (see the eighth batch). `REPORTS_MENU`, topbar-data.js `reports`, the `.dd`
+(`transfer/activity-per-week.html`) · Entities · Files (a Logons link after Partners lived an hour: the
+Logons & connections group went the same night, see the ninth request). `REPORTS_MENU`, topbar-data.js `reports`, the `.dd`
 dropdown CSS and report.js's Escape handler went; linkcheck models the fixed links, verify.sh the
 order and the absence. The history below describes the 2026-09-29 pulldown the groups came from.
 
@@ -1406,7 +1406,7 @@ and Subscriptions in boxes went the same day) · Entities · Errors (Failures un
 errors, Routing errors — the separate "Server log errors" group was folded in 2026-09-29, user
 request; + Unknown transfers) · Use cases & delivery · Activity & volume · Performance
 · Flow patterns · Protocols & security (Security Parameters carries the SSH security tables since
-2026-09-30) · Logons & connections ·
+2026-09-30) · (Logons & connections until 2026-09-30) ·
 Partners · Configuration · Coverage — every published report is in exactly one (the
 former boxes-only reports included). (The **Cleanup** group — Cleanup backlog, Config hygiene,
 Whitelist audit, Account sharing, Twins — went 2026-09-29 with Sources and targets, File journey
@@ -1555,7 +1555,8 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   "Sizes & types", "Duration", … — the start page reads the TITLE, the help `<h1>` repeats
   it. The Configuration pair is **Configured subscriptions** / **Configured accounts** (the Entities
   group keeps Subscriptions / Accounts). A new report: label and TITLE the same.
-- **Connections split In / Out** (`inbound-connections.sh`, the three volume tabs): a TM
+- **Connections split In / Out** (`inbound-connections.sh`, the three volume tabs — GONE 2026-09-30 with the
+  Connections page; the rule lives on in bin/logons.sh): a TM
   "had initiated a connection" line that names a login is a partner connecting IN, `login name ""`
   is SecureTransport connecting OUT (bin/logons.sh's reading). (Its sidecar `_inbound-addr.tsv`
   and `bin/server-inbound-addr.awk` went 2026-09-29 with their readers, the Whitelist audit and
@@ -1801,14 +1802,28 @@ front end) then four fix workers with disjoint files. The rules it left:
   Partners row by stem. verify.sh checks the rows, the names and the totals. A column change in a writer needs
   its RULES string changed in step (one rule per ROW field from field 3).
 
+## Rules from the ninth 2026-09-30 request ("Remove the 10 Logons & connections reports … Build on …")
+
+- **The Logons & connections group is GONE** (Logons: Scanners · By account · By source IP; Connections:
+  Per day · By account · By address · Failure reasons · By remote host · Test connections · Host keys), with
+  its builds: `inbound-connections.sh`, `connection-diagnostics.sh`, the merges `connections.sh` /
+  `logons.sh`, logon.sh's Scanners table (`logon-scanners.rpt` and every door-knocker accumulator — the
+  knocker DETECTION stays: those names never reach Incoming), the help pages `server-logon` /
+  `server-inbound-connections`, the top-bar Logons link. `auth-activity.sh` stays PAGELESS for
+  entity-coverage: ONE By account table (account, logons) + `auth-logins.tsv` (proven identical). The
+  `connection-diagnostics` SUBSET stays (site-failures reads it). logon.rpt proven byte-identical. Never
+  restore; verify.sh asserts the absence.
+- **The home page ends with "Build on yyyy-mm-dd hh:mm:ss"** linking `tools/build.html` — the build's start,
+  `AXWAY_BUILD_START` (exported by bin/build.sh; a publish run on its own prints "Build report"); class
+  `buildstamp`, quiet and centered. verify.sh checks the shape.
+
 ## Rules from the eighth 2026-09-30 request ("remove the sitemap and the reports start page")
 
 - **No site map, no Reports start page**: `docs/tools/sitemap.html` (write_sitemap, the top-bar 🗺 icon,
   the `.smcard` CSS, help/sitemap.html) and `docs/reports/index.html` (write_reports_index, rg_desc,
-  help/index.html) are GONE — never restore. What only they reached got a new way in: **Logons**
-  (`server/logons-scanners.html`, the Logons & connections group) is a top-bar link after Partners, and the
-  **build report** (`tools/build.html`) is linked from `help/general.html`. linkcheck models the Logons
-  edge; verify.sh asserts the absence of both pages, their help pages and every link to them.
+  help/index.html) are GONE — never restore. What only they reached got a new way in: the
+  **build report** (`tools/build.html`) is linked from `help/general.html` and the home page's "Build on …"
+  (the ninth request); the Logons & connections group's top-bar Logons link went with the group. verify.sh asserts the absence of both pages, their help pages and every link to them.
 
 ## Rules from the seventh 2026-09-30 batch ("a few different things", user request, late)
 

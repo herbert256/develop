@@ -157,7 +157,12 @@ check $([ "${pmn:-0}" -gt 0 ] && [ "${pmok:-x}" = "$pmn" ] && [ "${pmmiss:-1}" =
 check $(awk -F'\t' '$1 == "GHEAD" { g = $0 } $1 == "HEAD" { h = $0 } END { print (g ~ /Files In/ && g ~ /colspan=5,class=gband gsep}Files Out/ && g !~ /Pickup/ && g ~ /Logons/ && g ~ /Screening/ && h !~ /\tNo account|\tKey failures|\tSession errors|\tRe-screens|\tFirst logon|\tOldest waiting|\tPickups|\tLast logon/) ? 0 : 1 }' data/analyses/reports/partners-in.rpt 2>/dev/null || echo 1) "partners-in.rpt lacks the Files In / Files Out (5 columns, Pickup merged in) / Logons / Screening groups or still carries a removed column (No account, Key failures, Session errors, Re-screens, First logon, Oldest waiting, Pickups, Last logon)"
 n=$(ls docs/server/logons-incoming.html docs/server/logons-outgoing.html 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${n:-1}" = 0 ] && ! grep -rqs 'logons-incoming\.html\|logons-outgoing\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "the retired Logons Incoming / Outgoing tab pages are back or still linked"
-check $([ -f docs/server/logons-scanners.html ] && [ "$(command grep -c $'^TABLE\t' data/server/reports/logons.rpt 2>/dev/null)" = 3 ] && echo 0 || echo 1) "Logons is not Scanners · By account · By source IP (docs/server/logons-scanners.html + 3 tables)"
+# the Logons & connections group is GONE (2026-09-30, user request: "Remove the
+# 10 Logons & connections reports (and the builds for it)"): no page, writer,
+# merge, help page or link; auth-activity stays a pageless producer for
+# entity-coverage (one By account table + auth-logins.tsv)
+n=$(ls docs/server/logons-*.html docs/server/connections-*.html bin/server/reports/inbound-connections.sh bin/server/reports/connection-diagnostics.sh bin/server/reports/connections.sh bin/server/reports/logons.sh data/server/reports/logons.rpt data/server/reports/connections.rpt data/server/reports/logon-scanners.rpt data/server/reports/inbound-connections.rpt data/server/reports/connection-diagnostics.rpt docs/help/server-logon.html docs/help/server-inbound-connections.html 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-1}" = 0 ] && ! grep -rqsE 'server/(logons|connections)-[a-z-]+\.html|help/server-(logon|inbound-connections)\.html' docs --include='*.html' --include='*.js' && [ "$(command grep -c $'^TABLE\t' data/server/reports/auth-activity.rpt 2>/dev/null)" = 1 ] && [ -s data/server/reports/auth-logins.tsv ] && echo 0 || echo 1) "the Logons & connections reports are back or still linked (or auth-activity.rpt is not its one By account table + auth-logins.tsv)"
 # Partners Out (2026-09-30, user request: Logons › Outgoing renamed, all
 # hosts): every base host has a row, the failure totals equal logon.rpt's
 # Outgoing TOTAL, every host of a UC-named configured subscription shows that
@@ -281,13 +286,11 @@ n=$(awk -F'\t' '$12=="UC3_APS_FMGENLOG_PIEDPIPER" && $2=="Processed" && $17=="in
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "the extended-site flow UC3_APS_FMGENLOG_PIEDPIPER has 0 Processed file(s) with movement 'in'"
 # the UNCONFIGURED no-account name (2026-09-04): the funnel's own
 # "Unable to find account with username: svc-backup" rejection is a door
-# knocker — a Scanners row, never an Incoming row (it would be the one
+# knocker — never an Incoming row (it would be the one
 # Incoming row without a detail page)
 R="data/server/reports/logon.rpt"
 inc=$(awk -F'\t' '$1=="TABLE" { t=$2 } $1=="ROW" && t=="Incoming" && index($2, "svc-backup") { n++ } END { print n+0 }' "$R" 2>/dev/null)
-scn=$(awk -F'\t' '$1=="TABLE" { t=$2 } $1=="ROW" && t ~ /scanner names/ && index($2, "svc-backup") { n++ } END { print n+0 }' "data/server/reports/logon-scanners.rpt" 2>/dev/null)
 check $([ "${inc:-1}" -eq 0 ] && echo 0 || echo 1) "logon Incoming lists svc-backup ($inc row(s)), expected none (unconfigured no-account name is a door knocker)"
-check $([ "${scn:-0}" -ge 1 ] && echo 0 || echo 1) "logon Scanners lacks svc-backup, expected a row (the funnel no-account rejection)"
 # the PERSISTENT connection (2026-09-06, the FE000508 finding): the first
 # login's hourly re-key screenings count under Re-screens, not Allowed,
 # its weekly CMS-parsing pair lands in Session errors (the row's green
@@ -817,9 +820,9 @@ check $(grep -q 'data-restint' docs/transfer/duration-longest.html 2>/dev/null &
 # Reports pulldown) — the entlabel links of topbar.js in order, each with its
 # fixed target, then the search icon
 tbl=$(grep 'class="entlabel"' docs/assets/topbar.js 2>/dev/null | sed -E 's/.*">([^<]+)<\/a>.*/\1/' | tr '\n' '|')
-want='Overview|Errors|Duration|Partners|Logons|Waiting/Expired|Security|Seen|Configuration|Use cases|Patterns|Activity|Entities|Files|'
+want='Overview|Errors|Duration|Partners|Waiting/Expired|Security|Seen|Configuration|Use cases|Patterns|Activity|Entities|Files|'
 ok=0; [ "$tbl" = "$want" ] || ok=1
-for lk in 'transfer/duration.html">Duration' 'analyses/partners-in.html">Partners' 'server/logons-scanners.html">Logons' 'transfer/waiting-expired.html">Waiting/Expired' 'transfer/security-params.html">Security' 'analyses/first-seen.html">Seen' 'analyses/subscriptions.html">Configuration' 'analyses/use-cases.html">Use cases' 'transfer/file-journey-patterns.html">Patterns' 'transfer/activity-per-week.html">Activity' 'transfer/entities/subscription-all.html">Entities' 'search/all-files.html">Files'; do
+for lk in 'transfer/duration.html">Duration' 'analyses/partners-in.html">Partners' 'transfer/waiting-expired.html">Waiting/Expired' 'transfer/security-params.html">Security' 'analyses/first-seen.html">Seen' 'analyses/subscriptions.html">Configuration' 'analyses/use-cases.html">Use cases' 'transfer/file-journey-patterns.html">Patterns' 'transfer/activity-per-week.html">Activity' 'transfer/entities/subscription-all.html">Entities' 'search/all-files.html">Files'; do
     grep -qF "$lk</a>" docs/assets/topbar.js 2>/dev/null || ok=1
 done
 check $ok "topbar.js cluster is '${tbl}', expected '${want}' with the fixed targets (Duration -> transfer/duration.html … Activity -> transfer/activity-per-week.html)"
@@ -852,6 +855,9 @@ for p in build.html; do
     check $([ ! -e "docs/$p" ] && echo 0 || echo 1) "docs/$p still sits at the docs root"
 done
 check $(grep -q 'href="../tools/build.html"' docs/help/general.html 2>/dev/null && echo 0 || echo 1) "help/general.html does not link the build report ../tools/build.html"
+# the home page ends with "Build on yyyy-mm-dd hh:mm:ss" linking the build
+# report (2026-09-30, user request) — the build's start (AXWAY_BUILD_START)
+check $(grep -qE '<p class="buildstamp"><a href="tools/build.html">Build on [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}</a></p>' docs/index.html 2>/dev/null && echo 0 || echo 1) "docs/index.html lacks the 'Build on yyyy-mm-dd hh:mm:ss' link to tools/build.html at the bottom"
 check $([ ! -e docs/tools/sitemap.html ] && [ ! -e docs/reports ] && [ ! -e docs/help/sitemap.html ] && [ ! -e docs/help/index.html ] && ! grep -rqsE 'tools/sitemap\.html|reports/index\.html|help/sitemap\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "the site map or the Reports start page (or their help pages) are back or still linked"
 check $([ -z "$(ls docs/tools/whats-new.html docs/help/whats-new.html bin/build/whats-new-history.tsv 2>/dev/null)" ] && echo 0 || echo 1) "What is new (tools/whats-new.html, its help page or bin/build/whats-new-history.tsv) still exists"
 check $(grep -rlq 'whats-new' docs --include='*.html' 2>/dev/null && echo 1 || echo 0) "a page still links whats-new"
@@ -1371,16 +1377,7 @@ check $([ "${n:-0}" -ge 1 ] && [ "${m:-1}" = 0 ] && echo 0 || echo 1) "entities/
 check $([ -s data/transfer/reports/_alltime.tsv ] && echo 0 || echo 1) "data/transfer/reports/_alltime.tsv missing or empty"
 n=$(grep -oE '<td class="num[^"]*">(<a [^>]*>)?[1-9][0-9]*(</a>)?</td>' docs/analyses/subscriptions.html 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "analyses/subscriptions.html: every count cell is blank"
-# Connections split In / Out (the per-day volume tab)
-n=$(grep -c '<th[^>]*>In</th>' docs/server/connections-per-day.html 2>/dev/null || true)
-m=$(grep -c '<th[^>]*>Out</th>' docs/server/connections-per-day.html 2>/dev/null || true)
-check $([ "${n:-0}" -ge 1 ] && [ "${m:-0}" -ge 1 ] && echo 0 || echo 1) "server/connections-per-day.html header lacks the In / Out columns"
-# the sample plants INBOUND connection lines (2026-09-29: gen-events.awk
-# s_authok names the partner's login on its connection line) — without them
-# the In side of Connections goes untested (the TOTAL In cell below)
 check $([ ! -e data/server/reports/_inbound-addr.tsv ] && [ ! -e data/server/cache/_subscriptions.tsv ] && echo 0 || echo 1) "a sidecar of the removed Cleanup reports (_inbound-addr.tsv, the flat server _subscriptions.tsv) is still written"
-n=$(awk '/<tr class="total"/ { n = split($0, C, "<td"); if (n >= 3) { c = C[3]; sub(/^[^>]*>/, "", c); sub(/<.*/, "", c); print c } exit }' docs/server/connections-per-day.html 2>/dev/null)
-check $([ "${n:-0}" -gt 0 ] 2>/dev/null && echo 0 || echo 1) "server/connections-per-day.html: the TOTAL row's In cell is empty ('${n:-}')"
 # an overlapping-rows TOTAL ships its own distinct per-day buckets
 n=$(grep -c '<tr class="total"[^>]* data-buckets="[^"]' docs/transfer/entities/bl-all.html 2>/dev/null || true)
 check $([ "${n:-0}" -ge 1 ] && echo 0 || echo 1) "entities/bl-all.html: no TOTAL row carries data-buckets"
@@ -1489,11 +1486,9 @@ b=$(awk -F'\t' '$1 == "TOTAL" { sub(/^@\{[^}]*\}/, "", $7); print $7; exit }' da
 check $([ -n "$a" ] && [ "$a" = "$b" ] && echo 0 || echo 1) "UC3 tab Polls total ${a:-?} differs from the Polling page's ${b:-?}"
 # the two tables the sample left empty until the 2026-09-29 audit: the server
 # log's resubmit trail (gen-events.awk plants it beside the "resub" flows'
-# resubmits) and the admin-UI test connections
+# resubmits) — the admin-UI test connections' table went 2026-09-30 with Connections
 n=$(awk -F'\t' '$1 == "TABLE" { t = ($2 ~ /^Resubmission outcomes/) } t && $1 == "ROW" && $3 ~ /^[0-9]+$/ { n++ } END { print n + 0 }' data/transfer/reports/resubmissions.rpt 2>/dev/null)
 check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "resubmissions.rpt: the Resubmission outcomes (server log) table has no dated row"
-n=$(awk -F'\t' '$1 == "TABLE" { t = ($2 == "Test connections") } t && $1 == "ROW" && $0 ~ /\tssh\t|\tpesit\t/ { n++ } END { print n + 0 }' data/server/reports/connection-diagnostics.rpt 2>/dev/null)
-check $([ "${n:-0}" -ge 2 ] && echo 0 || echo 1) "connection-diagnostics.rpt: the Test connections table lacks its ssh / pesit rows (${n:-0})"
 
 # the four columns the sample left empty until the 2026-09-30 audit (S-14;
 # gen-events.awk plants each without a PRNG draw):
@@ -1504,15 +1499,8 @@ want=$(awk -F'\t' 'index($5, "[Ssh Default] Authentication failed using local.")
 got=$(awk -F'\t' '$1 == "TABLE" { t = ($2 ~ /Incoming/) } t && $1 == "HEAD" { for (i = 2; i <= NF; i++) if ($i == "Auth failed") c = i }
                   t && c && $1 == "TOTAL" { v = $c; sub(/^@\{[^}]*\}/, "", v); print v + 0; exit }' data/server/reports/logon.rpt 2>/dev/null)
 check $([ "${want:-0}" -gt 0 ] && [ "${got:-x}" = "$want" ] && echo 0 || echo 1) "logon.rpt Incoming: Auth failed total ${got:-?}, planted anonymous failures ${want:-?}"
-# 2. Connections per day PESIT / FTP / Other = the planted inbound lines of
-#    those protocols (every other sampled connection line is SSH)
-for pr in PESIT FTP Other; do
-    col=$([ $pr = PESIT ] && echo 6 || { [ $pr = FTP ] && echo 7 || echo 8; })
-    want=$(awk -F'\t' -v p="$pr" 'match($5, /had initiated a connection over [A-Za-z0-9]+/) { x = substr($5, RSTART + 32, RLENGTH - 32)
-            if (p == "Other" ? (x != "SSH" && x != "PESIT" && x != "FTP") : (x == p)) n++ } END { print n + 0 }' "$P" 2>/dev/null)
-    got=$(awk -F'\t' -v c="$col" '$1 == "TABLE" { t = ($2 == "Connections per day") } t && $1 == "TOTAL" { v = $c; sub(/^@\{[^}]*\}/, "", v); print v + 0; exit }' data/server/reports/connections.rpt 2>/dev/null)
-    check $([ "${want:-0}" -gt 0 ] && [ "${got:-x}" = "$want" ] && echo 0 || echo 1) "connections.rpt Connections per day: $pr total ${got:-?}, planted $pr lines ${want:-?}"
-done
+# 2. (Connections per day PESIT / FTP / Other — the Connections page went
+#    2026-09-30)
 # 3. the nodirall UC3 (never transfers: its remote directory does not exist)
 #    lists on the UC3 tab's Missing remote directories, and stays orange
 nd=$(awk -F'\t' '("," $30 ",") ~ /,nodirall,/ { print $4; exit }' input/.sample/_estate.tsv 2>/dev/null)
