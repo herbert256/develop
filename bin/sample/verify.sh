@@ -1313,6 +1313,37 @@ check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "resubmissions.rpt: the Resubmi
 n=$(awk -F'\t' '$1 == "TABLE" { t = ($2 == "Test connections") } t && $1 == "ROW" && $0 ~ /\tssh\t|\tpesit\t/ { n++ } END { print n + 0 }' data/server/reports/connection-diagnostics.rpt 2>/dev/null)
 check $([ "${n:-0}" -ge 2 ] && echo 0 || echo 1) "connection-diagnostics.rpt: the Test connections table lacks its ssh / pesit rows (${n:-0})"
 
+# the four columns the sample left empty until the 2026-09-30 audit (S-14;
+# gen-events.awk plants each without a PRNG draw):
+# 1. Logons > Incoming "Auth failed" = every planted anonymous failure (the
+#    one-second window attributes each to the login screened just before it)
+P=data/server/cache/_parse.tsv
+want=$(awk -F'\t' 'index($5, "[Ssh Default] Authentication failed using local.") { n++ } END { print n + 0 }' "$P" 2>/dev/null)
+got=$(awk -F'\t' '$1 == "TABLE" { t = ($2 ~ /Incoming/) } t && $1 == "HEAD" { for (i = 2; i <= NF; i++) if ($i == "Auth failed") c = i }
+                  t && c && $1 == "TOTAL" { v = $c; sub(/^@\{[^}]*\}/, "", v); print v + 0; exit }' data/server/reports/logon.rpt 2>/dev/null)
+check $([ "${want:-0}" -gt 0 ] && [ "${got:-x}" = "$want" ] && echo 0 || echo 1) "logon.rpt Incoming: Auth failed total ${got:-?}, planted anonymous failures ${want:-?}"
+# 2. Connections per day PESIT / FTP / Other = the planted inbound lines of
+#    those protocols (every other sampled connection line is SSH)
+for pr in PESIT FTP Other; do
+    col=$([ $pr = PESIT ] && echo 6 || { [ $pr = FTP ] && echo 7 || echo 8; })
+    want=$(awk -F'\t' -v p="$pr" 'match($5, /had initiated a connection over [A-Za-z0-9]+/) { x = substr($5, RSTART + 32, RLENGTH - 32)
+            if (p == "Other" ? (x != "SSH" && x != "PESIT" && x != "FTP") : (x == p)) n++ } END { print n + 0 }' "$P" 2>/dev/null)
+    got=$(awk -F'\t' -v c="$col" '$1 == "TABLE" { t = ($2 == "Connections per day") } t && $1 == "TOTAL" { v = $c; sub(/^@\{[^}]*\}/, "", v); print v + 0; exit }' data/server/reports/connections.rpt 2>/dev/null)
+    check $([ "${want:-0}" -gt 0 ] && [ "${got:-x}" = "$want" ] && echo 0 || echo 1) "connections.rpt Connections per day: $pr total ${got:-?}, planted $pr lines ${want:-?}"
+done
+# 3. the nodirall UC3 (never transfers: its remote directory does not exist)
+#    lists on the UC3 tab's Missing remote directories, and stays orange
+nd=$(awk -F'\t' '("," $30 ",") ~ /,nodirall,/ { print $4; exit }' input/.sample/_estate.tsv 2>/dev/null)
+n=$(awk -F'\t' -v s="$nd" '$1 == "TABLE" { t = ($2 == "Missing remote directories") } t && $1 == "ROW" && index($3, s) { n++ } END { print n + 0 }' data/server/reports/no-remote-dir.rpt 2>/dev/null)
+check $([ -n "$nd" ] && [ "${n:-0}" = 1 ] && grep -q 'Missing remote directories' docs/analyses/uc-status-uc3.html 2>/dev/null && echo 0 || echo 1) "no-remote-dir.rpt: the nodirall flow ${nd:-?} is not on the UC3 tab's Missing remote directories (${n:-0} row(s))"
+c=$(awk -F'\t' -v s="$nd" '$1 == s { print $3; exit }' data/flow-manager/base/_subscriptions.tsv 2>/dev/null)
+check $([ "${c:-x}" = orange ] && echo 0 || echo 1) "the nodirall flow ${nd:-?} is ${c:-?}, expected orange (never transferred; only a Connection failure streak reddens one)"
+# 4. the shareduc4 account delivers AND collects on one connection: its UC2
+#    row's Same connection is filled
+su=$(awk -F'\t' '$3 == 2 && ("," $30 ",") ~ /,shareduc4,/ { print $4; exit }' input/.sample/_estate.tsv 2>/dev/null)
+n=$(awk -F'\t' -v s="$su" '$1 == "ROW" && index($2, "}" s) { v = $7; print v + 0; exit }' data/server/reports/uc2-visits.rpt 2>/dev/null)
+check $([ -n "$su" ] && [ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "uc2-visits.rpt: the shareduc4 flow ${su:-?} has no Same connection (${n:-0})"
+
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2
 else

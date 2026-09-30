@@ -368,7 +368,7 @@ function build_roster() {
     # failure — red, not blue (2026-09-10, user rule)
     addf(3, "ZG",  "RATES",    "OSCORP",   "",  0, 0, "pollconnfail,hybrid")
     # orange
-    addf(3, "ZG",  "IKAZ",     "BLUTH",    "", 0, 0, "noxfer,hybrid")
+    addf(3, "ZG",  "IKAZ",     "BLUTH",    "", 0, 0, "noxfer,hybrid,nodirall")   # nodirall: never transfers BECAUSE its remote directory does not exist — the UC3 tab's Missing remote directories (2026-09-30 audit S-14)
     addf(3, "AB",  "EXPORT",   "WAYNE",    "", 0, 0, "noxfer,undeployed,schedoff")
     addf(3, "IT",  "FACTS",    "HOOLI",    "", 0, 0, "noxfer,nocron")
     addf(3, "DPL", "STREAM",   "UMBRELLA", "", 0, 0, "noxfer,schedoff")

@@ -134,6 +134,10 @@ function s_allowed(abs, sid, addr) {
 function s_initconn(abs, sid) {   # OUR connection OUT (login name ""); the partner's IN line is in s_authok
     S(abs, "I", "TM", sid, "User with login name \"\", associated with account \"" ACCT "\", had initiated a connection over SSH. Remote address: " anyip() ".")
 }
+# a FIXED session id (2026-09-30 audit S-14): the planted scenarios below
+# must not draw from the PRNG (sesshex() does), so no other line moves —
+# a hex tag + a number, unique per scenario and day
+function fixsid(tag, n) { return sprintf("%s%010d", tag, n) }
 function s_poll(abs, sid, nfound) {
     S(abs, "I", "TM", sid, "Applying the search pattern '*' for transfer site '" srvsite() "': " nfound " file(s) were found of which " nfound " matched the pattern.")
     S(abs - 300 - rint(400), "I", "TM", sid, "Remote files pattern of transfer site: '" srvsite() "' evaluated to: '*'")
@@ -554,6 +558,29 @@ function env_ambient(   ci, jd, base, i, n, k, sid, lst) {
                 S(base + 26480873, "E", "TM", sid, "[Ssh Default] Stream read/write error. Exception message is: CMS parsing has failed")
             }
         }
+        # the ANONYMOUS AUTHENTICATION FAILURE (2026-09-30 audit S-14 — the
+        # Logons > Incoming "Auth failed" column was always empty): once a
+        # week the second allow-listed login is screened ("Allowed user") and
+        # fails authentication 400 ms later with the name-less "[Ssh Default]
+        # Authentication failed using local." — bin/logons.sh attributes it
+        # to that login by the one-second window. Fixed times, fixed session:
+        # no PRNG draw.
+        if (jd % 7 == 3 && NAL >= 2) {
+            sid = fixsid("415554484641494c", jd)
+            S(base + 30000123, "I", "TM", sid, "[Ssh Default] Allowed user '" AL_L[2] "' from address '" AL_IP[2] "', corresponding account '" AL_A[2] "@" AL_L[2] "' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level.")
+            S(base + 30000523, "E", "TM", sid, "[Ssh Default] Authentication failed using local.")
+        }
+        # INBOUND CONNECTIONS OVER PESIT / FTP / OTHER (2026-09-30 audit S-14
+        # — the Connections per day PESIT / FTP / Other columns were always
+        # empty: every sampled connection line is SSH): a partner login
+        # connecting IN (its login named) over PeSIT every day, over FTP once
+        # a week and over HTTP (an "Other" protocol) every eleventh day, from
+        # its own whitelisted address. Fixed times and sessions: no PRNG draw.
+        if (NAL >= 4) {
+            S(base + 32400777, "I", "TM", fixsid("5045534954", jd), "User with login name \"" AL_L[2] "\", associated with account \"" AL_A[2] "@" AL_L[2] "\", had initiated a connection over PESIT. Remote address: " AL_IP[2] ".")
+            if (jd % 7 == 4) S(base + 39600555, "I", "TM", fixsid("465450", jd), "User with login name \"" AL_L[3] "\", associated with account \"" AL_A[3] "@" AL_L[3] "\", had initiated a connection over FTP. Remote address: " AL_IP[3] ".")
+            if (jd % 11 == 5) S(base + 46800333, "I", "TM", fixsid("48545450", jd), "User with login name \"" AL_L[4] "\", associated with account \"" AL_A[4] "@" AL_L[4] "\", had initiated a connection over HTTP. Remote address: " AL_IP[4] ".")
+        }
         # the shared-certificate serial list (ssh-security's detector)
         if (NAL >= 3) {
             lst = AL_A[1] "@" AL_L[1] ", " AL_A[2] "@" AL_L[2] ", " AL_A[3] "@" AL_L[3]
@@ -718,6 +745,20 @@ function flow_day_ambient(jd, base,   i, np, tt, sid, poff) {
     # the weak-SSH warning family
     if (hastag("weakssh") && rnd() < 0.4)
         S(base + 25000000 + rint(30000000), "W", "TM", "", "Insecure or deprecated SSH connection parameter used: [Cipher: aes128-cbc] by Account \"" ACCT "\" , Transfer site: \"" srvsite() "\", connecting to remote host: " HOST)
+    # the MISSING REMOTE DIRECTORY (2026-09-30 audit S-14 — the UC3 tab's
+    # "Missing remote directories" table never rendered: every sampled "No
+    # such file" was resolved by a later successful listing): a tagged UC3
+    # that never transfers BECAUSE its configured remote directory does not
+    # exist — two of its hourly polls a day (06:mm and 18:mm, mm = its cron
+    # minute) log the listing error and no poll ever lists the directory, so
+    # no-remote-dir.sh keeps the flow. A never-transferred UC3 stays orange
+    # on it (only "Connection failure" streaks redden one). Fixed times and
+    # session ids, LAST in the flow-day: no PRNG draw, nothing else moves.
+    if (hastag("nodirall")) {
+        poff = (substr(SCHED, 1, 3) == "ch:") ? (substr(SCHED, 4) + 0) * 60000 : 0
+        for (i = 0; i < 2; i++)
+            S(base + (6 + 12 * i) * 3600000 + poff + 4211, "E", "TM", fixsid("4e4f444952", jd * 2 + i), "Error during transfer operation: Error occurred while listing files from partner " srvsite() " defined in account " ACCT ". No such file: /outbox/" tolower(APP))
+    }
 }
 function cd_ms(   a) { if (substr(SCHED,1,3) != "cd:") return 21600000
     split(substr(SCHED, 4), a, ":"); return (a[1] * 3600 + a[2] * 60) * 1000 }
@@ -794,6 +835,15 @@ FILENAME == CAL {
         GAPF = CG[ci]
         # a historical rename: the EARLY window logs the old name
         LOGSITE = (OLDNAME != "" && jd < J0R + 14) ? OLDNAME : SITE
+        # the SHARED-SESSION UC4 drop (2026-09-30 audit S-14 — "Same
+        # connection" was empty on every UC2 row): the UC2 and UC4 rows of a
+        # shareduc4 account are separate estate rows, and SHARESID was reset
+        # per row, so the UC4 deliveries carried NO session and never met a
+        # collect. Now ONE fixed id per account-day that both rows use — the
+        # partner's one persistent SSH connection of the day, delivering AND
+        # collecting on it. No PRNG draw (the UC2 row still draws the id it
+        # used to, see below).
+        if (hastag("shareduc4")) SHARESID = fixsid("534841524544", jd)
         flow_day_ambient(jd, base)
         if (VOL <= 0) continue
         nf = int(VOL * CF[ci] * (0.55 + 0.9 * rnd()) + rnd())
@@ -802,7 +852,7 @@ FILENAME == CAL {
             CID = uuid4(); NOPROF = 0
             t0 = base + file_time()
             if (UC == 1) uc1_file(t0)
-            else if (UC == 2) { if (hastag("shareduc4")) SHARESID = sesshex(); uc2_file(t0) }
+            else if (UC == 2) { if (hastag("shareduc4")) sesshex(); uc2_file(t0) }   # (the draw stays so the RNG sequence is unchanged; the id is the day's SHARESID)
             else if (UC == 3) uc3_file(t0)
             else if (UC == 4) uc4_file(t0)
         }
