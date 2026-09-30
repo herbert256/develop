@@ -474,8 +474,8 @@ is seen through its child flows; the unique-match `canon()` alone missed four su
 broke the endpoint identities below), falling back to the unique reverse match for a truncated
 value; partner attribution = col 20 ∪ subscription partners ∪ host partners; accounts match
 exactly. Orange is transfer evidence only.
-**Cross-check after any change**: orange ends at `first-seen.rpt`'s DATED Seen (Seen minus the
-no-date bucket; acceptance 2026-08-22: subscriptions 283, partners 97, accounts 221).
+**Cross-check after any change**: orange ends at `first-seen.rpt`'s DATED Seen (the sum of its
+day rows — the no-date row went 2026-09-30; acceptance 2026-08-22: subscriptions 283, partners 97, accounts 221).
 The overview-only views (Throughput, Connections, Seen, Use cases) are not on the day pages:
 Throughput's slots open the day's Duration, Connections' and the Seen curves' its Files processed,
 a UC stack's the UC's status page.

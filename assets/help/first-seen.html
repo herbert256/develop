@@ -18,14 +18,14 @@
 <h2>What it shows</h2>
 <ul>
 <li>For six entity types &mdash; <strong>Logical</strong>, <strong>Partners</strong>, <strong>Subscriptions</strong>, <strong>Accounts</strong>, <strong>Logins</strong>, <strong>Hosts</strong> &mdash; the day each <strong>configured</strong> name first appeared in the transfer log: one row per log day, newest first.</li>
-<li>Above the days: <strong>Total</strong>, <strong>Seen</strong>, <strong>Not seen</strong> (opening the matching Entities view) and <strong>Seen, no date</strong>.</li>
+<li>Above the days: <strong>Total</strong>, <strong>Seen</strong>, <strong>Not seen</strong> (opening the matching Entities view).</li>
 <li>A day cell opens a page of its names &mdash; each linking its detail page, with its <strong>First transfer</strong> timestamp, tinted by its result colour.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Per column: Seen + Not seen = Total; the day rows + Seen, no date = Seen.</li>
+<li>Per column: Seen + Not seen = Total.</li>
 <li>Transfers no subscription claimed (subscription <strong>Unknown</strong>) are no subscription and are not counted; a Total or Seen cell equals the Entities view it opens.</li>
-<li><strong>Seen, no date</strong> = seen without a dated transfer of its own, credited through a sibling (a shared endpoint&rsquo;s co-tenant, one organisation of a two-partner account).</li>
+<li>A name seen without a dated transfer of its own (credited through a sibling: a shared endpoint&rsquo;s co-tenant, one organisation of a two-partner account) counts in Seen but in no day row, so the day rows can sum to less than Seen.</li>
 <li>Only transfers count: a name the server log mentions but that never transferred is Not seen.</li>
 <li>Dates: accounts and partners per File; subscriptions, logins and hosts per log record. Names match exactly, case aside; a subscription also matches the logged names it prefixes.</li>
 </ul>

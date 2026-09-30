@@ -512,14 +512,8 @@ write_first_seen_page() {
                     printf '<tr data-res="orange"><td>Not seen</td>'
                     i=0; for m in "${members[@]}"; do i=$((i+1)); eval "fscell \"\$v$i\" $m ${kp}notseen"; done
                     printf '</tr>\n' ;;
-                NODATE)
-                    # seen names with no dated transfer of their own
-                    # (sibling-credited names): they count into Seen, so the day rows + this
-                    # row sum to the Seen row
-                    v6=$v5; v5=$v4; v4=$v3; v3=$v2; v2=$v1; v1=$d
-                    printf '<tr data-res="green"><td>Seen, no date</td>'
-                    i=0; for m in "${members[@]}"; do i=$((i+1)); eval "fscell \"\$v$i\" $m ${kp}nodate"; done
-                    printf '</tr>\n' ;;
+                # (NODATE — the "Seen, no date" row — went 2026-09-30, user
+                # request; its names still count into Seen)
                 ROW)
                     printf '<tr><td>%s</td>' "$d"
                     i=0; for m in "${members[@]}"; do i=$((i+1)); eval "fscell \"\$v$i\" $m \"$kp$d\""; done

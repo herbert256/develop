@@ -11,16 +11,17 @@
 # 2026-09-27.)
 #
 # A seen name with NO dated transfer of its own — a sibling-credited name
-# (the UC3 clean-poll greens were one until 2026-09-28) — lands in the
-# "Seen, no date" bucket: per column, Seen + Not seen = Total and the day
-# rows + the no-date row = Seen.
+# (the UC3 clean-poll greens were one until 2026-09-28) — counts into Seen
+# but into no day row: per column, Seen + Not seen = Total, and the day rows
+# sum to Seen minus those names. (Their own "Seen, no date" row and its cell
+# pages went 2026-09-30, user request.)
 #
 #   -> data/analyses/reports/first-seen.rpt        the page spec (SEEN /
-#      NOTSEEN / NODATE / ROW / TOTAL lines, columns logicals partners
+#      NOTSEEN / ROW / TOTAL lines, columns logicals partners
 #      subscriptions accounts logins hosts)
-#   -> data/first-seen/<type>-<key>.rpt            one per NONZERO cell (key =
-#      YYYY-MM-DD | notseen | nodate | seen | total) — rendered into
-#      docs/first-seen/ by bin/analyses/publish.sh, like the coverage cells.
+#   -> data/first-seen/<type>-<date>.rpt           one per NONZERO day cell
+#      (YYYY-MM-DD) — rendered into docs/first-seen/ by
+#      bin/analyses/publish.sh, like the coverage cells.
 #
 # Sources: the coverage TSVs (transfer/reports/coverage/{logicals,partners,
 # subscriptions,accounts,logins,hosts}.tsv — the seen flags; the partner
@@ -185,8 +186,8 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
         }
         # one line per CONFIGURED name. The seen SPLIT is the coverage flag;
         # the DATE is the name'\''s own first transfer (subscriptions by
-        # prefix). Seen without a date -> the "nodate" bucket, so the day
-        # rows + nodate always sum to Seen.
+        # prefix). Seen without a date -> the "nodate" key: counted into
+        # Seen, in no day row (its page row went 2026-09-30).
         nt = split("logicals partners subscriptions accounts logins hosts", TL, " ")
         for (i = 1; i <= nt; i++) {
             t = TL[i]
@@ -215,17 +216,17 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
                (t == "accounts") ? "Accounts" : (t == "logins") ? "Logins" : "Hosts"
     }
     function celltitle(t, key, n) {
-        if (key == "nodate")  return lbl(t) ": Seen, no dated transfer (" n ")"
         return lbl(t) ": First seen " key " (" n ")"
     }
-    # ONE .rpt per DATED cell and the no-date cell — the ones that get a cell
-    # page (analyses/publish.sh _fs_cell). The Total / Seen / Not seen cells open the Entities views since
+    # ONE .rpt per DATED cell — the ones that get a cell page
+    # (analyses/publish.sh _fs_cell). The Total / Seen / Not seen cells open the Entities views since
     # 2026-09-29, so their .rpts (flushtotal / flushseen and the notseen
-    # cell) had no reader and went the same day; tn / cnt still feed the
-    # page spec.
+    # cell) had no reader and went the same day, the no-date cell with its
+    # row 2026-09-30; tn / cnt still feed the page spec (a no-date name
+    # counts into Total and Seen).
     function flushcell(   f, i, v, t) {
         if (bn == 0) return
-        if (cck == "notseen") { bn = 0; return }
+        if (cck == "notseen" || cck == "nodate") { bn = 0; return }
         split(cvt, VT, SUBSEP); t = VT[2]
         f = FSD "/" t "-" cck ".rpt"
         print "TITLE\t" celltitle(t, cck, bn) > f
@@ -239,8 +240,6 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
         line = "SEEN"; for (i = 1; i <= nt; i++) line = line OFS ((tn[v SUBSEP TL[i]] + 0) - (cnt[v SUBSEP TL[i] SUBSEP "notseen"] + 0))
         print line > out
         line = "NOTSEEN"; for (i = 1; i <= nt; i++) line = line OFS (cnt[v SUBSEP TL[i] SUBSEP "notseen"] + 0)
-        print line > out
-        line = "NODATE"; for (i = 1; i <= nt; i++) line = line OFS (cnt[v SUBSEP TL[i] SUBSEP "nodate"] + 0)
         print line > out
         for (k = nd; k >= 1; k--) {   # newest day first
             line = "ROW" OFS days[k]
@@ -268,7 +267,7 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
         # ordered day list
         nd = 0; for (d in alldates) days[++nd] = d
         for (i = 2; i <= nd; i++) { v = days[i]; j = i - 1; while (j >= 1 && days[j] > v) { days[j+1] = days[j]; j-- } days[j+1] = v }
-        pagespec(1, MAIN,  "On what day each configured logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs — the same Seen/Not seen split as the home status tables. Per column: Seen + Not seen = Total; the day rows plus the no-date row sum to Seen.")
+        pagespec(1, MAIN,  "On what day each configured logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs — the same Seen/Not seen split as the home status tables. Per column: Seen + Not seen = Total.")
     }
 '
 # The awk wrote the page to .tmp (after the per-cell rpts); the rename here
