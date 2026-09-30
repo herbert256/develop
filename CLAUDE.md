@@ -1773,9 +1773,10 @@ front end) then four fix workers with disjoint files. The rules it left:
   auth-activity).
 - **Partner scorecard, Blast radius and Application dependencies are GONE** (writers, .rpt, pages, help pages) —
   never restore; verify.sh asserts the absence.
-- **Top bar**: Overview · Errors · Duration · Waiting/Expired · Entities · Files · **Partners: In / Out** + the
-  search icon (fixed paths in topbar.js like Duration; CSS `.entpair` / `.entsep`; linkcheck models both edges;
-  verify.sh checks the order).
+- **Top bar**: Overview · Errors · Duration · Waiting/Expired · Entities · Files · **Partners** + the search icon
+  ("Partners: In / Out" until the evening, user request: ONE link → `analyses/partners-in.html`, Partners Out
+  through the Partners group row; a fixed path in topbar.js like Duration; linkcheck models the edge; verify.sh
+  checks the order and that the `.entpair` pair is gone).
 - The day pages' "Logon screening failures" / "Outbound logon failures" lines open Partners in / Partners Out
   WITHOUT ?axway_date (full-period pages).
 
@@ -1800,7 +1801,7 @@ front end) then four fix workers with disjoint files. The rules it left:
   colour; its Waiting / Expired cells open the `waiting/` / `expired/` File lists. The Entities
   Waiting / Expired cells, the Top view TOTAL cells and the day-page lines link here.
 - **Top bar**: Overview · Errors · Duration (`transfer/duration.html`) · Waiting/Expired
-  (`transfer/waiting-expired.html`) · Entities · Files · Partners: In / Out (fourth batch) + the search icon; NO data period.
+  (`transfer/waiting-expired.html`) · Entities · Files · Partners (fourth batch) + the search icon; NO data period.
 - **Column groups**: the `gsep` gap is 30 px site-wide (= the home table's spacers).
 - **Activity › Per weekday**: Weekday · Days · Files · Avg/day · Volume · Load — Files = the OK
   Files, no Error %. The Per week / Per hour tabs keep "OK Files".
