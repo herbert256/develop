@@ -7,9 +7,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: IO errors — Axway ST reports</title>
-<link rel="stylesheet" href="../assets/style.css?v=2740747380">
+<link rel="stylesheet" href="../assets/style.css?v=2318716717">
 <script src="../assets/topbar-data.js?v=2002570715" defer></script>
-<script src="../assets/topbar.js?v=2740747380" defer></script>
+<script src="../assets/topbar.js?v=2318716717" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="general"></div>
@@ -25,8 +25,7 @@
 </ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Per folder</strong> &mdash; <strong>Last</strong> / <strong>First</strong> line, <strong>Account</strong>, <strong>Login</strong>, <strong>Subscriptions</strong> (each links its page), <strong>Folder</strong>.</li>
-<li><strong>Per folder</strong> counts &mdash; <strong>IO errors</strong> (lines), <strong>Files</strong> (distinct names), <strong>Error</strong> / <strong>OK</strong> (distinct Files by outcome), <strong>Not logged</strong> (lines naming no File), <strong>Days</strong> with a line.</li>
+<li><strong>IO errors per folder</strong> &mdash; <strong>Last</strong> line, <strong>Account</strong>, <strong>Login</strong>, <strong>Subscriptions</strong> (each links its page), <strong>IO errors</strong> (lines), <strong>Files</strong> (distinct names), <strong>Error</strong> / <strong>OK</strong> (distinct Files by outcome), <strong>Not logged</strong> (lines naming no File), <strong>Days</strong> with a line, <strong>First</strong> line, <strong>Folder</strong>.</li>
 <li><strong>IO error lines</strong> &mdash; <strong>Date</strong>, <strong>Time</strong>, <strong>Account</strong>, <strong>Login</strong>, <strong>Subscription</strong>, <strong>File</strong> (opens its File page, if any), <strong>Operation</strong>, <strong>State</strong>, <strong>Transfer</strong> (the joined File&rsquo;s start).</li>
 <li><strong>Per day</strong> &mdash; <strong>Date</strong>, <strong>IO errors</strong>, <strong>Folders</strong>, <strong>Files</strong>.</li>
 </ul>
@@ -35,7 +34,7 @@
 <li>Source: every server-log line with <strong>IO Error</strong> or <strong>Input/output error</strong>; the folder <code>account@login</code> gives Account and Login.</li>
 <li>Each line joins <strong>by file name</strong> to the File in flight (the newest starting before it, else the first after).</li>
 <li><strong>State</strong>: <em>Error</em> = the route never read it (a one-legged File), <em>OK</em> = a retry read it, <em>not logged</em> = no File has that name. A line joined to a File takes that File&rsquo;s row colour.</li>
-<li>Error / OK follow the site outcome (Waiting = OK, Expired = Error). Counts re-total under the date filter.</li>
+<li>Error / OK follow the site outcome (Waiting = OK, Expired = Error). Counts re-total under the date filter. Per folder rows tint by the account&rsquo;s result colour; a 0 Not logged is empty.</li>
 </ul>
 <h2>Tips</h2>
 <ul>

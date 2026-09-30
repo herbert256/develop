@@ -7,9 +7,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: Configured accounts — Axway ST reports</title>
-<link rel="stylesheet" href="../assets/style.css?v=2740747380">
+<link rel="stylesheet" href="../assets/style.css?v=2318716717">
 <script src="../assets/topbar-data.js?v=2002570715" defer></script>
-<script src="../assets/topbar.js?v=2740747380" defer></script>
+<script src="../assets/topbar.js?v=2318716717" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="general"></div>
@@ -19,7 +19,7 @@
 <h1>Configured accounts</h1>
 <h2>What it shows</h2>
 <ul>
-<li>A configuration audit of the accounts, logins and communication profiles (one per endpoint) in the FlowManager export. Each check heading carries its count; 0 = nothing to fix.</li>
+<li>A configuration audit of the accounts, logins and communication profiles (one per endpoint) in the FlowManager export. Each check heading carries its count and its table a Total row; 0 = nothing to fix (the empty table says so).</li>
 <li><strong>Connection type</strong> / <strong>Protocol</strong> &mdash; profiles per type and per protocol.</li>
 <li><strong>Type &mdash; the name prefix</strong> / <strong>Authentication &mdash; the name suffix</strong> &mdash; profiles per prefix and suffix with their <strong>Meaning</strong>, against the configured <code>type</code> and <code>clientAuthentication</code> (<strong>Match auth</strong> / <strong>Mismatch</strong>).</li>
 <li><strong>Naming inconsistencies</strong> &mdash; a suffix contradicting the real authentication.</li>
@@ -32,7 +32,7 @@
 <h2>Rules</h2>
 <ul>
 <li>Profile names read <code>&lt;TYPE&gt;_&lt;partner&gt;_&lt;AUTH&gt;</code>: <code>SCP</code>/<code>SSCP</code> = server (ST connects out), <code>CCP</code> = client (the partner connects in); <code>PWD</code> = password, <code>KEY</code> = public key.</li>
-<li>Incoming account names separate parts with <code>-</code>, outgoing with <code>_</code>. Account, login and host names link their detail pages.</li>
+<li>Incoming account names separate parts with <code>-</code>, outgoing with <code>_</code>. Account, login and host names and the whitelisted IPs link their detail pages.</li>
 </ul>
 <h2>Tips</h2>
 <ul>

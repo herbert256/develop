@@ -7,9 +7,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: Sizes &amp; types — Axway ST reports</title>
-<link rel="stylesheet" href="../assets/style.css?v=2740747380">
+<link rel="stylesheet" href="../assets/style.css?v=2318716717">
 <script src="../assets/topbar-data.js?v=2002570715" defer></script>
-<script src="../assets/topbar.js?v=2740747380" defer></script>
+<script src="../assets/topbar.js?v=2318716717" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="general"></div>
@@ -27,12 +27,13 @@
 <li><strong>Empty files</strong> &mdash; per subscription, the zero-byte Files delivered OK, First / Last.</li>
 <li><strong>By type</strong> &mdash; per extension: Transfers / Error / OK / Volume / % of transfers; counts legs.</li>
 <li><strong>Duplicates</strong> &mdash; names transferred more than once, any outcome: Files / Error / <strong>Accounts</strong> (distinct senders) / First / Last; full period.</li>
-<li><strong>Largest files</strong> &mdash; the 50 largest Files: Size / Throughput (size &divide; wall-clock span) / Start Time / Account / Destination Subscription / Outcome / File, in the <a href="general.html#colours">File colour</a>.</li>
+<li><strong>Largest files</strong> &mdash; the 50 largest Files: Size / Throughput (size &divide; wall-clock span) / Start / Account / Subscription / Outcome / File, in the <a href="general.html#colours">File colour</a>.</li>
 <li><strong>Size regime</strong> &mdash; flows with 20+ Files whose median size changed 3&times;+ between the first and second half of their Files; &infin; = a first-half median of 0 B.</li>
 <li><strong>Stub shippers</strong> &mdash; flows with 10%+ stubs, files smaller than the <strong>Stub limit</strong> = max(1 KB, 1% of the flow&rsquo;s median).</li>
 </ul>
 <h2>Rules</h2>
 <ul>
+<li>Empty files delivered OK, Size regime changed and Stub shippers: rows tint by the subscription&rsquo;s result colour. A size bucket without Files shows empty cells.</li>
 <li>All tabs but By type count Files; Error = Failed or Expired.</li>
 <li>The 0 B bucket holds every empty File, failed or not; only the OK ones reach Empty files.</li>
 </ul>

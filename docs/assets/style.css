@@ -22,8 +22,8 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
           flex-wrap:wrap; gap:0.3rem 1.5rem; padding:0.7rem 2rem; background:#20344a;
           box-shadow:0 2px 4px rgba(0,0,0,0.2);
           min-height:1.25rem; }   /* the runtime-bar placeholder is EMPTY until report.js fills it — keep the strip at full height */
-/* SIX evenly-spaced parts (2026-07 redesign): brand · env pair · Entities +
-   search · the three report dropdowns · the Dashboard link · the right icons.
+/* evenly-spaced parts: the brand (or the env pair) · the link cluster + search ·
+   the Dashboard link · the help icon (the report dropdowns went 2026-09-30).
    The bar's justify-content:space-between distributes the leftover space
    evenly — no part carries a pushing margin, so the first part sits on the
    left border and the last on the right. */
@@ -48,7 +48,6 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
 .topbar .envlink:hover { text-decoration:underline; }
 .topbar .envlink.envcur { color:#ffd400; font-weight:bold; }
 .topbar .envsep { color:#fff; opacity:0.7; }
-.topbar .tright { color:#fff; font-size:0.95rem; white-space:nowrap; }
 /* the plain Dashboard link between the link cluster and the right icons (ONE
    dashboard page — no dropdown; the Reports pulldown went 2026-09-30) */
 .topbar a.dashlink { color:#fff; font-size:0.95rem; white-space:nowrap; }
@@ -86,7 +85,7 @@ body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:3.2rem 2rem 
 .stat-orange { background:#fff3d6; border-color:#e8d9b0; }
 
 h1 { color:#20344a; margin:0 0 1.1rem; }   /* tight to the top bar above, more breathing room below */
-h1 .grouptag { font-size:0.55em; font-weight:400; color:#6b7785; margin-left:0.5em; white-space:nowrap; }   /* the report group (the Reports menu) a page belongs to, appended to its title */
+h1 .grouptag { font-size:0.55em; font-weight:400; color:#6b7785; margin-left:0.5em; white-space:nowrap; }   /* the report group a page belongs to, appended to its title */
 h2 { color:#20344a; font-size:1.1rem; margin-top:1.8rem; }
 /* an anchored heading (TABLE anchor=…): a jump to it lands clear of the fixed top bar */
 h2[id] { scroll-margin-top:3.6rem; }
@@ -317,8 +316,8 @@ table[data-restint] tr[data-res="orange"] td.failed.z,
 table[data-restint] tr[data-res="orange"] td.processed.z { background-color:#fdf1dc; }
 table[data-restint] tr[data-res="red"] td.failed.z,
 table[data-restint] tr[data-res="red"] td.processed.z    { background-color:#fde3e3; }
-/* A NON-EMPTY Warning-count cell (td.warn — Logons / Incoming's Key failures
-   and Locked) keeps its amber inside a tinted row, exactly as the Error/OK
+/* A NON-EMPTY Warning-count cell (td.warn — e.g. Partners in's Waiting and
+   Locked) keeps its amber inside a tinted row, exactly as the Error/OK
    cells keep theirs; an empty one follows the row (2026-09-02). Same
    specificity as the row rules above, later in source, so it wins. */
 table[data-seenrows] tr[data-seen] td.warn:not(:empty),
@@ -488,7 +487,7 @@ a.daybtn:hover { background:#e8f0fe; text-decoration:none; }
 .searchcfg { margin:0 0 1.2rem; }
 /* the Search page controls: the view buttons and type checkboxes first, the
    search INPUT row below them (adopted from the div.controls row setupSearch
-   builds) ALONE on its own line, with the syntax hint on the line below it */
+   builds) ALONE on its own line (the syntax hint below it went 2026-09-30) */
 .searchcfg .essearch { margin:0.6rem 0 0.2rem; font-size:0.9rem; color:#444;
                        display:flex; align-items:center; flex-wrap:wrap; gap:0.3rem 0; }
 .searchcfg .essearch label { margin:0 0.35rem 0 0; }
@@ -523,18 +522,15 @@ a.daybtn:hover { background:#e8f0fe; text-decoration:none; }
                 cursor:pointer; color:#888; font-size:1.1rem; line-height:1; padding:0 0.15rem; user-select:none; }
 .search-clear:hover { color:#20344a; }
 /* On a report page the Search box now leads the controls row; keep extra space
-   between it and the From/To pulldowns, and put the syntax hint on its own line
-   just below (flush-left under the box), like the Search page. */
+   between it and the From/To pulldowns (the syntax hint line below it went
+   2026-09-30). */
 .controls .search-wrap.sepafter { margin-right:2rem; }
 th.sortable { cursor:pointer; }
 th.sortable:hover { background-color:#2c4a6b; }
 .arrow { font-size:0.75em; }
 
-/* ---- landing pages ---- */
-td.desc { color:#444; white-space:normal; }
 /* .card base — the dashboards' chart/KPI cards build on it (.dash-grid .card);
-   the root index's section-card links are gone (navigation is the top-bar
-   dropdowns). */
+   the root index's section-card links are gone (navigation is the top bar). */
 .card { display:block; background:#fff; border:1px solid #ddd; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1);
         padding:1.1rem 1.3rem; text-decoration:none; color:inherit;
         transition:box-shadow 0.12s ease, border-color 0.12s ease, transform 0.12s ease; }

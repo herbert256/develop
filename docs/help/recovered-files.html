@@ -7,9 +7,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: Retries &amp; resubmissions &rsaquo; Recovered files — Axway ST reports</title>
-<link rel="stylesheet" href="../assets/style.css?v=2740747380">
+<link rel="stylesheet" href="../assets/style.css?v=2318716717">
 <script src="../assets/topbar-data.js?v=2002570715" defer></script>
-<script src="../assets/topbar.js?v=2740747380" defer></script>
+<script src="../assets/topbar.js?v=2318716717" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="general"></div>
@@ -19,16 +19,17 @@
 <h1>Retries &amp; resubmissions &rsaquo; Recovered files</h1>
 <h2>What it shows</h2>
 <ul>
-<li>A <strong>recovered File</strong> carried at least one failed leg and still finished OK. The boxes: Recovered Files, Automatic, Manual, share of all Files, Failed legs healed, and the Subscriptions, Protocols and Days involved.</li>
+<li>A <strong>recovered File</strong> carried at least one failed leg and still finished OK. The boxes: Recovered Files, Automatic, Manual, share of all Files, Failed transfers healed, and the Subscriptions, Protocols and Days involved.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
 <li><strong>Per subscription</strong> &mdash; <strong>Recovered</strong> = <strong>Automatic</strong> + <strong>Manual</strong>; <strong>Files</strong> = all its Files; <strong>Recovered %</strong>. The <strong>Unknown</strong> subscription is left out (it counts in the boxes and the other tables).</li>
-<li><strong>Per protocol</strong> &mdash; the same split, plus <strong>Failed legs healed</strong> over all <strong>Failed legs</strong> of that protocol = <strong>Healed %</strong>, how often a failure there is transient.</li>
+<li><strong>Per protocol</strong> &mdash; the same split, plus <strong>Failed transfers healed</strong> over all <strong>Failed transfers</strong> of that protocol = <strong>Healed %</strong>, how often a failure there is transient.</li>
 <li><strong>Per day</strong> &mdash; <strong>Files</strong>, <strong>Recovered</strong>, <strong>Automatic</strong>, <strong>Manual</strong>, <strong>Share %</strong>; only days with a recovery; the Date opens the day page.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
+<li>Per subscription: rows tint by the subscription&rsquo;s result colour.</li>
 <li>Automatic = no operator (a platform retry, or a bookend-settled File); Manual = a leg carries the Resubmitted flag. They are the Transfer top view&rsquo;s Recovered and the home page&rsquo;s Cured.</li>
 <li>Orange File rows elsewhere also cover a resubmitted File that never failed: orange, not Recovered.</li>
 <li>OK = Processed or Waiting. A File counts on its <strong>start day</strong>.</li>

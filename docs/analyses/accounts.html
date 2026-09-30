@@ -7,10 +7,10 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<link rel="stylesheet" href="../assets/style.css?v=2740747380">
+<link rel="stylesheet" href="../assets/style.css?v=2318716717">
 <script src="../assets/topbar-data.js?v=2002570715" defer></script>
-<script src="../assets/topbar.js?v=2740747380" defer></script>
-<script src="../assets/report.js?v=2740747380" defer></script>
+<script src="../assets/topbar.js?v=2318716717" defer></script>
+<script src="../assets/report.js?v=2318716717" defer></script>
 </head>
 <body class="sort-fresh">
 <div class="topbar" data-b="../" data-help="accounts"></div>
@@ -35,6 +35,7 @@
 <tr><th>Prefix</th><th>Meaning</th><th class="num">Profiles</th><th>Configured type</th></tr>
 <tr><td>SCP</td><td>Server comm profile</td><td class="num">90</td><td>SERVER</td></tr>
 <tr><td>CCP</td><td>Client comm profile</td><td class="num">61</td><td>CLIENT</td></tr>
+<tr class="total"><td>Total (2 prefixes)</td><td></td><td class="num">151</td><td></td></tr>
 </table></div>
 <h2>Authentication &mdash; the name suffix</h2>
 <div class="tablewrap"><table class="index fit">
@@ -42,25 +43,32 @@
 <tr><td>PWD</td><td>password</td><td class="num">105</td><td class="num st-ok">105</td><td class="num"></td></tr>
 <tr><td>KEY</td><td>public key</td><td class="num">46</td><td class="num st-ok">46</td><td class="num"></td></tr>
 <tr><td>(other)</td><td>no PWD/KEY suffix</td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+<tr class="total"><td>Total</td><td></td><td class="num">151</td><td class="num">151</td><td class="num"></td></tr>
 </table></div>
 <h2>Naming inconsistencies (0)</h2>
-<p class="range">No inconsistencies &mdash; every profile&rsquo;s auth suffix matches its configured authentication.</p>
+<div class="tablewrap"><table class="index fit">
+<tr><th>Communication profile</th><th>Suffix says</th><th>Actual authentication</th></tr>
+<tr class="total"><td>Total (0 profile(s))</td><td></td><td></td></tr>
+</table></div>
 <h2>Not clear domain-application-partner (2)</h2>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Account</th><th>Domain</th><th>Application</th><th>Partner</th><th>Missing</th><th>Why</th></tr>
 <tr data-res="green"><td><a href="../details/accounts/infra-st-monitor-infra.html"><code>INFRA_ST-MONITOR_INFRA</code></a></td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>domain, application, partner</td><td>its logical flow has a pinned short name — no domain/application/partner parts</td></tr>
 <tr data-res="orange"><td><a href="../details/accounts/old-migration-globex.html"><code>OLD-MIGRATION-GLOBEX</code></a></td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>domain, application, partner</td><td>not connected to any logical flow (no subscription of this account carries a FlowID)</td></tr>
+<tr class="total"><td>Total (2 account(s))</td><td></td><td></td><td></td><td></td><td></td></tr>
 </table></div>
 <h2>FTP endpoints (2) &mdash; insecure</h2>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Communication profile</th><th>Name suffix</th><th>Authentication</th></tr>
 <tr data-res="red"><td><code>SCP_AB_CREDITREG_WEYLAND_PWD</code></td><td>PWD</td><td>PASSWORD</td></tr>
 <tr data-res="red"><td><code>SCP_CD_QUOTES_STARK_PWD</code></td><td>PWD</td><td>PASSWORD</td></tr>
+<tr class="total"><td>Total (2 profile(s))</td><td></td><td></td></tr>
 </table></div>
 <h2>Incoming partners without IP whitelisting (1)</h2>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Account</th><th>Protocol</th><th>Authentication</th><th>Status</th></tr>
 <tr data-res="red"><td><a href="../details/accounts/zg-hooli-gekko.html">ZG_HOOLI_GEKKO</a></td><td>SFTP</td><td>PASSWORD</td><td>never seen</td></tr>
+<tr class="total"><td>Total (1 account(s))</td><td></td><td></td><td></td></tr>
 </table></div>
 <h2>Hosts with conflicting setup</h2>
 <h3>Port (2 host(s))</h3>
@@ -70,6 +78,7 @@
 <tr data-res="red"><td></td><td>22</td><td>SCP_AB_HRDATA_WEYLAND_PWD, SCP_AB_STREAM_WEYLAND_KEY</td></tr>
 <tr data-res="red"><td><a href="../details/hosts/sftp-stark-example.html"><code>sftp.stark.example</code></a></td><td>21</td><td>SCP_CD_QUOTES_STARK_PWD</td></tr>
 <tr data-res="red"><td></td><td>22</td><td>SCP_APS_INVOICE_STARK_PWD, SCP_IT_CRM_STARK_KEY, SCP_IT_LEADS_STARK_PWD, SCP_SI_TELEMETRY_STARK_KEY</td></tr>
+<tr class="total"><td>Total (2 host(s))</td><td></td><td></td></tr>
 </table></div>
 <h3>Protocol (2 host(s))</h3>
 <div class="tablewrap"><table class="index fit">
@@ -78,28 +87,29 @@
 <tr data-res="red"><td></td><td>SFTP</td><td>SCP_AB_HRDATA_WEYLAND_PWD, SCP_AB_STREAM_WEYLAND_KEY</td></tr>
 <tr data-res="red"><td><a href="../details/hosts/sftp-stark-example.html"><code>sftp.stark.example</code></a></td><td>FTP</td><td>SCP_CD_QUOTES_STARK_PWD</td></tr>
 <tr data-res="red"><td></td><td>SFTP</td><td>SCP_APS_INVOICE_STARK_PWD, SCP_IT_CRM_STARK_KEY, SCP_IT_LEADS_STARK_PWD, SCP_SI_TELEMETRY_STARK_KEY</td></tr>
+<tr class="total"><td>Total (2 host(s))</td><td></td><td></td></tr>
 </table></div>
 <h2>Whitelisted IPs with conflicting incoming setup</h2>
 <h3>Authentication (42 IP(s))</h3>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Whitelisted IP</th><th>Value</th><th>Accounts</th></tr>
-<tr data-res="orange"><td><code>198.51.100.10</code></td><td>PASSWORD</td><td><a href="../details/accounts/stmt-export-globex.html">STMT-EXPORT-GLOBEX</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/198-51-100-10.html"><code>198.51.100.10</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/stmt-export-globex.html">STMT-EXPORT-GLOBEX</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/aps-cosmos-globex.html">APS-COSMOS-GLOBEX</a></td></tr>
-<tr data-res="orange"><td><code>198.51.100.100</code></td><td>PASSWORD</td><td><a href="../details/accounts/cd-invoice-vandelay.html">CD-INVOICE-VANDELAY</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/198-51-100-100.html"><code>198.51.100.100</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/cd-invoice-vandelay.html">CD-INVOICE-VANDELAY</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/hr-match-vandelay.html">HR-MATCH-VANDELAY</a></td></tr>
-<tr data-res="orange"><td><code>198.51.100.101</code></td><td>PASSWORD</td><td><a href="../details/accounts/cd-invoice-vandelay.html">CD-INVOICE-VANDELAY</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/198-51-100-101.html"><code>198.51.100.101</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/cd-invoice-vandelay.html">CD-INVOICE-VANDELAY</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/hr-match-vandelay.html">HR-MATCH-VANDELAY</a></td></tr>
-<tr data-res="orange"><td><code>198.51.100.102</code></td><td>PASSWORD</td><td><a href="../details/accounts/cd-invoice-vandelay.html">CD-INVOICE-VANDELAY</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/198-51-100-102.html"><code>198.51.100.102</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/cd-invoice-vandelay.html">CD-INVOICE-VANDELAY</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/hr-match-vandelay.html">HR-MATCH-VANDELAY</a></td></tr>
-<tr data-res="orange"><td><code>198.51.100.11</code></td><td>PASSWORD</td><td><a href="../details/accounts/stmt-export-globex.html">STMT-EXPORT-GLOBEX</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/198-51-100-11.html"><code>198.51.100.11</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/stmt-export-globex.html">STMT-EXPORT-GLOBEX</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/aps-cosmos-globex.html">APS-COSMOS-GLOBEX</a></td></tr>
-<tr data-res="orange"><td><code>198.51.100.110</code></td><td>PASSWORD</td><td><a href="../details/accounts/odv-maia-piedpiper.html">ODV-MAIA-PIEDPIPER</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/198-51-100-110.html"><code>198.51.100.110</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/odv-maia-piedpiper.html">ODV-MAIA-PIEDPIPER</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/aim-lake-piedpiper.html">AIM-LAKE-PIEDPIPER</a></td></tr>
-<tr data-res="orange"><td><code>198.51.100.111</code></td><td>PASSWORD</td><td><a href="../details/accounts/odv-maia-piedpiper.html">ODV-MAIA-PIEDPIPER</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/198-51-100-111.html"><code>198.51.100.111</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/odv-maia-piedpiper.html">ODV-MAIA-PIEDPIPER</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/aim-lake-piedpiper.html">AIM-LAKE-PIEDPIPER</a></td></tr>
-<tr data-res="orange"><td><code>198.51.100.12</code></td><td>PASSWORD</td><td><a href="../details/accounts/stmt-export-globex.html">STMT-EXPORT-GLOBEX</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/198-51-100-12.html"><code>198.51.100.12</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/stmt-export-globex.html">STMT-EXPORT-GLOBEX</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/aps-cosmos-globex.html">APS-COSMOS-GLOBEX</a></td></tr>
-<tr data-res="orange"><td><code>198.51.100.13</code></td><td>PASSWORD</td><td><a href="../details/accounts/stmt-export-globex.html">STMT-EXPORT-GLOBEX</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/198-51-100-13.html"><code>198.51.100.13</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/stmt-export-globex.html">STMT-EXPORT-GLOBEX</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/aps-cosmos-globex.html">APS-COSMOS-GLOBEX</a></td></tr>
 <tr data-res="orange"><td><code>198.51.100.170</code></td><td>PASSWORD</td><td><a href="../details/accounts/stmt-export-globex.html">STMT-EXPORT-GLOBEX</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/aps-cosmos-globex.html">APS-COSMOS-GLOBEX</a></td></tr>
@@ -109,9 +119,9 @@
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/fs-ifrs-wayne.html">FS-IFRS-WAYNE</a></td></tr>
 <tr data-res="orange"><td><code>198.51.100.196</code></td><td>PASSWORD</td><td><a href="../details/accounts/cb-vida-wayne.html">CB-VIDA-WAYNE</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/fs-ifrs-wayne.html">FS-IFRS-WAYNE</a></td></tr>
-<tr data-res="orange"><td><code>198.51.100.20</code></td><td>PASSWORD</td><td><a href="../details/accounts/crm-sync-initech.html">CRM-SYNC-INITECH</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/198-51-100-20.html"><code>198.51.100.20</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/crm-sync-initech.html">CRM-SYNC-INITECH</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/zk-miaz-initech.html">ZK-MIAZ-INITECH</a></td></tr>
-<tr data-res="orange"><td><code>198.51.100.21</code></td><td>PASSWORD</td><td><a href="../details/accounts/crm-sync-initech.html">CRM-SYNC-INITECH</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/198-51-100-21.html"><code>198.51.100.21</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/crm-sync-initech.html">CRM-SYNC-INITECH</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/zk-miaz-initech.html">ZK-MIAZ-INITECH</a></td></tr>
 <tr data-res="orange"><td><code>198.51.100.210</code></td><td>PASSWORD</td><td><a href="../details/accounts/zk-ariva-oscorp.html">ZK-ARIVA-OSCORP</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/hr-pension-oscorp.html">HR-PENSION-OSCORP</a></td></tr>
@@ -121,7 +131,7 @@
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/hr-match-vandelay.html">HR-MATCH-VANDELAY</a></td></tr>
 <tr data-res="orange"><td><code>198.51.100.216</code></td><td>PASSWORD</td><td><a href="../details/accounts/cd-invoice-vandelay.html">CD-INVOICE-VANDELAY</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/hr-match-vandelay.html">HR-MATCH-VANDELAY</a></td></tr>
-<tr data-res="orange"><td><code>198.51.100.22</code></td><td>PASSWORD</td><td><a href="../details/accounts/crm-sync-initech.html">CRM-SYNC-INITECH</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/198-51-100-22.html"><code>198.51.100.22</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/crm-sync-initech.html">CRM-SYNC-INITECH</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/zk-miaz-initech.html">ZK-MIAZ-INITECH</a></td></tr>
 <tr data-res="orange"><td><code>198.51.100.220</code></td><td>PASSWORD</td><td><a href="../details/accounts/odv-maia-piedpiper.html">ODV-MAIA-PIEDPIPER</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/aim-lake-piedpiper.html">AIM-LAKE-PIEDPIPER</a></td></tr>
@@ -131,27 +141,27 @@
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/fs-ifrs-wayne.html">FS-IFRS-WAYNE</a></td></tr>
 <tr data-res="orange"><td><code>198.51.100.61</code></td><td>PASSWORD</td><td><a href="../details/accounts/cb-vida-wayne.html">CB-VIDA-WAYNE</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/fs-ifrs-wayne.html">FS-IFRS-WAYNE</a></td></tr>
-<tr data-res="orange"><td><code>198.51.100.90</code></td><td>PASSWORD</td><td><a href="../details/accounts/zk-ariva-oscorp.html">ZK-ARIVA-OSCORP</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/198-51-100-90.html"><code>198.51.100.90</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/zk-ariva-oscorp.html">ZK-ARIVA-OSCORP</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/hr-pension-oscorp.html">HR-PENSION-OSCORP</a></td></tr>
-<tr data-res="orange"><td><code>198.51.100.91</code></td><td>PASSWORD</td><td><a href="../details/accounts/zk-ariva-oscorp.html">ZK-ARIVA-OSCORP</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/198-51-100-91.html"><code>198.51.100.91</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/zk-ariva-oscorp.html">ZK-ARIVA-OSCORP</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/hr-pension-oscorp.html">HR-PENSION-OSCORP</a></td></tr>
-<tr data-res="orange"><td><code>203.0.113.10</code></td><td>PASSWORD</td><td><a href="../details/accounts/dpl-rensei-soylent.html">DPL-RENSEI-SOYLENT</a>, <a href="../details/accounts/it-maia-soylent.html">IT-MAIA-SOYLENT</a>, <a href="../details/accounts/zk-sensor-soylent.html">ZK-SENSOR-SOYLENT</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/203-0-113-10.html"><code>203.0.113.10</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/dpl-rensei-soylent.html">DPL-RENSEI-SOYLENT</a>, <a href="../details/accounts/it-maia-soylent.html">IT-MAIA-SOYLENT</a>, <a href="../details/accounts/zk-sensor-soylent.html">ZK-SENSOR-SOYLENT</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/cb-isolated-soylent.html">CB-ISOLATED-SOYLENT</a></td></tr>
-<tr data-res="orange"><td><code>203.0.113.11</code></td><td>PASSWORD</td><td><a href="../details/accounts/dpl-rensei-soylent.html">DPL-RENSEI-SOYLENT</a>, <a href="../details/accounts/it-maia-soylent.html">IT-MAIA-SOYLENT</a>, <a href="../details/accounts/zk-sensor-soylent.html">ZK-SENSOR-SOYLENT</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/203-0-113-11.html"><code>203.0.113.11</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/dpl-rensei-soylent.html">DPL-RENSEI-SOYLENT</a>, <a href="../details/accounts/it-maia-soylent.html">IT-MAIA-SOYLENT</a>, <a href="../details/accounts/zk-sensor-soylent.html">ZK-SENSOR-SOYLENT</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/cb-isolated-soylent.html">CB-ISOLATED-SOYLENT</a></td></tr>
-<tr data-res="orange"><td><code>203.0.113.12</code></td><td>PASSWORD</td><td><a href="../details/accounts/dpl-rensei-soylent.html">DPL-RENSEI-SOYLENT</a>, <a href="../details/accounts/it-maia-soylent.html">IT-MAIA-SOYLENT</a>, <a href="../details/accounts/zk-sensor-soylent.html">ZK-SENSOR-SOYLENT</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/203-0-113-12.html"><code>203.0.113.12</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/dpl-rensei-soylent.html">DPL-RENSEI-SOYLENT</a>, <a href="../details/accounts/it-maia-soylent.html">IT-MAIA-SOYLENT</a>, <a href="../details/accounts/zk-sensor-soylent.html">ZK-SENSOR-SOYLENT</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/cb-isolated-soylent.html">CB-ISOLATED-SOYLENT</a></td></tr>
 <tr data-res="orange"><td><code>203.0.113.195</code></td><td>PASSWORD</td><td><a href="../details/accounts/odv-are-aperture.html">ODV-ARE-APERTURE</a>, <a href="../details/accounts/si-sapbhp-aperture.html">SI-SAPBHP-APERTURE</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/fs-stmt-aperture.html">FS-STMT-APERTURE</a></td></tr>
 <tr data-res="orange"><td><code>203.0.113.196</code></td><td>PASSWORD</td><td><a href="../details/accounts/odv-are-aperture.html">ODV-ARE-APERTURE</a>, <a href="../details/accounts/si-sapbhp-aperture.html">SI-SAPBHP-APERTURE</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/fs-stmt-aperture.html">FS-STMT-APERTURE</a></td></tr>
-<tr data-res="orange"><td><code>203.0.113.20</code></td><td>PASSWORD</td><td><a href="../details/accounts/dpl-scan-cyberdyne.html">DPL-SCAN-CYBERDYNE</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/203-0-113-20.html"><code>203.0.113.20</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/dpl-scan-cyberdyne.html">DPL-SCAN-CYBERDYNE</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/it-ekdsi-cyberdyne.html">IT-EKDSI-CYBERDYNE</a></td></tr>
-<tr data-res="orange"><td><code>203.0.113.21</code></td><td>PASSWORD</td><td><a href="../details/accounts/dpl-scan-cyberdyne.html">DPL-SCAN-CYBERDYNE</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/203-0-113-21.html"><code>203.0.113.21</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/dpl-scan-cyberdyne.html">DPL-SCAN-CYBERDYNE</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/it-ekdsi-cyberdyne.html">IT-EKDSI-CYBERDYNE</a></td></tr>
-<tr data-res="orange"><td><code>203.0.113.22</code></td><td>PASSWORD</td><td><a href="../details/accounts/dpl-scan-cyberdyne.html">DPL-SCAN-CYBERDYNE</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/203-0-113-22.html"><code>203.0.113.22</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/dpl-scan-cyberdyne.html">DPL-SCAN-CYBERDYNE</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/it-ekdsi-cyberdyne.html">IT-EKDSI-CYBERDYNE</a></td></tr>
-<tr data-res="orange"><td><code>203.0.113.23</code></td><td>PASSWORD</td><td><a href="../details/accounts/dpl-scan-cyberdyne.html">DPL-SCAN-CYBERDYNE</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/203-0-113-23.html"><code>203.0.113.23</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/dpl-scan-cyberdyne.html">DPL-SCAN-CYBERDYNE</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/it-ekdsi-cyberdyne.html">IT-EKDSI-CYBERDYNE</a></td></tr>
 <tr data-res="orange"><td><code>203.0.113.230</code></td><td>PASSWORD</td><td><a href="../details/accounts/dpl-rensei-soylent.html">DPL-RENSEI-SOYLENT</a>, <a href="../details/accounts/it-maia-soylent.html">IT-MAIA-SOYLENT</a>, <a href="../details/accounts/zk-sensor-soylent.html">ZK-SENSOR-SOYLENT</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/cb-isolated-soylent.html">CB-ISOLATED-SOYLENT</a></td></tr>
@@ -161,25 +171,36 @@
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/it-ekdsi-cyberdyne.html">IT-EKDSI-CYBERDYNE</a></td></tr>
 <tr data-res="orange"><td><code>203.0.113.236</code></td><td>PASSWORD</td><td><a href="../details/accounts/dpl-scan-cyberdyne.html">DPL-SCAN-CYBERDYNE</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/it-ekdsi-cyberdyne.html">IT-EKDSI-CYBERDYNE</a></td></tr>
-<tr data-res="orange"><td><code>203.0.113.90</code></td><td>PASSWORD</td><td><a href="../details/accounts/odv-are-aperture.html">ODV-ARE-APERTURE</a>, <a href="../details/accounts/si-sapbhp-aperture.html">SI-SAPBHP-APERTURE</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/203-0-113-90.html"><code>203.0.113.90</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/odv-are-aperture.html">ODV-ARE-APERTURE</a>, <a href="../details/accounts/si-sapbhp-aperture.html">SI-SAPBHP-APERTURE</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/fs-stmt-aperture.html">FS-STMT-APERTURE</a></td></tr>
-<tr data-res="orange"><td><code>203.0.113.91</code></td><td>PASSWORD</td><td><a href="../details/accounts/odv-are-aperture.html">ODV-ARE-APERTURE</a>, <a href="../details/accounts/si-sapbhp-aperture.html">SI-SAPBHP-APERTURE</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/203-0-113-91.html"><code>203.0.113.91</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/odv-are-aperture.html">ODV-ARE-APERTURE</a>, <a href="../details/accounts/si-sapbhp-aperture.html">SI-SAPBHP-APERTURE</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/fs-stmt-aperture.html">FS-STMT-APERTURE</a></td></tr>
-<tr data-res="orange"><td><code>203.0.113.92</code></td><td>PASSWORD</td><td><a href="../details/accounts/odv-are-aperture.html">ODV-ARE-APERTURE</a>, <a href="../details/accounts/si-sapbhp-aperture.html">SI-SAPBHP-APERTURE</a></td></tr>
+<tr data-res="orange"><td><a href="../details/incoming_connections/203-0-113-92.html"><code>203.0.113.92</code></a></td><td>PASSWORD</td><td><a href="../details/accounts/odv-are-aperture.html">ODV-ARE-APERTURE</a>, <a href="../details/accounts/si-sapbhp-aperture.html">SI-SAPBHP-APERTURE</a></td></tr>
 <tr data-res="orange"><td></td><td>PUBLIC_KEY</td><td><a href="../details/accounts/fs-stmt-aperture.html">FS-STMT-APERTURE</a></td></tr>
+<tr class="total"><td>Total (42 IP(s))</td><td></td><td></td></tr>
 </table></div>
 <h2>Account &amp; login checks</h2>
 <h3>Non-standard login names (0)</h3>
-<p class="range">Every incoming login is a standard <code>FE&lt;digits&gt;</code> name.</p>
+<div class="tablewrap"><table class="index fit">
+<tr><th>Account</th><th>Communication profile</th><th>Login</th></tr>
+<tr class="total"><td>Total (0 login(s))</td><td></td><td></td></tr>
+</table></div>
 <h3>Login used by more than one account (1)</h3>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Login</th><th class="num">Accounts</th><th>On</th></tr>
 <tr data-res="orange"><td><a href="../details/logins/fe001111.html"><code>FE001111</code></a></td><td class="num">2</td><td><a href="../details/accounts/zg-bulk-dunder.html">ZG-BULK-DUNDER</a>, <a href="../details/accounts/zg-civil-dunder.html">ZG-CIVIL-DUNDER</a></td></tr>
+<tr class="total"><td>Total (1 login(s))</td><td class="num">2</td><td></td></tr>
 </table></div>
 <h3>Communication profiles with more than one host (0)</h3>
-<p class="range">Every communication profile resolves to a single host.</p>
+<div class="tablewrap"><table class="index fit">
+<tr><th>Account</th><th>Communication profile</th><th class="num">Hosts</th><th>Host list</th></tr>
+<tr class="total"><td>Total (0 profile(s))</td><td></td><td class="num"></td><td></td></tr>
+</table></div>
 <h3>Incoming password profiles with no stored password (0)</h3>
-<p class="range">Every incoming password profile has a stored password.</p>
+<div class="tablewrap"><table class="index fit">
+<tr><th>Account</th><th>Communication profile</th><th>Login</th></tr>
+<tr class="total"><td>Total (0 profile(s))</td><td></td><td></td></tr>
+</table></div>
 <h3>Accounts with more than one communication profile (9)</h3>
 <div class="tablewrap"><table class="index fit">
 <tr><th>Account</th><th class="num">Profiles</th><th>Communication profiles</th></tr>
@@ -192,8 +213,12 @@
 <tr data-res="orange"><td><a href="../details/accounts/it-ekdsi-cyberdyne.html">IT-EKDSI-CYBERDYNE</a></td><td class="num">2</td><td><code>CCP_IT-EKDSI-CYBERDYNE_KEY | CCP_IT-EKDSI-CYBERDYNE_PWD</code></td></tr>
 <tr data-res="orange"><td><a href="../details/accounts/odv-are-aperture.html">ODV-ARE-APERTURE</a></td><td class="num">2</td><td><code>CCP_ODV-ARE-APERTURE_PWD | CCP_ODV-ARE-APERTURE_PWD</code></td></tr>
 <tr data-res="orange"><td><a href="../details/accounts/stmt-export-globex.html">STMT-EXPORT-GLOBEX</a></td><td class="num">8</td><td><code>CCP_STMT-EXPORT-GLOBEX_PWD | CCP_STMT-EXPORT-GLOBEX_PWD | CCP_STMT-EXPORT-GLOBEX_PWD | CCP_STMT-EXPORT-GLOBEX_PWD | CCP_STMT-EXPORT-GLOBEX_PWD | CCP_STMT-EXPORT-GLOBEX_PWD | CCP_STMT-EXPORT-GLOBEX_PWD | CCP_STMT-EXPORT-GLOBEX_PWD</code></td></tr>
+<tr class="total"><td>Total (9 account(s))</td><td class="num">26</td><td></td></tr>
 </table></div>
 <h3>Login / login-name mismatch (0)</h3>
-<p class="range">Every <code>login</code> matches its <code>loginName</code>.</p>
+<div class="tablewrap"><table class="index fit">
+<tr><th>Account</th><th>Communication profile</th><th>login</th><th>loginName</th></tr>
+<tr class="total"><td>Total (0 profile(s))</td><td></td><td></td><td></td></tr>
+</table></div>
 </body>
 </html>
