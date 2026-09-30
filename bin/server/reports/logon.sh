@@ -70,9 +70,9 @@ TACCT="$TDATA/account.rpt"
 THOST="$TDATA/remote-host.rpt"
 # (known_names: bin/server/lib.sh since 2026-09-30)
 # The configured logins (flow-manager base cache, written in build stage 1):
-# the Door-knockers near-miss table checks each FE-namespace knocker name
-# against this list — the striking rows are the ones that ARE configured in
-# Flow Manager while the server says "not associated with any account".
+# the one key per configured login (klu) and the door-knocker test (a
+# configured login is never a knocker). (The near-miss table that listed the
+# FE-namespace knockers against this list went 2026-09-30, user request.)
 LBASE="$CONFIG_BASE/_logins.tsv"
 base_logins() {
     [ -f "$LBASE" ] || return 0
@@ -99,8 +99,7 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
 # Emits TAB-separated:
 #   R   <TAB> user <TAB> a t d n b k l r x <TAB> buckets <TAB> 9 drill fields <TAB> latest side (A T D N B K L) <TAB> its stamp
-#   OUT <TAB> count <TAB> host <TAB> user <TAB> reason <TAB> buckets <TAB> first <TAB> last <TAB> loglines
-#   KN  <TAB> name <TAB> count <TAB> nips <TAB> top-ip (n) <TAB> configured <TAB> first <TAB> last <TAB> buckets <TAB> loglines   (FE-namespace door knockers)
+#   OUT <TAB> count <TAB> host <TAB> user <TAB> pw key cert other <TAB> reason <TAB> buckets <TAB> first <TAB> last <TAB> sessions (\037) <TAB> loglines
 #   SC  <TAB> name <TAB> count <TAB> nips <TAB> ips (", "-joined, "-" = none) <TAB> first <TAB> last <TAB> buckets <TAB> loglines  (scanner door knockers)
 #   DKT <TAB> total <TAB> nnames
 #   TOT <TAB> a t d n b k l totals <TAB> outbound_total
@@ -179,6 +178,10 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
             reason = substr(r, RSTART + RLENGTH); sub(/^ +/, "", reason)
             k = host SUBSEP ouser
             oc[k]++; ototal++
+            # the connection (session) of the failed attempt — joined to the
+            # transfer legs of that session for the Subscription column
+            # (2026-09-30, user request; see out_subs below)
+            if ($6 != "" && !((k SUBSEP $6) in osx)) { osx[k SUBSEP $6] = 1; oss[k] = oss[k] "\037" $6 }
             # reason class: Password / Publickey / Certificate (the FTPS
             # 530 "Need certificate authentication" and 534 policy
             # refusals — the partner demands or rejects our TLS client
@@ -355,26 +358,22 @@ agg=$(awk -F'\t' -v BLF="$BLACKLIST_FILE" "$LOGLINES_AWK$LINK_AWK$BLACKLIST_AWK$
         for (x in ocd) { split(x, a2, SUBSEP); kk = a2[1] SUBSEP a2[2]
             obk[kk] = obk[kk] (obk[kk] == "" ? "" : ",") a2[3] ":" ocd[x] ":" (ocdc[x SUBSEP "p"]+0) ":" (ocdc[x SUBSEP "k"]+0) ":" (ocdc[x SUBSEP "c"]+0) ":" (ocdc[x SUBSEP "o"]+0) }
         for (k in oc) { split(k, a, SUBSEP)
-            printf "OUT\t%d\t%s%s\t%s%s\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\n", oc[k], hostlink(a[1]), a[1], acctlink(a[2]), a[2], \
+            printf "OUT\t%d\t%s%s\t%s%s\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\n", oc[k], hostlink(a[1]), a[1], acctlink(a[2]), a[2], \
                    opw[k]+0, oky[k]+0, ocr[k]+0, oot[k]+0, \
-                   orsn[k], (obk[k] == "" ? "-" : obk[k]), ofst[k], olst[k], lastlines("O" SUBSEP k)
+                   orsn[k], (obk[k] == "" ? "-" : obk[k]), ofst[k], olst[k], (oss[k] == "" ? "-" : substr(oss[k], 2)), lastlines("O" SUBSEP k)
         }
         # ---- door knockers ----
         for (x in dkd) { split(x, a5, SUBSEP); dkb[a5[1]] = dkb[a5[1]] (dkb[a5[1]] == "" ? "" : ",") a5[2] ":" dkd[x] }
-        # top source IP per FE-namespace name (ties break on the address)
-        for (x in dkip) { split(x, a5, SUBSEP)
-            if (a5[1] ~ /^FE[0-9]+$/ && (dkip[x] > tipn[a5[1]] || (dkip[x] == tipn[a5[1]] && a5[2] < tip[a5[1]]))) { tipn[a5[1]] = dkip[x]; tip[a5[1]] = a5[2] } }
         # the scanner names distinct source ADDRESSES, ", "-joined per name
         # (the IPs column — 2026-08-31, user request); collected here in hash
         # order, sortjoin() below makes the list deterministic
         for (x in dkip) { split(x, a5, SUBSEP)
             if (a5[1] !~ /^FE[0-9]+$/) scip[a5[1]] = scip[a5[1]] (scip[a5[1]] == "" ? "" : SUBSEP) a5[2] }
         nkn = 0
+        # (the FE-namespace knockers had their own near-miss table until
+        # 2026-09-30, user request — they stay out of Incoming, listed nowhere)
         for (u in dkc) { nkn++
-            if (u ~ /^FE[0-9]+$/)
-                printf "KN\t%s\t%d\t%d\t%s (%d)\t%s\t%s\t%s\t%s\t%s\n", u, dkc[u], dkips[u]+0, tip[u], tipn[u]+0, \
-                    ((u in klog) ? "yes" : "no"), dkf[u], dkl[u], (dkb[u] == "" ? "-" : dkb[u]), lastlines("DK" SUBSEP u)
-            else
+            if (u !~ /^FE[0-9]+$/)
                 printf "SC\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t%s\n", u, dkc[u], dkips[u]+0, (scip[u] == "" ? "-" : sortjoin(scip[u])), dkf[u], dkl[u], \
                     (dkb[u] == "" ? "-" : dkb[u]), lastlines("DK" SUBSEP u)
         }
@@ -479,17 +478,6 @@ rows() {
 # when the family is absent): logon is a merged-component of Logons, whose
 # tab bar enumerates tables, so the TABLE count must not vary per env.
 IFS=$'\t' read -r _ dk_tot dk_names <<< "$(printf '%s\n' "$agg" | grep $'^DKT\t' || printf 'DKT\t0\t0\n')"
-n_near=0; near_att=0
-near_rows() {
-    while IFS=$'\t' read -r _ name count nips topip conf fst lst bkt lines; do
-        [ -n "$name" ] || continue
-        [ "$bkt" = "-" ] && bkt=""
-        n_near=$((n_near + 1)); near_att=$((near_att + count))
-        if [ "$conf" = "yes" ]; then confcell="yes — no account attached"; else confcell="no"; fi
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:res=red\t@data:buckets=%s\t@data:loglines=%s\n' \
-            "$name" "$count" "$nips" "$topip" "$confcell" "$fst" "$lst" "$bkt" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^KN\t' | LC_ALL=C sort -t"$(printf '\t')" -k3,3nr -k2,2)"
-}
 n_scan=0; scan_att=0
 scan_rows() {
     while IFS=$'\t' read -r _ name count nips ips fst lst bkt lines; do
@@ -503,14 +491,41 @@ scan_rows() {
 }
 
 n_pairs=0
+# The SUBSCRIPTION of an Outgoing pair (2026-09-30, user request): the
+# sessions of its failed attempts joined to the transfer legs of the same
+# connection (_transfers.tsv col 24 -> col 6, the site's session join) — the
+# failed outbound attempt is logged as a leg of the flow that tried it. A
+# session whose legs name two flows names neither (the site rule); "Unknown"
+# is no subscription. The pair's distinct subscriptions, sorted, as ONE
+# @{alist=subscriptions} cell (each name links its detail page); blank when
+# no session resolves. Replaces field 13 (the sessions) of the OUT line.
+out_subs() {
+    # (the OUT lines arrive on stdin; FILENAME, not FNR == NR, tells the two
+    # inputs apart — with NO Outgoing rows FNR == NR would hold for the legs)
+    { printf '%s\n' "$agg" | grep $'^OUT\t' || true; } | awk -F'\t' -v OFS='\t' -v TRF="$TRANSFER_CACHE/_transfers.tsv" '
+        FILENAME != TRF { if ($0 == "") next; L[++n] = $0; m = split($13, S, "\037"); for (i = 1; i <= m; i++) if (S[i] != "" && S[i] != "-") want[S[i]] = 1; next }
+        ($24 in want) && $6 != "" && $6 != "Unknown" { if (!($24 in ss)) ss[$24] = $6; else if (ss[$24] != $6) ss[$24] = "\001" }
+        END {
+            for (i = 1; i <= n; i++) {
+                split(L[i], F, "\t"); m = split(F[13], S, "\037"); c = 0; delete got
+                for (j = 1; j <= m; j++) { s = S[j]; if ((s in ss) && ss[s] != "\001" && !(ss[s] in got)) { got[ss[s]] = 1; U[++c] = ss[s] } }
+                for (a = 2; a <= c; a++) { v = U[a]; b = a - 1; while (b >= 1 && U[b] > v) { U[b + 1] = U[b]; b-- } U[b + 1] = v }
+                cell = ""; for (a = 1; a <= c; a++) cell = cell (a > 1 ? ", " : "") U[a]
+                F[13] = (cell == "") ? "-" : "@{alist=subscriptions}" cell
+                line = F[1]; for (a = 2; a <= 14; a++) line = line OFS F[a]
+                print line
+            }
+        }' - "$TRANSFER_CACHE/_transfers.tsv"
+}
 out_rows() {
-    while IFS=$'\t' read -r _ count host ouser pw ky cr ot reason bkt fst lst lines; do
+    while IFS=$'\t' read -r _ count host ouser pw ky cr ot reason bkt fst lst subs lines; do
         [ -n "$host" ] || continue
         [ "$bkt" = "-" ] && bkt=""
+        [ "$subs" = "-" ] && subs=""
         n_pairs=$((n_pairs + 1))
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' \
-            "$host" "$ouser" "$count" "$pw" "$ky" "$cr" "$ot" "$reason" "$fst" "$lst" "$bkt" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^OUT\t' | LC_ALL=C sort -t"$(printf '\t')" -k2,2nr)"
+        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' \
+            "$host" "$ouser" "$subs" "$count" "$pw" "$ky" "$cr" "$ot" "$reason" "$fst" "$lst" "$bkt" "$lines"
+    done <<< "$(out_subs | LC_ALL=C sort -t"$(printf '\t')" -k2,2nr)"
 }
 
 {
@@ -539,30 +554,15 @@ out_rows() {
         "$nrows" "$atot" "$dtot" "$ttot" "$ntot" "$btot" "$ktot" "$ltot" "$aftot" "$xtot" "$lgtot" "$rtot"
 
     printf 'TABLE\tOutgoing\twide\tdrill=log line\n'
-    printf 'HEAD\tRemote host\tUser\tFailures\tPassword\tKey\tCertificate\tOther\tReason (last seen)\tFirst\tLast\n'
-    printf 'KIND\thost\tmono\tnumfailed\tnumfailed\tnumfailed\tnumfailed\tnumfailed\ttext\ttext\ttext\n'
-    printf 'RECALC\t-\t-\ts0\ts1\ts2\ts3\ts4\t-\t-\t-\n'
+    printf 'HEAD\tRemote host\tUser\tSubscription\tFailures\tPassword\tKey\tCertificate\tOther\tReason (last seen)\tFirst\tLast\n'
+    printf 'KIND\thost\tmono\ttext\tnumfailed\tnumfailed\tnumfailed\tnumfailed\tnumfailed\ttext\ttext\ttext\n'
+    printf 'RECALC\t-\t-\t-\ts0\ts1\ts2\ts3\ts4\t-\t-\t-\n'
     out_rows
-    printf 'TOTAL\t@{colspan=2}Total (%s pair(s))\t@{class=num failed}%s\t@{class=num failed}%s\t@{class=num failed}%s\t@{class=num failed}%s\t@{class=num failed}%s\t\t\t\n' "$n_pairs" "$ototal" "$opwt" "$okyt" "$ocrt" "$oott"
+    printf 'TOTAL\t@{colspan=3}Total (%s pair(s))\t@{class=num failed}%s\t@{class=num failed}%s\t@{class=num failed}%s\t@{class=num failed}%s\t@{class=num failed}%s\t\t\t\n' "$n_pairs" "$ototal" "$opwt" "$okyt" "$ocrt" "$oott"
 
 
-    # ---- door knockers: near misses first (the actionable table), then ----
-    # the scanner top 25 (2026-08)
-    if [ "${dk_tot:-0}" -gt 0 ]; then
-        printf 'TABLE\tDoor knockers — near misses\twide\trestint\tnoagg=2\tdrill=log line\n'
-    else
-        printf 'TABLE\tDoor knockers — near misses\tnofilter\tnosort\n'
-    fi
-    printf 'HEAD\tLogin\tAttempts\tSource IPs\tTop source\tConfigured login\tFirst\tLast\n'
-    printf 'KIND\tlogin\tnumfailed\tnum\tmono\ttext\ttext\ttext\n'
-    printf 'RECALC\t-\ts0\t-\t-\t-\t-\t-\n'
-    if [ "${dk_tot:-0}" -gt 0 ]; then
-        near_rows
-    else
-        printf 'ROW\t@{colspan=7}No door-knocker lines in this data window.\n'
-    fi
-    printf 'TOTAL\tTotal (%s name(s))\t@{class=num failed}%s\t\t\t\t\t\n' "$n_near" "$near_att"
-
+    # ---- door knockers: the scanner top 25 (2026-08; the near-miss table went
+    # 2026-09-30, user request)
     if [ "${dk_tot:-0}" -gt 0 ]; then
         printf 'TABLE\tDoor knockers — scanner names\twide\tnoagg=2,3\tdrill=log line\n'
     else

@@ -5,8 +5,9 @@
 # with account \"…\", successfully authenticated over SSH … Remote address: …"
 # line records who connected, from where. Per account and per source IP — a
 # baseline of who is actually logging in that the transfer logs don't give
-# (they start at the transfer, after auth). A third table surfaces SHARED
-# CERTIFICATES: one certificate serial authenticating many accounts.
+# (they start at the transfer, after auth). (The third table — shared
+# certificates per serial, the Logons › Certificates tab — went 2026-09-30,
+# user request.)
 #
 # Reads the parse cache (data/_parse.tsv: 1=date, 2=time, 4=component, 5=message).
 # Accounts are shown as logged with the @endpoint suffix stripped (mono); an
@@ -52,11 +53,9 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
-# One pass. SSH successful-auth lines feed the account and source-IP tables;
-# certificate-attempt lines feed the shared-certificate table. Emits:
+# One pass. SSH successful-auth lines feed the account and source-IP tables. Emits:
 #   AC <TAB> account <TAB> logins <TAB> nIPs <TAB> buckets <TAB> first <TAB> last <TAB> loglines
 #   IP <TAB> ip <TAB> logins <TAB> nAccts <TAB> buckets <TAB> first <TAB> last <TAB> loglines
-#   CT <TAB> serial <TAB> attempts <TAB> nAccts <TAB> buckets <TAB> first <TAB> last <TAB> loglines
 #   TOT <TAB> logins <TAB> naccts <TAB> nips
 agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
     $1 == "KA" { kacct[$2] = 1; next }                       # known-account list (first input)
@@ -91,36 +90,14 @@ agg=$(awk -F'\t' "$LOGLINES_AWK$LINK_AWK"'
             }
             next
         }
-
-        if (m ~ /Authentication attempt with certificate with serial number/) {
-            ser = ""; if (match(m, /serial number [0-9A-Fa-f]+/)) ser = substr(m, RSTART + 14, RLENGTH - 14)
-            if (ser == "") next
-            na = 0; lst2 = ""
-            if (match(m, /assigned to \[[^]]*\]/)) { lst2 = substr(m, RSTART + 13, RLENGTH - 14); na = gsub(/@/, "@", lst2) }
-            # ONE serial can cover MANY distinct certificates (self-signed
-            # default "01"): the certificate IDENTITY here is serial + its
-            # assigned-account list, keyed "ser#seq" (seq in encounter order —
-            # the cache order is fixed, so this is deterministic)
-            if (!((ser "#" lst2) in cidof)) cidof[ser "#" lst2] = ser "#" (++cseq[ser])
-            ck = cidof[ser "#" lst2]
-            cc[ck]++; if (na > cn[ck]) cn[ck] = na
-            addline("C" SUBSEP ck, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
-            if (d != "") {
-                ccd[ck SUBSEP d]++
-                if (!(ck in cfst) || d < cfst[ck]) cfst[ck] = d
-                if (!(ck in clst) || d > clst[ck]) clst[ck] = d
-            }
-        }
     }
     END {
         for (k in aip) { split(k, a, SUBSEP); nip[a[1]]++ }
         for (k in ipa) { split(k, a, SUBSEP); nac[a[1]]++ }
         for (k in acd) { split(k, a, SUBSEP); abk[a[1]] = abk[a[1]] (abk[a[1]] ? "," : "") a[2] ":" acd[k] }
         for (k in ipd) { split(k, a, SUBSEP); ibk[a[1]] = ibk[a[1]] (ibk[a[1]] ? "," : "") a[2] ":" ipd[k] }
-        for (k in ccd) { split(k, a, SUBSEP); cbk[a[1]] = cbk[a[1]] (cbk[a[1]] ? "," : "") a[2] ":" ccd[k] }
         naccts = 0; for (x in ac)  { naccts++; printf "AC\t%s%s\t%d\t%d\t%s\t%s\t%s\t%s\n", acctlink(x), x, ac[x], nip[x]+0, abk[x], afst[x], alst[x], lastlines("A" SUBSEP x) }
         nips = 0;   for (x in ipc) { nips++;   printf "IP\t%s\t%d\t%d\t%s\t%s\t%s\t%s\n", x, ipc[x], nac[x]+0, ibk[x], ifst[x], ilst[x], lastlines("I" SUBSEP x) }
-        for (x in cc) printf "CT\t%s\t%d\t%d\t%s\t%s\t%s\t%s\n", x, cc[x], cn[x]+0, cbk[x], cfst[x], clst[x], lastlines("C" SUBSEP x)
         for (x in al9) { split(x, a9, SUBSEP); printf "AL\t%s\t%s\t%d\n", a9[1], a9[2], al9[x] }   # hash order — the shell sorts the sidecar
         printf "TOT\t%d\t%d\t%d\n", tot+0, naccts+0, nips+0
     }
@@ -137,12 +114,8 @@ if [ "${tot:-0}" -eq 0 ]; then
     rm -f "$OUT"   # no data for this ENV — page not published (an env-split legitimate state)
     exit 0
 fi
-n_cert=$(printf '%s\n' "$agg" | grep -c $'^CT\t' || true)
-# max accounts on ONE certificate = field 4 (field 3 is the attempt count)
-# serials appearing on MORE than one distinct certificate (for the display suffix)
-multi_ser=$(printf '%s\n' "$agg" | awk -F'\t' '$1=="CT"{split($2,p,"#"); c[p[1]]++} END{for(k in c) if(c[k]>1) printf " %s ", k}')
 
-# The three row writers print STRAIGHT to stdout inside the page block below —
+# The two row writers print STRAIGHT to stdout inside the page block below —
 # a `rows+=$(printf …)` per row forks a subshell per row for nothing.
 acct_rows() {
     while IFS=$'\t' read -r _ acct logins nip bk fst lst lines; do
@@ -158,17 +131,6 @@ ip_rows() {
     done <<< "$(printf '%s\n' "$agg" | grep $'^IP\t' | sort -t"$(printf '\t')" -k3,3nr)"
 }
 
-cert_rows() {
-    while IFS=$'\t' read -r _ ser attempts nac bk fst lst lines; do
-        [ -z "$ser" ] && continue
-        # display: the serial, disambiguated when several DISTINCT certificates
-        # share it ("01 (cert 2)")
-        disp=${ser%%#*}; seq=${ser##*#}
-        case $multi_ser in *" $disp "*) disp="$disp (cert $seq)" ;; esac
-        ncell="$nac"; [ "$nac" -gt 1 ] 2>/dev/null && ncell="@{class=warn}$nac"
-        printf 'ROW\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$disp" "$attempts" "$ncell" "$fst" "$lst" "$bk" "$lines"
-    done <<< "$(printf '%s\n' "$agg" | grep $'^CT\t' | sort -t"$(printf '\t')" -k3,3nr -k2,2)"
-}
 
 {
     printf 'TITLE\tAuthentication Activity\n'
@@ -187,12 +149,6 @@ cert_rows() {
     ip_rows
     printf 'TOTAL\tTotal (%s IP(s))\t@{class=num}%s\t\t\t\n' "$nips" "$tot"
 
-    printf 'TABLE\tCertificates (shared-key detection)\n'
-    printf 'HEAD\tCertificate serial\tAuth attempts\tAccounts on certificate\tFirst seen\tLast seen\n'
-    printf 'KIND\tmono\tnum\tnum\ttext\ttext\n'
-    printf 'RECALC\t-\ts0\t-\t-\t-\n'
-    cert_rows
-    printf 'TOTAL\tTotal (%s certificate(s))\t\t\t\t\n' "$n_cert"
 
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

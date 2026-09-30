@@ -1330,6 +1330,13 @@ check $(grep -q '<tr class="total"><td>Total</td>' docs/index.html 2>/dev/null &
 # no .rpt, no link
 n=$(ls docs/transfer/sources-and-targets*.html docs/analyses/data-diff*.html docs/analyses/triage*.html docs/transfer/file-journey-last-leg.html docs/transfer/file-journey-in-and-out.html docs/transfer/episodes-episodes.html docs/analyses/subscriptions-in-boxes*.html docs/*/cleanup-backlog*.html docs/*/config-hygiene*.html docs/*/whitelist-audit*.html docs/*/account-sharing*.html docs/*/twins*.html 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "$n removed report page(s) (sources-and-targets, data-diff, triage, last leg, in and out, episodes, boxes, Cleanup) still published"
+# the Logons Near misses + Certificates tabs are GONE (2026-09-30, user
+# request); the Outgoing table names the subscription that tried
+n=$(ls docs/server/logons-near-misses.html docs/server/logons-certificates.html 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-1}" = 0 ] && ! grep -rqs 'logons-near-misses\.html\|logons-certificates\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "the retired Logons Near misses / Certificates pages (or a link to them) are back"
+oh=$(awk -F'\t' '$1 == "TABLE" && $2 == "Outgoing" { t = 1; next } $1 == "TABLE" { t = 0 } t && $1 == "HEAD" { print $4; exit }' data/server/reports/logon.rpt 2>/dev/null)
+os=$(awk -F'\t' '$1 == "TABLE" && $2 == "Outgoing" { t = 1; next } $1 == "TABLE" { t = 0 } t && $1 == "ROW" && index($4, "@{alist=subscriptions}") == 1 { n++ } END { print n + 0 }' data/server/reports/logon.rpt 2>/dev/null)
+check $([ "$oh" = "Subscription" ] && [ "${os:-0}" -gt 0 ] && echo 0 || echo 1) "logon.rpt Outgoing: column 3 is '${oh:-?}' (expected Subscription), ${os:-0} row(s) name a subscription"
 # the red-run producers became ONE sidecar writer (2026-09-30): no
 # from-green-to-red / only-red .rpt or script may come back, the sidecar exists
 n=$(ls data/transfer/reports/from-green-to-red.rpt data/transfer/reports/only-red.rpt bin/transfer/reports/from-green-to-red.sh bin/transfer/reports/only-red.sh 2>/dev/null | wc -l | tr -d ' ')

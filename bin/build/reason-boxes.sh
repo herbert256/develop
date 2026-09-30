@@ -207,7 +207,7 @@ _subs_box_rows() {
                         if (s ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] /) {
                             d = substr(s, 1, 10); gsub(/-/, "", d); key = d substr(s, 12, 12) }
                         break }
-                    if (key == "" && $11 ~ /^[0-9]/) { d = $11; gsub(/-/, "", d); key = d "23:59:59.999" }   # Last ($11; $10 is First — 2026-09-29 fix)
+                    if (key == "" && $12 ~ /^[0-9]/) { d = $12; gsub(/-/, "", d); key = d "23:59:59.999" }   # Last ($12; $11 is First — the Subscription column went in after User 2026-09-30)
                     if (key == "") next
                     hu = tolower(h)
                     if (hu in SUBS) { m2 = split(substr(SUBS[hu], 2), S2, "\037")

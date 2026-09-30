@@ -1750,6 +1750,16 @@ front end) then four fix workers with disjoint files. The rules it left:
 - **Detail pages**: the Waiting/Expired summary is HELD and rendered after the Features block
   (`we_table`), so the section order does not depend on whether an entity has such Files.
 
+## Rules from the third 2026-09-30 "few little things" batch (user request)
+
+- **Logons**: the Near misses and Certificates tabs are GONE (logon.sh no longer writes the FE-namespace
+  knocker table — those names stay out of Incoming, listed nowhere; auth-activity.sh no longer scans the
+  certificate lines); tabs Incoming · Outgoing · Scanners · By account · By source IP.
+- **Logons › Outgoing names the SUBSCRIPTION that tried** (after User): the sessions of the pair's
+  failed attempts joined to the transfer legs of the same connection (`_transfers.tsv` col 24 → col 6,
+  the site's session join; a session naming two flows names neither; `Unknown` is no subscription),
+  one `@{alist=subscriptions}` cell. reason-boxes reads the Outgoing Last date as field 12 now.
+
 ## Rules from the second 2026-09-30 "few little things" batch (user request)
 
 - **Waiting & Expired** (`transfer/waiting-expired.html`, `bin/transfer/reports/waiting-expired.sh`)
