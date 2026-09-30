@@ -10,7 +10,7 @@
    kinds that own a slot chart load it.
 
    Placeholder contract (bin/dashboards/publish.sh, bin/day/publish.sh):
-     <div class="slotchart" data-kind="dur|durfit|count|bytes|rate|pesit"
+     <div class="slotchart" data-kind="dur|count|bytes|rate|pesit"
           data-cid="ch1" data-title="…" data-link="../day/{}.html?…"
           data-base="360" data-iv360="…" [data-iv240="…" data-iv720="…" …]></div>
    Each data-iv<MINUTES> is one resolution, "label:v1[:v2[:v3]]:date|…" — the
@@ -45,39 +45,8 @@
   var DT = [1000, 2000, 3000, 5000, 7000, 10000, 15000, 20000, 25000, 30000, 45000, 60000, 300000, 1800000, 3600000, 18000000, 36000000, 86400000, 172800000];
   var DTL = ["1 s", "2 s", "3 s", "5 s", "7 s", "10 s", "15 s", "20 s", "25 s", "30 s", "45 s", "1 m", "5 m", "30 m", "1 h", "5 h", "10 h", "24 h", ">= 48 h"];
 
-  // The FITTED duration axis (kind `durfit`, the Monitor charts): identical
-  // bands and piecewise-linear segments, but the ticks come from this chart's
-  // OWN data — the monitor loop is floored at ~5 min by the :05 poll, so the
-  // shared 1 s..1 h axis parks it in a sliver. Ticks are picked from a
-  // nice-duration ladder spanning [min, max] of the plotted values (every
-  // entry integral in its display unit), thinned to at most 8.
-  // The ladder runs past 24 h and the fit always keeps TWO ticks (2026-09-29
-  // audit F16: a chart whose values were all >= 24 h fitted ONE tick, and the
-  // axis divided by ticks - 1 = 0 — every coordinate NaN); a value beyond the
-  // top tick draws at the top, like the fixed axis.
-  var DLAD = [1000, 2000, 5000, 10000, 15000, 30000, 60000, 120000, 300000, 600000, 900000, 1200000, 1800000, 2700000, 3600000, 7200000, 14400000, 43200000, 86400000, 172800000, 345600000, 604800000];
-  function dtick(ms) { return ms < 60000 ? ms / 1000 + " s" : ms < 3600000 ? ms / 60000 + " m" : ms < 172800000 ? ms / 3600000 + " h" : ms / 86400000 + " d"; }
-  function fitTicks(slots) {
-    var mn = Infinity, mxv = 0, i, q, t;
-    for (i = 0; i < slots.length; i++) if (slots[i].has)
-      for (q = 0; q < slots[i].v.length; q++) { t = slots[i].v[q]; if (t < mn) mn = t; if (t > mxv) mxv = t; }
-    if (mxv === 0) return { t: DT, l: DTL };
-    var lo = 0, hi = DLAD.length - 1;
-    while (lo < DLAD.length - 1 && DLAD[lo + 1] <= mn) lo++;
-    while (hi > 0 && DLAD[hi - 1] >= mxv) hi--;
-    if (hi <= lo) hi = lo + 1;
-    if (hi > DLAD.length - 1) { hi = DLAD.length - 1; lo = hi - 1; }
-    var t2 = DLAD.slice(lo, hi + 1);
-    while (t2.length > 8) {
-      var th = [], j;
-      for (j = 0; j < t2.length - 1; j += 2) th.push(t2[j]);
-      th.push(t2[t2.length - 1]);
-      t2 = th;
-    }
-    var l2 = [], k;
-    for (k = 0; k < t2.length; k++) l2.push(dtick(t2[k]));
-    return { t: t2, l: l2 };
-  }
+  // (the FITTED duration axis — DLAD / dtick / fitTicks — went 2026-09-30
+  // with the Monitor dashboard, its one user)
 
   function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
 
@@ -109,7 +78,7 @@
 
   // ---- per-KIND setup (series count, colours, names, empty text) -----------
   function kindSpec(kind) {
-    if (kind === "dur" || kind === "durfit") return { ns: 3, col: ["#1e6b38", "#d9821c", "#95241e"], name: ["P50", "P90", "P98"], empty: "no OK Files in this slot", fmt: hdur };
+    if (kind === "dur") return { ns: 3, col: ["#1e6b38", "#d9821c", "#95241e"], name: ["P50", "P90", "P98"], empty: "no OK Files in this slot", fmt: hdur };
     if (kind === "pesit") return { ns: 2, col: [CR, CP], name: ["ST → CFT", "CFT → ST"], empty: "no data", fmt: hn };
     // the CUMULATIVE "seen" curves (Subscriptions / Partners / Accounts seen).
     // THREE counts: v0 orange = seen in the transfer log, split into v1 green
@@ -179,14 +148,10 @@
   function draw(kind, style, slots, linkpat, cid, title, scale) {
     // the frame: every kind the 230-high one, the fixed-axis `dur` the
     // taller HDUR one — its 19 ticks (DT) would sit 10 units apart in the
-    // shared frame and their labels overlap; `durfit` (at most 8 fitted
-    // ticks) keeps the shared frame. Decided on the ORIGINAL kind, before
-    // the durfit remap below. Shadows the module H0/BASE0/IH0 for this draw.
+    // shared frame and their labels overlap. Shadows the module H0/BASE0/IH0
+    // for this draw.
     var H = (kind === "dur") ? HDUR : H0, BASE = H - B, IH = BASE - T0;
-    // durfit = dur on a per-chart fitted axis; remapped HERE so every other
-    // dur branch (marks, tooltip) is shared untouched
     var DTv = DT, DTLv = DTL;
-    if (kind === "durfit") { var ft = fitTicks(slots); DTv = ft.t; DTLv = ft.l; kind = "dur"; }
     var K = kindSpec(kind), ns = K.ns, n = slots.length, i, s, g;
     var step = n > 1 ? IW / (n - 1) : 0, gw = IW / n, bw = gw * 0.6, mx = 1;
     if (kind !== "dur") {

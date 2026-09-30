@@ -989,11 +989,10 @@ run_step "report catch-up: failed subscriptions (the Reason columns)"     bin/tr
 # 2026-09-27 (speed round 8) they run BESIDE THE PUBLISHES below, in the
 # second background slot, waited for right before the dashboards publish:
 # nothing from here to there reads their outputs or rewrites their inputs
-# (the transfer + server reports, the caches, colour/, the config). ONE
-# exception, served first in the foreground: whether monitor.rpt EXISTS
-# sets the top bar's Monitor link in every page a publish bakes (publish_lib
-# TB_MON, folded into the ?v= stamp) — so monitor.sh runs here, once, and
-# bin/dashboards/reports.sh leaves it out.
+# (the transfer + server reports, the caches, colour/, the config). (The
+# Monitor dashboard — monitor.sh, run here in the foreground because its
+# .rpt set the top bar's Monitor link — went 2026-09-30, user request: its
+# page was empty on both runtimes.)
 # STARTED RIGHT AFTER THE SERVER REPORTS (2026-09-29, build speed — until
 # then after phase 2 + the analyses reports, ~6 s later, and the build then
 # waited up to 8 s for it): their inputs are the transfer caches, phase-1
@@ -1003,9 +1002,7 @@ run_step "report catch-up: failed subscriptions (the Reason columns)"     bin/tr
 # Checked: phase 2 writes showseen / ranking, the analyses step data/analyses/,
 # the cross-* and entity-search .rpt files and data/first-seen/ — none of
 # them an input here, and nothing below reads data/day/ or overview.rpt
-# before the wait. monitor.sh (the transfer cache only) moved up with them, so
-# the dashboards' orphaned-.rpt.tmp sweep can never meet its atomic write.
-run_step "report: dashboards monitor (the top bar's Monitor flag)"        bin/dashboards/reports/monitor.sh
+# before the wait.
 bg2_step_start "report: dashboards + day pages .rpt files"                bash -c 'bin/dashboards/reports.sh & d=$!; bin/day/reports.sh; s=$?; wait "$d" || s=$?; exit "$s"'
 run_step "report: transfer .rpt files (phase 2)"                          bin/transfer/reports.sh phase2
 run_step "report: analyses .rpt files"                                    bin/analyses/reports.sh

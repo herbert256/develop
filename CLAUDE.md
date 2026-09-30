@@ -3,7 +3,7 @@
 Guidance for Claude Code (claude.ai/code) when working with this repository.
 
 **Deep subsystem notes live in `ARCHITECTURE.md`** (repo root, not auto-loaded): the attribution
-chain and result colours in full, PDA derivation, dashboards + Monitor, day pages, drill-down,
+chain and result colours in full, PDA derivation, dashboards, day pages, drill-down,
 home, Entities views, detail pages, special pages, the Boxes sidecar, group lists. **Read the relevant
 section there BEFORE changing one of those subsystems.**
 
@@ -152,7 +152,7 @@ checkout with logs but no config export: it synthesizes the two JSONs from the t
 - **The top bar is RUNTIME**: pages bake only that placeholder; report.js `buildTopbar` renders
   the full bar from `docs/assets/topbar-data.js` (written by `ensure_assets`: the
   ONE menu string, `reports` (the Reports pulldown, 2026-09-29 — the transfer / server / analyses /
-  goodies keys are gone), with its `@` placeholder, `monitor:0|1`,
+  goodies keys are gone), with its `@` placeholder (the `monitor:0|1` flag went 2026-09-30 with the Monitor dashboard),
   `coreid:"<url>"`, `env:"<label>"`, `envkey:"<key>"`, `period:"yyyy-mm-dd / yyyy-mm-dd"` (the DATA PERIOD — the transfer day report’s META first/last days, shown second in the bar after the environment, before Entities; 2026-09-13, user request) + the `AXWAY_ENVLINKS` switch function;
   `?v=` stamp `TB_VER` folds the flag, the template, the label, the key and the site URLs). The
   help/build pages bake full chrome (`render_shared_topbar` → `render_topbar BASE HELPSLUG`, the
@@ -235,8 +235,8 @@ rescan rewrote, 2026-09-28), `bin/build/kaput-evidence.sh` early (its ONLY run: 
 background slot 2 beside transfer phase 1 and the server reports (with `AXWAY_WAIT_FAILED=1`: it
 waits — capped at 30 min — for the phase-1 pool's marker `.phase1-pool-done` in the transfer
 reports dir before reading what phase 1 writes, 2026-09-28), then — right after the server
-reports since 2026-09-29 — the dashboards MONITOR (`monitor.sh`, foreground: whether
-`monitor.rpt` exists sets every page's top bar) and dashboards ∥ day in background slot 2 (their
+reports since 2026-09-29 — dashboards ∥ day in background slot 2 (the Monitor dashboard's
+`monitor.sh`, run in the foreground before them, went 2026-09-30, user request; their
 inputs are all final there), then transfer phase 2 and analyses, the dashboards + day reports
 waited for right before the dashboards publish. After the server reports: `bin/build/reason-boxes.sh`
 (the box-reason sidecar, beside details.sh), then — after details.sh's wait — `failed.sh catchup`,
@@ -255,7 +255,7 @@ modes went 2026-09-30; the detail pages' ONLY render), then partner-groups, serv
 Dependency rules: transfer reports before server and analyses reports; dashboards + day after both areas;
 `bin/build/publish.sh` last of the publishes (the area publishes clear the dirs its index pages
 live in). A script that ran twice in one build only to skip the second time runs ONCE now:
-`bin/build/kaput-evidence.sh` (not in the server-reports pool), `monitor.sh` (not in `bin/dashboards/reports.sh`),
+`bin/build/kaput-evidence.sh` (not in the server-reports pool),
 `details.sh`, failed-files.sh, unknown-transfers.sh and failing-reasons.sh (no catch-up re-runs since
 2026-09-30); `failed.sh` runs twice on purpose (full in phase 1, `catchup` after reason-boxes — the
 evidence ↔ box-reason cycle).
@@ -539,7 +539,7 @@ snapshot), whose files outlive the build. Do not reintroduce a freshness check: 
 must not repeat work inside one build gets an explicit mode or a single call site instead (the
 server parse's `AXWAY_SKIP_MENTIONS` / `AXWAY_MENTIONS_ONLY`, the transfer parse's
 `AXWAY_DERIVE_ONLY`, failed.sh's `catchup` mode — the publishes' `firstpass` / `catchup` modes went
-2026-09-30 — kaput-evidence / monitor run once). Within-build DEPENDENCY guards stay:
+2026-09-30 — kaput-evidence runs once). Within-build DEPENDENCY guards stay:
 `ensure_logons` builds the logon summary only when it is not there yet (the background step
 normally has), `srv_subset` falls back to the whole cache without `subsets/.done`, and the
 appended-names mention rescan is skipped when it cannot change anything. (The one tracked
@@ -603,8 +603,9 @@ separator-folded) is owned here too — it runs FIRST, the PDA pass consumes it.
 
 ### bin/dashboards/ and bin/day/
 
-`bin/dashboards/reports.sh` → `overview.rpt` (`monitor.rpt`, whose EXISTENCE flags "this checkout
-has a monitor", comes from `monitor.sh`, which `bin/build.sh` runs on its own); `publish.sh` renders the Overview — 5 KPIs + one hero graph with alternate
+`bin/dashboards/reports.sh` → `overview.rpt` (the Monitor dashboard — `monitor.sh` →
+`monitor.rpt` → `dashboards/monitor.html`, the top-bar Monitor link and the `durfit` chart kind —
+went 2026-09-30, user request: its page was empty on both runtimes; never restore); `publish.sh` renders the Overview — 5 KPIs + one hero graph with alternate
 views, all chart type `slots`, drawn client-side by `docs/assets/slotchart.js`.
 `bin/day/reports.sh` writes one `.rpt` per calendar day (both logs); its publish renders KPIs →
 hero → problem lists → facts → six Top-5 tables. Both run after the two areas' reports; the
@@ -1653,7 +1654,7 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   Unknown transfers totals Legs / Volume / OK / Error; Configured subscriptions reads
   `Total (N): C configured + K skipped` (the annotation after ")" is dropped while filtered).
 - **Labels (Files vs transfers, Error vs failure)**: KPIs "Files" / "File error rate", hero
-  "OK Files" (`?axway_hero=OK%20Files` — keep the CARDALT keys, the seen cards', monitor's and
+  "OK Files" (`?axway_hero=OK%20Files` — keep the CARDALT keys, the seen cards' and
   anomalies' links and report.js `kmap` in step); Duration views "Delivered Files" / "All Files";
   attempts "% of OK Files"; One-legged per day = one "One-legged Files" column; "Automatic" (not
   "Auto Retries"); resubmission outcomes Error / OK; connection efficiency "User sessions" vs the
@@ -1759,7 +1760,7 @@ front end) then four fix workers with disjoint files. The rules it left:
   trends.sh, expected-arrival.sh, merge-punctuality.sh, route-throughput.sh and their help pages
   deleted; `punctuality.sh` stays as a PAGELESS producer (`punctuality-src.rpt`, one table, no
   drill) — the Polling / UC3 polling file-arrival slot (bin/cron-observed.awk). The dashboard
-  Wire throughput and Monitor CFT pickup cards lost their card link (slots still open the day).
+  Wire throughput card lost its card link (slots still open the day; the Monitor dashboard went 2026-09-30).
   Never restore them.
 - **The Unknown subscription**: `_files.tsv` col 12 / `_transfers.tsv` col 6 = `Unknown` for a
   File no attribution pass could place (parse.sh; session-sites.sh rescans those sessions).

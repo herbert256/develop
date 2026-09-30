@@ -308,7 +308,7 @@ S = server/, A = analyses/):
   went 2026-09-29, user request, with Sources and targets; never restore.)
 
 Entity Search (search/search.html) sits behind the top bar's search icon, the Files search behind
-its Files link, the Dashboard and Monitor behind their own links — none of them in a group.
+its Files link, the Dashboard behind its own link — none of them in a group.
 
 (Until 2026-09-29 the groups were per AREA, each area with its own dropdown and start page, plus
 the Goodies short cuts.)
@@ -441,16 +441,11 @@ First CARD = hero; CARDALT lines render hidden `.althero` siblings; report.js `s
 swaps positionally (button 0 "Duration" hardcoded in both publishes; rpt directive `HERO0`
 overrides).
 
-**The MONITOR dashboard** — `bin/dashboards/reports/monitor.sh` → `monitor.rpt` →
-`docs/dashboards/monitor.html`: the CFT end-to-end monitor page (three `durfit`-axis
-`dur` latency views keyed on `monitor_*.txt` files): Monitor CFT pickup, Monitor duration (UC1
-inbound start → UC3 outbound start, joined on FILE NAME — the monitor subscriptions share no
-CoreId), Monitor staging. A cycle with no end counts as max(1 h, the family's slowest matched
-pair), unless younger than 1 h against the newest row (export cut mid-flight — skipped).
-**`monitor.rpt`'s EXISTENCE is the "this checkout has a monitor" flag** (removed when no monitor rows):
-it gates the page render (help slug `monitor`), the sitemap entry (keeps it reachable for
-linkcheck) and the `monitor:0|1` flag in topbar-data.js that makes `buildTopbar` show the
-top-bar Monitor link.
+**The MONITOR dashboard is GONE** (2026-09-30, user request: its page was empty on both runtimes
+— no monitor traffic in the logs): `monitor.sh`, `monitor.rpt`, `dashboards/monitor.html`, its help
+page, the top-bar Monitor link (`TB_MON` / topbar-data.js `monitor`), the sitemap entry, the HERO0
+directive and the `durfit` chart kind. The sample's INFRA_ST-MONITOR flows stay as ordinary
+subscriptions.
 
 **The UC status stacks** are TOTAL-PRESERVING compositions: every slot is a full stack of that use
 case's configured subscriptions, bottom-up in ascending severity. UC1/UC3/UC4 share KIND `ucst`
@@ -493,7 +488,7 @@ next change) — overview row 1h/2h/4h/6h/12h/1d (base
 the FIXED 19-tick duration axis — 1 s · 2 s · 3 s · 5 s · 7 s · 10 s · 15 s · 20 s · 25 s · 30 s ·
 45 s · 1 m · 5 m · 30 m · 1 h · 5 h · 10 h · 24 h · ≥ 48 h, the user's list verbatim, 2026-09-12;
 equal spacing, linear between ticks, the last tick the clamp ceiling; drawn in a taller 760x380
-frame so the labels keep apart — `durfit`, the Monitor's fitted axis, stays in the 230 frame) /
+frame so the labels keep apart) /
 `count` / `bytes` / `rate` / `pesit` / `seen` / `ucst` `ucst2` (`stack:1`). The interval +
 Line/Bar/Solid rows (sessionStorage `axway-chart-interval[-<base>]` / `axway-chart-style`) are
 owned by slotchart.js (the tooltip rebinds on every redraw). Hover targets carry `data-l`+`data-v`

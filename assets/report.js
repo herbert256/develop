@@ -3925,10 +3925,7 @@
       '<div class="dd"><span class="ddlabel" tabindex="0" aria-haspopup="true">Reports ▾</span><div class="ddm">' + menu(M.reports) + "</div></div>" +
       "</nav>" +
       '<a class="dashlink" href="' + b + 'dashboards/index.html">Dashboard</a>' +
-      // the Monitor dashboard link renders only when this site HAS one
-      // (M.monitor = the flag ensure_assets bakes into topbar-data.js from
-      // monitor.rpt's existence)
-      (M.monitor ? '<a class="dashlink" href="' + b + 'dashboards/monitor.html">Monitor</a>' : "") +
+      // (the Monitor link — M.monitor — went 2026-09-30 with that dashboard)
       '<span class="tr-group">' +
       '<a class="searchbtn" href="' + b + 'tools/sitemap.html" title="Site map" aria-label="Site map">🗺</a>' +
       (help ? '<a class="helpbtn" href="' + b + "help/" + help + '.html" title="Help" aria-label="Help">?</a>' : "") +

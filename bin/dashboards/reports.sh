@@ -19,8 +19,7 @@ rm -f "$REPORTS_DIR"/*.rpt.tmp   # orphaned atomic-write temps from a killed run
 
 source "$SCRIPT_DIR/../timing.sh"   # timed: its TIME line (2026-09-29, build speed)
 timed "$SCRIPT_DIR/reports/overview.sh"
-# (monitor.sh is NOT run here: bin/build.sh runs it once, in the foreground
-# before this step — whether monitor.rpt exists sets every page's top bar)
+# (the Monitor dashboard, monitor.sh, went 2026-09-30, user request)
 # (ONE dashboard since 2026-07: the per-topic specs folded into overview.sh)
 
 echo "All dashboards reports done." >&2

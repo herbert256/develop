@@ -592,9 +592,6 @@ render_topbar() {
     printf '<div class="dd"><span class="ddlabel" tabindex="0" aria-haspopup="true">Reports \342\226\276</span><div class="ddm">%s</div></div>' "${REPORTS_MENU//@/$base}"
     printf '</nav>'
     printf '<a class="dashlink" href="%sdashboards/index.html">Dashboard</a>' "$base"
-    # the Monitor link when the site HAS a monitor (TB_MON) — buildTopbar's
-    # M.monitor twin (2026-09-28 fix: the baked bar never showed it)
-    if [ "${TB_MON:-0}" = 1 ]; then printf '<a class="dashlink" href="%sdashboards/monitor.html">Monitor</a>' "$base"; fi
     # Top-bar right: the SITE MAP icon, then the help icon (the Report finder
     # icon went 2026-09-29 with the finder, user request).
     printf '<span class="tr-group">'
@@ -2343,12 +2340,8 @@ apply_report_groups() {
 # The RUNTIME top bar's menu-data version (the ?v= stamp html_head puts on
 # assets/topbar-data.js): changes exactly when the menu content does, so a
 # MENU change needs only a re-publish of the data file — no page re-render.
-# The "has a Monitor dashboard" flag for the runtime top bar: the flag IS the
-# existence of monitor.rpt (bin/dashboards/reports/monitor.sh writes it only
-# when the transfer cache carries monitor rows). Baked into topbar-data.js —
-# buildTopbar shows the Monitor link only when it is 1 — and folded into
-# TB_VER so a flag flip re-stamps the data file's ?v=.
-TB_MON=0; [ -f data/dashboards/reports/monitor.rpt ] && TB_MON=1
+# (The "has a Monitor dashboard" flag TB_MON — topbar-data.js `monitor` —
+# went 2026-09-30 with that dashboard, user request.)
 # The CoreId -> SecureTransport File Tracking URL template (2026-09-07, user
 # request): input/coreid-url.txt, ONE line carrying @COREID@ where the id goes
 # (comment and blank lines skipped) — hand-maintained per checkout; a runtime
@@ -2393,7 +2386,7 @@ if [ -f "$DATA/transfer/reports/day.rpt" ]; then
     TB_PERIOD=$(awk -F'\t' '$1 == "META" && ($2 == "first" || $2 == "last") && $3 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { v[$2] = substr($3, 1, 10) }
         END { if (("first" in v) && ("last" in v)) print v["first"] " / " v["last"] }' "$DATA/transfer/reports/day.rpt")
 fi
-TB_VER=$(printf '%s' "$REPORTS_MENU$ERRORS_HREF$OVERVIEW_HREF$TB_MON$TB_CID${ENV_LABEL:-}${ENV_KEY:-}$ENV_SITES_JS$TB_PERIOD" | cksum | cut -d' ' -f1)
+TB_VER=$(printf '%s' "$REPORTS_MENU$ERRORS_HREF$OVERVIEW_HREF$TB_CID${ENV_LABEL:-}${ENV_KEY:-}$ENV_SITES_JS$TB_PERIOD" | cksum | cut -d' ' -f1)
 
 # Copy the shared assets into docs/ and write .nojekyll. Idempotent, so each
 # publish script can call it and still produce a valid site when run on its own.
@@ -2443,7 +2436,7 @@ ensure_assets() {
     # slashes and spaces, nothing to escape)
     # + errors: the top bar's Errors link (ERRORS_HREF, docs-root-relative —
     # a plain page path, nothing to escape)
-    local _tb; printf -v _tb 'window.AXWAY_TB={reports:"%s",errors:"%s",overview:"%s",monitor:%s,coreid:"%s",env:"%s",envkey:"%s",period:"%s"};%s' "$r" "${ERRORS_HREF:-}" "${OVERVIEW_HREF:-}" "${TB_MON:-0}" "$c" "$e" "$k" "${TB_PERIOD:-}" "$ENVSWITCH_JS"
+    local _tb; printf -v _tb 'window.AXWAY_TB={reports:"%s",errors:"%s",overview:"%s",coreid:"%s",env:"%s",envkey:"%s",period:"%s"};%s' "$r" "${ERRORS_HREF:-}" "${OVERVIEW_HREF:-}" "$c" "$e" "$k" "${TB_PERIOD:-}" "$ENVSWITCH_JS"
     _asset_put docs/assets/topbar-data.js "$_tb"
     [ -f docs/.nojekyll ] || : > docs/.nojekyll
 }

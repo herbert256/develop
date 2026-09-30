@@ -558,12 +558,9 @@ write_sitemap() {
             done
             printf '</ul></div>\n'
         done < <(_report_groups)
-        # ONE dashboard (2026-07) + the Monitor dashboard where the env has
-        # monitor data (the rpt is the flag) — this line is also what keeps
-        # monitor.html REACHABLE for linkcheck (its top-bar link is runtime-only)
+        # ONE dashboard (2026-07; the Monitor dashboard went 2026-09-30)
         printf '<div class="smcard"><h3>Dashboards</h3><ul>\n'
         printf '<li><a href="../dashboards/index.html">Dashboard</a></li>\n'
-        [ -f "$DATA/dashboards/reports/monitor.rpt" ] && printf '<li><a href="../dashboards/monitor.html">Monitor</a></li>\n'
         printf '</ul></div>\n'
         printf '<div class="smcard"><h3>Tools</h3><ul>\n'
         printf '<li><a href="../index.html">Home</a> — the shared landing page</li>\n'

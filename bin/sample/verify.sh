@@ -76,8 +76,10 @@ check $([ "$gpf" -eq "$egp" ] && echo 0 || echo 1) "clean pollers in base/_subsc
 check $([ "$gpno" -eq 0 ] && echo 0 || echo 1) "$gpno clean-polling UC3 flow(s) with no transfers are not orange"
 check $([ -e "data/colour/_greenpoll.tsv" ] && echo 1 || echo 0) "the retired data/colour/_greenpoll.tsv still exists"
 
-# the monitor dashboard flag
-check $([ -f "data/dashboards/reports/monitor.rpt" ] && echo 0 || echo 1) "monitor.rpt missing"
+# the Monitor dashboard is GONE (2026-09-30, user request): no script, .rpt,
+# page, help page, top-bar link or durfit chart kind may come back
+n=$(ls bin/dashboards/reports/monitor.sh data/dashboards/reports/monitor.rpt docs/dashboards/monitor.html docs/help/monitor.html 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-0}" = 0 ] && ! grep -rqs 'dashboards/monitor.html\|durfit' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "the Monitor dashboard (monitor.sh / .rpt / page / help / link / durfit) is back"
 
 # BOTH config shapes in the one export (2026-09-11): the classic folder
 # parameters and the HYBRID participant parameters

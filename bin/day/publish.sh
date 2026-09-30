@@ -110,7 +110,7 @@ render_card() {   # $1 chart id  $2 title  $3 sub  $4 href  $5 span  $6 chart  $
             # linear axis. NOT offered on the duration kinds — their ms..h axis
             # is already non-linear, so the toggle would be a dead button.
             case ${args[0]} in
-                dur|durfit) ;;
+                dur) ;;
                 *) svg+='<p class="tabs scalebtns"><span class="tab" data-cscale="lin">Linear</span><span class="tab active" data-cscale="log">Log</span></p>' ;;
             esac
             svg+='<p class="tabs stylebtns"><span class="tab" data-cstyle="line">Line</span><span class="tab" data-cstyle="bar">Bar</span><span class="tab active" data-cstyle="solid">Solid</span></p>'

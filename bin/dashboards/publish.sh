@@ -104,7 +104,7 @@ render_card() {   # $1 chart id  $2 title  $3 sub  $4 href  $5 span  $6 chart  $
             # linear axis. NOT offered on the duration kinds — their ms..h axis
             # is already non-linear, so the toggle would be a dead button.
             case ${args[0]} in
-                dur|durfit) ;;
+                dur) ;;
                 seen) svg+='<p class="tabs scalebtns"><span class="tab active" data-cscale="lin">Linear</span><span class="tab" data-cscale="log">Log</span></p>' ;;   # the seen graphs open LINEAR (2026-09-03, user request; slotchart.js scaleFor)
                 *) svg+='<p class="tabs scalebtns"><span class="tab" data-cscale="lin">Linear</span><span class="tab active" data-cscale="log">Log</span></p>' ;;
             esac
@@ -141,13 +141,11 @@ for rpt in "$DRPT"/*.rpt; do
     page=$(field1 PAGE "$rpt"); foot=$(field1 FOOT "$rpt")
     base=${rpt##*/}; base=${base%.rpt}
     out="$DDIR/${page:-$base}.html"
-    # button 0 of the hero row names the FIRST CARD's view; the overview keeps
-    # its hardcoded Duration (the day pages hardcode it too), other pages (the
-    # Monitor dashboard) name theirs via the optional HERO0 directive
-    hero0=$(field1 HERO0 "$rpt"); : "${hero0:=Duration}"
-    # every dashboards page shares the dashboards help page except the Monitor
-    # dashboard, which has its own
-    hslug=dashboards; [ "${page:-$base}" = monitor ] && hslug=monitor
+    # button 0 of the hero row names the FIRST CARD's view: Duration (the day
+    # pages hardcode it too; the HERO0 directive and the Monitor dashboard's own
+    # help slug went 2026-09-30 with that dashboard)
+    hero0=Duration
+    hslug=dashboards
 
     # a TAB is IFS whitespace, so `read` would collapse EMPTY middle fields
     # (a card without a sub or span) and shift the columns — swap the tabs
