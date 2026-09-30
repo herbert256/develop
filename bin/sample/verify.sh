@@ -258,7 +258,7 @@ for pg in transfer/connection-efficiency transfer/episodes transfer/files-empty-
 done
 check $([ -z "$bad" ] && echo 0 || echo 1) "entity-keyed table(s) without the result-colour row tint:$bad"
 bad=""
-for pg in transfer/same-protocol transfer/file-in-file-out-uc4-to-uc2 transfer/went-quiet-subscriptions; do
+for pg in transfer/went-quiet-subscriptions; do
     t=$(grep -o '<table' "docs/$pg.html" 2>/dev/null | wc -l | tr -d ' '); n=$(grep -o '<tr class="total"' "docs/$pg.html" 2>/dev/null | wc -l | tr -d ' ')
     [ "${t:-0}" -gt 0 ] && [ "$n" = "$t" ] || bad="$bad $pg($n/$t)"
 done
@@ -837,9 +837,9 @@ check $(grep -q 'data-restint' docs/transfer/duration-longest.html 2>/dev/null &
 # Reports pulldown) — the entlabel links of topbar.js in order, each with its
 # fixed target, then the search icon
 tbl=$(grep 'class="entlabel"' docs/assets/topbar.js 2>/dev/null | sed -E 's/.*">([^<]+)<\/a>.*/\1/' | tr '\n' '|')
-want='Overview|Errors|Duration|Partners|Waiting/Expired|Security|Seen|Configuration|Use cases|Patterns|Activity|Entities|Files|'
+want='Entities|Files|Overview|Errors|Duration|Partners|Waiting/Expired|Security|Seen|Configuration|Use cases|Activity|'
 ok=0; [ "$tbl" = "$want" ] || ok=1
-for lk in 'transfer/duration.html">Duration' 'analyses/partners-in.html">Partners' 'transfer/waiting-expired.html">Waiting/Expired' 'transfer/security-params.html">Security' 'analyses/first-seen.html">Seen' 'analyses/subscriptions.html">Configuration' 'analyses/use-cases.html">Use cases' 'transfer/file-journey-patterns.html">Patterns' 'transfer/activity-per-week.html">Activity' 'transfer/entities/subscription-all.html">Entities' 'search/all-files.html">Files'; do
+for lk in 'transfer/duration.html">Duration' 'analyses/partners-in.html">Partners' 'transfer/waiting-expired.html">Waiting/Expired' 'transfer/security-params.html">Security' 'analyses/first-seen.html">Seen' 'analyses/subscriptions.html">Configuration' 'analyses/use-cases.html">Use cases' 'transfer/activity-per-week.html">Activity' 'transfer/entities/subscription-all.html">Entities' 'search/all-files.html">Files'; do
     grep -qF "$lk</a>" docs/assets/topbar.js 2>/dev/null || ok=1
 done
 check $ok "topbar.js cluster is '${tbl}', expected '${want}' with the fixed targets (Duration -> transfer/duration.html … Activity -> transfer/activity-per-week.html)"
@@ -988,20 +988,6 @@ check $([ ! -f docs/transfer/activity-per-day.html ] && echo 0 || echo 1) "docs/
 n=$(grep -c 'class="num failed"\|class="num processed"\|numfailed\|numprocessed' docs/transfer/activity-per-week.html docs/transfer/activity-per-hour.html docs/transfer/activity-per-weekday.html 2>/dev/null | awk -F: '{ s += $2 } END { print s + 0 }')
 check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n green/red (OK/Error) cells left on the four Activity over Time pages"
 
-# the Patterns group tables carry ONE Files column — the delivered count —
-# and no Error / OK (Delivered / Errored) pair (2026-09-13, user request):
-# no green/red cells on the file-journey pages, the leg-count / journey /
-# arrived-left Files totals = the caches' OK count
-n=$(awk -F'\t' '$1 == "HEAD" && (/\tOK\t|\tOK$|\tError\t|\tError$|\tDelivered\t|\tErrored\t/) { n++ } END { print n + 0 }' data/transfer/reports/file-journey.rpt 2>/dev/null)
-check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "file-journey.rpt still has $n table header(s) with an OK / Error / Delivered / Errored column"
-n=$(grep -c 'class="num failed"\|class="num processed"' docs/transfer/file-journey*.html 2>/dev/null | awk -F: '{ s += $2 } END { print s + 0 }')
-check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n green/red (OK/Error) cells left on the Patterns group pages"
-want=$(awk -F'\t' '$4 != "" && $2 != "Failed" && $2 != "Expired" { n++ } END { print n + 0 }' "$F" 2>/dev/null)
-for t in "Files by leg count" "Files by protocol journey"; do
-    got=$(awk -F'\t' -v t="$t" '$1 == "TABLE" && $2 == t { p = 1 } p && $1 == "TOTAL" { v = $3; sub(/^@\{[^}]*\}/, "", v); print v + 0; exit }' data/transfer/reports/file-journey.rpt 2>/dev/null)
-    check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "file-journey '$t' Files total is '${got:-absent}', the caches hold ${want:-?} OK Files"
-done
-# (the Arrived / Left tab and the Last leg table went 2026-09-29, user request)
 
 # the Protocol & Security group tables carry ONE Transfers column — the OK
 # legs — and no Error / OK pair (2026-09-13, user request): no green/red
@@ -1176,39 +1162,13 @@ check $([ "$n" = 0 ] && echo 0 || echo 1) "$n retired Error reasons view page(s)
 n=$(grep -c 'tabs undertabs' docs/analyses/failing-reasons.html 2>/dev/null || true)
 check $([ "${n:-0}" = 0 ] && [ -f docs/analyses/failing-reasons.html ] && echo 0 || echo 1) "analyses/failing-reasons.html missing or still carries a selector row"
 
-# the UC4 to UC2 report (2026-09-14, user request): an independent recount of the pairs — a UC2 File with
-# the same file name, login and post-prefix subscription name as a UC4 File that started earlier
-FB="data/transfer/reports/uc4-to-uc2.rpt"
-wn=$(LC_ALL=C awk -F'\t' '$11 != "" && $4 != "" && $12 ~ /^[Uu][Cc][24]/ { u = toupper(substr($12, 1, 3)); k = $11 SUBSEP toupper($14) SUBSEP toupper(substr($12, 4))
-        if (u == "UC4") { if (!(k in M4) || $6 < M4[k]) M4[k] = $6 } else { n2++; K2[n2] = k; T2[n2] = $6 } }
-    END { for (i = 1; i <= n2; i++) if ((K2[i] in M4) && M4[K2[i]] < T2[i]) n++; print n + 0 }' data/transfer/cache/_files.tsv 2>/dev/null)
-fn=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 2 && $1 == "ROW" { n++ } END { print n + 0 }' "$FB" 2>/dev/null)
-check $([ "${wn:-0}" -gt 0 ] && [ "$fn" = "$wn" ] && echo 0 || echo 1) "uc4-to-uc2: the Files table lists ${fn:-?} pair(s), the recount finds ${wn:-?}"
-h=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 2 && $1 == "HEAD" { print; exit }' "$FB" 2>/dev/null)
-check $([ "$h" = $'HEAD\tFile\tLogin\tUC4 subscription\tUC4 date/time\tUC2 subscription\tUC2 date/time\tGap\tUC4 CoreId\tUC2 CoreId' ] && echo 0 || echo 1) "uc4-to-uc2 Files HEAD is '$h'"
-check $([ -f docs/transfer/file-in-file-out-uc4-to-uc2.html ] && [ -f docs/help/uc4-to-uc2.html ] && [ ! -f docs/transfer/uc4-to-uc2.html ] && echo 0 || echo 1) "the UC4 to UC2 tab of File in - File out (or its help page) is missing, or the retired uc4-to-uc2.html page is still published"
-# ... and its gaps are real: none negative, and not every one "0 s" (the 2026-09-14 OFMT precision bug)
-read -r gneg gnz <<< "$(awk -F'\t' '/^TABLE\t/ { t++ } t == 2 && $1 == "ROW" { if ($8 ~ /^-/) neg++; if ($8 != "0 s") nz++ } END { print neg + 0, nz + 0 }' "$FB" 2>/dev/null)"
-check $([ "${gneg:-1}" = 0 ] && [ "${gnz:-0}" -gt 0 ] && echo 0 || echo 1) "uc4-to-uc2 gaps: ${gneg:-?} negative, ${gnz:-?} non-zero"
 
-# the Inbound and Outbound same Protocol report (2026-09-14, user request): an independent recount — a File
-# whose earliest Inbound leg and latest Outbound leg share one protocol, UC5-UC8 left out — the planted
-# samecollect flow present, no UC5-UC8 row, the page and its help published
-SP="data/transfer/reports/same-protocol.rpt"
-wn=$(LC_ALL=C awk -F'\t' 'FNR == 1 { f++ } f == 1 { if ($1 != "" && $2 != "") U[toupper($1)] = toupper($2); next }
-    f == 2 { c = $1; if ($2 == "Inbound") { if (!(c in IK) || $13 < IK[c]) { IK[c] = $13; IP[c] = $10 } } else if ($2 == "Outbound") { if (!(c in OK) || $13 > OK[c]) { OK[c] = $13; OP[c] = $10 } } next }
-    { c = $1; if (!(c in IP) || !(c in OP) || IP[c] != OP[c] || IP[c] == "") next; s = toupper($12); u = ""
-      if (match(s, /^UC[0-9]+/)) u = substr(s, 1, RLENGTH); else if (s in U) u = U[s]
-      if (u !~ /^UC[5-8]$/) n++ } END { print n + 0 }' data/flow-manager/xref/_subscriptions-ucderived.tsv data/transfer/cache/_transfers.tsv data/transfer/cache/_files.tsv 2>/dev/null)
-fn=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 2 && $1 == "ROW" { n++ } END { print n + 0 }' "$SP" 2>/dev/null)
-check $([ "$fn" = "$wn" ] && { [ "$(exp samecollect)" -eq 0 ] || [ "${fn:-0}" -gt 0 ]; } && echo 0 || echo 1) "same-protocol: the Files table lists ${fn:-?} File(s), the recount finds ${wn:-?} (planted flows: $(exp samecollect))"
-n=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 2 && $1 == "ROW" && $2 == "UC4_AIM_LAKE_PIEDPIPER" { n++ } END { print n + 0 }' "$SP" 2>/dev/null)
-check $([ "$(exp samecollect)" -eq 0 ] || [ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "same-protocol lists no File of the planted UC4_AIM_LAKE_PIEDPIPER flow"
-n=$(awk -F'\t' '$1 == "ROW" && toupper($2) ~ /^UC[5-8]/ { n++ } END { print n + 0 }' "$SP" 2>/dev/null)
-check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "same-protocol lists ${n:-?} UC5-UC8 row(s)"
-h=$(awk -F'\t' '/^TABLE\t/ { t++ } t == 2 && $1 == "HEAD" { print; exit }' "$SP" 2>/dev/null)
-check $([ "$h" = $'HEAD\tSubscription\tDate/time\tProtocol\tFirst inbound\tLast outbound\tLegs\tOutcome\tCoreId\tFilename' ] && echo 0 || echo 1) "same-protocol Files HEAD is '$h'"
-check $([ -f docs/transfer/same-protocol.html ] && [ -f docs/help/same-protocol.html ] && echo 0 || echo 1) "docs/transfer/same-protocol.html or its help page is missing"
+# the Flow patterns group is GONE (2026-09-30, user request: "Remove the Patterns
+# top menu entry and also remove the reports below it"): File journey (Patterns ·
+# Leg count · Most legs · Protocol journey), File in - File out (Handovers · UC4 to
+# UC2) and Inbound and Outbound same Protocol — no page, writer, merge, help page or link
+n=$(ls docs/transfer/file-journey*.html docs/transfer/file-in-file-out*.html docs/transfer/same-protocol.html bin/transfer/reports/patterns.sh bin/transfer/reports/legs-count.sh bin/transfer/reports/protocol-journey.sh bin/transfer/reports/file-in-file-out.sh bin/transfer/reports/uc4-to-uc2.sh bin/transfer/reports/same-protocol.sh bin/transfer/reports/file-journey.sh bin/transfer/reports/merge-file-in-file-out.sh docs/help/patterns.html docs/help/file-in-file-out.html docs/help/uc4-to-uc2.html docs/help/same-protocol.html data/transfer/reports/file-journey.rpt data/transfer/reports/same-protocol.rpt 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-1}" = 0 ] && ! grep -rqsE 'transfer/(file-journey|file-in-file-out)[a-z-]*\.html|same-protocol\.html|help/(patterns|uc4-to-uc2)\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "the Flow patterns reports are back or still linked"
 
 # the subscription pages' Activity per day Error cells (2026-09-15, user request): every nonzero Error cell
 # opens transfer/failed-files.html for that day and that subscription (the name quoted: a whole-cell search)

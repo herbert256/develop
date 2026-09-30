@@ -1385,11 +1385,11 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
 ### Report groups and menus — NO pulldown since 2026-09-30
 
 **THE REPORTS PULLDOWN IS GONE** (2026-09-30, late, user request: "Remove the Reports pulldown"):
-the top bar links the groups by FIXED paths in assets/topbar.js — Overview · Errors (data) ·
-Duration · Partners · Waiting/Expired · Security (`transfer/security-params.html`) · Seen
-(`analyses/first-seen.html`) · Configuration (`analyses/subscriptions.html`) · Use cases
-(`analyses/use-cases.html`) · Patterns (`transfer/file-journey-patterns.html`) · Activity
-(`transfer/activity-per-week.html`) · Entities · Files (a Logons link after Partners lived an hour: the
+the top bar links the groups by FIXED paths in assets/topbar.js — [Entities · Files] (their own group
+right after the environment name since the tenth request) · [Overview · Errors (data) · Duration · Partners ·
+Waiting/Expired · Security (`transfer/security-params.html`) · Seen (`analyses/first-seen.html`) ·
+Configuration (`analyses/subscriptions.html`) · Use cases (`analyses/use-cases.html`) · Activity
+(`transfer/activity-per-week.html`)] · Dashboard · [🔍 ?] (Patterns went with the Flow patterns group; a Logons link after Partners lived an hour: the
 Logons & connections group went the same night, see the ninth request). `REPORTS_MENU`, topbar-data.js `reports`, the `.dd`
 dropdown CSS and report.js's Escape handler went; linkcheck models the fixed links, verify.sh the
 order and the absence. The history below describes the 2026-09-29 pulldown the groups came from.
@@ -1406,7 +1406,7 @@ MIX areas by question: Overview (the two Top views — a top-bar link, not a men
 and Subscriptions in boxes went the same day) · Entities · Errors (Failures until 2026-09-29; + the server log errors: Errors, Per flow, IO
 errors, Routing errors — the separate "Server log errors" group was folded in 2026-09-29, user
 request; + Unknown transfers) · Use cases & delivery · Activity & volume · Performance
-· Flow patterns · Protocols & security (Security Parameters carries the SSH security tables since
+· (Flow patterns until 2026-09-30) · Protocols & security (Security Parameters carries the SSH security tables since
 2026-09-30) · (Logons & connections until 2026-09-30) ·
 Partners · Configuration · Coverage — every published report is in exactly one (the
 former boxes-only reports included). (The **Cleanup** group — Cleanup backlog, Config hygiene,
@@ -1803,6 +1803,18 @@ front end) then four fix workers with disjoint files. The rules it left:
   Partners row by stem. verify.sh checks the rows, the names and the totals. A column change in a writer needs
   its RULES string changed in step (one rule per ROW field from field 3).
 
+## Rules from the tenth 2026-09-30 request (Patterns, the search icon, Entities & Files)
+
+- **The Flow patterns group is GONE** (user request: "Remove the Patterns top menu entry and also remove the
+  reports below it"): File journey (Patterns · Leg count · Most legs · Protocol journey), File in - File out
+  (Handovers · UC4 to UC2) and Inbound and Outbound same Protocol — their writers (patterns, legs-count,
+  protocol-journey, file-in-file-out, uc4-to-uc2, same-protocol), the merges file-journey.sh /
+  merge-file-in-file-out.sh, the help pages patterns / file-in-file-out / uc4-to-uc2 / same-protocol and the
+  top-bar Patterns link. No other reader took their data. The sample keeps its planted scenarios (data only).
+  Never restore; verify.sh asserts the absence.
+- **Top bar**: Entities · Files are a group of their own right after the environment name, then the cluster
+  Overview … Activity, the Dashboard link, and at the right the search icon beside the help icon.
+
 ## Rules from the second 2026-09-30 audit ("extreme deep analyse & audit … every .rpt file and every field …")
 
 Six read-only auditors (rpt/field usage, transfer, server + analyses, home/day/detail, layout in the
@@ -1881,8 +1893,8 @@ browser, front end + gates), then four fix workers with disjoint files, each pro
   (`protocol-protocol-direction.html`) is GONE, with protocol.sh's per-protocol / per-direction / per-action-by
   aggregates (unread since 2026-09-29). Never restore; verify.sh asserts the absence.
 - **No Reports pulldown; six more top-bar links** — see "Report groups and menus" (the cluster:
-  Overview · Errors · Duration · Partners · Waiting/Expired · Security · Seen · Configuration · Use cases ·
-  Patterns · Activity · Entities · Files + the search icon).
+  Entities · Files | Overview · Errors · Duration · Partners · Waiting/Expired · Security · Seen · Configuration ·
+  Use cases · Activity | Dashboard | 🔍 ? — the tenth request's order).
 
 ## Rules from the sixth 2026-09-30 batch ("a few different things", user request)
 

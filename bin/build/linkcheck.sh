@@ -23,9 +23,10 @@
 #     Waiting/Expired links, 2026-09-30), analyses/partners-in.html (the
 #     Partners link, 2026-09-30), transfer/security-params.html,
 #     analyses/first-seen.html, analyses/subscriptions.html,
-#     analyses/use-cases.html, transfer/file-journey-patterns.html and
+#     analyses/use-cases.html and
 #     transfer/activity-per-week.html (Security · Seen · Configuration · Use
-#     cases · Patterns · Activity, 2026-09-30 — the pulldown's replacement)
+#     cases · Activity, 2026-09-30 — the pulldown's replacement; Patterns went
+#     the same night with the Flow patterns reports)
 #   - the help icon  -> data-b + help/<data-help>.html
 # EVERY page carries the placeholder since 2026-09-30 — the help pages and the
 # build report too (their baked bar, render_shared_topbar, went with the one
@@ -160,7 +161,6 @@ awk -v DOCS="$DOCS" "$(cat bin/date.awk)"'
                     edge(page, b "analyses/first-seen.html")
                     edge(page, b "analyses/subscriptions.html")
                     edge(page, b "analyses/use-cases.html")
-                    edge(page, b "transfer/file-journey-patterns.html")
                     edge(page, b "transfer/activity-per-week.html")
                     if (hlp != "") edge(page, b "help/" hlp ".html")
                 }

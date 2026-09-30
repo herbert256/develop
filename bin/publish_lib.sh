@@ -184,7 +184,7 @@ CUR_DATES=""
 
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — a page's title comes from its file's TITLE).
-transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search file-journey file-in-file-out same-protocol activity cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage skipped not-in-flow-manager ranking files failed episodes failed-files unknown-transfers waiting-expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell duration-all)
+transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search activity cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage skipped not-in-flow-manager ranking files failed episodes failed-files unknown-transfers waiting-expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell duration-all)
 server_order=(topview errors failure-flows io-errors routing-errors uc-status polling missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab); site-failures one since 2026-09-28 (its rows = the Per flow connection-failure rows); routing-errors = the 2026-09-28 merge of could-not-send, publish-failed and post-client-action
 
 # ---- the analyses-housed area reports ---------------------------------------
@@ -244,8 +244,6 @@ report_tabs() {
         # component order — the tab count MUST equal the merged rpt's TABLE count
         activity)      echo "Per week|Per hour|Hour × weekday|Per weekday" ;;   # 2026-09-29: Per day went (= the Top view, Volume included)
         retries)       echo "Failing flows|Legs before success|Gave up|Retry spacing|Failing side|Resubmitted per day|Per subscription|Resubmission outcomes|Recovered files" ;;   # 2026-09-29: + recovered-files (its three tables on one tab)
-        file-journey)  echo "Patterns|Leg count|Most legs|Protocol journey" ;;   # (Last leg + In and out went 2026-09-29, user request)
-        file-in-file-out) echo "Handovers|UC4 to UC2" ;;   # 2026-09-29: + uc4-to-uc2 (each component's two tables on one tab)
         errors)        echo "Log reasons|Heatmap|Top messages" ;;   # 2026-09-29: "Log reasons" — server-log LINES by reason, not the Files in error the analyses Error reasons page counts   # 2026-09-29: Per component (the levels per component) rides the server Top view   # 2026-09-28: Per day went (= the Top view), By hour / By weekday folded into the Heatmap, Reasons carries the per-week table (tab=reasons)
         missing-entities) echo "Subscriptions|Accounts|Hosts|Whitelist|Logins" ;;   # the five unknown-* tables (retired and brought back 2026-09-29, user request)
         uc-status)     echo "UC1|UC2|UC3|UC4" ;;
@@ -304,8 +302,8 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         topview) echo "Top view" ;;
         entity-search) echo "Search" ;;
         activity) echo "Activity" ;;
-        retries) echo "Retries & resubmissions" ;; file-journey) echo "File journey" ;;
-        failed-files) echo "Failed files" ;; unknown-transfers) echo "Unknown transfers" ;; same-protocol) echo "Inbound and Outbound same Protocol" ;; security-outreach) echo "Security outreach" ;;
+        retries) echo "Retries & resubmissions" ;;
+        failed-files) echo "Failed files" ;; unknown-transfers) echo "Unknown transfers" ;; security-outreach) echo "Security outreach" ;;
         connection-efficiency) echo "Connection efficiency" ;;
         failure-flows) echo "Per flow" ;; io-errors) echo "IO errors" ;; routing-errors) echo "Routing errors" ;;
         partners-in) echo "Partners in" ;; partners-out) echo "Partners Out" ;;   # 2026-09-30, user request (Partner scorecard, Blast radius and Application dependencies went the same day)
@@ -325,7 +323,6 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         entity-coverage) echo "Entity coverage" ;; skipped) echo "Skipped" ;;
         files) echo "Sizes & types" ;;   # the MERGED report (size-dist + file-type + duplicate-files): its own group tab was an EMPTY span until 2026-09-13 (user report)
         failed) echo "Failed Subscriptions" ;; failing-reasons) echo "Error reasons" ;; episodes) echo "Recovered flows" ;; waiting-expired) echo "Waiting & Expired" ;; pirates) echo "One-legged" ;; went-quiet) echo "Went quiet" ;; failure-heatmap) echo "Failure heatmap" ;; not-in-flow-manager) echo "Not in Flow Manager" ;;
-        file-in-file-out) echo "File in - File out" ;;
         protocol) echo "Direction & Mode" ;;   # "Protocol, Direction & Mode" until 2026-09-30
         ranking) echo "Ranking" ;;
         duration|duration-all) echo "Duration" ;; duration-longest) echo "Longest Files" ;;
@@ -890,7 +887,6 @@ help_slug_for() {   # $1 area (transfer|server)  $2 report basename
         # the 2026-07 merged reports keep one component's existing help page
         activity)            echo "day" ;;
         retries)             echo "retry" ;;
-        file-journey)        echo "patterns" ;;
         errors)              echo "server-errors-day" ;;
         uc-status)           echo "server-uc1-status" ;;
         files)               echo "size-dist" ;;
@@ -910,7 +906,6 @@ tab_help_slug() {
         uc-status/UC2) echo server-uc2-status ;;
         uc-status/UC3) echo server-uc3-status ;;
         uc-status/UC4) echo server-uc4-status ;;
-        file-in-file-out/UC4\ to\ UC2) echo uc4-to-uc2 ;;
         retries/Recovered\ files) echo recovered-files ;;
         *) help_slug_for "$1" "$2" ;;
     esac
@@ -2024,7 +2019,6 @@ _report_groups() {
         "Performance|transfer/duration=Duration|transfer/duration-longest=Longest Files|transfer/duration-dwell=Store-and-forward|transfer/anomalies=Anomalies" \
         "Use cases & delivery|analyses/use-cases=Use cases|analyses/uc-status=UC status|analyses/polling=Polling|transfer/waiting-expired=Waiting & Expired|transfer/went-quiet=Went quiet" \
         "Activity & volume|transfer/activity=Activity|transfer/ranking=Ranking|transfer/files=Sizes & types|transfer/month-stats/this=Month stats" \
-        "Flow patterns|transfer/file-journey=File journey|transfer/file-in-file-out=File in - File out|transfer/same-protocol=Inbound and Outbound same Protocol" \
         "Protocols & security|transfer/protocol=Direction & Mode|transfer/security-params=Security Parameters|transfer/security-outreach=Security outreach|transfer/av-scan=AV Scan|transfer/connection-efficiency=Connection efficiency" \
         "Partners|analyses/partners-in=Partners in|analyses/partners-out=Partners Out" \
         "Configuration|analyses/subscriptions=Configured subscriptions|analyses/accounts=Configured accounts|analyses/logical-detection=Logical detection|analyses/xref/cross=Cross References" \
