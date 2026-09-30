@@ -140,13 +140,20 @@ h2[id] { scroll-margin-top:3.6rem; }
 .alert.warn strong { color:#7a4a00; }
 /* LOGCARD directive (render_rpt.awk): one raw log line in a card of its own —
    the evidencing server-log line under a detail page's red banner.
-   Timestamp above, the message verbatim in monospace below;
-   a long message wraps rather than widening the page. */
-.logcard { display:inline-block; max-width:100%; margin:-0.6rem 0 1.3rem; padding:0.55rem 0.9rem;
+   Timestamp above, the message verbatim in monospace below, on ONE line
+   (.logline — a long message widens the page; 2026-09-30). */
+.logcard { display:inline-block; margin:-0.6rem 0 1.3rem; padding:0.55rem 0.9rem;
            background:#fff; border:1px solid #b8d0e8; border-left:4px solid #5b86ad; border-radius:4px; }
 .logcard .lc-when { display:block; font-size:0.8rem; color:#66707c; margin-bottom:0.2rem; }
 .logcard .lc-msg { display:block; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-                   font-size:0.85rem; color:#20344a; white-space:pre-wrap; overflow-wrap:anywhere; }
+                   font-size:0.85rem; color:#20344a; }
+/* A SERVER-LOG LINE never wraps, site-wide (2026-09-30, user request: "do not
+   wrap server log lines, even if the result is wider than the screen"): the
+   ONE class for every place one is shown — render_rpt's message columns (KIND
+   prose, Message / Message shape / Example message / What goes wrong), the
+   LOGCARD message, report.js's log-line drill entries. (td pre — the error
+   pages' raw Line — was already one line.) The page scrolls sideways. */
+.logline { white-space:pre; }
 a { color:#20344a; text-decoration:none; }
 a:hover { text-decoration:underline; }
 
@@ -392,7 +399,6 @@ th[data-colmark] { box-shadow:inset 0 0 0 2px #fff; }
    and the hover tint (both sit on the tr) so the gap never colors. */
 th.spc, td.spc { border:none; background:#f7f7f9; padding:0; width:1.2rem; min-width:1.2rem; }
 td.wrap { white-space:normal; max-width:46rem; }   /* a long list cell (partner coverage pages' member accounts) wraps instead of stretching the row */
-td.prose { white-space:normal; min-width:30rem; max-width:46rem; }   /* KIND prose — a sentence cell (the detail Last server log Message): wraps at a readable width, never below 30rem (2026-09-29 audit) */
 /* collapsed list cell (partner coverage pages' Whitelisted IPs): the summary
    shows just the count, the native disclosure triangle + pointer say "click
    to open"; the expanded address list gets a little air above. */
@@ -425,7 +431,12 @@ tr.subrow td.subname::before { content:"\21B3\00a0"; color:#8a94a6; }
 
 /* ---- wide table variant (historical: tables now size to content; only the tighter padding remains) ---- */
 table.wide th, table.wide td { padding:6px 10px; }
-td.file { max-width:480px; overflow:hidden; text-overflow:ellipsis; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.85rem; }
+/* a FILE NAME never wraps and is never cut: a name that does not fit widens its
+   cell (2026-09-30, user request — it was cut at 480px with an ellipsis):
+   td.file = KIND file (monospace), td.fn = a text-KIND File / File name /
+   Filename column (render_rpt) */
+td.file { white-space:nowrap; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.85rem; }
+td.fn { white-space:nowrap; }
 code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
 /* multi-line cell (e.g. a transfer's row pattern): stacked lines, monospace */
 td.lines { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.85rem; white-space:nowrap; line-height:1.4; }

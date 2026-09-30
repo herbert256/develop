@@ -7,9 +7,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: Duration — Axway ST reports</title>
-<link rel="stylesheet" href="../assets/style.css?v=1687345211">
-<script src="../assets/topbar-data.js?v=966105652" defer></script>
-<script src="../assets/topbar.js?v=1687345211" defer></script>
+<link rel="stylesheet" href="../assets/style.css?v=2344066773">
+<script src="../assets/topbar-data.js?v=1014003582" defer></script>
+<script src="../assets/topbar.js?v=2344066773" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="general"></div>
@@ -19,19 +19,19 @@
 <h1>Duration</h1>
 <h2>What it shows</h2>
 <ul>
-<li>How long Files take, per day, in two tables side by side; the summary line gives the File count, median, p95, p99 and max over the window.</li>
-<li>Two views: <strong>Delivered Files</strong> (the default) and <strong>All Files</strong> (every File with a measured duration).</li>
+<li>How long Files take: the per-day table and, beside it, the <strong>Duration distribution</strong> of the same Files; the summary line: Files, median, p95, p99, max.</li>
+<li>Two views: <strong>Delivered Files</strong> (the default) and <strong>All Files</strong> (every File with a measured duration); each shows its own distribution.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Duration per day &mdash; percentiles</strong> &mdash; Date / Files / p10 / p25 / p50 / p75 / p90 / p95 / p98 / p99 / p100: p95 = 95% of the day&rsquo;s Files finished at or below it; p100 = the longest.</li>
-<li><strong>Duration per day &mdash; min / avg / median / max</strong> &mdash; Date / Files / Min / Avg / Median / Max.</li>
+<li><strong>Duration per day &mdash; percentiles</strong> &mdash; Date / Files, then <strong>Average</strong> / <strong>Median</strong>, then p10 / p25 / p50 / p75 / p90 / p95 / p98 / p99 / p100: p95 = 95% of the day&rsquo;s Files finished at or below it; p100 = the longest.</li>
+<li><strong>Duration distribution</strong> &mdash; Duration bucket / Files / Share, seven bands from &lt;= 100 ms to &gt; 30 min.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
 <li>A File&rsquo;s duration is its wall-clock span, first record start to last record end: the store-and-forward gap and retry idle time included, not the sum of the record durations.</li>
-<li>Delivered Files leaves out the Error Files, whose span is how long they ran before giving up (short attempts or long retry spans); in All Files a failure counts as long as it ran before giving up, so its Max can far exceed the OK view&rsquo;s.</li>
-<li>Percentiles use the nearest-rank method. They are not additive: a narrowed date range keeps the day rows but blanks them in the total row; Files re-totals.</li>
+<li>Delivered Files leaves out the Error Files, whose span is how long they ran before giving up; in All Files a failure counts as long as it ran, so its p100 can far exceed the Delivered view&rsquo;s.</li>
+<li>Percentiles use the nearest-rank method; Median is p50. They are not additive: a narrowed date range keeps the day rows but blanks them in the total row; Files and the distribution re-total.</li>
 </ul>
 <h2>Tips</h2>
 <ul>

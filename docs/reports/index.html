@@ -7,10 +7,10 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<link rel="stylesheet" href="../assets/style.css?v=1687345211">
-<script src="../assets/topbar-data.js?v=966105652" defer></script>
-<script src="../assets/topbar.js?v=1687345211" defer></script>
-<script src="../assets/report.js?v=1687345211" defer></script>
+<link rel="stylesheet" href="../assets/style.css?v=2344066773">
+<script src="../assets/topbar-data.js?v=1014003582" defer></script>
+<script src="../assets/topbar.js?v=2344066773" defer></script>
+<script src="../assets/report.js?v=2344066773" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="index"></div>
@@ -44,6 +44,11 @@
 <tr><td><a href="../server/failure-flows.html">Per flow</a></td><td class="desc">Server-log ERROR messages classified by reason and attributed to the subscription each message names.</td></tr>
 <tr><td><a href="../server/io-errors.html">IO errors</a></td><td class="desc">The platform failing to read (or write) a file on its own storage — &quot;IO Error reading file /data/FlowManager/&lt;account&gt;@&lt;login&gt;/&lt;file&gt;&quot; — per folder, per line and per day, each line joined to the File it concerns and its outcome.</td></tr>
 <tr><td><a href="../server/routing-errors.html">Routing errors</a></td><td class="desc">The Advanced Routing errors a route gives up on — Could not send file (AR0074), Publish to account failed (ARPA0001), Post client action error (ARRC0009), Route stopped (ARSP0001) — one row per line, newest first, with the subscription or account and the file.</td></tr>
+<tr><th colspan="2">Performance</th></tr>
+<tr><td><a href="../transfer/duration.html">Duration</a></td><td class="desc">How long transfers take — per-day average, median and percentiles beside the duration distribution (the longest Files have their own page). Delivered (Processed) Files only — the default; use the All Files button to include failures.</td></tr>
+<tr><td><a href="../transfer/duration-longest.html">Longest Files</a></td><td class="desc">The 250 longest delivered Files by wall-clock duration, at most 10 per subscription.</td></tr>
+<tr><td><a href="../transfer/duration-dwell.html">Store-and-forward</a></td><td class="desc">How long a file waits inside SecureTransport between its inbound and its outbound leg (the store-and-forward dwell): the distribution, the dwell per subscription and the gap per day.</td></tr>
+<tr><td><a href="../transfer/anomalies.html">Anomalies</a></td><td class="desc">Detected unusual hours and days: error-rate spikes, duration surges, file-count spikes, drops and silences, and volume bursts — each compared to its typical value across the window.</td></tr>
 <tr><th colspan="2">Use cases &amp; delivery</th></tr>
 <tr><td><a href="../analyses/use-cases.html">Use cases</a></td><td class="desc">Every use case on one row: who connects, which way the file travels and what triggers it, the configured subscriptions per use case by status — each count opening the Subscriptions page filtered to it — and the FlowManager templates behind them.</td></tr>
 <tr><td><a href="../analyses/uc-status-uc1.html">UC status</a></td><td class="desc">Every configured subscription of each use case in one status view per UC — healthy, failing, failing after a working history, or never seen — the result colour with the server-log polls, pickups and problems beside it.</td></tr>
@@ -56,22 +61,16 @@
 <tr><td><a href="../transfer/ranking-subscriptions.html">Ranking</a></td><td class="desc">Where each entity stands against the others of its own type — its position on Files, Volume, Errors, Duration and Throughput, with the value behind every position.</td></tr>
 <tr><td><a href="../transfer/files-by-size.html">Sizes &amp; types</a></td><td class="desc">Files bucketed by transfer size (plus the empty files delivered OK), split per file extension, the business filenames transferred more than once (any outcome), the 50 largest Files and the per-subscription size profile.</td></tr>
 <tr><td><a href="../transfer/month-stats/this-subscription.html">Month stats</a></td><td class="desc">The nine entities counted over the Files that started this month or the previous one: total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired.</td></tr>
-<tr><th colspan="2">Performance</th></tr>
-<tr><td><a href="../transfer/duration.html">Duration</a></td><td class="desc">How long transfers take — per-day percentiles and min / avg / median / max (the longest Files and the distribution have their own pages). Delivered (Processed) Files only — the default; use the All Files button to include failures.</td></tr>
-<tr><td><a href="../transfer/duration-longest.html">Longest Files</a></td><td class="desc">The 50 longest delivered Files by wall-clock duration.</td></tr>
-<tr><td><a href="../transfer/duration-dwell.html">Distribution &amp; Store-and-forward</a></td><td class="desc">Two clocks on the same Files, side by side: how long the whole trip takes (the wall-clock duration histogram) and how long a file waits inside SecureTransport between its inbound and outbound leg (the store-and-forward dwell), with the dwell per subscription and per day below.</td></tr>
-<tr><td><a href="../transfer/anomalies.html">Anomalies</a></td><td class="desc">Detected unusual hours and days: error-rate spikes, duration surges, file-count spikes, drops and silences, and volume bursts — each compared to its typical value across the window.</td></tr>
 <tr><th colspan="2">Flow patterns</th></tr>
 <tr><td><a href="../transfer/file-journey-patterns.html">File journey</a></td><td class="desc">The shape of each File through the platform: row/status patterns, leg counts and the ordered protocol chain.</td></tr>
 <tr><td><a href="../transfer/file-in-file-out-handovers.html">File in - File out</a></td><td class="desc">Files that arrive on one subscription and leave on another: the partner-to-partner handovers, and the UC4 deliveries collected back through the same-named UC2 subscription.</td></tr>
 <tr><td><a href="../transfer/same-protocol.html">Inbound and Outbound same Protocol</a></td><td class="desc">Files whose first inbound leg used the same protocol as their last outbound leg (for example an SFTP upload that also left over SFTP instead of going on to the CFT): per subscription and File by File.</td></tr>
 <tr><th colspan="2">Protocols &amp; security</th></tr>
 <tr><td><a href="../transfer/protocol-protocol-direction.html">Protocol, Direction &amp; Mode</a></td><td class="desc">Transfers (the OK legs) and volume by protocol × direction, the direction × action-by breakdown, and the BINARY/ASCII transfer mode split — the per-leg dimensions on one page.</td></tr>
-<tr><td><a href="../transfer/security-params.html">Security Parameters</a></td><td class="desc">Every attribute parsed from the SecurityParameters column — TLS version, cipher, cipher suite, MAC, key exchange, public key — in one table.</td></tr>
+<tr><td><a href="../transfer/security-params.html">Security Parameters</a></td><td class="desc">The cryptography in use: every SecurityParameters attribute of the transfer legs, then the server log SSH negotiations with weak algorithms flagged, deprecated-parameter warnings, PeSIT TLS and session problems.</td></tr>
 <tr><td><a href="../transfer/security-outreach.html">Security outreach</a></td><td class="desc">The partner call list for deprecated connection-security parameters: who still connects with ssh-rsa (SHA-1) keys or TLSv1.2, who already upgraded, and who runs a mixed fleet.</td></tr>
 <tr><td><a href="../transfer/av-scan-breakdown.html">AV Scan</a></td><td class="desc">Anti-virus scan outcomes on the first Inbound leg of every File — the scan runs when a file enters the system.</td></tr>
 <tr><td><a href="../transfer/connection-efficiency.html">Connection efficiency</a></td><td class="desc">How the technical connections (Session IDs) are used: Files per connection per account, connection storms per minute, and the anatomy of failing sessions.</td></tr>
-<tr><td><a href="../server/ssh-security.html">SSH security</a></td><td class="desc">Negotiated SSH ciphers, key-exchange, MACs and key algorithms with weak ones flagged, deprecated-parameter warnings, and session lifecycle problems.</td></tr>
 <tr><th colspan="2">Logons &amp; connections</th></tr>
 <tr><td><a href="../server/logons-incoming.html">Logons</a></td><td class="desc">The whole SSH authentication story: the incoming screening funnel (with bad keys and lockouts), successful logons per account and source IP, shared-certificate detection and our outbound auth failures.</td></tr>
 <tr><td><a href="../server/connections-per-day.html">Connections</a></td><td class="desc">Connection volume in and out per day, account and address, and why our outbound connections fail: failure reasons, per remote host, test connections and rejected host keys.</td></tr>

@@ -881,17 +881,25 @@
               // green · m amber · h/d red); the divider class stays
               base = (oc !== null ? oc : c.className).replace(/\b(processed|failed|warn|okc|errc|z)\b/g, "").replace(/\s+/g, " ").trim();
               pms = pctlHist(agg.dur, +tok.slice(1));
-              c.textContent = v; c.className = pms === null ? base : base + " " + durTint(pms);
+              setCellVal(c, v); c.className = pms === null ? base : base + " " + durTint(pms);
             } else if (oc !== null && /failed|processed|errc|okc|warn/.test(oc)) {    // tinted count kinds: a 0 -> blank + no tint (matches render_rpt's z rule; warn untints via td.warn:empty)
               base = oc.replace(/ ?\bz\b/g, "");
               if (v === "0") { c.textContent = ""; c.className = base + " z"; }
-              else { c.textContent = v; c.className = base; }
-            } else { c.textContent = v; }
+              else { setCellVal(c, v); c.className = base; }
+            } else { setCellVal(c, v); }
           }
         }
       }
       dcol += span;
     }
+  }
+  // A recalculated value keeps the cell's ONE link (2026-09-30: the Entities
+  // Waiting / Expired cells link their pages — writing the cell's textContent
+  // dropped the <a> while a range was narrowed). A blank value blanks the whole
+  // cell (a 0 links nothing); the full-range restore brings the link back.
+  function setCellVal(c, v) {
+    var a = (c.children.length === 1 && c.firstElementChild.tagName === "A") ? c.firstElementChild : null;
+    if (a && v !== "") a.textContent = v; else c.textContent = v;
   }
   function updateTotalLabel(tr, vis) {
     var c = cell0(tr); if (!c) return;
@@ -1545,7 +1553,9 @@
       var root9 = tb9 ? (tb9.getAttribute("data-b") || "") : "";
       entries.forEach(function (e) {
         var line = document.createElement("div");
-        line.className = "coreid-item";
+        // a server-log LINE never wraps (2026-09-30, user request): class
+        // logline (style.css) — the drill cell widens the table instead
+        line.className = unit === "log line" ? "coreid-item logline" : "coreid-item";
         var m9 = ro ? /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/.exec(e) : null;
         if (m9 && fpset.indexOf(" " + m9[0] + " ") < 0) m9 = null;   // no published page: plain text
         if (m9) {
