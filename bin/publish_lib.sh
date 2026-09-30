@@ -2293,7 +2293,7 @@ TB_CID=$(_coreid_url input/coreid-url.txt)
 # environment's link and the separator, so only the current environment
 # shows — its link the home page (the page-relative index.html, which works
 # from disk too).
-ENV_SITES_JS='{local:{acceptance:"http://localhost/runtime-acceptance/",production:"http://localhost/runtime-production/"},remote:{acceptance:"https://probable-adventure-l6y6k83.pages.github.io/",production:"https://expert-adventure-9myme9m.pages.github.io/"}}'
+ENV_SITES_JS='{local:{acceptance:"http://localhost/acceptance/",production:"http://localhost/production/"},remote:{acceptance:"https://probable-adventure-l6y6k83.pages.github.io/",production:"https://expert-adventure-9myme9m.pages.github.io/"}}'
 # THE DATA PERIOD in the top bar (2026-09-13, user request): "yyyy-mm-dd /
 # yyyy-mm-dd", the first and last day of the transfer data — the day report's
 # META first/last records (the same window the From/To selectors span) —

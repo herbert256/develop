@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
-# bin/acc.sh — refresh the ACCEPTANCE runtime checkout (../runtime-acceptance, beside this
+# bin/acc.sh — refresh the ACCEPTANCE runtime checkout (../acceptance, beside this
 # develop repo) with this repo's code and rebuild its site from its own real
 # data. No arguments. What happens, step by step: bin/runtime-lib.sh.
 #
 #   bin/acc.sh
 #
 set -euo pipefail
-[ $# -eq 0 ] || { echo "usage: bin/acc.sh   (no arguments — syncs the code into ../runtime-acceptance and runs its bin/build.sh)" >&2; exit 2; }
+[ $# -eq 0 ] || { echo "usage: bin/acc.sh   (no arguments — syncs the code into ../acceptance and runs its bin/build.sh)" >&2; exit 2; }
 source "$(dirname "${BASH_SOURCE[0]}")/runtime-lib.sh"
-runtime_refresh runtime-acceptance
+runtime_refresh acceptance

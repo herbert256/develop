@@ -20,14 +20,15 @@ The project lives in three sibling repos sharing all code but never data. **deve
 is where every change happens and holds ONLY the **SAMPLE ESTATE**: synthetic input data from
 `bin/sample/generate.sh` (fake orgs, RFC 5737 addresses, `.example` hosts) — deterministic
 (seed `AXWAY_SAMPLE_SEED`), committed, regenerable; `bin/sample/verify.sh` asserts a built site
-covers every planted scenario. **runtime-acceptance** and **runtime-production**
-(`~/axway/runtime-acceptance`, `~/axway/runtime-production`; github `herbert256/runtime-acceptance`
-/ `runtime-production`, private; each serves its `docs/` through GitHub Pages — the two remote
+covers every planted scenario. **acceptance** and **production**
+(`~/axway/acceptance`, `~/axway/production` — the local checkouts were `runtime-acceptance` /
+`runtime-production` until 2026-09-30, user request; github `herbert256/runtime-acceptance`
+/ `runtime-production`, private — the GitHub repo names did not change; each serves its `docs/` through GitHub Pages — the two remote
 URLs in publish_lib `ENV_SITES_JS`) are the operational twins with the REAL exports of ONE
 environment each — **never read, edit or build them from an AI session**; they have no CLAUDE.md
 by design. (The old combined `runtime` repo — two environments in one checkout — is RETIRED since
 2026-09-11, left in place for Herbert to delete; `bin/acc.sh` / `bin/prd.sh` refuse it.) Code flows one way
-via **`bin/acc.sh`** and **`bin/prd.sh`** (no arguments — the runtime checkouts sit BESIDE this repo as `../runtime-acceptance` and `../runtime-production`; each syncs `bin/` + `assets/` + `.gitattributes` into its checkout, removes CLAUDE/ARCHITECTURE
+via **`bin/acc.sh`** and **`bin/prd.sh`** (no arguments — the runtime checkouts sit BESIDE this repo as `../acceptance` and `../production`; each syncs `bin/` + `assets/` + `.gitattributes` into its checkout, removes CLAUDE/ARCHITECTURE
 there, then runs that checkout's `bin/build.sh`; run the two one AFTER the other, never at the
 same time — every runtime build pulls and pushes the shared inbox/outbox repo, `~/exchange` by
 default, which the build report and every message call "the inbox" / "the outbox", never by
@@ -36,7 +37,9 @@ sync EXCLUDES the develop-only tooling — `bin/acc.sh`, `bin/prd.sh`, their sha
 stale copies of them in the target, so a runtime `bin/` carries pipeline code only. The committed
 `input/.sample-estate` marker gates the generator — absent in a runtime checkout, so it can never
 clobber real exports. Local preview: develop at `http://localhost/develop/`, the runtimes at
-`http://localhost/runtime-acceptance/` and `http://localhost/runtime-production/`.
+`http://localhost/acceptance/` and `http://localhost/production/` (web-root symlinks in
+`~/www/docs/` → `../../axway/<env>/docs`; `/runtime-acceptance/` / `/runtime-production/` until
+2026-09-30).
 
 ## Environment (one repo = one environment)
 
@@ -60,7 +63,7 @@ site bold and YELLOW (`.envcur`), its link the home page; the OTHER one the SAME
 other site, whose host differs per viewer, so its href is computed in the browser, never baked:
 `assets/topbar.js` envLinks (the ONE implementation, 2026-09-30 — `window.AXWAY_ENVLINKS` /
 `ENVSWITCH_JS` before) reading the four URLs of topbar-data.js `sites` (publish_lib
-`ENV_SITES_JS` — localhost → `http://localhost/runtime-{acceptance,production}/`, any other host
+`ENV_SITES_JS` — localhost → `http://localhost/{acceptance,production}/`, any other host
 → the two GitHub Pages sites) fills every `a[data-envto]` from its `data-root` (the page's
 docs-root prefix) + the page's root-relative path + query + hash; the other site answers a
 missing page with its own 404 (GitHub Pages serves `docs/404.html`; the local Apache its
@@ -1469,8 +1472,8 @@ CI build (the sources are gitignored): run `bin/build.sh` locally → commit `do
 both MANUAL.
 
 - **Local preview: `http://localhost/develop/`** — the local Homebrew httpd serves this repo's
-  `docs/` (the runtime twins serve at `http://localhost/runtime-acceptance/` and
-  `http://localhost/runtime-production/`); preview there, never start a
+  `docs/` (the runtime twins serve at `http://localhost/acceptance/` and
+  `http://localhost/production/`); preview there, never start a
   throwaway HTTP server, hard-reload after an asset edit. Every page head carries the no-cache
   trio (`http-equiv` Cache-Control / Pragma / Expires — 2026-09-12, user request; baked by
   `html_head`, `write_root_404`, the build report and the hand-authored `assets/help/*.html`,

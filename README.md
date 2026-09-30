@@ -2,7 +2,7 @@
 
 Build stats from Axway SecureTransport Cloud logs — the **DEVELOP** repo.
 
-## The three-repo model (develop / runtime-acceptance / runtime-production)
+## The three-repo model (develop / acceptance / production)
 
 This project lives in three sibling repos that share ALL code but never data:
 
@@ -12,17 +12,18 @@ This project lives in three sibling repos that share ALL code but never data:
   addresses, `.example` hosts). No real company data exists here, in the
   working tree or in git history, so nothing real can ever leak into an AI
   context. Preview: **http://localhost/develop/**.
-- **runtime-acceptance** and **runtime-production** — the operational twins
+- **acceptance** and **production** (the local checkouts; GitHub `runtime-acceptance` /
+  `runtime-production`) — the operational twins
   holding the REAL exports of one environment each (one repo = one
   environment since 2026-09-11; the old combined `runtime` repo is retired).
   They are operated, never developed: no CLAUDE.md/ARCHITECTURE.md, only
   their own README. **AI must never read or edit a runtime repo.** Previews:
-  **http://localhost/runtime-acceptance/** and
-  **http://localhost/runtime-production/**.
+  **http://localhost/acceptance/** and
+  **http://localhost/production/**.
 
 Code flows one way, develop → runtime, via **`bin/acc.sh`** and
 **`bin/prd.sh`** (no arguments — the runtime checkouts sit beside this repo
-as `../runtime-acceptance` and `../runtime-production`): each syncs `bin/` +
+as `../acceptance` and `../production`): each syncs `bin/` +
 `assets/` (+ `.gitattributes`) into its checkout and then runs that
 checkout's `bin/build.sh`, rebuilding the site from its own real data; run
 the two one after the other, never at the same time. It never touches `input/`, and
@@ -134,7 +135,7 @@ and every convention, see **`CLAUDE.md`**; deep subsystem notes live in
   overwrites the docs copies.
 
 Preview locally at **http://localhost/develop/** (the local httpd serves this
-repo's `docs/`; the runtime twins serve at **http://localhost/runtime-acceptance/**
-and **http://localhost/runtime-production/**).
+repo's `docs/`; the runtime twins serve at **http://localhost/acceptance/**
+and **http://localhost/production/**).
 Hard-reload after an asset edit — the `?v=` cache-buster refreshes on the
 next publish.

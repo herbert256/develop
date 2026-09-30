@@ -773,7 +773,7 @@ check $([ "$(grep -c 'envkey:"sample"' "$tbd" 2>/dev/null)" = 1 ] && echo 0 || e
 check $([ "$(grep -c 'function envLinks' docs/assets/topbar.js 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar.js does not define the environment switch (envLinks)"
 # from the file system only the current environment shows (2026-09-14): the switch carries the file: branch
 check $([ "$(grep -c 'location.protocol === "file:"' docs/assets/topbar.js 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar.js: the environment switch lacks the file-system branch (only the current environment from file://)"
-for u in 'http://localhost/runtime-acceptance/' 'http://localhost/runtime-production/' 'https://probable-adventure-l6y6k83.pages.github.io/' 'https://expert-adventure-9myme9m.pages.github.io/'; do
+for u in 'http://localhost/acceptance/' 'http://localhost/production/' 'https://probable-adventure-l6y6k83.pages.github.io/' 'https://expert-adventure-9myme9m.pages.github.io/'; do
     check $([ "$(grep -c "$u" "$tbd" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar-data.js lacks the site URL $u"
 done
 check $([ "$(grep -c 'data-envto' docs/assets/topbar.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "topbar.js does not render the Acceptance / Production pair (data-envto)"

@@ -3,11 +3,12 @@
 # bin/runtime-lib.sh — the develop -> runtime refresh, shared by bin/acc.sh
 # and bin/prd.sh (sourced, not run). One repo = one environment (2026-09-11):
 # the two runtime checkouts sit BESIDE this develop repo in the same parent
-# directory — ../runtime-acceptance and ../runtime-production — so the two
+# directory — ../acceptance and ../production (runtime-acceptance /
+# runtime-production until 2026-09-30, user request) — so the two
 # wrappers take no argument (they replaced the path-taking bin/runtime.sh,
 # 2026-09-11, user request).
 #
-# runtime_refresh NAME   (NAME = runtime-acceptance | runtime-production)
+# runtime_refresh NAME   (NAME = acceptance | production)
 #   1. validate the target: ../NAME exists, is a checkout of this project
 #      (.git + input/), names its environment in input/environment.txt, is
 #      not a develop checkout (no input/.sample-estate) and has no build
