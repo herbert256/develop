@@ -28,9 +28,8 @@
    stay cached for the next query. With BOTH fields empty the line beside
    them reads "N files in M subscriptions" for the From/To period (the
    period summary, from the MANIFEST: per day its File count + subscription
-   indexes, 2026-10-01), and every day shard is loaded in the background
-   for the browser cache (the warm-up, 2026-09-30; tally-only reads); a day's parsed rows are kept only when a
-   typed search needs them.
+   indexes, 2026-10-01); no day file is read for it (the background warm-up
+   of every day file went 2026-10-01, user request).
 
    KEEP THE FILTER IN STEP with publish-all-files.sh: the text is lowercased
    with every run of non-ASCII characters -> "?"; an all-[0-9a-f-] trigram is
@@ -124,55 +123,45 @@
     }
 
     // ---- the day cache + the shard loader -------------------------------
-    // CACHE[d] = a day's parsed ROWS — kept only for a day a typed search
-    // needed; TALLY[d] = { n: the day's File count, s: its distinct
-    // subscription names } — kept for every day the page read (the period
-    // summary and the cache warm-up need no rows: 2026-09-30, so warming all
-    // ~350k production Files leaves only the small tallies in the tab; a
-    // later search re-reads a day through the same ?v= URL, which the
-    // browser answers from its HTTP cache). ROWS[d] = a pending load must
-    // keep the rows (a search asked, maybe after a warm-up load started).
+    // CACHE[d] = a day's parsed rows, kept for the next query once a typed
+    // search read the day. The day files load ON DEMAND only: the background
+    // warm-up of every day file went 2026-10-01 (user request: "do not cache
+    // the day files at page load anymore").
     // SEQ / DONE: one script per day in flight (WAIT dedupes); DONE[d] =
     // the load number AXWAY_AFD answered, so a late onload of an older
     // script can never fail a newer load of the same day.
-    var CACHE = {}, TALLY = {}, WAIT = {}, ROWS = {}, SEQ = {}, DONE = {};
+    var CACHE = {}, WAIT = {}, SEQ = {}, DONE = {};
     window.AXWAY_AFD = function (d, rows, subs) {
-      var names = lines(subs), rl = lines(rows), R = [], j, g, used = {}, us = [];
+      var names = lines(subs), rl = lines(rows), R = [], j, g, gs = [];
       for (j = 0; j < rl.length; j++) {
         g = rl[j].split("\t");
-        if (!used[g[2]]) { used[g[2]] = 1; if (names[+g[2]] !== undefined) us.push(names[+g[2]]); }
-        if (ROWS[d]) R.push({ nm: g[0], nk: g[0].toLowerCase(), tm: g[1], si: +g[2], by: g[3],
+        R.push({ nm: g[0], nk: g[0].toLowerCase(), tm: g[1], si: +g[2], by: g[3],
                  cid: g[4].substr(0, 8) + "-" + g[4].substr(8, 4) + "-" + g[4].substr(12, 4) + "-" + g[4].substr(16, 4) + "-" + g[4].substr(20),
                  fl: g[5] || "" });
       }
-      TALLY[d] = { n: rl.length, s: us };
-      if (ROWS[d]) {
-        var gs = [];
-        for (j = 0; j < names.length; j++) gs.push({ name: names[j], key: names[j].toLowerCase() });
-        CACHE[d] = { rows: R, subs: gs };
-      }
+      for (j = 0; j < names.length; j++) gs.push({ name: names[j], key: names[j].toLowerCase() });
+      CACHE[d] = { rows: R, subs: gs };
       DONE[d] = SEQ[d];
-      var cbs = WAIT[d] || []; delete WAIT[d]; delete ROWS[d];
+      var cbs = WAIT[d] || []; delete WAIT[d];
       for (j = 0; j < cbs.length; j++) cbs[j](true);
     };
-    // load(day, cb, rows): rows = the caller needs the parsed rows (a typed
-    // search) — else the tally is enough (the summary, the warm-up).
-    // cb(ok): ok = false when the shard could not be read. A FAILED shard is
-    // NOT cached (2026-09-28 audit F07): it was stored as an empty day, so
-    // the search said "no matches" for a day it never read and never asked
-    // for it again; now the status counts it and the next search retries it.
-    // A script that loads but never calls AXWAY_AFD fails the same way.
-    function load(day, cb, rows) {
-      if (rows ? CACHE[day.d] : TALLY[day.d]) { cb(true); return; }
-      if (WAIT[day.d]) { if (rows) ROWS[day.d] = 1; WAIT[day.d].push(cb); return; }
-      WAIT[day.d] = [cb]; if (rows) ROWS[day.d] = 1;
+    // load(day, cb): cb(ok), ok = false when the shard could not be read. A
+    // FAILED shard is NOT cached (2026-09-28 audit F07): it was stored as an
+    // empty day, so the search said "no matches" for a day it never read and
+    // never asked for it again; now the status counts it and the next search
+    // retries it. A script that loads but never calls AXWAY_AFD fails the
+    // same way.
+    function load(day, cb) {
+      if (CACHE[day.d]) { cb(true); return; }
+      if (WAIT[day.d]) { WAIT[day.d].push(cb); return; }
+      WAIT[day.d] = [cb];
       var my = SEQ[day.d] = (SEQ[day.d] || 0) + 1;
       var s = document.createElement("script");
       s.src = "all/d-" + day.d + ".js?v=" + day.v;
       s.onerror = function () {
         if (s.parentNode) s.parentNode.removeChild(s);
         if (DONE[day.d] === my) return;      // answered after all (a late error event)
-        var cbs = WAIT[day.d] || []; delete WAIT[day.d]; delete ROWS[day.d];
+        var cbs = WAIT[day.d] || []; delete WAIT[day.d];
         for (var j = 0; j < cbs.length; j++) cbs[j](false);
       };
       s.onload = function () { if (s.parentNode) s.parentNode.removeChild(s); if (DONE[day.d] !== my) s.onerror(); };
@@ -231,42 +220,19 @@
     // ---- the search ------------------------------------------------------
     var range = null, gen = 0, timer = null;
 
-    // ---- THE PERIOD SUMMARY + THE CACHE WARM-UP (2026-09-30, user request:
-    // "When no value in both input boxes give the text "nnnn files in nnn
-    // subscriptions" for the selected period … so that all data files are
-    // forced to be loaded and in the local cache of the browser"). With both
-    // fields empty the line beside them counts the Files of the From/To
-    // period and their DISTINCT subscriptions — from the MANIFEST since
-    // 2026-10-01 (per day its File count + subscription indexes: exact at
-    // once); warmAll() loads EVERY day file in the background for the
-    // browser cache only (the same loader and ?v= URLs, tally-only reads, so
-    // a later search finds the files in the HTTP cache and no rows stay in
-    // the tab: only a typed search keeps a day's rows).
-    // "Unknown" (no subscription found) counts its Files but is no
-    // subscription — the site rule every subscription count follows.
+    // ---- THE PERIOD SUMMARY (2026-09-30, user request: "When no value in
+    // both input boxes give the text "nnnn files in nnn subscriptions" for
+    // the selected period"). With both fields empty the line beside them
+    // counts the Files of the From/To period and their DISTINCT
+    // subscriptions from the MANIFEST (2026-10-01: per day its File count +
+    // subscription indexes — exact the moment the page opens, no day file
+    // read). The background warm-up that loaded every day file for the
+    // browser cache went the same day (user request: "do not cache the day
+    // files at page load anymore"). "Unknown" (no subscription found) counts
+    // its Files but is no subscription — the site rule every subscription
+    // count follows.
     function inRange(D) { return !range || (D.d >= range.f && D.d <= range.t); }
-    var warmed = false;
-    function warmAll() {                   // every day shard once per page, newest first
-      if (warmed || NOIDX) return;
-      warmed = true;
-      var q = DAYS.slice(), w = 0;
-      function step() {
-        while (w < PAR && q.length) {
-          var D = q.shift();
-          if (TALLY[D.d]) continue;
-          w++;
-          load(D, function () { w--; step(); }, false);   // the tally only: the rows stay in the HTTP cache
-        }
-      }
-      step();
-    }
     function plural(n, one, many) { return n + " " + (n === 1 ? one : many); }
-    // THE PERIOD SUMMARY comes from the MANIFEST (2026-10-01, user request):
-    // every day of it carries its File count and the dictionary indexes of
-    // its subscriptions, so the line is exact the moment the page opens — no
-    // day file needed. warmAll() still loads every day file in the
-    // background, for the browser cache only (a later search reads them
-    // from there).
     function summary(my) {
       if (NOIDX) { count.textContent = "the search index did not load — reload the page"; return; }
       if (my !== gen) return;
@@ -280,7 +246,6 @@
         }
       }
       count.textContent = plural(nf, "file", "files") + " in " + plural(ns, "subscription", "subscriptions");
-      warmAll();
     }
     function sync(fq, sq) {
       var qs = [], rest = location.search.replace(/^\?/, "").split("&"), k;
@@ -367,7 +332,7 @@
           var D2 = cand[next++];
           if (CACHE[D2.d]) continue;
           inflight++;
-          load(D2, loaded(D2.d), true);   // a search needs the rows
+          load(D2, loaded(D2.d));
         }
       }
       function loaded(d) { return function (ok) { inflight--; if (!ok) bad[d] = 1; pump(); }; }
@@ -402,7 +367,7 @@
 
     var f0 = param("f"), s0 = param("s");
     if (f0 !== "" || s0 !== "") { fbox.value = f0; sbox.value = s0; whenUtil(run); }
-    else run();   // both fields empty: the period summary (and the cache warm-up) at once
+    else run();   // both fields empty: the period summary at once
     (f0 !== "" && s0 === "" ? sbox : fbox).focus();
   }
 
