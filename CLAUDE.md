@@ -1825,9 +1825,9 @@ front end) then four fix workers with disjoint files. The rules it left:
 - **All files search**: with both fields empty the line beside them reads "N files in M subscriptions" for the
   From/To period, from the MANIFEST (index.js: per day its File count + subscription indexes; Unknown's Files
   count, Unknown is no subscription) — exact the moment the page opens (2026-10-01, user request; per-day
-  tallies from the day files until then). warmAll() then loads every day file (4 at a time) for the browser
-  cache only — a tally-only read keeps NO rows (rows are cached only when a typed search reads that day,
-  through the same `?v=` URL, from the browser cache). A From/To change recounts from the manifest.
+  tallies from the day files until then). The day files load ON DEMAND only: the background warm-up that
+  loaded every day file for the browser cache went 2026-10-01 (user request: "do not cache the day files at
+  page load anymore"). A From/To change recounts from the manifest.
 
 ## Rules from the tenth 2026-09-30 request (Patterns, the search icon, Entities & Files)
 
