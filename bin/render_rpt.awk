@@ -105,13 +105,8 @@ function splice(s, mark, rep,   p) {
     p = index(s, mark); if (p == 0) return s
     return substr(s, 1, p - 1) rep substr(s, p + length(mark))
 }
-function esc(s) {
-    gsub(/&/,  "\\&amp;",  s)
-    gsub(/</,  "\\&lt;",   s)
-    gsub(/>/,  "\\&gt;",   s)
-    gsub(/"/,  "\\&quot;", s)
-    return s
-}
+# (esc -> html_esc and slugify -> slugof: bin/fmt.awk, the ONE copy — this
+# program runs as awk -f bin/fmt.awk -f bin/render_rpt.awk since 2026-09-30)
 
 # The @{...}/@data: protocol is IN-BAND with the data: a raw value that
 # happens to begin with the prefix (a partner-chosen filename, an entity
@@ -128,7 +123,7 @@ function ok_colspan(s) { return s ~ /^[0-9]+$/ }
 # relative paths only — must start alphanumeric (no leading / or .), no
 # path traversal, no scheme colon, no quote/angle/entity characters
 function ok_target(s)  { return s ~ /^[A-Za-z0-9][A-Za-z0-9\/_. -]*$/ && index(s, "..") == 0 }
-# href= is used verbatim (esc()-quoted): a relative URL, or absolute http(s)
+# href= is used verbatim (html_esc()-quoted): a relative URL, or absolute http(s)
 # — never a bare scheme like javascript:/data:, never protocol-relative.
 # POSITIVE, not just a scheme ban (2026-09-28 audit F01): the browser's URL
 # parser TRIMS leading spaces/control characters, DROPS tab/CR/LF anywhere
@@ -268,26 +263,18 @@ function prose(s,    out, i, j, tok, p, sd, nm, slug) {
         j = index(substr(s, i + 2), "]]")
         if (j == 0) break
         tok = substr(s, i + 2, j - 1)
-        out = out esc(substr(s, 1, i - 1))
+        out = out html_esc(substr(s, 1, i - 1))
         p = index(tok, "/")
         slug = ""
         if (p > 1) { sd = substr(tok, 1, p - 1); nm = substr(tok, p + 1); slug = slug_for(sd, nm) }
         else nm = tok
-        if (slug != "" && ok_target(sd "/" slug)) out = out "<a href=\"" dlink sd "/" slug ".html\">" esc(nm) "</a>"
-        else            out = out esc(nm)
+        if (slug != "" && ok_target(sd "/" slug)) out = out "<a href=\"" dlink sd "/" slug ".html\">" html_esc(nm) "</a>"
+        else            out = out html_esc(nm)
         s = substr(s, i + j + 3)
     }
-    return bold(out esc(s))
+    return bold(out html_esc(s))
 }
 
-# Same result as the old  tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-'
-# | sed 's/^-//;s/-$//'  pipeline (C locale: ASCII case folding only).
-function slugify(s) {
-    s = tolower(s)
-    gsub(/[^a-z0-9]+/, "-", s)
-    sub(/^-/, "", s); sub(/-$/, "", s)
-    return s
-}
 
 # Entity name -> detail-page slug. The _slugmap.tsv maps are COMPREHENSIVE
 # (details.sh records EVERY page, seen or configured-only, since the slug
@@ -299,7 +286,7 @@ function slug_for(sd, name,    k) {
     k = sd US name
     if (k in SLUG && SLUG[k] != "") return SLUG[k]
     if (sd in HAVEMAP) return ""
-    return slugify(name)
+    return slugof(name)
 }
 
 # $2..$NF -> CELL[1..NCELL], preserving empty/trailing cells. A directive
@@ -345,7 +332,7 @@ function emit_header(    i, k, thc) {
                 }
                 if (gbad) { gsp = ""; gcls = ""; gtxt = GHC[i] }
             }
-            printf "<th%s%s>%s</th>", gsp, gcls, esc(gtxt)
+            printf "<th%s%s>%s</th>", gsp, gcls, html_esc(gtxt)
         }
         printf "</tr>\n"
     }
@@ -355,7 +342,7 @@ function emit_header(    i, k, thc) {
         if (k == "num" || k == "numfailed" || k == "numprocessed" || k == "numwarn" || k == "numerr" || k == "numok") thc = "num"
         else thc = ""
         if ((i - 1) in gsepset) thc = (thc != "" ? thc " gsep" : "gsep")
-        printf "<th%s>%s</th>", (thc != "" ? " class=\"" thc "\"" : ""), esc(HEADC[i])
+        printf "<th%s>%s</th>", (thc != "" ? " class=\"" thc "\"" : ""), html_esc(HEADC[i])
     }
     printf "</tr>\n"
 }
@@ -490,15 +477,15 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     # loop from the table's gsep= modifier) — left divider + extra padding
     if (gsephit) { cls = (cls != "" ? cls " gsep" : "gsep"); gsephit = 0 }
     rawtext = text
-    text = esc(text)
+    text = html_esc(text)
     # `clinks` (2026-09-03) = a clines cell whose every line is a LINK:
     # "href|label" per \x1f line — a relative href (no scheme, no //) becomes
     # <a>, anything else renders as the plain line; folds like clines below
     if (!total && kind == "clinks") {
         nln = split(rawtext, LNS, US); text = ""
         for (li = 1; li <= nln; li++) { p = index(LNS[li], "|")
-            if (p > 1 && ok_href(substr(LNS[li], 1, p - 1)) && substr(LNS[li], 1, 1) != "/") lhtml = "<a href=\"" esc(substr(LNS[li], 1, p - 1)) "\">" esc(substr(LNS[li], p + 1)) "</a>"
-            else lhtml = esc(LNS[li])
+            if (p > 1 && ok_href(substr(LNS[li], 1, p - 1)) && substr(LNS[li], 1, 1) != "/") lhtml = "<a href=\"" html_esc(substr(LNS[li], 1, p - 1)) "\">" html_esc(substr(LNS[li], p + 1)) "</a>"
+            else lhtml = html_esc(LNS[li])
             text = text (li > 1 ? US : "") lhtml }
     }
     # @{alist=SUB}: one link per listed name (slugmap-resolved; no page =
@@ -508,15 +495,15 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         nln = split(rawtext, LNS, ", "); text = ""; r = ""; rmix = 0
         for (li = 1; li <= nln; li++) {
             slug = slug_for(alsd, LNS[li])
-            if (slug != "" && ok_target(alsd "/" slug)) lhtml = "<a href=\"" dlink alsd "/" slug ".html\">" esc(LNS[li]) "</a>"
-            else lhtml = esc(LNS[li])
+            if (slug != "" && ok_target(alsd "/" slug)) lhtml = "<a href=\"" dlink alsd "/" slug ".html\">" html_esc(LNS[li]) "</a>"
+            else lhtml = html_esc(LNS[li])
             text = text (li > 1 ? ", " : "") lhtml
             rr = RESM[alsd US toupper(LNS[li])]
             if (li == 1) r = rr; else if (rr != r) rmix = 1
         }
         if (r != "" && !rmix) cls = (cls != "" ? cls " res-" r : "res-" r)
     }
-    if (maskv != "") text = text "<span class=\"mask\">" esc(maskv) "</span>"
+    if (maskv != "") text = text "<span class=\"mask\">" html_esc(maskv) "</span>"
     if (!total && kind == "mono") text = "<code>" text "</code>"
     # KIND pre: a raw log LINE, kept verbatim inside <pre> — the logged spacing
     # survives and the line does NOT wrap (see td pre in style.css), so one
@@ -582,7 +569,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     # prefix, no .html suffix) — e.g. the Top view date cells -> the per-day
     # pages. Wraps the whole cell like link=.
     # (allowed on TOTAL rows too)
-    if (rawhref != "") { text = "<a href=\"" esc(rawhref) "\">" text "</a>"; cls = (cls != "" ? cls " cl" : "cl") }
+    if (rawhref != "") { text = "<a href=\"" html_esc(rawhref) "\">" text "</a>"; cls = (cls != "" ? cls " cl" : "cl") }
     # a tinted count cell whose value is 0: show nothing, drop the tint (warn
     # included since 2026-08 — the logons Key failures/Locked ask; an empty
     # warn cell untints via td.warn:empty)
@@ -593,7 +580,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     # CONCATENATION, not sprintf (2026-09-29): mawk caps a sprintf result at
     # 8192 bytes ("program limit exceeded: sprintf buffer") — a long cell
     # (a server-log message list, a prose cell) aborted the acceptance render
-    CELLOUT = "<td" sp (cls != "" ? " class=\"" cls "\"" : "") (sv != "" ? " data-sortval=\"" sv "\"" : "") (tt != "" ? " title=\"" esc(tt) "\"" : "") ">" text "</td>"
+    CELLOUT = "<td" sp (cls != "" ? " class=\"" cls "\"" : "") (sv != "" ? " data-sortval=\"" sv "\"" : "") (tt != "" ? " title=\"" html_esc(tt) "\"" : "") ">" text "</td>"
     CELLCLS = cls
 }
 
@@ -601,24 +588,24 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     dir = $1
     rest = (NF > 1 ? substr($0, length($1) + 2) : "")
 
-    if (dir == "TITLE")         printf "<h1>%s</h1>\n", esc(rest)
+    if (dir == "TITLE")         printf "<h1>%s</h1>\n", html_esc(rest)
     # INTRO is a full-width paragraph like NOTE: a mid-page section intro
     # (the dwell report's Gap-per-day paragraph) closes the open table and
     # any side-by-side row first — it used to print INSIDE the previous
     # table's markup (2026-09-05). An INTRO the no-prose rule suppresses is
     # NO block at all, like a suppressed NOTE: it closes nothing (2026-09-29)
     else if (dir == "INTRO")    { if (!noprose) { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; printf "<p class=\"range\">%s</p>\n", prose(rest) } }
-    else if (dir == "ALERT")    printf "<p class=\"alert\">%s</p>\n", bold(esc(rest))
+    else if (dir == "ALERT")    printf "<p class=\"alert\">%s</p>\n", bold(html_esc(rest))
     # WARN is ALERT's amber sibling: same banner, lower severity. ALERT is the
     # RUNTIME register (errors in the server log); WARN is the CONFIGURATION
     # register, so it wears the site's warning colour (orange) rather than red.
-    else if (dir == "WARN")     printf "<p class=\"alert warn\">%s</p>\n", bold(esc(rest))
+    else if (dir == "WARN")     printf "<p class=\"alert warn\">%s</p>\n", bold(html_esc(rest))
     else if (dir == "LOGCARD") {
         # LOGCARD <date time> <message> — a card holding one raw log line (the
         # detail pages' server-log evidence)
         split_cells()
         printf "<div class=\"logcard\"><span class=\"lc-when\">%s</span><span class=\"lc-msg\">%s</span></div>\n", \
-            esc(CELL[1]), esc(CELL[2])
+            html_esc(CELL[1]), html_esc(CELL[2])
     }
     else if (dir == "STAT") {
         # STAT <class> <value> <label> — an info box (Partner Coverage's
@@ -630,8 +617,8 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         # "white" is the DEFAULT box — style.css has .stat-green/-orange/-red
         # but deliberately no .stat-white, so emitting the modifier added a
         # class that styled nothing on 48 boxes. Only a colour gets a modifier.
-        statcls = (CELL[1] == "" || CELL[1] == "white") ? "stat" : ("stat stat-" esc(CELL[1]))
-        statlbl = esc(CELL[3]); gsub(US, "<br>", statlbl)
+        statcls = (CELL[1] == "" || CELL[1] == "white") ? "stat" : ("stat stat-" html_esc(CELL[1]))
+        statlbl = html_esc(CELL[3]); gsub(US, "<br>", statlbl)
         # optional cells 4+: a "@data:NAME=VALUE" cell becomes a data-NAME
         # attribute on the box (report.js recalcStats — a data-tok box
         # recomputes its value for the selected date range from its data-sb
@@ -641,11 +628,11 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         for (statci = 4; statci <= NCELL; statci++) {
             if (CELL[statci] ~ /^@data:[A-Za-z][A-Za-z0-9-]*=/) {
                 stateq = index(CELL[statci], "=")
-                statpf = statpf " data-" substr(CELL[statci], 7, stateq - 7) "=\"" esc(substr(CELL[statci], stateq + 1)) "\""
+                statpf = statpf " data-" substr(CELL[statci], 7, stateq - 7) "=\"" html_esc(substr(CELL[statci], stateq + 1)) "\""
             }
         }
         printf "<div class=\"%s\"%s><span class=\"stat-v\">%s</span><span class=\"stat-l\">%s</span></div>\n", \
-            statcls, statpf, esc(CELL[2]), statlbl
+            statcls, statpf, html_esc(CELL[2]), statlbl
     }
     else if (dir == "NAV") {
         split_cells()
@@ -659,9 +646,9 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             if (p == 0) { a = f; lr = f } else { a = substr(f, 1, p - 1); lr = substr(f, p + 1) }
             p = index(lr, "|")
             if (p == 0) { lbl = lr; file = lr } else { lbl = substr(lr, 1, p - 1); file = substr(lr, p + 1) }
-            if (a == "1")      printf "<span class=\"tab active\">%s</span>", esc(lbl)
-            else if (a == "2") printf "<span class=\"tab disabled\">%s</span>", esc(lbl)
-            else               printf "<a class=\"tab\" href=\"%s\">%s</a>", file, esc(lbl)
+            if (a == "1")      printf "<span class=\"tab active\">%s</span>", html_esc(lbl)
+            else if (a == "2") printf "<span class=\"tab disabled\">%s</span>", html_esc(lbl)
+            else               printf "<a class=\"tab\" href=\"%s\">%s</a>", file, html_esc(lbl)
         }
         printf "</p>\n"
     }
@@ -687,7 +674,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             # report.js (setupSwitches) shows one at a time behind a button
             # row built from the labels, the first table being the default
             else if (index(mi, "switch=") == 1) { sw = substr(mi, 8); p9 = index(sw, ":"); this_swkey = (p9 ? substr(sw, 1, p9 - 1) : sw)
-                tattr = tattr " data-switch=\"" esc(this_swkey) "\" data-switch-label=\"" esc(p9 ? substr(sw, p9 + 1) : sw) "\"" }
+                tattr = tattr " data-switch=\"" html_esc(this_swkey) "\" data-switch-label=\"" html_esc(p9 ? substr(sw, p9 + 1) : sw) "\"" }
             # tab=KEY (2026-09-05): publish_lib's segment_rpt keeps consecutive
             # tables sharing KEY on ONE tab page, stacked and all visible (the
             # switch= group shows one at a time) — nothing to render here
@@ -707,7 +694,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             # docs/search/all/s/<slug>.js; data-v = the build id, that list's
             # cache-buster (it is written after the detail pages render, so no
             # cksum of it exists yet — a new build = a new id)
-            else if (index(mi, "subfiles=") == 1) tattr = tattr " data-subfiles=\"" esc(substr(mi, 10)) "\" data-v=\"" buildid() "\" data-nocolmove=\"1\""
+            else if (index(mi, "subfiles=") == 1) tattr = tattr " data-subfiles=\"" html_esc(substr(mi, 10)) "\" data-v=\"" buildid() "\" data-nocolmove=\"1\""
             else if (mi == "seenrows")   tattr = tattr " data-seenrows=\"1\""
             else if (mi == "restint")    tattr = tattr " data-restint=\"1\""   # rows tint by their data-res RESULT even when seen (beats the seenrows green)
             else if (mi == "rowlink")    tattr = tattr " data-rowlink=\"1\""   # the WHOLE row opens its target (report.js setupIndexRows): the row's own @data:href, else its first link
@@ -724,14 +711,14 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             # :coreids-<key> list opens under the cell at <col>; the
             # optional noun (underscores = spaces) heads the list, else the
             # column label (report.js setupExpandable)
-            else if (index(mi, "drillcols=") == 1) { tattr = tattr " data-drill-cols=\"" esc(substr(mi, 11)) "\""
+            else if (index(mi, "drillcols=") == 1) { tattr = tattr " data-drill-cols=\"" html_esc(substr(mi, 11)) "\""
                 ndk = split(substr(mi, 11), DKA, ","); for (dk = 1; dk <= ndk; dk++) { dp = index(DKA[dk], ":"); if (dp > 1) DCK[substr(DKA[dk], 1, dp - 1)] = 1 } }
             # autohide=<Group label>;<Group label> (2026-09-13, the Entities
             # pages): a column GROUP (a GHEAD banner cell) whose visible cells
             # are ALL empty is hidden in the browser — after a date-range
             # change or a search — and comes back when it has values again
             # (report.js autoHideGroups)
-            else if (index(mi, "autohide=") == 1)  tattr = tattr " data-autohide=\"" esc(substr(mi, 10)) "\""
+            else if (index(mi, "autohide=") == 1)  tattr = tattr " data-autohide=\"" html_esc(substr(mi, 10)) "\""
             else if (index(mi, "pager=") == 1)    tattr = tattr " data-pager=\"" substr(mi, 7) "\""
             # zerohide=<m>: while the date range is NARROWED, hide a data row
             # whose re-aggregated bucket metric <m> sums to 0 — a "0 of this
@@ -740,7 +727,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             else if (index(mi, "zerohide=") == 1) tattr = tattr " data-zerohide=\"" substr(mi, 10) "\""
             # fold=<res>|<label>: rows with that data-res collapse behind one
             # summary row at load (report.js setupRowFold; {n} = folded count)
-            else if (index(mi, "fold=") == 1)     tattr = tattr " data-fold=\"" esc(substr(mi, 6)) "\""
+            else if (index(mi, "fold=") == 1)     tattr = tattr " data-fold=\"" html_esc(substr(mi, 6)) "\""
             else if (mi == "keephead")   keep_heading = 1   # keep the heading even on the FIRST table of a report page (droptitle)
         }
         # side-by-side (sxs): open the flex row on the first sxs table, close it
@@ -762,7 +749,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
         # with the page <h1>); detail pages keep every section title, and an
         # sxs table always keeps its heading (it labels one column of a pair)
         if (heading != "" && (droptitle != "1" || ntables != 1 || this_sxs || keep_heading))
-            printf "<h2>%s</h2>\n", esc(heading)
+            printf "<h2>%s</h2>\n", html_esc(heading)
         table_open = 1; table_printed = 0; hdr_done = 0
         subcol = 0; subacc = 0
         nhead = 0; nkind = 0; split("", HEADC); split("", KINDS)
@@ -858,7 +845,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
                 if (nm == "seen" && index(tattr, "data-seenrows=") == 0) continue
                 ev = vv
                 if (tunit_file && !is_total && (nm == "coreids" || index(nm, "coreids-") == 1 || index(nm, "drill-cell-") == 1)) ev = fenc(vv, rowdate)
-                ad = " data-" nm "=\"" esc(ev) "\""
+                ad = " data-" nm "=\"" html_esc(ev) "\""
                 # coreids-failed / -processed bind only when the row has ONE
                 # such cell (report.js setupExpandable) — held apart until the
                 # cells are rendered, their page-bearing Files with them
@@ -942,8 +929,8 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     # still closed the flex row, splitting the failure heatmap's side-by-side
     # By hour / By weekday pair)
     else if (dir == "NOTE")    { if (!noprose) { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; printf "<p class=\"note\">%s</p>\n", prose(rest) } }
-    else if (dir == "LINK")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; split_cells(); if (ok_href(CELL[1])) printf "<p class=\"report-link\"><a href=\"%s\"%s>%s</a></p>\n", esc(CELL[1]), (CELL[1] ~ /^https?:\/\// ? " target=\"_blank\" rel=\"noopener\"" : ""), esc(CELL[2]); else printf "<p class=\"report-link\">%s</p>\n", esc(CELL[2]) }
-    else if (dir == "SUMMARY") { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; printf "<div class=\"summary\">%s</div>\n", esc(rest) }
+    else if (dir == "LINK")    { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; split_cells(); if (ok_href(CELL[1])) printf "<p class=\"report-link\"><a href=\"%s\"%s>%s</a></p>\n", html_esc(CELL[1]), (CELL[1] ~ /^https?:\/\// ? " target=\"_blank\" rel=\"noopener\"" : ""), html_esc(CELL[2]); else printf "<p class=\"report-link\">%s</p>\n", html_esc(CELL[2]) }
+    else if (dir == "SUMMARY") { close_table(); close_col(); if (grp_open) { printf "</div>\n"; grp_open = 0 }; printf "<div class=\"summary\">%s</div>\n", html_esc(rest) }
     else if (dir == "FOOT")    close_table()
     # DESC, META and anything unknown: not rendered
 }

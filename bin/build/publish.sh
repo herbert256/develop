@@ -31,24 +31,40 @@ source "$SCRIPT_DIR/../awklib.sh"       # $AWKLIB: the shared awk helpers (html_
 
 ensure_assets   # topbar-data.js (the menus' data file)
 
-# Give the hand-authored help pages the EXACT site top bar (the user asked for
-# one consistent interface). The help BODY stays hand-authored; only the chrome
-# is regenerated — render_shared_topbar. (The footer bar went 2026-07; no help
-# page carries one any more.)
-# This is the one publish step that writes into docs/help/ (see CLAUDE.md).
+# THE HELP PAGES (2026-09-30, the lean round): assets/help/<slug>.html is a
+# FRAGMENT — the page body from its <h1> on (an optional first line
+# "<!-- help: back=page -->" words the back link "Back to the page" instead of
+# "Back to the report") — and THIS is the one place its chrome comes from: the
+# head (the no-cache trio, the stylesheet + top-bar scripts with their ?v=
+# busters), the top-bar placeholder (assets/topbar.js fills it, like on every
+# page; the "?" opens the generic help), the back + Generic help links (not on
+# general.html itself) and the tail; the <title> is "Help: <the h1 text> —
+# Axway ST reports". Read from assets/help/ (the source), written to
+# docs/help/, so a re-run is idempotent. (Until 2026-09-30 every source carried
+# the full page with a baked bar that render_shared_topbar re-stamped.) This is
+# the one publish step that writes into docs/help/ (see CLAUDE.md).
 apply_help_chrome() {
-    local tb f tmp
-    tb=$(render_shared_topbar "../" "general")   # a help page's "?" = the general help (2026-09-29 audit: it opened the Reports start page's help)
-    for f in docs/help/*.html; do
+    local f out
+    HC_SCRIPTS=$(topbar_scripts "../") HC_BAR=$(topbar_placeholder "../" "general")
+    export HC_SCRIPTS HC_BAR
+    for f in assets/help/*.html; do
         [ -f "$f" ] || continue
-        tmp=$(mktemp "${TMPDIR:-/tmp}/help.XXXXXX")
-        # + the stylesheet cache-buster (2026-09-30 audit L-06: the help
-        # sources load style.css bare, so a CSS change could show stale)
-        awk -v tb="$tb" -v av="${ASSET_VER:-}" '
-            /^<div class="topbar"><a class="brand"/         { print tb; next }
-            av != "" { gsub(/href="\.\.\/assets\/style\.css"/, "href=\"../assets/style.css?v=" av "\"") }
-            { print }
-        ' "$f" > "$tmp" && mv "$tmp" "$f"
+        out="docs/help/${f##*/}"
+        awk -v av="${ASSET_VER:-}" -v gen="$([ "${f##*/}" = general.html ] && echo 0 || echo 1)" '
+            NR == 1 && $0 == "<!-- help: back=page -->" { back = "page"; next }
+            { body[++n] = $0
+              if (title == "" && match($0, /<h1>.*<\/h1>/)) { title = substr($0, RSTART + 4, RLENGTH - 9); gsub(/<[^>]*>/, "", title) } }
+            END {
+                printf "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n"
+                printf "<meta http-equiv=\"Cache-Control\" content=\"no-cache, no-store, must-revalidate\">\n<meta http-equiv=\"Pragma\" content=\"no-cache\">\n<meta http-equiv=\"Expires\" content=\"0\">\n"
+                printf "<title>Help: %s — Axway ST reports</title>\n", title
+                printf "<link rel=\"stylesheet\" href=\"../assets/style.css%s\">\n", (av != "" ? "?v=" av : "")
+                printf "%s\n</head>\n<body>\n%s\n<main class=\"help-content\">\n", ENVIRON["HC_SCRIPTS"], ENVIRON["HC_BAR"]
+                printf "<a class=\"help-back\" href=\"../index.html\" onclick=\"if(history.length>1){history.back();return false}\">&larr; Back to the %s</a>\n", (back == "page" ? "page" : "report")
+                if (gen) printf "<a class=\"help-back help-generic\" href=\"general.html\">Generic help</a>\n"
+                for (i = 1; i <= n; i++) print body[i]
+                printf "</main>\n</body>\n</html>\n"
+            }' "$f" > "$out.tmp" && mv "$out.tmp" "$out"
     done
 }
 

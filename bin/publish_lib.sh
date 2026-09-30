@@ -29,6 +29,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 source bin/skiplist.sh    # SKIPLIST_FILE  — input/skip.txt (the ONE skip list)
 source bin/fastawk.sh   # route unqualified `awk` to mawk when installed (see bin/fastawk.sh)
 source bin/envlabel.sh  # ENV_LABEL — the checkout's environment label (input/environment.txt)
+source bin/awklib.sh    # $AWKLIB — the shared awk helpers (bin/date.awk + bin/fmt.awk)
 
 # One repo = one environment (2026-09-11): a publish run renders THE site tree
 # (docs/…) from THE data tree (data/…) — flat, no environment segment. The
@@ -47,7 +48,7 @@ FM_CONFIG_DIR="input/flow-manager"
 # CDN) never serves a stale style.css/report.js against freshly published HTML.
 # Content-derived (not the build timestamp), so an assets-unchanged rebuild
 # keeps the same URL and the cache stays warm.
-ASSET_VER=$( (cksum docs/assets/style.css docs/assets/report.js docs/assets/slotchart.js docs/assets/all-files-search.js docs/assets/sub-files.js 2>/dev/null || true) | cksum | cut -d' ' -f1 )
+ASSET_VER=$( (cksum docs/assets/style.css docs/assets/topbar.js docs/assets/report.js docs/assets/slotchart.js docs/assets/all-files-search.js docs/assets/sub-files.js 2>/dev/null || true) | cksum | cut -d' ' -f1 )
 
 # ---- the render job pool ----------------------------------------------------
 # Rendering a page is FORK-BOUND, not compute-bound: measured on a full rebuild,
@@ -459,6 +460,9 @@ unset _sm _smsub
 # to an absolute path at source time, like the cd above, so render_rpt works
 # from any later working directory.
 RENDER_AWK="$PWD/bin/render_rpt.awk"
+# ...run behind bin/fmt.awk (html_esc, slugof — its own esc / slugify copies
+# went 2026-09-30): awk -f "$FMT_AWKF" -f "$RENDER_AWK"
+FMT_AWKF="$PWD/bin/fmt.awk"
 # the PUBLISHED File pages (bin/transfer/filepages.sh, 2026-09-29): render_rpt
 # marks the drill lists whose first File has one (data-fp)
 FILEPAGES_F="$PWD/data/transfer/cache/_filepages.tsv"; [ -f "$FILEPAGES_F" ] || FILEPAGES_F=""
@@ -519,109 +523,35 @@ html_head() {   # $1 title  $2 css_href  [$3 date-list]  [$4 unused (was the rig
     # without it (details) fall back to pageKeyBase()'s basename derivation.
     [ -n "${7:-}" ] && printf '<meta name="report-key" content="%s">\n' "$7"
     # (the dark-theme head script went 2026-09-29 with the theme, user request)
-    printf '<link rel="stylesheet" href="%sassets/style.css%s">\n<script src="%sassets/topbar-data.js%s" defer></script>\n<script src="%sassets/report.js%s" defer></script>\n' "$base" "${ASSET_VER:+?v=$ASSET_VER}" "$base" "${TB_VER:+?v=$TB_VER}" "$base" "${ASSET_VER:+?v=$ASSET_VER}"
+    printf '<link rel="stylesheet" href="%sassets/style.css%s">\n' "$base" "${ASSET_VER:+?v=$ASSET_VER}"
+    topbar_scripts "$base"
+    printf '<script src="%sassets/report.js%s" defer></script>\n' "$base" "${ASSET_VER:+?v=$ASSET_VER}"
     local _xs
     for _xs in ${9:-}; do printf '<script src="%sassets/%s%s" defer></script>\n' "$base" "$_xs" "${ASSET_VER:+?v=$ASSET_VER}"; done
     printf '</head>\n<body%s>\n' "${8:+ class=\"$8\"}"
-    # RUNTIME top bar (2026-07): every html_head page bakes only a compact
-    # PLACEHOLDER — report.js (buildTopbar) renders the full bar client-side
-    # from docs/assets/topbar-data.js (the menu strings + the environment
-    # label, written once per publish by ensure_assets) + these data attrs:
-    # data-b the depth prefix back to the docs root, data-help the help slug.
-    # The baked-chrome pages (help, build report — render_shared_topbar) keep
-    # the full bar; buildTopbar skips a non-empty topbar div.
-    printf '<div class="topbar" data-b="%s"%s></div>\n' \
-        "$base" "${5:+ data-help=\"$5\"}"
+    topbar_placeholder "$base" "${5:-}"
 }
 
-# The site-wide top bar (the BAKED form — the help pages and the build report;
-# every other page gets the same bar client-side from report.js buildTopbar,
-# KEEP THE TWO IN STEP). $1 base (docs-root prefix), $2 help slug (""=none).
-render_topbar() {
-    local base=$1 helpslug=${2:-} home=${1}index.html brand
-    # evenly-spaced parts (the bar's justify-content:space-between does the
-    # spacing — no pushing margins, 2026-07 redesign): 1 the brand (-> home;
-    # its TEXT is the ENVIRONMENT LABEL, input/environment.txt — "Axway ST" on a
-    # checkout without one; 2026-09-12, user request: the static label span
-    # that stood beside a fixed "Cloud" brand since the env split of
-    # 2026-09-11 is gone) · 2 the data period · 3 the Entities / Errors /
-    # Files links + the search icon (one cluster since 2026-09-29) · 4 the
-    # Reports pulldown (ONE, 2026-09-29 — the Transfer / Server / Analyses
-    # dropdowns went) · 5 the plain Dashboard link (ONE dashboard page — no
-    # dropdown; + Monitor when the site has one) · 6 the three right icons. The precomputed menu strings carry an "@" placeholder; swap
-    # it for this page's prefix.
-    esc "${ENV_LABEL:-Axway ST}"; brand=$ESC
-    if env_has_switch; then
-        # THE ENVIRONMENT SWITCH (2026-09-12, user request; ENVSWITCH_JS): the
-        # pair "Acceptance / Production" — the active one (.envcur: bold,
-        # yellow) is the home link; the other one (data-envto) is filled by
-        # window.AXWAY_ENVLINKS() with the SAME PAGE on the other site, from
-        # data-root (this page's docs-root prefix). KEEP IN STEP with
-        # report.js buildTopbar, which renders the identical markup.
-        local _k=${ENV_KEY} _x _pair="" _e
-        for _e in acceptance production; do
-            [ -n "$_pair" ] && _pair="$_pair"'<span class="envsep">/</span>'
-            _x=$(printf '%s' "$_e" | awk '{ print toupper(substr($0, 1, 1)) substr($0, 2) }')
-            if [ "$_e" = "$_k" ]; then _pair="$_pair"'<a class="envlink envcur" href="'"$home"'">'"$_x"'</a>'
-            else _pair="$_pair"'<a class="envlink" data-envto="'"$_e"'" data-root="'"$base"'" href="#">'"$_x"'</a>'; fi
-        done
-        printf '<div class="topbar"><span class="brand envpair">%s</span>' "$_pair"
-    else
-        printf '<div class="topbar"><a class="brand" href="%s">%s</a>' "$home" "$brand"
-    fi
-    # THE DATA PERIOD (2026-09-13, user request): second, after the
-    # environment and before Entities — KEEP IN STEP with report.js buildTopbar
-    if [ -n "${TB_PERIOD:-}" ]; then esc "$TB_PERIOD"; printf '<span class="period" title="The data period: the first and last day of the transfer data">%s</span>' "$ESC"; fi
-    # THE ENTITIES / ERRORS / FILES CLUSTER (2026-09-29, user request: the
-    # Errors group — Failures before — out of the Reports pulldown, "an own
-    # link in the Top Menu bar before Files", and "have Entities, Files,
-    # Errors next to each other"): ONE bar part, the three links side by
-    # side, then the entity-search icon (it stood between Entities and Files
-    # before). Files = the ALL FILES search (2026-09-28). KEEP IN STEP with
-    # report.js buildTopbar.
-    printf '<span class="entgroup">'
-    # OVERVIEW first (2026-09-29, user request: "just before Entities")
-    [ -n "${OVERVIEW_HREF:-}" ] && printf '<a class="entlabel" href="%s%s">Overview</a>' "$base" "$OVERVIEW_HREF"
-    printf '<a class="entlabel" href="%stransfer/entities/subscription-all.html">Entities</a>' "$base"
-    [ -n "${ERRORS_HREF:-}" ] && printf '<a class="entlabel" href="%s%s">Errors</a>' "$base" "$ERRORS_HREF"
-    printf '<a class="entlabel" href="%ssearch/all-files.html">Files</a><a class="searchbtn" href="%ssearch/search.html" title="Search" aria-label="Search">&#128269;</a></span>' "$base" "$base"
-    printf '<nav class="nav">'
-    # ONE pulldown, Reports (2026-09-29, user request: the Transfer reports /
-    # Server reports / Analyses / Goodies four went) — KEEP IN STEP with
-    # report.js buildTopbar
-    printf '<div class="dd"><span class="ddlabel" tabindex="0" aria-haspopup="true">Reports \342\226\276</span><div class="ddm">%s</div></div>' "${REPORTS_MENU//@/$base}"
-    printf '</nav>'
-    printf '<a class="dashlink" href="%sdashboards/index.html">Dashboard</a>' "$base"
-    # Top-bar right: the SITE MAP icon, then the help icon (the Report finder
-    # icon went 2026-09-29 with the finder, user request).
-    printf '<span class="tr-group">'
-    printf '<a class="searchbtn" href="%stools/sitemap.html" title="Site map" aria-label="Site map">&#128506;</a>' "$base"
-    [ -n "$helpslug" ] && printf '<a class="helpbtn" href="%shelp/%s.html" title="Help" aria-label="Help">?</a>' "$base" "$helpslug"
-    printf '</span></div>'
-    # the baked-chrome pages load no report.js / topbar-data.js, so the switch
-    # function rides inline right after its anchors (ONE line: apply_help_chrome
-    # swaps the whole bar line — the script must stay on it)
-    if env_has_switch; then printf '<script>%swindow.AXWAY_ENVLINKS();</script>' "$ENVSWITCH_JS"; fi
-    # ...and so does the WRAPPED-BAR fit (2026-09-30 audit J-03: on a narrow
-    # window the fixed bar wraps and covered the h1 — report.js fitTopbar
-    # pads the report pages, these pages load no report.js). KEEP IN STEP
-    # with report.js fitTopbar.
-    printf '<script>%s</script>' "$FITTOP_JS"
-    printf '\n'
+# THE TOP BAR (2026-09-30, the lean round: ONE implementation, assets/
+# topbar.js, on EVERY page — the report pages, the help pages and the build
+# report alike; the baked twin render_topbar / render_shared_topbar and its
+# inline FITTOP_JS / AXWAY_ENVLINKS scripts are gone). A page bakes only a
+# PLACEHOLDER — data-b the depth prefix back to the docs root, data-help the
+# help slug — and loads topbar-data.js (the data, ensure_assets; ?v= TB_VER)
+# then topbar.js (?v= ASSET_VER), both deferred and BEFORE report.js, which
+# finds the bar built.
+topbar_scripts() {   # $1 = the docs-root prefix
+    printf '<script src="%sassets/topbar-data.js%s" defer></script>\n<script src="%sassets/topbar.js%s" defer></script>\n' \
+        "$1" "${TB_VER:+?v=$TB_VER}" "$1" "${ASSET_VER:+?v=$ASSET_VER}"
 }
-# report.js fitTopbar, inline for the baked-chrome pages (render_topbar, the
-# build report fallback bar): pad the body to a wrapped fixed top bar.
-FITTOP_JS='(function(){function f(){var b=document.querySelector(".topbar");if(!b||!document.body)return;var h=b.offsetHeight;document.body.style.paddingTop=h>48?(h+12)+"px":""}f();addEventListener("resize",f)})();'
+topbar_placeholder() {   # $1 = the docs-root prefix  $2 = the help slug ("" = none)
+    printf '<div class="topbar" data-b="%s"%s></div>\n' "$1" "${2:+ data-help=\"$2\"}"
+}
+
 # (The site-wide fixed FOOTER BAR was removed 2026-07, with its "Build report"
 # link and build timestamp. The build report is reachable from the SITE MAP,
 # which links the report of the run that built the site — see write_sitemap in
 # bin/build/publish.sh. Nothing bakes a build identity into a page any more.)
-# The baked top bar of a shared-chrome page (the local build report, help/…)
-# whose docs-root prefix is $1; $2 = help slug. (Kept as a separate name: the
-# callers predate the one-prefix bar.)
-render_shared_topbar() {
-    render_topbar "$1" "${2:-}"
-}
 
 # ---- report page renderer ---------------------------------------------------
 
@@ -690,7 +620,7 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 (unused)  $5 (unused)  [
             -v grpicons="${GRPICON_MAP:-}" -v dropbuckets="$dropbuckets" \
             -v rdates="$CUR_DATES" \
             -v noprose="${RPT_NOPROSE:-0}" -v fpages="$FILEPAGES_F" \
-            -f "$RENDER_AWK" "$rpt"
+            -f "$FMT_AWKF" -f "$RENDER_AWK" "$rpt"
         printf '</body>\n</html>\n'
     } > "$out"
 }
@@ -1294,10 +1224,9 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # 13 p100 · 14 Total · 15 Avg · 16 Ok · 17 Error · 18 Error % ·
     # 19 Waiting · 20 Expired · 21 First · 22 Last · 23 Days.
     entity_res_block() {   # $1 = green|orange|red   $2 = the All-view rows to filter
-        printf '%s\n' "$2" | LC_ALL=C awk -F'\t' -v OFS='\t' -v want="@data:res=$1" -v tmpl="$stotal" '
-            function human(b,   u,i,v){ split("B KB MB GB TB PB",u," "); i=1; v=b+0
-                while (v>=1024 && i<6) { v/=1024; i++ }
-                return sprintf("%.0f %s",v,u[i]) }
+        # (the whole-unit byte format hbytes0 and the quicksort qsortn come
+        # from $AWKLIB — bin/fmt.awk, 2026-09-30; pasted copies before)
+        printf '%s\n' "$2" | LC_ALL=C awk -F'\t' -v OFS='\t' -v want="@data:res=$1" -v tmpl="$stotal" "$AWKLIB"'
             function hshort(ms,   v) { v = ms / 1000; if (v < 59.5) return sprintf("%.0f s", v)
                 v /= 60; if (v < 59.5) return sprintf("%.0f m", v); v /= 60; if (v < 23.5) return sprintf("%.0f h", v); return sprintf("%.0f d", v / 24) }
             function dtint(ms,   v) { v = ms / 1000; if (v < 59.5) return "processed"; if (v / 60 < 59.5) return "warn"; return "failed" }
@@ -1305,13 +1234,6 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
             function pr(x, c) { if (x + 0 == 0 || c + 0 == 0) return ""; return sprintf("%.1f%%", x * 100 / c) }
             function nz(x) { return (x + 0 == 0) ? "" : x + 0 }
             function n(s) { gsub(/[^0-9]/, "", s); return s + 0 }
-            function qsortn(A, lo, hi,   i, j, p, t) {
-                while (lo < hi) {
-                    i = lo; j = hi; p = A[int((lo + hi) / 2)]
-                    while (i <= j) { while (A[i] < p) i++; while (A[j] > p) j--; if (i <= j) { t = A[i]; A[i] = A[j]; A[j] = t; i++; j-- } }
-                    if (j - lo < hi - i) { if (lo < j) qsortn(A, lo, j); lo = i } else { if (i < hi) qsortn(A, i, hi); hi = j }
-                }
-            }
             function prank(P,   r, cum, i2) { r = int((HN - 1) * P / 100 + 0.5) + 1; cum = 0
                 for (i2 = 1; i2 <= hq; i2++) { cum += HC[i2]; if (cum >= r) return HQ[i2] } return HQ[hq] }
             $1=="ROW" {
@@ -1336,7 +1258,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                 for (j = 1; j <= hq; j++) HC[j] = HH[HQ[j]]
                 V[3]=nz(S[3]); V[4]=nz(S[4]); V[5]=S[5]+0; V[6]=pr(S[5], files); V[7]=S[7]+0; V[8]=S[8]+0; V[9]=S[9]+0
                 W[10] = (HN > 0) ? dcell(prank(90)) : ""; W[11] = (HN > 0) ? dcell(prank(95)) : ""; W[12] = (HN > 0) ? dcell(prank(99)) : ""; W[13] = (HN > 0) ? dcell(prank(100)) : ""   # WHOLE cells (their tint follows the value)
-                V[14]=human(sb); V[15]=human(files > 0 ? sb / files : 0); V[16]=S[16]+0; V[17]=S[17]+0; V[18]=pr(S[17], S[16]+S[17]); V[19]=S[19]+0; V[20]=S[20]+0; V[23]=days+0
+                V[14]=hbytes0(sb); V[15]=hbytes0(files > 0 ? sb / files : 0); V[16]=S[16]+0; V[17]=S[17]+0; V[18]=pr(S[17], S[16]+S[17]); V[19]=S[19]+0; V[20]=S[20]+0; V[23]=days+0
                 nt = split(tmpl, T, "\t"); while (nt > 2 && T[nt] ~ /^@data:/) nt--   # the All total own distinct @data:buckets never ride a SUBSET total (2026-09-29)
                 if (cnt + 0 == 0) { V[14] = ""; V[15] = ""; V[23] = "" }   # an EMPTY view (2026-09-29): no "0 B" / 0 days in its total
                 l = T[2]; sub(/\([0-9,]+/, "(" (cnt + 0), l); out = T[1] OFS l
@@ -2095,7 +2017,7 @@ render_month_stats() {   # $1 area
 # belongs to one (the former boxes-only reports included). The "Server log
 # errors" group was folded into Failures (2026-09-29, user request), and
 # Failures was renamed ERRORS the same day (user request: "Rename Failures to
-# Errors") — out of the pulldown, a top-bar link of its own (render_topbar).
+# Errors") — out of the pulldown, a top-bar link of its own (assets/topbar.js).
 _report_groups() {
     printf '%s\n' \
         "Overview|transfer/topview=Transfer top view|server/topview=Server top view" \
@@ -2153,7 +2075,7 @@ rg_rel() {
 
 # THE REPORTS PULLDOWN — Start page (reports/index.html) + one line per group,
 # landing on its first member. "@" = the page's docs-root prefix, swapped per
-# page by render_topbar / report.js buildTopbar (topbar-data.js `reports`).
+# page by assets/topbar.js (topbar-data.js `reports`).
 # NOT Entities (2026-09-29, user request): the top bar's own Entities link
 # opens them; the group stays for the start page, the finder and the h1 tags.
 # NOT Errors either (2026-09-29, user request: "Remove Failures from the
@@ -2335,7 +2257,7 @@ apply_report_groups() {
     rm -f "$q"
 }
 # (The graphical dashboard — bin/dashboards/publish.sh, ONE page since
-# 2026-07 — is a plain top-bar link emitted by render_topbar; the former
+# 2026-07 — is a plain top-bar link (assets/topbar.js); the former
 # DASHBOARD_MENU dropdown is gone.)
 # The RUNTIME top bar's menu-data version (the ?v= stamp html_head puts on
 # assets/topbar-data.js): changes exactly when the menu content does, so a
@@ -2359,21 +2281,17 @@ TB_CID=$(_coreid_url input/coreid-url.txt)
 # must serve its own 404 when the page is not there (GitHub Pages: docs/
 # 404.html). The other site's host differs per viewer, so the hrefs are
 # computed in the browser (never baked): on localhost the local checkouts,
-# anywhere else the GitHub Pages sites. ENV_SITES_JS holds the four URLs;
-# ENVSWITCH_JS is the ONE implementation — window.AXWAY_ENVLINKS() fills
-# every a[data-envto] from its data-root (the page's docs-root prefix) —
-# shipped inside topbar-data.js (report.js calls it after buildTopbar) AND
-# inline after the baked bar (render_topbar: help pages, build report). The
+# anywhere else the GitHub Pages sites. ENV_SITES_JS holds the four URLs,
+# shipped as topbar-data.js `sites`; assets/topbar.js (envLinks — the ONE
+# implementation since 2026-09-30, a baked ENVSWITCH_JS string before) fills
+# every a[data-envto] from its data-root (the page's docs-root prefix). The
 # develop/sample checkout keeps its single "Sample" brand link.
 # FROM THE FILE SYSTEM (location.protocol file:, 2026-09-14, user request)
-# there is no other site to switch to: the function REMOVES the other
+# there is no other site to switch to: topbar.js REMOVES the other
 # environment's link and the separator, so only the current environment
 # shows — its link the home page (the page-relative index.html, which works
 # from disk too).
 ENV_SITES_JS='{local:{acceptance:"http://localhost/runtime-acceptance/",production:"http://localhost/runtime-production/"},remote:{acceptance:"https://probable-adventure-l6y6k83.pages.github.io/",production:"https://expert-adventure-9myme9m.pages.github.io/"}}'
-ENVSWITCH_JS='window.AXWAY_ENVLINKS=function(){if(location.protocol==="file:"){var F=document.querySelectorAll(".envpair a[data-envto],.envpair .envsep"),j;for(j=0;j<F.length;j++)F[j].parentNode.removeChild(F[j]);return}var S='"$ENV_SITES_JS"',h=location.hostname,L=(h==="localhost"||h==="127.0.0.1")?S.local:S.remote,A=document.querySelectorAll("a[data-envto]"),i,a,b,r,p;for(i=0;i<A.length;i++){a=A[i];b=L[a.getAttribute("data-envto")];if(!b)continue;r=new URL(a.getAttribute("data-root")||"./",location.href).pathname;p=location.pathname.indexOf(r)===0?location.pathname.slice(r.length):"";a.href=b+p+location.search+location.hash}};'
-# the pair is a RUNTIME feature: only the two runtime keys get it
-env_has_switch() { [ "${ENV_KEY:-}" = acceptance ] || [ "${ENV_KEY:-}" = production ]; }
 # THE DATA PERIOD in the top bar (2026-09-13, user request): "yyyy-mm-dd /
 # yyyy-mm-dd", the first and last day of the transfer data — the day report's
 # META first/last records (the same window the From/To selectors span) —
@@ -2396,7 +2314,7 @@ TB_VER=$(printf '%s' "$REPORTS_MENU$ERRORS_HREF$OVERVIEW_HREF$TB_CID${ENV_LABEL:
 ensure_assets() {
     # the assets and .nojekyll live at the docs ROOT (docs/assets/); every
     # publish writes the same bytes, so writing them is idempotent.
-    # style.css / report.js / slotchart.js / all-files-search.js / sub-files.js and docs/help/
+    # style.css / topbar.js / report.js / slotchart.js / all-files-search.js / sub-files.js and docs/help/
     # are SEEDED from the repo-root assets/ by bin/build.sh (2026-08-29 —
     # every build clears the docs tree first, so docs/ is pure build
     # output; EDIT IN assets/, a build overwrites the docs copies). Only the
@@ -2416,10 +2334,10 @@ ensure_assets() {
     }
     # (build-stamp.js is GONE with the footer bar: no page shows a build time
     # any more, so there is nothing to stamp.)
-    # The runtime top bar's menu data (buildTopbar in report.js): the ONE
+    # The runtime top bar's menu data (assets/topbar.js): the ONE
     # Reports pulldown string (2026-09-29: the transfer / server / analyses /
     # goodies keys went with their four dropdowns), docs-root-relative with
-    # its "@" placeholder kept verbatim (report.js swaps it for the page's
+    # its "@" placeholder kept verbatim (topbar.js swaps it for the page's
     # data-b prefix).
     local r=$REPORTS_MENU
     r=${r//\\/\\\\}; r=${r//\"/\\\"}
@@ -2429,14 +2347,14 @@ ensure_assets() {
     c=${c//\\/\\\\}; c=${c//\"/\\\"}
     e=${e//\\/\\\\}; e=${e//\"/\\\"}
     k=${k//\\/\\\\}; k=${k//\"/\\\"}
-    # + envkey (report.js renders the Acceptance / Production pair for the
-    # two runtime keys) and the ENVIRONMENT SWITCH function itself
-    # (ENVSWITCH_JS — the one implementation, see TB_VER above)
+    # + envkey (topbar.js renders the Acceptance / Production pair for the
+    # two runtime keys) and the switch's four site URLs (`sites`,
+    # ENV_SITES_JS — a JS object literal, baked verbatim)
     # + the data period (TB_PERIOD, "yyyy-mm-dd / yyyy-mm-dd" — plain digits,
     # slashes and spaces, nothing to escape)
     # + errors: the top bar's Errors link (ERRORS_HREF, docs-root-relative —
     # a plain page path, nothing to escape)
-    local _tb; printf -v _tb 'window.AXWAY_TB={reports:"%s",errors:"%s",overview:"%s",coreid:"%s",env:"%s",envkey:"%s",period:"%s"};%s' "$r" "${ERRORS_HREF:-}" "${OVERVIEW_HREF:-}" "$c" "$e" "$k" "${TB_PERIOD:-}" "$ENVSWITCH_JS"
+    local _tb; printf -v _tb 'window.AXWAY_TB={reports:"%s",errors:"%s",overview:"%s",coreid:"%s",env:"%s",envkey:"%s",period:"%s",sites:%s};' "$r" "${ERRORS_HREF:-}" "${OVERVIEW_HREF:-}" "$c" "$e" "$k" "${TB_PERIOD:-}" "$ENV_SITES_JS"
     _asset_put docs/assets/topbar-data.js "$_tb"
     [ -f docs/.nojekyll ] || : > docs/.nojekyll
 }

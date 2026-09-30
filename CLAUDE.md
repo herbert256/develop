@@ -49,25 +49,24 @@ acceptance-vs-production pages (`publish-accvsprod.sh`), `migrate-input.sh` and
 committed, NEVER-synced **`input/environment.txt`** — one line, the display label: `Acceptance` /
 `Production` in the two runtime repos, `Sample` here. **`bin/envlabel.sh`** is its one reader
 (sourced; `ENV_LABEL`, `ENV_KEY` = lowercased, `ENV_INBOX`, `env_of_name`, `env_inbox_find`):
-the label is the TEXT of the top bar's brand/home link (report.js `buildTopbar` reads `env:"…"`
-from `topbar-data.js`; `render_topbar` bakes the same link on the help/build pages; "Cloud" on a
+the label is the TEXT of the top bar's brand/home link (topbar.js `buildTopbar` reads `env:"…"`
+from `topbar-data.js`, on every page; "Cloud" on a
 checkout without the file — 2026-09-12, the separate label span beside a fixed "Cloud" brand is
 gone; the fallback reads "Axway ST" since 2026-09-29) and the home title (`Axway ST reports — <label>`, "Cloud
 Reports" until 2026-09-29, user request). **THE ENVIRONMENT SWITCH** (2026-09-12,
 user request, later the same day): on a RUNTIME checkout (`ENV_KEY` acceptance|production —
-`env_has_switch`) the brand slot holds the pair **Acceptance / Production** instead — the ACTIVE
+`ENV_KEY`) the brand slot holds the pair **Acceptance / Production** instead — the ACTIVE
 site bold and YELLOW (`.envcur`), its link the home page; the OTHER one the SAME PAGE on the
 other site, whose host differs per viewer, so its href is computed in the browser, never baked:
-`window.AXWAY_ENVLINKS()` (publish_lib `ENVSWITCH_JS`, the ONE implementation; the four URLs in
+`assets/topbar.js` envLinks (the ONE implementation, 2026-09-30 — `window.AXWAY_ENVLINKS` /
+`ENVSWITCH_JS` before) reading the four URLs of topbar-data.js `sites` (publish_lib
 `ENV_SITES_JS` — localhost → `http://localhost/runtime-{acceptance,production}/`, any other host
 → the two GitHub Pages sites) fills every `a[data-envto]` from its `data-root` (the page's
 docs-root prefix) + the page's root-relative path + query + hash; the other site answers a
 missing page with its own 404 (GitHub Pages serves `docs/404.html`; the local Apache its
-default). It ships inside `topbar-data.js` (report.js `buildTopbar` renders the pair from
-`envkey:"…"` and calls it) AND inline on the baked bar line (`render_topbar`: the help pages and
-the build report load no script; `apply_help_chrome` swaps the whole line, so the script stays on
-it). The develop/sample checkout keeps its single "Sample" brand link. `TB_VER` folds the key
-and the URLs. KEEP the two markups in step; it derives the runtime
+default). topbar.js `buildTopbar` renders the pair from `envkey:"…"` on EVERY page (the help pages
+and the build report included — there is no baked bar any more). The develop/sample checkout
+keeps its single "Sample" brand link. `TB_VER` folds the key and the URLs. `bin/envlabel.sh` derives the runtime
 inbox prefixes (Acceptance → `acc*`, Production → `prd*` and `prod*`, case-insensitive; any other
 label = the inbox skipped with a note) and names the outbox archives
 (`build/st-reports-<key>_<stamp>.7z` and the outbox repo's `st-reports-<key>.7z`; the `~/cloud/`
@@ -149,14 +148,16 @@ checkout with logs but no config export: it synthesizes the two JSONs from the t
 - `html_head` derives ONE prefix — `base`, back to the docs root — from the css href callers pass
   docs-root-relative (`../assets/style.css` from `docs/transfer/`); the placeholder it bakes is
   `<div class="topbar" data-b=… [data-help=…]>`.
-- **The top bar is RUNTIME**: pages bake only that placeholder; report.js `buildTopbar` renders
-  the full bar from `docs/assets/topbar-data.js` (written by `ensure_assets`: the
+- **The top bar is RUNTIME — on EVERY page** (2026-09-30: the help pages and the build report too):
+  pages bake only that placeholder and load `assets/topbar-data.js` then `assets/topbar.js` (the ONE
+  bar: buildTopbar, fitTopbar, envLinks) before `report.js` — publish_lib `topbar_scripts` /
+  `topbar_placeholder`; `render_topbar` / `render_shared_topbar` / `FITTOP_JS` / `ENVSWITCH_JS` are
+  gone, there is no keep-in-step twin. topbar.js `buildTopbar` renders the full bar from
+  `docs/assets/topbar-data.js` (pure data, written by `ensure_assets`: the
   ONE menu string, `reports` (the Reports pulldown, 2026-09-29 — the transfer / server / analyses /
   goodies keys are gone), with its `@` placeholder (the `monitor:0|1` flag went 2026-09-30 with the Monitor dashboard),
-  `coreid:"<url>"`, `env:"<label>"`, `envkey:"<key>"`, `period:"yyyy-mm-dd / yyyy-mm-dd"` (the DATA PERIOD — the transfer day report’s META first/last days, shown second in the bar after the environment, before Entities; 2026-09-13, user request) + the `AXWAY_ENVLINKS` switch function;
-  `?v=` stamp `TB_VER` folds the flag, the template, the label, the key and the site URLs). The
-  help/build pages bake full chrome (`render_shared_topbar` → `render_topbar BASE HELPSLUG`, the
-  switch script inline on the bar line) — KEEP THE TWO IN STEP.
+  `coreid:"<url>"`, `env:"<label>"`, `envkey:"<key>"`, `period:"yyyy-mm-dd / yyyy-mm-dd"` (the DATA PERIOD — the transfer day report’s META first/last days, shown second in the bar after the environment, before Entities; 2026-09-13, user request), `sites` (the four env URLs);
+  `?v=` stamp `TB_VER` folds the template, the label, the key and the site URLs).
 - report.js has no `pageEnv`/`setupEnvSwitch`; the sessionStorage keys carry no env prefix; the
   `report-area` meta is the area alone.
 
@@ -1374,7 +1375,7 @@ sidecars `_inbound-addr.tsv` / the flat server `_subscriptions.tsv` deleted; nev
   `Label|dir/stem=Label|…` — `dir` the docs directory the page renders into (transfer / server /
   analyses, plus `transfer/entities`, `transfer/month-stats` and `analyses/xref`), `stem` the report basename or the
   hand-written page name. It feeds `REPORTS_MENU` (topbar-data.js `reports`, the ONE menu key;
-  report.js `buildTopbar` + `render_topbar` draw ONE `.dd`; `TB_VER` folds it), the start page
+  topbar.js `buildTopbar` draws ONE `.dd`; `TB_VER` folds it), the start page
   (`write_reports_index` + `rg_desc`: a report's DESC, fixed texts for the hand-written pages),
   the sitemap (ONE `.smcols` flow of cards since 2026-09-29, user request — no Reports /
   Dashboards / Tools sections: the Start page card, one card per group, a Dashboards card and
@@ -1450,12 +1451,15 @@ both MANUAL.
   the site works under any base path — the 404 page derives its home link from the URL itself.
 - **`docs/` is PURE committed build output** (2026-08-29): every `bin/build.sh` run CLEARS
   `docs/` wholesale and RE-SEEDS the
-  hand-authored files from the repo-root **`assets/`** — `style.css`, `report.js`, `slotchart.js`,
+  hand-authored files from the repo-root **`assets/`** — `style.css`, `topbar.js`, `report.js`, `slotchart.js`,
   `all-files-search.js`, `sub-files.js` → `docs/assets/` (build.sh `SEED_ASSETS`), `assets/help/` → `docs/help/`. **EDIT IN `assets/`, never in
   `docs/`** — a build overwrites the docs copies. (`.nojekyll` and `topbar-data.js` stay
   generated.)
 - **`assets/help/*.html`** — a help page per report (or shared per group/family) plus `general.html`
-  and `index.html`; seeded into `docs/help/` each build. `help_slug_for AREA BASENAME` maps
+  and `index.html`. Since 2026-09-30 they are FRAGMENTS (the body from `<h1>`; an optional first
+  line `<!-- help: back=page -->`): `bin/build/publish.sh apply_help_chrome` reads `assets/help/`
+  and writes the full page to `docs/help/` — head, the no-cache trio, stylesheet + bar scripts with
+  `?v=`, placeholder, back / Generic help links, tail; the title `Help: <h1> — Axway ST reports`. `help_slug_for AREA BASENAME` maps
   basename → slug (server basenames get a `server-` prefix; detail pages `details-$sub`). **A
   new/renamed/regrouped report needs its help page created or extended BY HAND** — a slug with no
   file is a silent 404, not a build error.
@@ -1555,7 +1559,7 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   a regex strip ate "Protocols"); `sort=` and a numeric `?axway_sort=N` are BUILT indexes (a stored
   column order moves positions); the Entities pages remember EVERY sort key (`k` list, labels);
   a sort sends the pager to page 1; a table without a search box still shows the date-range empty
-  message; `fitTopbar` pads the body to the wrapped top bar on a narrow window; the CSV header of a
+  message; topbar.js `fitTopbar` pads the body to the wrapped top bar on a narrow window; the CSV header of a
   grouped table prefixes each column with its group; a search hides a catalog's group heading row
   with no match under it; `initSeen` only touches seenrows
   tables.
@@ -1723,13 +1727,25 @@ front end) then four fix workers with disjoint files. The rules it left:
   many writers — hence `slugof`). The server reports build their `LINK_AWK` from the `SRV_*_AWK`
   strings and `known_names` in `bin/server/lib.sh`. `details_writer.awk` runs as
   `-f bin/fmt.awk -f details_writer.awk`. `hbytes2` / `hbytes0` are the awk twins of report.js
-  `humanBytes` / `humanBytesInt` — KEEP IN STEP. (Left in place: the copies inside publish_lib.sh's
-  entity_res_block and render_rpt.awk's `esc` / `slugify`.)
+  `humanBytes` / `humanBytesInt` — KEEP IN STEP. render_rpt runs `-f bin/fmt.awk -f bin/render_rpt.awk`
+  (html_esc, slugof); entity_res_block takes hbytes0 / qsortn from `$AWKLIB` (its hshort / pr / nz /
+  dtint stay: they mirror entities.sh FMT_AWK).
 - **Compact payloads** (see RECALC, Drill-down, the Entities pages): what the renderer SHIPS is
   encoded; report.js decodes it first in `init()`. A static round-trip check (decode every shipped
   attribute and compare with the writer's dated form) is the proof for any change there.
 - **One pass per publish**: no publish catch-up modes; the Reason catch-up (`failed.sh catchup`)
   runs in the report stage. Keep it that way: a new cross-phase dependency goes BEFORE the publishes.
+- **Compact slot-chart series** (2026-09-30): charts_lib `rc_cards` writes a contiguous series as
+  `=S<YYYY-MM-DD>T<HHMM>~<o|d|m>|<values>|…`, re-checking every slot's label and date (the original
+  is kept on any mismatch); slotchart.js `expandSeries()` rebuilds `label:values:date` before
+  `parse()`. A new series writer keeps the contiguous walk and the label shapes `MM-DD HHh` /
+  `MM-DD` / `HHhMM`. KEEP IN STEP: overview.sh `slotlab`, the day slot labels, `rc_cards`,
+  `expandSeries`. overview.sh `slot_sidecar` sums the PeSIT / EventQueue sidecars; day/reports.sh's
+  two passes share `DAY_FN_AWK`.
+- **Security**: security-outreach.sh is security-params.sh's WRITER (not pooled): ONE pass over
+  `_files` + `_transfers` col 19 feeds both reports. reason-boxes builds its newest-OK-END map once
+  (`$TMPD/lok.tsv`) for boxes 14 / 20 / 21 / 15. (A cross-script `_lastok-end.tsv` was NOT made:
+  result.sh / kaput-evidence / filepages / details.sh use DIFFERENT rules.)
 - **Measured, not worth it** (do not retry): an `inbound` server subset, a `day` marker subset for
   day_srv, sharing the three `_files.tsv` subscription sorts (<0.5 CPU-s), one shared SSH subset for
   the logon family readers (breaks even), `grep -F` prefilters (slower than mawk).
@@ -1740,8 +1756,7 @@ front end) then four fix workers with disjoint files. The rules it left:
   Reports pulldown — its own top-bar link (`ERRORS_HREF`, the group's first page, Failed
   Subscriptions; `errors` in topbar-data.js). The top bar's Overview · Entities · Errors · Files
   are ONE cluster (`span.entgroup`, the entity-search icon after them; Overview joined later that
-  day — `OVERVIEW_HREF` = transfer/topview.html, `overview` in topbar-data.js) in render_topbar
-  AND report.js buildTopbar.
+  day — `OVERVIEW_HREF` = transfer/topview.html, `overview` in topbar-data.js) in topbar.js buildTopbar.
 - **Sub-rows** (`_report_subrows`, publish_lib.sh): members of a group that collapse into ONE
   entry of the group's first row (its label, landing on the first of them) and get a SECOND row
   of their own on their pages — "Server log" = server errors / failure-flows / io-errors /
@@ -1818,8 +1833,10 @@ removed trend.sh. Fixed:
   (`csv_open`, set by split_csv) is held and the next physical line joins it; a held record that
   never closes (the next line opens like a record, 64 lines, or end of file) is dropped and
   counted (`WARNING: dropped N CSV record(s) whose quoted field never closed`).
-- **Search globs never become a RegExp** (F12): `globMatcher` (report.js and
-  all-files-search.js, KEEP IN STEP) is the two-pointer walk. **A "quoted phrase" is ONE search
+- **Search globs never become a RegExp** (F12): `globMatcher` is the two-pointer walk — ONE copy in
+  report.js since 2026-09-30, exported with humanBytes / fileState / fileTint / fileCell as
+  `window.AXWAY_UTIL` for sub-files.js and all-files-search.js (the all-files engine defers its
+  initial `?f=` / `?s=` search to it). **A "quoted phrase" is ONE search
   term** (F10): parseQuery swaps each phrase for a placeholder before the operator split, so
   and/or/not inside quotes is text — the Failing reasons links search `"<reason>"`.
 - **The all-files bloom files the Unicode-lowercase trigrams too** (F11) for a name holding
@@ -1927,6 +1944,9 @@ bin/timing.sh           `timed` -> the TIME lines
 bin/logons.sh           ensure_logons -> the logon summary (_logons.tsv + _logons-hosts.tsv; logon.sh's twin)
 bin/ssh-family.awk      the [Ssh Default] logon-family classifier, ONE copy for logon.sh + logons.sh (2026-09-30)
 bin/awklib.sh           $AWKLIB (date.awk + fmt.awk) and $CADENCE_AWK — injected in front of an awk program's text
+bin/analyses/reports/uc-status-lib.sh  the UC1/UC3/UC4 status skeleton (ucs_setup, UCS_AWK: roster, red flip, Files join, ucs_walk per-hour sidecar; ucs_rows/ucs_stats) — each UC script keeps only its signal block + columns
+bin/dashboards/charts_lib.sh  ONE render_card for the dashboards AND the day pages (RC_BASEIV / RC_MORE per publish) + rc_cards (the compact series)
+assets/topbar.js        the ONE top bar (buildTopbar, fitTopbar, envLinks) — every page loads it after topbar-data.js
 bin/date.awk            jdn / fromjdn / minof            bin/cadence.awk  patron / regspread / label (the pickup-pattern vocabulary)
 bin/fmt.awk             hbytes2 / hbytes0 / hbytes1, hdurms, hdsecs, lit, html_esc, slugof, qsortn
 bin/pool.sh             pool_run / pool_wait (POOL_TIMED, POOL_WHAT) — the report runners and the server parse

@@ -23,7 +23,7 @@ done < <(find "$ROOT/bin" -name '*.sh' -type f -print0)
 # the stand-alone .awk programs COMPILE (2026-09-29 audit — bash -n never saw
 # them): mawk -W dump parses without running; the sample generators are
 # compiled behind their prelude, subname.awk behind the renames helpers it is
-# always run with, details_writer.awk behind bin/fmt.awk (lit()). Skipped when mawk is not installed.
+# always run with, details_writer.awk and render_rpt.awk behind bin/fmt.awk. Skipped when mawk is not installed.
 if command -v mawk >/dev/null 2>&1; then
     rn_awk=$( . "$ROOT/bin/renames.sh" >/dev/null 2>&1; printf '%s' "${RENAMES_AWK:-}" )
     awktmp=$(mktemp "${TMPDIR:-/tmp}/axcs.XXXXXX")
@@ -33,6 +33,7 @@ if command -v mawk >/dev/null 2>&1; then
             */sample/*.awk)       cat "$ROOT/bin/sample/prelude.awk" > "$awktmp" ;;
             */subname.awk)        printf '%s\n' "$rn_awk" > "$awktmp" ;;
             */details_writer.awk) cat "$ROOT/bin/fmt.awk" > "$awktmp" ;;   # run as -f fmt.awk -f details_writer.awk
+            */render_rpt.awk)     cat "$ROOT/bin/fmt.awk" > "$awktmp" ;;   # run as -f fmt.awk -f render_rpt.awk (2026-09-30)
             *)                    : > "$awktmp" ;;
         esac
         cat "$f" >> "$awktmp"

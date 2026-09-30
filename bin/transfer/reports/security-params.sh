@@ -57,17 +57,38 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 subfile="$REPORTS_DIR/.secparams-subs.$$"
 pairfile="$REPORTS_DIR/.secparams-pairs.$$"
 : > "$subfile"
-trap 'rm -f "$subfile" "$pairfile"' EXIT
 
-# Read the shared parse cache (6=site, 10=protocol, 21=secparams raw).
+# ONE pass over the shared parse cache (6=site, 10=protocol, 19=secparams raw)
+# for BOTH security reports (2026-09-30, the lean round — security-outreach.sh
+# re-read _files + _transfers with the same attribute split): the
+# SecurityParameters string is split into Key/Value chunks ONCE per leg and
+# feeds this report's value counts and the outreach lists
+# (bin/transfer/reports/security-outreach.sh, called below as the writer).
 # Emits (stdout):  PROTO|protocol|count...   and   ATTR|key|value|count...
 # Emits (subfile): the per-subscription rows above.
-agg=$(awk -F'\t' -v subout="$subfile" '
+# Emits (oaggf):   the outreach lines D1 / D2 / D3 / T (see security-outreach.sh)
+SPX="$CONFIG_XREF/_subscriptions-partners.tsv"   # subscription -> partner (the outreach UNION attribution)
+oaggf="$REPORTS_DIR/.secparams-outreach.$$"
+: > "$oaggf"
+trap 'rm -f "$subfile" "$pairfile" "$oaggf"' EXIT
+agg=$(awk -F'\t' -v subout="$subfile" -v spx="$SPX" -v oagg="$oaggf" '
     function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
+    function label(a) { return (a == "Protocol") ? "TLS version" : a }
+    BEGIN {
+        # the outreach: the two DEPRECATED values, tracked with the other
+        # values of their attribute (the old -> new pairs)
+        dep["Public Key" SUBSEP "ssh-rsa"] = 1
+        dep["Protocol" SUBSEP "TLSv1.2"]   = 1
+        want["Public Key"] = 1; want["Protocol"] = 1
+        while ((getline _l < spx) > 0) { split(_l, _a, "\t")
+            if (_a[1] != "" && _a[2] != "") { _k = toupper(_a[1]); spm[_k] = (spm[_k] == "" ? _a[2] : spm[_k] SUBSEP _a[2]) } }   # case-folded like sp_union (2026-09-29 audit)
+        close(spx)
+    }
     # file 1 = $FILES: the per-CoreId host-resolved partner (col 20, filled at
     # parse time via _hosts-partners.tsv, else the account org; empty when the
     # parse abstained) — the OTHER half of the site-wide PARTNER UNION
     FNR == NR { if ($20 != "") { hpv = $20; gsub(/[|\t]/, " ", hpv); hp[$1] = hpv } next }
+    { if ($14 + 0 > maxj) { maxj = $14 + 0; maxdate = $11 } }   # the outreach window end (every leg)
     {
         st = $3; sub(/ Subtransmission$/, "", st); f = (st != "Processed")
         proto = $10; if (proto == "") proto = "UNKNOWN"
@@ -82,16 +103,31 @@ agg=$(awk -F'\t' -v subout="$subfile" '
         # protocol counts feed only the page TOTAL/SUMMARY (every leg counted
         # once); the Protocol distribution TABLE lives in the protocol report
         pc[proto]++; if (f) pf[proto]++; else pp[proto]++
-        if (unk) next
 
-        sp = $19
-        if (sp == "" || sp == "UNKNOWN") next
-        gsub(/\.$/, "", sp)
+        spv = $19
+        if (spv == "" || spv == "UNKNOWN") next
+        doP = !unk; doO = ($11 != "")      # this report / the outreach (every dated leg, Unknown included)
+        if (!doP && !doO) next
+        if (doO) {
+            # (NOT the shared sp_union of bin/pda-union.sh: this union is per
+            # LEG — the leg own subscription, _transfers col 6, not the File
+            # col 12 — keyed on the EXACT spelling, and "(none)" books the
+            # unattributed) the outreach partner UNION for this leg: the
+            # subscription configured partners plus the CoreId host-resolved
+            # one, deduped
+            pl = (toupper($6) in spm) ? spm[toupper($6)] : ""
+            if (h != "") { inp = 0; np = split(pl, pa, SUBSEP)
+                for (j = 1; j <= np; j++) if (pa[j] == h) { inp = 1; break }
+                if (!inp) pl = (pl == "" ? h : pl SUBSEP h) }
+            if (pl == "") pl = "(none)"
+            np = split(pl, pa, SUBSEP)
+        }
+        gsub(/\.$/, "", spv)
         # Insert a marker before each known attribute key so both the ssh format
         # ("Cipher: x, MAC: y, ...") and the TLS format ("Protocol: TLSv1.3
         # Cipher suite: z") split into Key/Value chunks.
-        gsub(/(Cipher suite|Public Key|Key Exchange|Cipher|MAC|Protocol): /, SUBSEP "&", sp)
-        m = split(sp, pairs, SUBSEP)
+        gsub(/(Cipher suite|Public Key|Key Exchange|Cipher|MAC|Protocol): /, SUBSEP "&", spv)
+        m = split(spv, pairs, SUBSEP)
         for (pi = 1; pi <= m; pi++) {
             seg = trim(pairs[pi]); gsub(/,$/, "", seg)
             ci = index(seg, ": ")
@@ -100,9 +136,25 @@ agg=$(awk -F'\t' -v subout="$subfile" '
             val = trim(substr(seg, ci + 2)); gsub(/,$/, "", val)
             gsub(/[|\t]/, " ", key); gsub(/[|\t]/, " ", val)
             if (key == "" || val == "") continue
-            cnt[key SUBSEP val]++; if (f) cf[key SUBSEP val]++; else cp[key SUBSEP val]++
-            if (d != "") { cd2[key SUBSEP val SUBSEP d]++; if (f) cfd[key SUBSEP val SUBSEP d]++; else cpd[key SUBSEP val SUBSEP d]++ }
-            sk4 = key SUBSEP val SUBSEP site SUBSEP h; asc[sk4]++; if (f) asf[sk4]++; else asp[sk4]++
+            if (doP) {
+                cnt[key SUBSEP val]++; if (f) cf[key SUBSEP val]++; else cp[key SUBSEP val]++
+                if (d != "") { cd2[key SUBSEP val SUBSEP d]++; if (f) cfd[key SUBSEP val SUBSEP d]++; else cpd[key SUBSEP val SUBSEP d]++ }
+                sk4 = key SUBSEP val SUBSEP site SUBSEP h; asc[sk4]++; if (f) asf[sk4]++; else asp[sk4]++
+            }
+            if (doO && (key in want)) {
+                for (j = 1; j <= np; j++) { pt = pa[j]
+                    k = pt SUBSEP key SUBSEP val
+                    if (C[k] == "") {                              # EMPTINESS, not membership (mawk LHS trap)
+                        pak = pt SUBSEP key
+                        if (PAV[pak] == "") PAL[++npa] = pak
+                        PAV[pak] = (PAV[pak] == "" ? val : PAV[pak] SUBSEP val)
+                        FD[k] = $11; LD[k] = $11; LJ[k] = $14 + 0
+                    }
+                    C[k]++
+                    if ($11 < FD[k]) FD[k] = $11
+                    if ($11 > LD[k]) { LD[k] = $11; LJ[k] = $14 + 0 }
+                }
+            }
         }
     }
     END {
@@ -112,8 +164,46 @@ agg=$(awk -F'\t' -v subout="$subfile" '
         for (kv in cnt) { split(kv, a, SUBSEP); printf "ATTR|%s|%s|%d|%d|%d|%s\n", a[1], a[2], cnt[kv], cf[kv]+0, cp[kv]+0, (abk[kv]==""?"-":abk[kv]) }
         # per-(subscription, host-partner) rows -> the sidecar
         for (k in asc) { split(k, a, SUBSEP); printf "%s|%s|%s|%s|%d|%d|%d\n", a[1], a[2], a[3], a[4], asc[k], asf[k]+0, asp[k]+0 > subout }
+        # ---- the OUTREACH lines (security-outreach.sh writes the page) ----
+        #   D1|legs|partner|param|first|last              still using (last 7 days)
+        #   D2|partner|param_old|new_val|oldlast|newfirst|cut   cut = date | mixed
+        #   D3|param|nstill|npartners|legs|newest         one per deprecated value
+        #   T|maxdate|cutoffdate
+        cutoff = maxj - 6                                     # "still using" = seen in the last 7 days
+        for (i = 1; i <= npa; i++) {
+            split(PAL[i], q, SUBSEP); pt = q[1]; oa = q[2]
+            nv = split(PAV[PAL[i]], vs, SUBSEP)
+            for (vi = 1; vi <= nv; vi++) {
+                v = vs[vi]
+                if (!((oa SUBSEP v) in dep)) continue
+                k = pt SUBSEP oa SUBSEP v
+                dk = oa SUBSEP v
+                d3n[dk]++; d3l[dk] += C[k]
+                if (LD[k] > d3d[dk]) d3d[dk] = LD[k]
+                if (LJ[k] >= cutoff) { d3s[dk]++
+                    printf "D1|%d|%s|%s: %s|%s|%s\n", C[k], pt, label(oa), v, FD[k], LD[k] > oagg }
+                # the old -> new pairs: every OTHER value of the same attribute
+                for (wi = 1; wi <= nv; wi++) {
+                    if (wi == vi) continue
+                    w = vs[wi]
+                    if ((oa SUBSEP w) in dep) continue
+                    k2 = pt SUBSEP oa SUBSEP w
+                    cut = (FD[k2] >= LD[k]) ? FD[k2] : "mixed"
+                    printf "D2|%s|%s: %s|%s|%s|%s|%s\n", pt, label(oa), v, w, LD[k], FD[k2], cut > oagg
+                }
+            }
+        }
+        n3 = split("Public Key" SUBSEP "ssh-rsa" SUBSEP "Protocol" SUBSEP "TLSv1.2", t3, SUBSEP)
+        for (i = 1; i <= n3; i += 2) { dk = t3[i] SUBSEP t3[i+1]
+            printf "D3|%s: %s|%d|%d|%d|%s\n", label(t3[i]), t3[i+1], d3s[dk]+0, d3n[dk]+0, d3l[dk]+0, (d3d[dk] == "" ? "-" : d3d[dk]) > oagg }
+        printf "T|%s|%s\n", maxdate, (cutoff > 0 ? "last 7 days" : "-") > oagg
+        close(oagg)
     }
 ' "$FILES" "$PARSED")
+
+# the outreach page (security-outreach.sh is its WRITER since 2026-09-30 —
+# written before the empty-estate exit below: it always renders its tables)
+"$SCRIPT_DIR/security-outreach.sh" "$oaggf"
 
 if [ -z "$agg" ]; then
     echo "No usable records found." >&2

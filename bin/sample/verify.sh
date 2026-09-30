@@ -589,7 +589,17 @@ check $([ "$(grep -c 'href="../search/search.html"' docs/tools/sitemap.html 2>/d
 check $([ -z "$(ls docs/tools/report-finder.html docs/help/report-finder.html 2>/dev/null)" ] && echo 0 || echo 1) "the Report finder (tools/report-finder.html or its help page) is still published"
 check $(grep -q 'setupPalette\|setupReportFinder\|setupTheme\|axway-theme' docs/assets/report.js 2>/dev/null && echo 1 || echo 0) "report.js still carries the palette / report finder / theme code"
 check $(grep -q 'data-theme="dark"\|axway-theme' docs/assets/style.css docs/help/index.html docs/index.html 2>/dev/null && echo 1 || echo 0) "the dark theme (CSS or head script) is still published"
-check $([ "$(grep -c 'href="../search/search.html"' docs/help/index.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "the baked top bar does not link ../search/search.html"
+# THE TOP BAR is ONE implementation since 2026-09-30 (assets/topbar.js, on
+# every page — the help pages and the build report included; the baked
+# render_topbar copy went): every help page and the build report carry the
+# placeholder and load topbar-data.js + topbar.js; topbar.js links the search
+tb=docs/assets/topbar.js
+n=0; nh=0; for f in docs/help/*.html; do nh=$((nh + 1)); grep -q '<div class="topbar" data-b="../" data-help="general"></div>' "$f" && grep -q '<script src="../assets/topbar-data.js' "$f" && grep -q '<script src="../assets/topbar.js' "$f" && n=$((n + 1)); done
+check $([ "$nh" -gt 0 ] && [ "$n" = "$nh" ] && echo 0 || echo 1) "$n of $nh help page(s) carry the top-bar placeholder + topbar-data.js + topbar.js"
+check $(grep -q '<div class="topbar" data-b="../" data-help="general"></div>' docs/tools/build.html 2>/dev/null && grep -q 'assets/topbar.js' docs/tools/build.html && echo 0 || echo 1) "tools/build.html lacks the top-bar placeholder or topbar.js"
+check $(grep -q 'search/search.html" title="Search"' "$tb" 2>/dev/null && echo 0 || echo 1) "topbar.js does not link search/search.html"
+n=$(grep -l 'assets/report.js' $(find docs -name '*.html') 2>/dev/null | xargs grep -L 'assets/topbar.js' 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n page(s) load report.js without topbar.js (the bar would stay empty)"
 check $([ "$(grep -c 'href="\.\./details/' docs/search/search-data.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "search/search-data.js rows do not link ../details/ (one level below the root)"
 
 # the SUBSCRIPTION FILES TABLE (2026-09-29, user request): docs/latest/ and
@@ -657,7 +667,11 @@ check $(grep -q 'data-restint' docs/transfer/duration-longest.html 2>/dev/null &
 # (help pages); report.js buildTopbar draws the same link. Since 2026-09-29
 # it sits in ONE cluster with Entities and Errors (Errors = the Errors
 # group's first page, Failed Subscriptions), the search icon after them.
-check $(grep -q '<span class="entgroup"><a class="entlabel" href="../transfer/topview.html">Overview</a><a class="entlabel" href="../transfer/entities/subscription-all.html">Entities</a><a class="entlabel" href="../analyses/failed.html">Errors</a><a class="entlabel" href="../search/all-files.html">Files</a><a class="searchbtn" href="../search/search.html"' docs/help/index.html 2>/dev/null && echo 0 || echo 1) "the baked top bar lacks the Overview / Entities / Errors / Files cluster (Overview -> ../transfer/topview.html, Errors -> ../analyses/failed.html, Files -> ../search/all-files.html)"
+# (checked in topbar.js, the ONE bar implementation since 2026-09-30: the
+# cluster's links in this order)
+n=$(awk '/<span class="entgroup">/ && !a { a = NR } />Overview<\/a>/ && !o { o = NR } />Entities<\/a>/ && !e { e = NR } />Errors<\/a>/ && !r { r = NR } />Files<\/a>/ && !f { f = NR } /search\/search.html" title="Search"/ && !s { s = NR }
+    END { print (a && a <= o && o < e && e < r && r < f && f <= s) ? 1 : 0 }' docs/assets/topbar.js 2>/dev/null)
+check $([ "${n:-0}" = 1 ] && grep -q 'subscription-all.html">Entities</a>' docs/assets/topbar.js && grep -q 'search/all-files.html">Files</a>' docs/assets/topbar.js && echo 0 || echo 1) "topbar.js lacks the Overview / Entities / Errors / Files cluster in that order (Files -> search/all-files.html)"
 # Errors is a top-bar link, not a Reports pulldown line
 check $(grep -oE 'reports:"([^"\\]|\\.)*"' docs/assets/topbar-data.js 2>/dev/null | grep -q 'analyses/failed.html' && echo 1 || echo 0) "the Reports pulldown still lists the Errors group"
 check $(grep -q 'errors:"analyses/failed.html"' docs/assets/topbar-data.js 2>/dev/null && echo 0 || echo 1) "topbar-data.js lacks errors:\"analyses/failed.html\" (the runtime bar's Errors link)"
@@ -694,7 +708,7 @@ check $(grep -rlq 'whats-new' docs --include='*.html' 2>/dev/null && echo 1 || e
 check $([ "$(grep -c 'href="\.\./reports/index.html"' docs/tools/sitemap.html 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "tools/sitemap.html does not link the Reports start page ../reports/index.html"
 check $([ "$(grep -cE 'href="\.\./assets/style\.css(\?v=[0-9]+)?"' docs/tools/build.html 2>/dev/null)" = 1 ] && [ "$(grep -c '@B@' docs/tools/build.html build/index.html 2>/dev/null | awk -F: '{ s += $2 } END { print s + 0 }')" = 0 ] && echo 0 || echo 1) "tools/build.html does not load ../assets/style.css, or a @B@ placeholder survived"
 check $([ "$(grep -cE 'href="\.\./docs/assets/style\.css(\?v=[0-9]+)?"' build/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "build/index.html (the local copy) does not load ../docs/assets/style.css"
-check $([ "$(grep -c 'tools/sitemap.html' docs/assets/report.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "report.js does not point the top bar at tools/sitemap.html"
+check $([ "$(grep -c 'tools/sitemap.html' docs/assets/topbar.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "topbar.js does not point the top bar at tools/sitemap.html"
 hdr=$(grep -o '<th[^>]*>[^<]*</th>' "docs/transfer/topview.html" 2>/dev/null | sed 's/<[^>]*>//g' | tr '\n' '|')
 check $([ "$hdr" = "|Files|Recovered|Resubmit|Transfers|State||Date|First|Last|Count|Ok|Error|Error %|Automatic|Manual|Ok|Error|Count|Ok|Error|Error %|Processed|Failed|Waiting|Expired|Volume|" ] && echo 0 || echo 1) "transfer/topview.html headers are '$hdr'"
 n=$(grep -c '<table' docs/transfer/topview.html 2>/dev/null || true)
@@ -754,14 +768,16 @@ check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "_files.tsv has $n dated File(s) 
 # function with the four site URLs, so a runtime checkout renders the pair
 tbd="docs/assets/topbar-data.js"
 check $([ "$(grep -c 'envkey:"sample"' "$tbd" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar-data.js does not carry envkey:\"sample\""
-check $([ "$(grep -c 'window.AXWAY_ENVLINKS=function' "$tbd" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar-data.js does not define the AXWAY_ENVLINKS switch function"
-# from the file system only the current environment shows (2026-09-14): the switch function carries the file: branch
-check $([ "$(grep -c 'location.protocol==="file:"' "$tbd" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar-data.js: AXWAY_ENVLINKS lacks the file-system branch (only the current environment from file://)"
+# (the switch is topbar.js envLinks since 2026-09-30 — a baked
+# AXWAY_ENVLINKS string in topbar-data.js before; the data file keeps the URLs)
+check $([ "$(grep -c 'function envLinks' docs/assets/topbar.js 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar.js does not define the environment switch (envLinks)"
+# from the file system only the current environment shows (2026-09-14): the switch carries the file: branch
+check $([ "$(grep -c 'location.protocol === "file:"' docs/assets/topbar.js 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar.js: the environment switch lacks the file-system branch (only the current environment from file://)"
 for u in 'http://localhost/runtime-acceptance/' 'http://localhost/runtime-production/' 'https://probable-adventure-l6y6k83.pages.github.io/' 'https://expert-adventure-9myme9m.pages.github.io/'; do
     check $([ "$(grep -c "$u" "$tbd" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar-data.js lacks the site URL $u"
 done
-check $([ "$(grep -c 'data-envto' docs/assets/report.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "report.js does not render the Acceptance / Production pair (data-envto)"
-check $([ "$(grep -c '<a class="brand" href="../index.html">Sample</a>' docs/help/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the help page bar does not lead with the single Sample brand link"
+check $([ "$(grep -c 'data-envto' docs/assets/topbar.js 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "topbar.js does not render the Acceptance / Production pair (data-envto)"
+check $([ "$(grep -c 'env:"Sample"' "$tbd" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar-data.js does not carry env:\"Sample\" (the single Sample brand link)"
 check $([ "$(grep -rl 'data-envto' docs --include=*.html 2>/dev/null | wc -l | tr -d ' ')" = 0 ] && echo 0 || echo 1) "a sample page bakes the Acceptance / Production pair (data-envto)"
 
 # the home page's Duration group ends on p99 (2026-09-13, user request):
@@ -839,12 +855,12 @@ check $([ "${dr:-0}" -ge 5 ] && echo 0 || echo 1) "the home page's newest day ca
 
 # the DATA PERIOD in the top bar (2026-09-13, user request): "yyyy-mm-dd /
 # yyyy-mm-dd", the transfer data's first and last day (day.rpt META
-# first/last), second after the environment — in the runtime bar data and
-# on the baked bar of the help pages
+# first/last), second after the environment — in the bar data, and placed
+# right after the brand by topbar.js
 per=$(awk -F'\t' '$1 == "META" && ($2 == "first" || $2 == "last") { v[$2] = substr($3, 1, 10) } END { print v["first"] " / " v["last"] }' data/transfer/reports/day.rpt 2>/dev/null)
 check $([ "$per" != " / " ] && [ "$(grep -c "period:\"$per\"" docs/assets/topbar-data.js 2>/dev/null)" = 1 ] && echo 0 || echo 1) "topbar-data.js does not carry period:\"$per\""
-check $([ "$(grep -c "<span class=\"period\"[^>]*>$per</span><span class=\"entgroup\">" docs/help/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the baked top bar does not show the period '$per' between the brand and Entities"
-check $([ "$(grep -c '<a class="brand" href="../index.html">Sample</a><span class="period"' docs/help/index.html 2>/dev/null)" = 1 ] && echo 0 || echo 1) "the baked top bar does not place the period right after the brand"
+n=$(awk '/brandHtml \+$/ && !b { b = NR } /M\.period \? .<span class="period"/ && !p { p = NR } /<span class="entgroup">/ && !g { g = NR } END { print (b && p == b + 1 && g > p) ? 1 : 0 }' docs/assets/topbar.js 2>/dev/null)
+check $([ "${n:-0}" = 1 ] && echo 0 || echo 1) "topbar.js does not place the period right after the brand, before the Entities cluster"
 
 # the fixed duration axis of the Overview / day-page Duration heroes
 # (2026-09-12, user request): the shipped slotchart.js carries the 19-tick

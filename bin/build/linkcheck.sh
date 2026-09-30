@@ -9,18 +9,19 @@
 #
 # THE TOP BAR IS RUNTIME, and that is the whole difficulty. Since 2026-07 the
 # publishes bake only an empty `<div class="topbar" data-b=… data-help=…>`
-# and report.js's buildTopbar renders the real bar
+# and assets/topbar.js renders the real bar
 # from docs/assets/topbar-data.js. A naive href scan therefore finds almost no
 # navigation at all and calls ~2,600 pages unreachable. This models what
-# buildTopbar emits, from the page's own attributes:
+# topbar.js emits, from the page's own attributes:
 #   - every menu href in topbar-data.js, its "@" placeholder replaced by data-b
 #   - brand -> data-b + index.html
 #   - data-b + dashboards/index.html, search/search.html,
 #     search/all-files.html (the Files link, 2026-09-28),
 #     tools/sitemap.html, transfer/entities/subscription-all.html
 #   - the help icon  -> data-b + help/<data-help>.html
-# A page whose topbar div is NOT empty has a baked bar (help pages, the build
-# report — render_shared_topbar) and is scanned normally.
+# EVERY page carries the placeholder since 2026-09-30 — the help pages and the
+# build report too (their baked bar, render_shared_topbar, went with the one
+# topbar.js); a page whose topbar div is NOT empty would be scanned normally.
 #
 # Entity Search ships its rows as DATA, not markup (split_search_rows lifts them
 # into docs/search/search-data.js — the search pages live under docs/search/ since

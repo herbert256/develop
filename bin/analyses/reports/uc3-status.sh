@@ -60,105 +60,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # because its page is an analyses/ page (the UC status report group of the one
 # Reports menu, 2026-09-29) — the same arrangement as cross-reference.sh. bin/server/reports.sh still runs it.
 source "$SCRIPT_DIR/../../server/lib.sh"
-mkdir -p "$REPORTS_DIR"
-OUT="$REPORTS_DIR/uc3-status.rpt"
+source "$SCRIPT_DIR/uc-status-lib.sh"   # the shared UC status skeleton (2026-09-30)
+ucs_setup UC3
+# (the clean-poll greens, _greenpoll.tsv, went 2026-09-28: a UC3 with no File
+# is not seen, however it polls)
 
-SUBB="$CONFIG_BASE/_subscriptions.tsv"     # name <TAB> direction <TAB> result
-FILESC="$TRANSFER_CACHE/_files.tsv"        # the logical-transfer cache (col 12 = subscription, 2 = outcome)
-# result.sh's flip sidecar, applied by the per-hour walker so its last row
-# matches the STATs: _redflip.tsv (green -> red on ring Error/Warn newer than
-# the last transfer, or the cannot-connect red; name + evidence stamp). The
-# clean-poll greens (_greenpoll.tsv) went 2026-09-28: a UC3 with no File is
-# not seen, however it polls.
-RFLIP="$DATA/colour/_redflip.tsv"
-# The per-HOUR status sidecar for the dashboards Overview's UC3 status card.
-# Written from THIS script because the classification lives here — the Overview
-# must never re-derive it (cf. pesit-slots.tsv). One row per hour,
-#   date <TAB> hour <TAB> ok <TAB> ok-error <TAB> error <TAB> not-seen
-# i.e. the four statuses in STACK order, best at the bottom, ascending severity,
-# "not seen" last. One hour divides 4/6/12/24 exactly, so the Overview can
-# re-bucket to any of its resolutions by taking the LAST hour of each — a status
-# is a STATE, not a flow, so it is carried forward, never summed.
-SLOTS_OUT="$REPORTS_DIR/uc3-slots.tsv"
-# sublink() prefixes an @{alink=subscriptions/<name>} UNCONDITIONALLY — the
-# renderer resolves it through the details slugmap and drops the link when the
-# name has no page, so a subscription with no transfer data still links.
-LINK_AWK="$SRV_SUBLINK_AWK"   # bin/server/lib.sh (2026-09-30)
-
-shopt -s nullglob
-files=("$INPUT_DIR"/*.csv)
-shopt -u nullglob
-if [ ${#files[@]} -eq 0 ]; then
-    echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
-fi
-[ -f "$RFLIP" ] || RFLIP=/dev/null   # first build: result.sh not run yet — no flips
-echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
-
-# One awk over three inputs: the configured UC3 roster, the transfer _files.tsv
-# (the Files/OK/Error history) and the server cache (the poll signals). Emits
+# One awk over the red-flip sidecar, the configured UC3 roster, the transfer
+# _files.tsv (the Files/OK/Error history) and the poll subset (the poll
+# signals). Emits
 #   A <TAB> stc <TAB> <sub cell> <TAB> files <TAB> ok <TAB> err <TAB> last-file
 #           <TAB> polls <TAB> empty <TAB> problems <TAB> last-log <TAB> loglines
 #   TOT <TAB> n0..n3 <TAB> files <TAB> ok <TAB> err <TAB> polls <TAB> problems <TAB> empty
-# the DERIVED use case map (bin/flow-manager.sh): a subscription with no UC
-# name prefix whose pattern + movement say UC3 (the production hybrid flows)
-# is a UC3 flow here exactly like a UC3_-named one (2026-08-31 audit — the
-# roster read the name alone and silently dropped them)
-UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"; [ -f "$UCDF" ] || UCDF=/dev/null
-agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -v SL="$SLOTS_OUT" -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK$AWKLIB"'
+agg=$(awk -F'\t' -v UC=UC3 -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -v SL="$SLOTS_OUT" -v RNF="$RENAMES_FILE" "$LOGLINES_AWK$RENAMES_AWK$LINK_AWK$AWKLIB$UCS_AWK"'
     BEGIN { rn_load(RNF) }
-    BEGIN { while ((getline ucl < ucdf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[2] == "UC3") ucd[toupper(uca[1])] = 1 } close(ucdf) }
-    # the logged site -> the clean subscription name (as the transfer parser does)
-    function clean(s) { sub(/_(SS?|C)CP_.*$|_[A-Za-z0-9]+_(SERVER|CLIENT)_.*$/, "", s); return s }
-    function span(h) { if (hmin == "" || h < hmin) hmin = h; if (h > hmax) hmax = h }
-    # the row drill: its problem lines (E) newest first, then its other lines
-    # (L: polls, poll set-up) newest first, 10 in all — so the failures a
-    # verdict classifies (subscription-verdict.awk nextmove) always lead, on
-    # every row, never crowded out by routine polls
-    function drill(k,   e, l, ne, nl, a9, i9, s9) {
-        e = lastlines("E" SUBSEP k); l = lastlines("L" SUBSEP k)
-        if (e == "" || l == "") return e l
-        ne = split(e, a9, _US); s9 = e; nl = split(l, a9, _US)
-        for (i9 = 1; i9 <= nl && ne < 10; i9++) { s9 = s9 _US a9[i9]; ne++ }
-        return s9
-    }
-    # a SERVER-LOG name -> the configured UC3 roster key. EXACT first — which
-    # is what nearly every line actually is — then, purely defensively (the
-    # server truncates long site names), the roster entry it prefixes or is
-    # prefixed by, and ONLY when exactly one matches: an ambiguous truncation
-    # must attribute to nothing rather than to whichever entry the roster
-    # happens to list first. Memoized: the fallback is a scan. _files.tsv
-    # never goes through this: its col 12 joins EXACTLY.
-    function key(u,   i, hit, c) {
-        if (u in res) return u
-        if (u in memo) return memo[u]
-        hit = ""; c = 0
-        for (i = 1; i <= nr; i++) if (index(u, R[i]) == 1 || index(R[i], u) == 1) { hit = R[i]; c++ }
-        return memo[u] = (c == 1) ? hit : ""
-    }
-    FILENAME == rfv { if ($1 != "" && $2 != "") rfd[toupper($1)] = ($3 != "") ? $3 : $2; next }   # red-flip sidecar: name -> RED SINCE (col 3; col 2 = the newest evidence)
-    FILENAME == sb {                                         # the configured UC3 roster (UC3-named or derived)
-        if ($1 == "" || ($1 !~ /^UC3/ && !(toupper($1) in ucd))) next
-        u = toupper($1); res[u] = $3; nm[u] = $1; R[++nr] = u
-        next
-    }
-    FILENAME == tf {                                         # transfer Files, joined EXACTLY (as result.sh)
-        if ($12 == "") next
-        k = toupper($12); if (!(k in res)) next
-        files[k]++
-        if ($2 == "Failed" || $2 == "Expired") err[k]++; else ok[k]++
-        if ($6 > lsk[k]) { lsk[k] = $6; lfd[k] = $4 }        # col 6 sortkey, col 4 date
-        # per-HOUR state for the sidecar: the outcome of the LATEST File in this
-        # hour (by sortkey — the cache is CoreId-sorted, not chronological) and
-        # whether any OK landed in it. "F" Failed (red), "X" Expired (ORANGE —
-        # the result colour of an Expired-last flow, not red), "" OK
-        if ($5 ~ /^[0-9][0-9]:/) {
-            hs = $7 * 24 + int(substr($5, 1, 2)); span(hs)
-            hk = k SUBSEP hs
-            if (!(hk in tsk) || $6 > tsk[hk]) { tsk[hk] = $6; tbad[hk] = ($2 == "Failed") ? "F" : ($2 == "Expired") ? "X" : "" }
-            if ($2 != "Failed" && $2 != "Expired") thok[hk] = 1
-        }
-        next
-    }
     {                                                        # server _parse.tsv
         m = $5
         sig = ""
@@ -183,29 +97,19 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -
         # polls here while the Polling page counted them) — fold it first,
         # the way remote-poll.sh sitecanon does
         k = key(toupper(rn_canon_pfx(s))); if (k == "") next
-        d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) d = ""
+        d = ucs_day()
         if (d != "" && d > llg[k]) llg[k] = d
         if (sig == "poll") { poll[k]++; if (found == 0) empty[k]++ }
         else if (sig == "prob") { prob[k]++ }
-        # a server line widens the hours the per-HOUR sidecar walks
-        if (d != "" && $2 ~ /^[0-9][0-9]:/)
-            span(jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 24 + int(substr($2,1,2)))
+        ucs_span(d)
         # the drill keeps the problems apart (E, shown first — drill()): on a
         # red flow they are the story, and thousands of routine poll lines
         # would otherwise crowd them out
         addline((sig == "prob" ? "E" : "L") SUBSEP k, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
     }
     END {
-        # statuses, worst first — the row sort is on this number
-        #   0 error             red,  no OK File ever
-        #   1 ok -> error       red,  OK Files before it went red
-        #   2 ok                green
-        #   3 not seen          neither green nor red (orange, or unfilled)
         for (i = 1; i <= nr; i++) {
-            k = R[i]; r = res[k]
-            if (r == "green")      stc = 2
-            else if (r == "red")   stc = (ok[k]+0 > 0) ? 1 : 0
-            else                   stc = 3
+            k = R[i]; stc = ucs_stc(k)
             n[stc]++
             tf_ += files[k]+0; tok += ok[k]+0; ter += err[k]+0; tpl += poll[k]+0; tpr += prob[k]+0; tem += empty[k]+0
             dl = drill(k)                                     # problems first, then the recent lines
@@ -215,100 +119,26 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -
         }
         printf "TOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", \
             n[0]+0, n[1]+0, n[2]+0, n[3]+0, tf_+0, tok+0, ter+0, tpl+0, tpr+0, tem+0
-        # ---- the per-HOUR sidecar (the Overview UC3 status card) -------------
-        # Walk the hours forward carrying each subscription\047s state, and count the
-        # four statuses at every hour. The state rules mirror the snapshot above
-        # exactly, with the result COLOUR re-derived from the evidence so far
-        # (bin/build/result.sh\047s rule for a subscription: green/red by the LAST
-        # transfer outcome — including the 2026-08 after-last-transfer red flip
-        # and the cannot-connect red, read from the _redflip sidecar below —
-        # orange = no File yet) — which is why the LAST hour
-        # reproduces the n[] figures printed above. That equality is the
-        # regression test.
-        if (hmin != "" && SL != "") {
-            # the result.sh RED FLIP (_redflip.tsv): a green-by-transfer flow
-            # flipped red by ring Error/Warn evidence NEWER than its last
-            # transfer, or the cannot-connect red. Applied from the hour it
-            # went red (the sidecar SINCE column), clamped into the walked
-            # span, so the LAST row reproduces the snapshot n[] exactly (the
-            # regression test). Hash order here only FILLS a map.
-            for (k9 in rfd) if (k9 in res) {
-                fh = ""
-                if (rfd[k9] ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:/)
-                    fh = jdn(substr(rfd[k9],1,4)+0, substr(rfd[k9],6,2)+0, substr(rfd[k9],9,2)+0) * 24 + substr(rfd[k9],12,2) + 0
-                if (fh == "") fh = hmax
-                if (fh > hmax) fh = hmax
-                if (fh < hmin) fh = hmin
-                RFH[k9] = fh
-            }
-            for (h = hmin; h <= hmax; h++) {
-                delete cnt
-                for (i = 1; i <= nr; i++) {
-                    k = R[i]; hk = k SUBSEP h
-                    if (hk in tsk) { HF[k] = 1; LST[k] = tbad[hk] }
-                    if (hk in thok) EOK[k] = 1
-                    # the COLOUR so far: no File yet is orange, however it
-                    # polls (2026-09-28); an Expired last File is ORANGE too,
-                    # like the snapshot (result.sh) — "not seen"
-                    col = !HF[k] ? "o" : (LST[k] == "") ? "g" : (LST[k] == "X") ? "o" : "r"
-                    # the red flip (after-last-transfer, or the cannot-connect
-                    # rule on a never-transferred flow): red from its hour on
-                    if ((k in RFH) && h >= RFH[k]) col = "r"
-                    sc = (col == "g") ? 2 : (col == "o") ? 3 : (EOK[k] ? 1 : 0)
-                    cnt[sc]++
-                }
-                printf "%s\t%d\t%d\t%d\t%d\t%d\n", fromjdn(int(h/24)), h%24, \
-                    cnt[2]+0, cnt[1]+0, cnt[0]+0, cnt[3]+0 > SL
-            }
-            close(SL)
-        }
+        # (the cannot-connect red rides the same _redflip sidecar ucs_walk() reads)
+        ucs_walk()
     }
 ' "$RFLIP" "$SUBB" "$FILESC" "$(srv_subset poll)")
 
 IFS=$'\t' read -r _ n_err n_okerr n_ok n_notseen t_files t_ok t_er t_poll t_prob t_empty \
     <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 n_all=$(( n_err + n_okerr + n_ok + n_notseen ))
-if [ "$n_all" -eq 0 ]; then
-    echo "No UC3 subscriptions configured." >&2
-    rm -f "$OUT" "$SLOTS_OUT"   # no data for this ENV — page not published
-    exit 0
-fi
+if [ "$n_all" -eq 0 ]; then ucs_none UC3; exit 0; fi
 
-# Rows ordered by status (stc 0..3), within a status by Error desc, Files desc,
-# then name — the noisiest subscription of a status first. The A lines reach
-# sort(1) UNCHANGED: its last-resort compare is the WHOLE line, which is what
-# breaks the remaining ties, so nothing may be added to or moved within them
-# before the sort. ONE awk then turns each sorted A line into its ROW — the
-# status label, an em-dash for an absent date, the loglines attribute — where a
-# bash while-read used to fork a $(printf) per row into an O(n^2) append.
-rows=$(awk -F'\t' '
-    function z(v) { return (v + 0 == 0) ? "" : v }   # a count cell shows blank, never 0
-    $3 == "" { next }          # no subscription (and the blank line an empty stream feeds in)
-    {
-        # ok -> error is RED like its row and its STAT box (2026-09-29)
-        st = ($2 == 0) ? "@{class=failed}error" : \
-             ($2 == 1) ? "@{class=failed}ok -> error" : \
-             ($2 == 2) ? "@{class=processed}ok" : "not seen"
-        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:loglines=%s\n", st, $3, z($4), z($5), z($6), \
-            ($7 == "-" ? "—" : $7), z($8), z($9), z($10), ($11 == "-" ? "—" : $11), $12
-    }
-' <<< "$(printf '%s\n' "$agg" | grep $'^A\t' | LC_ALL=C sort -t$'\t' -k2,2n -k6,6nr -k4,4nr -k3,3)")
+rows=$(printf '%s\n' "$agg" | ucs_rows 3)
 
 # A run with data but NO timestamped rows writes no sidecar at all; an EMPTY
 # sidecar is the valid "no per-hour data" answer for its readers (the
 # dashboards overview), so one is created when absent.
 [ -f "$SLOTS_OUT" ] || : > "$SLOTS_OUT"
 
-nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }   # a count cell shows blank, never 0
-
 {
     printf 'TITLE\tUC3 status\n'
-
-    printf 'STAT\twhite\t%s\tUC3 subscriptions\n' "$n_all"
-    printf 'STAT\tgreen\t%s\tok\n' "$n_ok"
-    printf 'STAT\tred\t%s\terror\n' "$n_err"
-    printf 'STAT\tred\t%s\tok -> error\n' "$n_okerr"   # red like its rows (the result colour), 2026-09-29
-    printf 'STAT\torange\t%s\tnot seen\n' "$n_notseen"
+    ucs_stats UC3
 
     printf 'TABLE\tUC3 subscriptions\twide\tnofilter\ttab=uc3\n'   # tab=uc3: uc3-polling.sh's tables stack under this one on the UC3 tab page (2026-09-05)
     printf 'HEAD\tStatus\tSubscription\tFiles\tOK\tError\tLast file\tPolls\tEmpty polls\tProblems\tLast log\n'

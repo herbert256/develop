@@ -1,19 +1,3 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<title>Help: AV Scan — Axway ST reports</title>
-<link rel="stylesheet" href="../assets/style.css">
-</head>
-<body>
-<div class="topbar"><a class="brand" href="../index.html">Axway ST</a></div>
-<main class="help-content">
-<a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
-<a class="help-back help-generic" href="general.html">Generic help</a>
 <h1>AV Scan</h1>
 <h2>What it shows</h2>
 <ul>
@@ -34,6 +18,3 @@
 <li>Not performed reasons: <strong>Before scanning was active</strong> (ahead of the first Allowed verdict, its time in the label), <strong>Failed or empty arrival</strong>, <strong>Encrypted</strong> (.pgp / .enc), <strong>Oversized</strong> (&ge; 1 MB), <strong>Other</strong> &mdash; should stay near 0; growth means a new skip reason.</li>
 <li>Not first inbound: inbound retries and the UC2 staging re-entry (inbound routing) are expected; an outbound row would break the scan-on-entry model. The outbound &ldquo;Scanning was not performed&rdquo; boilerplate is left out.</li>
 </ul>
-</main>
-</body>
-</html>

@@ -52,6 +52,11 @@ source bin/fastawk.sh   # route unqualified `awk` to mawk when installed
 source bin/ranges.sh    # rng_feed / rng_off: the byte-range split of the parallel server pass (2026-09-27)
 source bin/pda-union.sh # SP_MAP + SP_AWK: the File attribution UNION (sp_union) — the Top-5 partner tables
 source bin/awklib.sh    # $AWKLIB: the shared awk helpers (date.awk + fmt.awk)
+# the two day passes (transfer + server) share the weekday name and the
+# same-weekday delta (2026-09-30: both carried a pasted copy)
+DAY_FN_AWK='
+    function wdname(d,   p){ split(d,p,"-"); return WD[jdn(p[1]+0,p[2]+0,p[3]+0) % 7] }
+    function pctd(v, avg,   p) { if (avg <= 0) return ""; p = (v - avg) * 100 / avg; if (p > -0.5 && p < 0.5) return "0%"; return sprintf("%+.0f%%", p) }'
 DATA="data"
 
 RPTDIR="$DATA/day/reports"
@@ -141,10 +146,8 @@ _dylap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  day reports: %s\n' "$(
 _dylap "setup (the per-day counts)"
 if [ -f "$TF" ] && [ -n "$tdays" ]; then
 awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v udays="$udays" -v PS="$PSLOTS" -v EQF="$EQSLOTS" \
-    -v gtrc="$gtrc" -v oredc="$oredc" -v anomc="$anomc" -v SLGP="$SLGP" -v SLGS="$SLGS" -v SPMAP="$SP_MAP" "$SP_AWK$AWKLIB"'
+    -v gtrc="$gtrc" -v oredc="$oredc" -v anomc="$anomc" -v SLGP="$SLGP" -v SLGS="$SLGS" -v SPMAP="$SP_MAP" "$SP_AWK$AWKLIB$DAY_FN_AWK"'
     function humandur(ms,   s,m,h){ ms+=0; if(ms<1000)return int(ms) "ms"; s=int(ms/1000); if(s<60)return s "s"; m=int(s/60); s=s%60; if(m<60)return m "m " s "s"; h=int(m/60); m=m%60; return h "h " m "m" }
-    function wdname(d,   p){ split(d,p,"-"); return WD[jdn(p[1]+0,p[2]+0,p[3]+0) % 7] }
-    function pctd(v, avg,   p) { if (avg <= 0) return ""; p = (v - avg) * 100 / avg; if (p > -0.5 && p < 0.5) return "0%"; return sprintf("%+.0f%%", p) }
     # unpack a "date:count …" string (daycount) into a per-day array
     # ONE File into ONE hero-slot resolution (15/30/60 minutes). The three are
     # aggregated from the raw Files, never re-bucketed from each other:
@@ -564,7 +567,7 @@ if [ -f "$SV" ] && [ -f "$SP" ] && [ -n "$sdays" ]; then
 # writes the day facts exactly as the single pass did. day_srv is that one
 # program; the mode comes in through the environment (DAYSRV_*).
 day_srv() {
-awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v udays="$udays" -v nrdc="$nrdc" -v nrfc="$nrfc" -v anomc="$anomc" "$AWKLIB"'
+awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -v udays="$udays" -v nrdc="$nrdc" -v nrfc="$nrfc" -v anomc="$anomc" "$AWKLIB$DAY_FN_AWK"'
     BEGIN { PART = ENVIRON["DAYSRV_PART"] + 0; REDUCE = ENVIRON["DAYSRV_REDUCE"] + 0; SVF = ENVIRON["DAYSRV_SVF"]
             RANGEF = ENVIRON["DAYSRV_RANGEF"]; RLO = ENVIRON["DAYSRV_LO"] + 0; RHI = ENVIRON["DAYSRV_HI"] + 0; ROFF = ENVIRON["DAYSRV_ROFF"] + 0 }
     BEGIN { na = split(anomc, _aa, " "); for (i = 1; i <= na; i++) { if (_aa[i] == "") continue; p = index(_aa[i], ":"); if (p > 1) ANOMC[substr(_aa[i], 1, p - 1)] = substr(_aa[i], p + 1) }
@@ -573,8 +576,6 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             if (split(_na[i], _nb, ":") == 3) { NRDE[_nb[1]] = _nb[2] + 0; NRDS[_nb[1]] = _nb[3] + 0 } }
         nf = split(nrfc, _fa, " "); for (i = 1; i <= nf; i++) { if (_fa[i] == "") continue
             if (split(_fa[i], _fb, ":") == 3) { NRFP[_fb[1]] = _fb[2] + 0; NRFS[_fb[1]] = _fb[3] + 0 } } }
-    function wdname(d,   p){ split(d,p,"-"); return WD[jdn(p[1]+0,p[2]+0,p[3]+0) % 7] }
-    function pctd(v, avg,   p) { if (avg <= 0) return ""; p = (v - avg) * 100 / avg; if (p > -0.5 && p < 0.5) return "0%"; return sprintf("%+.0f%%", p) }
     FNR == 1 { fno++ }
     # the reduce run: the jobs counter dumps (type TAB key TAB count), summed
     REDUCE && FILENAME != SVF { if ($1 == "rc") rc[$2] += $3; else if ($1 == "er") er[$2] += $3; else if ($1 == "CEIL") CEIL[$2] += $3

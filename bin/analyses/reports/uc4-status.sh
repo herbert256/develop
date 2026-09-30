@@ -59,97 +59,32 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # because its page is an analyses/ page (the UC status report group of the one
 # Reports menu, 2026-09-29) — the same arrangement as cross-reference.sh. bin/server/reports.sh still runs it.
 source "$SCRIPT_DIR/../../server/lib.sh"
-mkdir -p "$REPORTS_DIR"
-OUT="$REPORTS_DIR/uc4-status.rpt"
-
-SUBB="$CONFIG_BASE/_subscriptions.tsv"            # name <TAB> direction <TAB> result
-FILESC="$TRANSFER_CACHE/_files.tsv"
-# result.sh's red-flip sidecar (green -> red on ring Error/Warn newer than the
-# last transfer; name + evidence stamp). The per-hour walker applies the same
-# flip so its last row matches the STATs.
-RFLIP="$DATA/colour/_redflip.tsv"
-# The per-HOUR status sidecar for the Overview's UC4 status card — written HERE
-# because the classification lives here (cf. pesit-slots.tsv). date <TAB> hour
-# <TAB> the FOUR statuses in STACK order: ok, ok-error, error, not-seen.
-# One hour divides
-# 4/6/12/24 exactly; the Overview re-buckets by taking the LAST hour of each,
-# since a status is a STATE, carried forward, never summed.
-SLOTS_OUT="$REPORTS_DIR/uc4-slots.tsv"               # col 12 = subscription, 2 = outcome
+source "$SCRIPT_DIR/uc-status-lib.sh"   # the shared UC status skeleton (2026-09-30)
+ucs_setup UC4
 XREF="$CONFIG_XREF/_accounts-subscriptions.tsv"   # account -> its subscriptions
-# the DERIVED use case map (bin/flow-manager.sh): a subscription with no UC
-# name prefix whose pattern + movement say UC4 counts as a UC4 flow here
-UCDF="$CONFIG_XREF/_subscriptions-ucderived.tsv"
 # the MULTI-FE-ACCOUNT maps (2026-08-31, user report — see the awk BEGIN)
 SLF="$CONFIG_XREF/_subscriptions-logins.tsv"; [ -f "$SLF" ] || SLF=/dev/null
 ALF="$CONFIG_XREF/_accounts-logins.tsv";      [ -f "$ALF" ] || ALF=/dev/null
-[ -f "$UCDF" ] || UCDF=/dev/null
-# sublink() prefixes an @{alink=subscriptions/<name>} UNCONDITIONALLY — the
-# renderer resolves it through the details slugmap and drops the link when the
-# name has no page, so a never-seen subscription still links.
-LINK_AWK="$SRV_SUBLINK_AWK"   # bin/server/lib.sh (2026-09-30)
 
-shopt -s nullglob
-files=("$INPUT_DIR"/*.csv)
-shopt -u nullglob
-if [ ${#files[@]} -eq 0 ]; then
-    echo "No *.csv in $INPUT_DIR — building from the EMPTY caches (config-only estate)" >&2
-fi
-[ -f "$RFLIP" ] || RFLIP=/dev/null   # first build: result.sh not run yet — no flips
-echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
-
-# One awk over four inputs: the configured UC4 roster, the account->subscription
-# map, the transfer _files.tsv (the Files/OK/Error history) and the server cache
-# (the partner-side signals). Emits
+# One awk over the red-flip sidecar, the configured UC4 roster, the
+# account->subscription map, the transfer _files.tsv (the Files/OK/Error
+# history) and the server cache (the partner-side signals). Emits
 #   A <TAB> stc <TAB> <sub cell> <TAB> files <TAB> ok <TAB> err <TAB> last-file
 #           <TAB> logons <TAB> arrivals <TAB> problems <TAB> last-log <TAB> loglines
-#   TOT <TAB> n0..n6 <TAB> files <TAB> ok <TAB> err <TAB> logons <TAB> arrivals <TAB> problems
-agg=$(awk -F'\t' -v sb="$SUBB" -v xf="$XREF" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -v slf="$SLF" -v alf="$ALF" -v SL="$SLOTS_OUT" "$LOGLINES_AWK$LINK_AWK$AWKLIB"'
-    BEGIN { while ((getline ucl < ucdf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[2] == "UC4") ucd[toupper(uca[1])] = 1 } close(ucdf)
-            # MULTI-FE ACCOUNTS (2026-08-31, user report): when the account
-            # carries SEVERAL configured logins, a logon or refusal that NAMES
-            # one is credited only to the flows configured for THAT login —
-            # each login is a different partner credential, so its lines say
-            # nothing about the other logins flows. Single-login accounts and
-            # lines naming no login keep the account-wide union.
-            while ((getline ucl < slf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[1] != "" && uca[2] != "") SUBL[toupper(uca[1])] = SUBL[toupper(uca[1])] SUBSEP toupper(uca[2]) } close(slf)
+#   TOT <TAB> n0..n3 <TAB> files <TAB> ok <TAB> err <TAB> logons <TAB> arrivals <TAB> problems
+agg=$(awk -F'\t' -v UC=UC4 -v sb="$SUBB" -v xf="$XREF" -v tf="$FILESC" -v rfv="$RFLIP" -v ucdf="$UCDF" -v slf="$SLF" -v alf="$ALF" -v SL="$SLOTS_OUT" "$LOGLINES_AWK$LINK_AWK$AWKLIB$UCS_AWK"'
+    # MULTI-FE ACCOUNTS (2026-08-31, user report): when the account carries
+    # SEVERAL configured logins, a logon or refusal that NAMES one is credited
+    # only to the flows configured for THAT login — each login is a different
+    # partner credential, so its lines say nothing about the other logins
+    # flows. Single-login accounts and lines naming no login keep the
+    # account-wide union.
+    BEGIN { while ((getline ucl < slf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[1] != "" && uca[2] != "") SUBL[toupper(uca[1])] = SUBL[toupper(uca[1])] SUBSEP toupper(uca[2]) } close(slf)
             while ((getline ucl < alf) > 0) { nuc = split(ucl, uca, "\t"); if (nuc >= 2 && uca[1] != "") aln[uca[1]]++ } close(alf) }
-    function span(h) { if (hmin == "" || h < hmin) hmin = h; if (h > hmax) hmax = h }
     function acctof(m,   a) { a=""; if (match(m, /[A-Za-z0-9_.-]+@FE[0-9]+/)) { a=substr(m,RSTART,RLENGTH); sub(/@.*/,"",a) } return a }
-    # the row drill: its refusals (E) newest first, then its other lines (L:
-    # logons, arrivals) newest first, 10 in all — so the problem a verdict
-    # classifies (subscription-verdict.awk nextmove) always leads, on every row
-    function drill(k,   e, l, ne, nl, a9, i9, s9) {
-        e = lastlines("E" SUBSEP k); l = lastlines("L" SUBSEP k)
-        if (e == "" || l == "") return e l
-        ne = split(e, a9, _US); s9 = e; nl = split(l, a9, _US)
-        for (i9 = 1; i9 <= nl && ne < 10; i9++) { s9 = s9 _US a9[i9]; ne++ }
-        return s9
-    }
-    # (no name-matching key(): the server lines are ACCOUNT-keyed here, and
-    # _files.tsv col 12 joins EXACTLY)
-    FILENAME == rfv { if ($1 != "" && $2 != "") rfd[toupper($1)] = ($3 != "") ? $3 : $2; next }   # red-flip sidecar: name -> RED SINCE (col 3; col 2 = the newest evidence)
-    FILENAME == sb {                                         # the configured UC4 roster
-        if ($1 == "" || ($1 !~ /^UC4/ && !(toupper($1) in ucd))) next
-        u = toupper($1); res[u] = $3; nm[u] = $1; R[++nr] = u
-        next
-    }
+    # (the server lines are ACCOUNT-keyed here — no key() name matching)
     FILENAME == xf {                                         # account -> its UC4 subscription(s), ALL of them
         if (($2 ~ /^UC4/ || (toupper($2) in ucd)) && (toupper($2) in res)) asub[$1] = asub[$1] SUBSEP toupper($2)
-        next
-    }
-    FILENAME == tf {                                         # transfer Files, joined EXACTLY (as result.sh)
-        if ($12 == "") next
-        k = toupper($12); if (!(k in res)) next
-        files[k]++
-        if ($2 == "Failed" || $2 == "Expired") err[k]++; else ok[k]++
-        if ($6 > lsk[k]) { lsk[k] = $6; lfd[k] = $4 }        # col 6 sortkey, col 4 date
-        # per-HOUR state for the sidecar: "F" Failed (red), "X" Expired (ORANGE —
-        # the result colour of an Expired-last flow, not red), "" OK
-        if ($5 ~ /^[0-9][0-9]:/) {
-            hs = $7 * 24 + int(substr($5, 1, 2)); span(hs); hk = k SUBSEP hs
-            if (!(hk in tsk) || $6 > tsk[hk]) { tsk[hk] = $6; tbad[hk] = ($2 == "Failed") ? "F" : ($2 == "Expired") ? "X" : "" }
-            if ($2 != "Failed" && $2 != "Expired") thok[hk] = 1
-        }
         next
     }
     {                                                        # server _parse.tsv
@@ -164,7 +99,7 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v xf="$XREF" -v tf="$FILESC" -v rfv="$RFLIP" -v 
         else if (m ~ /Disallowed user/) sig = "prob"
         else next
         a = acctof(m); if (a == "" || !(a in asub)) next
-        d = substr($1, 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) d = ""
+        d = ucs_day()
         # the STAT totals count the line ONCE; the per-flow columns credit
         # every UC4 flow of the account (see the header)
         if (sig == "logon") tlgL++; else if (sig == "arr") tarL++; else tprL++
@@ -178,24 +113,15 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v xf="$XREF" -v tf="$FILESC" -v rfv="$RFLIP" -v 
             if (lg9 != "" && aln[a] + 0 >= 2 && SUBL[k] != "" && index(SUBL[k] SUBSEP, SUBSEP lg9 SUBSEP) == 0) continue   # not this flow login
             if (d != "" && d > llg[k]) llg[k] = d
             if (sig == "logon") logon[k]++; else if (sig == "arr") arr[k]++; else prob[k]++
-            if (d != "" && $2 ~ /^[0-9][0-9]:/)                  # a server line widens the walked span
-                span(jdn(substr(d,1,4)+0, substr(d,6,2)+0, substr(d,9,2)+0) * 24 + int(substr($2,1,2)))
+            ucs_span(d)
             # the drill keeps the refusals on their own key (E, shown first —
             # drill()), so a refused flow is not crowded out by routine logons
             addline((sig == "prob" ? "E" : "L") SUBSEP k, $1 " " $2, lvlname($3) " " compname($4) "  " substr(m, 1, 200))
         }
     }
     END {
-        # statuses, worst first — the row sort is on this number
-        #   0 error             red,  no OK File ever
-        #   1 ok -> error       red,  OK Files before it went red
-        #   2 ok                green
-        #   3 not seen          orange (or unfilled) — never in the transfer log
         for (i = 1; i <= nr; i++) {
-            k = R[i]; r = res[k]
-            if (r == "green")      stc = 2
-            else if (r == "red")   stc = (ok[k]+0 > 0) ? 1 : 0
-            else                   stc = 3
+            k = R[i]; stc = ucs_stc(k)
             n[stc]++
             tf_ += files[k]+0; tok += ok[k]+0; ter += err[k]+0
             tlg = tlgL + 0; tar = tarL + 0; tpr = tprL + 0   # per LINE, not per credited flow
@@ -204,41 +130,7 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v xf="$XREF" -v tf="$FILESC" -v rfv="$RFLIP" -v 
                 files[k]+0, ok[k]+0, err[k]+0, (k in lfd ? lfd[k] : "-"), \
                 logon[k]+0, arr[k]+0, prob[k]+0, (k in llg ? llg[k] : "-"), dl
         }
-        if (hmin != "" && SL != "") {
-            # the result.sh RED FLIP (_redflip.tsv): a green-by-transfer flow
-            # flipped red by ring Error/Warn evidence NEWER than its last
-            # transfer. Applied from the hour it went red (the sidecar SINCE
-            # column), clamped into the walked span, so the LAST row
-            # reproduces the snapshot n[] exactly (the regression test). Hash
-            # order here only FILLS a map.
-            for (k9 in rfd) if (k9 in res) {
-                fh = ""
-                if (rfd[k9] ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:/)
-                    fh = jdn(substr(rfd[k9],1,4)+0, substr(rfd[k9],6,2)+0, substr(rfd[k9],9,2)+0) * 24 + substr(rfd[k9],12,2) + 0
-                if (fh == "") fh = hmax
-                if (fh > hmax) fh = hmax
-                if (fh < hmin) fh = hmin
-                RFH[k9] = fh
-            }
-            for (h = hmin; h <= hmax; h++) {
-                delete cnt
-                for (i = 1; i <= nr; i++) {
-                    k = R[i]; hk = k SUBSEP h
-                    if (hk in tsk) { HF[k] = 1; LST[k] = tbad[hk] }
-                    if (hk in thok) EOK[k] = 1
-                    # the COLOUR so far: an Expired last File is ORANGE, like
-                    # the snapshot (result.sh), so it reads "not seen" too
-                    col = !HF[k] ? "o" : (LST[k] == "") ? "g" : (LST[k] == "X") ? "o" : "r"
-                    # the red flip: green or orange -> red from its hour on
-                    if ((k in RFH) && h >= RFH[k]) col = "r"
-                    sc = (col == "g") ? 2 : (col == "o") ? 3 : (EOK[k] ? 1 : 0)
-                    cnt[sc]++
-                }
-                printf "%s\t%d\t%d\t%d\t%d\t%d\n", fromjdn(int(h/24)), h%24, \
-                    cnt[2]+0, cnt[1]+0, cnt[0]+0, cnt[3]+0 > SL
-            }
-            close(SL)
-        }
+        ucs_walk()
         printf "TOT\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", \
             n[0]+0, n[1]+0, n[2]+0, n[3]+0, \
             tf_+0, tok+0, ter+0, tlg+0, tar+0, tpr+0
@@ -248,47 +140,18 @@ agg=$(awk -F'\t' -v sb="$SUBB" -v xf="$XREF" -v tf="$FILESC" -v rfv="$RFLIP" -v 
 IFS=$'\t' read -r _ n_err n_okerr n_ok n_notseen t_files t_ok t_er t_lg t_ar t_prob \
     <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 n_all=$(( n_err + n_okerr + n_ok + n_notseen ))
-if [ "$n_all" -eq 0 ]; then
-    echo "No UC4 subscriptions configured." >&2
-    rm -f "$OUT" "$SLOTS_OUT"   # no data for this ENV — page not published
-    exit 0
-fi
+if [ "$n_all" -eq 0 ]; then ucs_none UC4; exit 0; fi
 
-# Rows ordered by status (stc 0..3), within a status by Error desc, Files desc,
-# then name — the noisiest subscription of a status first. The A lines reach
-# sort(1) UNCHANGED: its last-resort compare is the WHOLE line, which is what
-# breaks the remaining ties, so nothing may be added to or moved within them
-# before the sort. ONE awk then turns each sorted A line into its ROW — the
-# status label, an em-dash for an absent date, the loglines attribute — where a
-# bash while-read used to fork a $(printf) per row into an O(n^2) append.
-rows=$(awk -F'\t' '
-    function z(v) { return (v + 0 == 0) ? "" : v }   # a count cell shows blank, never 0
-    $3 == "" { next }          # no subscription (and the blank line an empty stream feeds in)
-    {
-        # ok -> error is RED like its row and its STAT box (2026-09-29)
-        st = ($2 == 0) ? "@{class=failed}error" : \
-             ($2 == 1) ? "@{class=failed}ok -> error" : \
-             ($2 == 2) ? "@{class=processed}ok" : "not seen"
-        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:loglines=%s\n", st, $3, z($4), z($5), z($6), \
-            ($7 == "-" ? "—" : $7), z($8), z($9), z($10), ($11 == "-" ? "—" : $11), $12
-    }
-' <<< "$(printf '%s\n' "$agg" | grep $'^A\t' | LC_ALL=C sort -t$'\t' -k2,2n -k6,6nr -k4,4nr -k3,3)")
+rows=$(printf '%s\n' "$agg" | ucs_rows 3)
 
 # A run with data but NO timestamped rows writes no sidecar at all; an EMPTY
 # sidecar is the valid "no per-hour data" answer for its readers (the
 # dashboards overview), so one is created when absent.
 [ -f "$SLOTS_OUT" ] || : > "$SLOTS_OUT"
 
-nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }   # a count cell shows blank, never 0
-
 {
     printf 'TITLE\tUC4 status\n'
-
-    printf 'STAT\twhite\t%s\tUC4 subscriptions\n' "$n_all"
-    printf 'STAT\tgreen\t%s\tok\n' "$n_ok"
-    printf 'STAT\tred\t%s\terror\n' "$n_err"
-    printf 'STAT\tred\t%s\tok -> error\n' "$n_okerr"   # red like its rows (the result colour), 2026-09-29
-    printf 'STAT\torange\t%s\tnot seen\n' "$n_notseen"
+    ucs_stats UC4
 
     # noagg=6,7,8: Logons / Arrivals / Problems are ACCOUNT-keyed lines
     # credited to every UC4 flow of the account (the TOTAL counts each line

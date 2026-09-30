@@ -30,109 +30,10 @@ ensure_assets   # topbar-data.js (the menus' data file)
 mkdir -p "$DDIR"
 rm -f "$DDIR"/*.html
 
-# swap CH_* palette tokens in a chart arg for their hex values (charts_lib) -> RCH
-resolve_ch() {
-    local s=$1
-    s=${s//CH_BLUE/$CH_BLUE}; s=${s//CH_GREEN/$CH_GREEN}; s=${s//CH_RED/$CH_RED}
-    s=${s//CH_AMBER/$CH_AMBER}; s=${s//CH_PURPLE/$CH_PURPLE}; s=${s//CH_TEAL/$CH_TEAL}
-    RCH=$s   # a variable, not stdout: see render_card (EINTR)
-}
-
-# one CARD line -> card html; dispatches the chart type to its charts_lib
-# generator with the trailing-empty args dropped (an EMBEDDED empty arg
-# — is passed through; only slots and vbar remain since 2026-09-29).
-# $1 is the chart's page-unique id: exported with the card title as
-# CH_ID/CH_TITLE so the generator (a $() grandchild) can emit the accessible
-# root <title>/<desc> + aria-labelledby and the chart-data table.
-# render_card -> RC_OUT (2026-09-29): the card HTML goes back in a VARIABLE,
-# never through stdout — a caller's $(render_card …) pipe fills with a big
-# card, and a SIGCHLD landing on the blocked write made bash 3.2's printf fail
-# with "write error: Interrupted system call" (the intermittent build
-# failure); resolve_ch -> RCH for the same reason (a series can be large)
-render_card() {   # $1 chart id  $2 title  $3 sub  $4 href  $5 span  $6 chart  $7..$14 args
-    local cid=$1; shift
-    local title=$1 sub=$2 href=$3 span=$4 chart=$5; shift 5
-    export CH_ID="$cid" CH_TITLE="$title"
-    local args=() a n
-    for a in "$@"; do resolve_ch "$a"; args+=("$RCH"); done
-    n=${#args[@]}
-    while [ "$n" -gt 0 ] && [ -z "${args[n-1]}" ]; do unset "args[$((n-1))]"; n=$((n-1)); done
-    local svg=""
-    case $chart in
-        vbar)  svg=$(svg_vbar  ${args[@]+"${args[@]}"}) ;;
-        slots)
-            local BASEIV=360   # the visible default resolution, in minutes
-            # CLIENT-SIDE since 2026-07: the card is one placeholder carrying
-            # the series, and docs/assets/slotchart.js draws the SVG + data
-            # table for the picked style/interval.
-            # args: a1 KIND, a2 the BASE series, a3 the {} link pattern, then
-            # any number of "<minutes>:<series>" EXTRA resolutions (a4..a8).
-            # Each becomes data-iv<minutes>; the base takes data-base and its
-            # own data-iv<minutes>. The interval row is built from the tags
-            # present, ascending — so the overview offers 1h/2h/4h/6h/12h/1 day
-            # and a day page 15/30 min/1 hour, from the same code.
-            local slink=${args[2]:-}; [ -n "$slink" ] || slink=$href
-            esc "$title"; local ctit=$ESC
-            esc "$slink"; local clink=$ESC
-            local ivlist="$BASEIV" a2 tag ser
-            svg="<div class=\"slotchart\" data-kind=\"${args[0]}\" data-cid=\"$cid\" data-title=\"$ctit\" data-link=\"$clink\" data-base=\"$BASEIV\""
-            esc "${args[1]:-}"; svg+=" data-iv$BASEIV=\"$ESC\""
-            for a2 in "${args[@]:3}"; do
-                [ -n "$a2" ] || continue
-                tag=${a2%%:*}; ser=${a2#*:}
-                [ -n "$ser" ] || continue
-                ivlist="$ivlist $tag"
-                esc "$ser"; svg+=" data-iv$tag=\"$ESC\""
-            done
-            svg+="></div>"
-            svg+='<div class="chartbtns">'
-            if [ "$(printf '%s\n' $ivlist | wc -l)" -gt 1 ]; then
-                svg+='<p class="tabs ivbtns">'
-                for tag in $(printf '%s\n' $ivlist | sort -n); do
-                    case $tag in
-                        15) lbl="15 min" ;; 30) lbl="30 min" ;; 60) lbl="1 hour" ;;
-                        120) lbl="2 hours" ;; 240) lbl="4 hours" ;; 360) lbl="6 hours" ;; 720) lbl="12 hours" ;;
-                        1440) lbl="1 day" ;; *) lbl="$tag min" ;;
-                    esac
-                    if [ "$tag" = "$BASEIV" ]; then svg+="<span class=\"tab active\" data-civ=\"$tag\">$lbl</span>"
-                    else svg+="<span class=\"tab\" data-civ=\"$tag\">$lbl</span>"; fi
-                done
-                svg+='</p>'
-            fi
-            # Linear/Log (2026-08): a few series swing over three orders of
-            # magnitude and flatten every ordinary slot against the floor on a
-            # linear axis. NOT offered on the duration kinds — their ms..h axis
-            # is already non-linear, so the toggle would be a dead button.
-            case ${args[0]} in
-                dur) ;;
-                seen) svg+='<p class="tabs scalebtns"><span class="tab active" data-cscale="lin">Linear</span><span class="tab" data-cscale="log">Log</span></p>' ;;   # the seen graphs open LINEAR (2026-09-03, user request; slotchart.js scaleFor)
-                *) svg+='<p class="tabs scalebtns"><span class="tab" data-cscale="lin">Linear</span><span class="tab active" data-cscale="log">Log</span></p>' ;;
-            esac
-            svg+='<p class="tabs stylebtns"><span class="tab" data-cstyle="line">Line</span><span class="tab" data-cstyle="bar">Bar</span><span class="tab active" data-cstyle="solid">Solid</span></p>'
-            svg+='</div>'
-            ;;
-    esac
-    # a chart with per-point links (area + link pattern) raises its chartbox
-    # above the whole-card stretched title link (style.css .ptlinks), so the
-    # day columns win the click inside the plot and the card link elsewhere
-    local cardcls=$span
-    if [ "$chart" = "area" ] && [ -n "${args[5]:-}" ]; then cardcls="${cardcls:+$cardcls }ptlinks"; fi
-    # slots cards ALWAYS raise the chartbox: the stretched title link would
-    # otherwise eat the tooltip mousemoves and the style buttons, links or not
-    if [ "$chart" = "slots" ]; then cardcls="${cardcls:+$cardcls }ptlinks"; fi
-    # the bottom-right "full report" link inside the chart (style.css
-    # .card-more): the card href surfaced visibly — the best-fitting
-    # transfer/server/analyses report for this graph. NOT on slots cards:
-    # the linked title covers the report link and the corner belongs to the
-    # Line/Bar/Solid switcher.
-    local more=""
-    if [ "$chart" != "slots" ] && [ -n "$href" ]; then esc "$href"; more="<a class=\"card-more\" href=\"$ESC\">full report &#8594;</a>"; fi
-    if [ -n "$cardcls" ]; then
-        RC_OUT="$(card_open "$title" "$sub" "$href" "$cardcls")$svg$more$(card_end)"
-    else
-        RC_OUT="$(card_open "$title" "$sub" "$href")$svg$more$(card_end)"
-    fi
-}
+# the card renderer is charts_lib.sh render_card (shared with the day pages,
+# 2026-09-30): the overview shows 6-hour slots by default and the
+# bottom-right "full report" link on non-slots cards
+RC_BASEIV=360; RC_MORE=1
 
 npages=0
 for rpt in "$DRPT"/*.rpt; do
@@ -169,7 +70,7 @@ for rpt in "$DRPT"/*.rpt; do
         else
             render_card "ch$chn" "$ctit" "$csub" "$chref" "$cspan" "$cchart" "$a1" "$a2" "$a3" "$a4" "$a5" "$a6" "$a7" "$a8"; cards+="$RC_OUT"
         fi
-    done < <(grep '^CARD'$'\t' "$rpt" | tr '\t' '\037' || true)
+    done < <(rc_cards CARD "$rpt")   # (series compacted — charts_lib rc_cards)
     # A CARDALT button label may name a GROUP as "<group>|<member>" (2026-08):
     # those views move OFF the first button row into a SECOND row that appears
     # only while their group is picked — the row-1 button carries the group
@@ -188,7 +89,7 @@ for rpt in "$DRPT"/*.rpt; do
         chn=$((chn + 1))
         render_card "ch$chn" "$ctit" "$csub" "$chref" "${cspan:+$cspan }althero" "$cchart" "$a1" "$a2" "$a3" "$a4" "$a5" "$a6" "$a7" "$a8"; alts+="$RC_OUT"
         esc "$blab"; altbtns+="<span class=\"tab\" data-hero=\"$ESC\">$ESC</span>"
-    done < <(grep '^CARDALT'$'\t' "$rpt" | tr '\t' '\037' || true)
+    done < <(rc_cards CARDALT "$rpt")
     # the six Top-5 tables (the overview): TOP lines in the day pages'
     # protocol, rendered by publish_lib's shared top_table into the same
     # .daytop grid — partners left, subscriptions right, one metric per row

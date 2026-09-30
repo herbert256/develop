@@ -51,6 +51,17 @@ trap 'rm -rf "$TMPD"' EXIT
 ENDK_AWK='
     function endk(   e) { e = $24; return (e ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] /) ? substr(e, 1, 4) substr(e, 6, 2) substr(e, 9, 2) substr(e, 12) : $6 }
 '
+# The NEWEST OK END per subscription (outcome policy OK, endk() shape, every
+# $12 != "" row — "Unknown" included), computed ONCE by the column-1 pass
+# below and read by boxes 14 / 20 / 21 / 15 (2026-09-30, the lean round:
+# each of them re-read _files.tsv for it). subscription <TAB> end-key.
+LOKF="$TMPD/lok.tsv"
+# lok_load(LOKF) -> lok[subscription]; lok_loadu() the same case-folded (the
+# max over the names one upper-cased key covers — box 15 joins upper-cased)
+LOK_AWK='
+    function lok_load(f,   l, p) { while ((getline l < f) > 0) { p = index(l, "\t"); if (p > 1) lok[substr(l, 1, p - 1)] = substr(l, p + 1) } close(f) }
+    function lok_loadu(f,   l, p, u, v) { while ((getline l < f) > 0) { p = index(l, "\t"); if (p > 1) { u = toupper(substr(l, 1, p - 1)); v = substr(l, p + 1); if (v > lok[u]) lok[u] = v } } close(f) }
+'
 _subs_box_rows() {
     local spec f c nf
         # column 1 — One-legged, REFINED (2026-07): a one-legged CoreId is only
@@ -68,7 +79,10 @@ _subs_box_rows() {
         # that outcome — the newest staged file is still awaiting pickup (5)
         # or was deleted before any pickup (6).
         if [ -f "$FILESC" ]; then
-            awk -F'\t' "$ENDK_AWK"'
+            awk -F'\t' -v LOKF="$LOKF" "$ENDK_AWK"'
+                # the shared newest-OK-END map (see LOKF above) — before the
+                # Unknown skip: the other boxes read every named row
+                $12 != "" && $2 != "Failed" && $2 != "Expired" { ek = endk(); if (ek > LOK[$12]) LOK[$12] = ek }
                 $12 == "" || $12 == "Unknown" { next }   # "Unknown" = no subscription (2026-09-29): in no box
                 {
                     if (!(($12) in ls)) orda[++na] = $12
@@ -77,6 +91,8 @@ _subs_box_rows() {
                     if ($2 != "Failed" && $2 != "Expired") { ek = endk(); if (ek > lo[$12]) lo[$12] = ek }
                 }
                 END {
+                    for (s in LOK) printf "%s\t%s\n", s, LOK[s] > LOKF
+                    close(LOKF)
                     for (i = 1; i <= n; i++) { s = ord[i]
                         if (lo[s] == "" || lo[s] <= lp[s]) print "1\t" s }
                     for (i = 1; i <= na; i++) { s = orda[i]
@@ -130,7 +146,8 @@ _subs_box_rows() {
         # (site-failures.tsv, 2026-09-29 — the report it read before went: no
         # other reader), exact enough to order against an OK File on the same day.
         if [ -s "$SRPT/site-failures.tsv" ] && [ -f "$FILESC" ]; then
-            awk -F'\t' "$ENDK_AWK"'
+            awk -F'\t' -v LOKF="$LOKF" "$LOK_AWK"'
+                BEGIN { lok_load(LOKF) }
                 FILENAME ~ /site-failures/ {
                     # subscription <TAB> newest failure stamp (site-failures.sh)
                     s = $2
@@ -138,9 +155,8 @@ _subs_box_rows() {
                         d = substr(s, 1, 10); gsub(/-/, "", d); cf[$1] = d substr(s, 12, 12) }
                     next
                 }
-                { if ($12 != "" && $2 != "Failed" && $2 != "Expired") { ek = endk(); if (ek > lok[$12]) lok[$12] = ek } }
                 END { for (s in cf) if (lok[s] == "" || lok[s] < cf[s]) print "14\t" s }
-            ' "$SRPT/site-failures.tsv" "$FILESC"
+            ' "$SRPT/site-failures.tsv"
         fi
         # columns 20 / 21 — Login errors (in / out), UNRESOLVED (2026-08): the
         # Logons report's failure rows joined onto subscriptions — in: the
@@ -153,10 +169,10 @@ _subs_box_rows() {
         # (metrics m2/m4/m5/m6 = Disallowed/Bad key/Key failures/Locked), so
         # the error date counts as end-of-day — only a LATER day's OK clears.
         if [ -f "$SRPT/logon.rpt" ] && [ -f "$FILESC" ]; then
-            awk -F'\t' -v LS="$XREF/_logins-subscriptions.tsv" "$ENDK_AWK"'
+            awk -F'\t' -v LS="$XREF/_logins-subscriptions.tsv" -v LOKF="$LOKF" "$LOK_AWK"'
                 BEGIN { while ((getline l < LS) > 0) { n = split(l, a, "\t")
                             if (n >= 2 && a[1] != "") SUBS[toupper(a[1])] = SUBS[toupper(a[1])] "\037" a[2] }
-                        close(LS) }
+                        close(LS); lok_load(LOKF) }
                 FILENAME ~ /logon\.rpt/ {
                     if ($1 == "TABLE") { t++; next }
                     if ($1 != "ROW" || t != 1) next
@@ -175,13 +191,12 @@ _subs_box_rows() {
                         for (i2 = 1; i2 <= m2; i2++) if (S2[i2] != "" && (!(S2[i2] in ce) || key > ce[S2[i2]])) ce[S2[i2]] = key }
                     next
                 }
-                { if ($12 != "" && $2 != "Failed" && $2 != "Expired") { ek = endk(); if (ek > lok[$12]) lok[$12] = ek } }
                 END { for (s in ce) if (lok[s] == "" || lok[s] < ce[s]) print "20\t" s }
-            ' "$SRPT/logon.rpt" "$FILESC"
-            awk -F'\t' -v HS="$XREF/_hosts-subscriptions.tsv" "$ENDK_AWK"'
+            ' "$SRPT/logon.rpt"
+            awk -F'\t' -v HS="$XREF/_hosts-subscriptions.tsv" -v LOKF="$LOKF" "$LOK_AWK"'
                 BEGIN { while ((getline l < HS) > 0) { n = split(l, a, "\t")
                             if (n >= 2 && a[1] != "") SUBS[tolower(a[1])] = SUBS[tolower(a[1])] "\037" a[2] }
-                        close(HS) }
+                        close(HS); lok_load(LOKF) }
                 FILENAME ~ /logon\.rpt/ {
                     if ($1 == "TABLE") { t++; next }
                     if ($1 != "ROW" || t != 2) next
@@ -199,9 +214,8 @@ _subs_box_rows() {
                         for (i2 = 1; i2 <= m2; i2++) if (S2[i2] != "" && (!(S2[i2] in ce) || key > ce[S2[i2]])) ce[S2[i2]] = key }
                     next
                 }
-                { if ($12 != "" && $2 != "Failed" && $2 != "Expired") { ek = endk(); if (ek > lok[$12]) lok[$12] = ek } }
                 END { for (s in ce) if (lok[s] == "" || lok[s] < ce[s]) print "21\t" s }
-            ' "$SRPT/logon.rpt" "$FILESC"
+            ' "$SRPT/logon.rpt"
         fi
         # (column 12 "Server log only" and column 19 "Failing polls" were the
         # blue result and the UC3 "server - error" status, both removed
@@ -218,15 +232,14 @@ _subs_box_rows() {
         # flow of a hybrid account put its healthy siblings in the red Deploy
         # box).
         if [ -f "$SRPT/deploy-errors.rpt" ]; then
-            _fc15="$FILESC"; [ -f "$_fc15" ] || _fc15=/dev/null
-            awk -F'\t' -v AS="$XREF/_accounts-subscriptions.tsv" -v SUBF="$FBASE/_subscriptions.tsv" -v FC="$_fc15" "$ENDK_AWK"'
+            awk -F'\t' -v AS="$XREF/_accounts-subscriptions.tsv" -v SUBF="$FBASE/_subscriptions.tsv" -v LOKF="$LOKF" "$LOK_AWK"'
                 BEGIN { while ((getline l < AS) > 0) { n = split(l, a, "\t")
                             if (n >= 2 && a[1] != "") ASUB[toupper(a[1])] = ASUB[toupper(a[1])] "\037" a[2] }
                         close(AS)
                         while ((getline l < SUBF) > 0) { split(l, a, "\t")
                             if (a[1] != "") EST[toupper(a[1])] = 1 }
-                        close(SUBF) }
-                FILENAME == FC { if ($12 != "" && $2 != "Failed" && $2 != "Expired") { ek = endk(); if (ek > lok[toupper($12)]) lok[toupper($12)] = ek }; next }
+                        close(SUBF)
+                        lok_loadu(LOKF) }   # (no _files.tsv: an absent map = no OK File, as the /dev/null stand-in was)
                 $1 == "TABLE" { t++; next }
                 $1 != "ROW" || t != 1 { next }
                 { nm = $2; sub(/^@\{[^}]*\}/, "", nm); if (nm == "") next
@@ -240,7 +253,7 @@ _subs_box_rows() {
                   key = $5; if (key ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] /) key = substr(key, 1, 4) substr(key, 6, 2) substr(key, 9, 2) substr(key, 12); else key = ""
                   if (k in ASUB) { m = split(substr(ASUB[k], 2), S, "\037")
                                    for (i = 1; i <= m; i++) if (S[i] != "" && (key == "" || lok[toupper(S[i])] == "" || lok[toupper(S[i])] < key)) print "15\t" S[i] } }
-            ' "$_fc15" "$SRPT/deploy-errors.rpt"
+            ' "$SRPT/deploy-errors.rpt"
         fi
         :   # the tests above are the last commands; keep the exit status 0
 }

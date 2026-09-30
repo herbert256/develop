@@ -47,7 +47,8 @@ pool_run "$SCRIPT_DIR/reports/size-profile.sh"
 pool_run "$SCRIPT_DIR/reports/connection-efficiency.sh"
 pool_run "$SCRIPT_DIR/reports/recovered.sh"
 pool_run "$SCRIPT_DIR/reports/recovered-files.sh"
-pool_run "$SCRIPT_DIR/reports/security-outreach.sh"
+# (security-outreach.sh is not pooled since 2026-09-30: security-params.sh
+# computes both security reports in one pass and calls it as the writer)
 pool_run "$SCRIPT_DIR/reports/failure-heatmap.sh"
 pool_run "$SCRIPT_DIR/reports/not-in-flow-manager.sh"
 pool_run "$SCRIPT_DIR/reports/day.sh"

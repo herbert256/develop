@@ -44,13 +44,14 @@
 
   function lines(s) { return (typeof s === "string" && s !== "") ? s.split("\n") : []; }
 
-  function humanBytes(b) {                      // the site's humanbytes format
-    b = +b;
-    if (b < 1024) return b + " B";
-    if (b < 1048576) return (b / 1024).toFixed(2) + " KB";
-    if (b < 1073741824) return (b / 1048576).toFixed(2) + " MB";
-    return (b / 1073741824).toFixed(2) + " GB";
-  }
+  // the glob matcher, the byte format, the File State words / row colours
+  // and the cell builder are report.js's ONE copy (window.AXWAY_UTIL,
+  // 2026-09-30 — this file carried its own globMatcher, a KEEP-IN-STEP pair,
+  // until then). report.js loads AFTER this file on the page (the engine
+  // registers its range hook first), so they are read when used — and the
+  // initial ?f= / ?s= search waits for them (whenUtil).
+  function U() { return window.AXWAY_UTIL; }
+  function whenUtil(fn) { if (U()) fn(); else document.addEventListener("DOMContentLoaded", fn); }
 
   // ---- the filter (publish-all-files.sh twin) -----------------------------
   function norm(s) { return s.replace(/[^\x00-\x7f]+/g, "?").toLowerCase(); }
@@ -80,26 +81,7 @@
   // ---- the matcher -------------------------------------------------------
   function matcher(term) {
     if (!/[*?]/.test(term)) return function (k) { return k.indexOf(term) !== -1; };
-    return globMatcher(term);
-  }
-  // the glob test WITHOUT a RegExp (2026-09-29 audit F12: "************z"
-  // backtracked for seconds per name): the two-pointer walk, retrying only
-  // from the LAST star; unanchored (wrapped in stars, star runs collapsed).
-  // KEEP IN STEP with assets/report.js globMatcher.
-  function globMatcher(q) {
-    var p = ("*" + q + "*").replace(/\*+/g, "*"), m = p.length;
-    return function (s) {
-      var i = 0, j = 0, star = -1, mark = 0, n = s.length, c;
-      while (i < n) {
-        c = j < m ? p.charAt(j) : "";
-        if (c === "*") { star = j++; mark = i; }
-        else if (c !== "" && (c === "?" || c === s.charAt(i))) { i++; j++; }
-        else if (star >= 0) { j = star + 1; i = ++mark; }
-        else return false;
-      }
-      while (j < m && p.charAt(j) === "*") j++;
-      return j === m;
-    };
+    return U().globMatcher(term);   // the glob test without a RegExp (report.js)
   }
   function words(q, raw) {
     q = q.replace(/^\s+|\s+$/g, "");
@@ -194,41 +176,27 @@
     showData(false);
 
     // ---- one match -> a <tr> -------------------------------------------
-    function cell(tr, cls, text, href, mono) {
-      var c = document.createElement("td"), t;
-      if (cls) c.className = cls;
-      if (mono) { t = document.createElement("code"); t.textContent = text; }
-      if (href) {
-        var a = document.createElement("a");
-        a.setAttribute("href", href);
-        if (mono) a.appendChild(t); else a.textContent = text;
-        c.appendChild(a);
-      } else if (mono) c.appendChild(t);
-      else c.textContent = text;
-      tr.appendChild(c);
-    }
-    // the site's words (2026-09-29): OK / Error / Waiting / Expired; the row
-    // COLOUR is the File colour (_files.tsv col 25, 2026-09-29, user request):
-    // green OK, orange OK after a retry or resubmit ("o") and Waiting, red
-    // Error and Expired
-    var STATE = { "": "OK", d: "OK", o: "OK", e: "Error", w: "Waiting", x: "Expired" };
-    var TINT = { "": "green", d: "green", o: "orange", e: "red", w: "orange", x: "red" };
+    // the site's words: OK / Error / Waiting / Expired; the row COLOUR is the
+    // File colour (_files.tsv col 25): green OK, orange OK after a retry or
+    // resubmit ("o") and Waiting, red Error and Expired — report.js
+    // fileState / fileTint; fileCell makes a linked cell a whole-cell link
     function render(day, r) {
+      var u = U(), cell = u.fileCell, hb = u.humanBytes;
       var tr = document.createElement("tr");
       var sn = CACHE[day].subs[r.si] ? CACHE[day].subs[r.si].name : "";
       var slug = Object.prototype.hasOwnProperty.call(SLUGOF, sn) ? SLUGOF[sn] : "";
-      var fk = r.fl.toLowerCase(), st = STATE[fk] || "OK";
+      var fk = r.fl.toLowerCase(), st = u.fileState[fk] || "OK";
       var when = day + " " + r.tm.substr(0, 2) + ":" + r.tm.substr(2, 2) + ":" + r.tm.substr(4, 2);
-      tr.setAttribute("data-res", TINT[fk] || "green");
+      tr.setAttribute("data-res", u.fileTint[fk] || "green");
       if (r.fl !== "" && r.fl !== r.fl.toLowerCase()) {   // a File page: the whole row opens it
         var h = "../files/" + r.cid + ".html";
         tr.setAttribute("data-href", h);
-        cell(tr, "cl", when, h); cell(tr, "cl", sn, h); cell(tr, "cl", st, h);
-        cell(tr, "num cl", humanBytes(r.by), h); cell(tr, "file cl", r.nm, h, true); cell(tr, "mono cl", r.cid, h, true);
+        cell(tr, "", when, h); cell(tr, "", sn, h); cell(tr, "", st, h);
+        cell(tr, "num", hb(r.by), h); cell(tr, "file", r.nm, h, true); cell(tr, "mono", r.cid, h, true);
       } else {                                              // else the subscription page
         var dh = slug ? "../details/subscriptions/" + slug + ".html" : "";
-        cell(tr, "", when, ""); cell(tr, dh ? "cl" : "", sn, dh); cell(tr, "", st, "");
-        cell(tr, "num", humanBytes(r.by), ""); cell(tr, "file", r.nm, "", true); cell(tr, "mono", r.cid, "", true);
+        cell(tr, "", when, ""); cell(tr, "", sn, dh); cell(tr, "", st, "");
+        cell(tr, "num", hb(r.by), ""); cell(tr, "file", r.nm, "", true); cell(tr, "mono", r.cid, "", true);
       }
       return tr;
     }
@@ -354,7 +322,7 @@
     });
 
     var f0 = param("f"), s0 = param("s");
-    if (f0 !== "" || s0 !== "") { fbox.value = f0; sbox.value = s0; run(); }
+    if (f0 !== "" || s0 !== "") { fbox.value = f0; sbox.value = s0; whenUtil(run); }
     (f0 !== "" && s0 === "" ? sbox : fbox).focus();
   }
 

@@ -2746,7 +2746,7 @@
   // freezing the page): the classic two-pointer walk that, on a mismatch,
   // retries only from the LAST star — at most text x pattern steps. Unanchored
   // like the substring search: the pattern is wrapped in stars, runs of stars
-  // collapse. KEEP IN STEP with assets/all-files-search.js globMatcher.
+  // collapse. The ONE copy: all-files-search.js uses it (window.AXWAY_UTIL).
   function globMatcher(q) {
     var p = ("*" + q + "*").replace(/\*+/g, "*"), m = p.length;
     return function (s) {
@@ -2762,6 +2762,34 @@
       return j === m;
     };
   }
+
+  // SHARED WITH THE FILE ENGINES (2026-09-30, the lean round: sub-files.js
+  // and all-files-search.js carried their own copies — globMatcher was a
+  // KEEP-IN-STEP pair): the glob matcher, the byte format, the File State
+  // words and row colours (the shard flag: "" / d delivered, o delivered after
+  // a retry or resubmit, e errored, w waiting, x expired — _files.tsv col 25)
+  // and the File-table cell builder (a linked cell is a whole-cell link, cl).
+  // The engines read them when they render, after this file ran.
+  function fileCell(tr, cls, text, href, mono) {
+    var c = document.createElement("td"), t = null, a;
+    if (href) cls = cls ? cls + " cl" : "cl";
+    if (cls) c.className = cls;
+    if (mono) { t = document.createElement("code"); t.textContent = text; }
+    if (href) {
+      a = document.createElement("a"); a.setAttribute("href", href);
+      if (t) a.appendChild(t); else a.textContent = text;
+      c.appendChild(a);
+    } else if (t) c.appendChild(t);
+    else c.textContent = text;
+    tr.appendChild(c);
+  }
+  window.AXWAY_UTIL = {
+    globMatcher: globMatcher,
+    humanBytes: humanBytes,
+    fileState: { "": "OK", d: "OK", o: "OK", e: "Error", w: "Waiting", x: "Expired" },
+    fileTint: { "": "green", d: "green", o: "orange", e: "red", w: "orange", x: "red" },
+    fileCell: fileCell
+  };
 
   // Parse a whole query into boolean groups, so terms can be combined with the
   // keywords "and" / "or" / "not". They act as operators only when whole words
@@ -3835,103 +3863,9 @@
     });
   }
 
-  // A narrow window WRAPS the fixed top bar onto a second line, and the body's
-  // fixed top padding (3.2rem, one line) then hid the page title behind it
-  // (2026-09-29): the padding follows the bar's real height instead.
-  function fitTopbar() {
-    var bar = document.querySelector(".topbar"); if (!bar || !document.body) return;
-    var h = bar.offsetHeight;
-    document.body.style.paddingTop = h > 48 ? (h + 12) + "px" : "";
-  }
-  var fitPending = false;
-  window.addEventListener("resize", function () {
-    if (fitPending) return; fitPending = true;
-    (window.requestAnimationFrame || setTimeout)(function () { fitPending = false; fitTopbar(); });
-  });
-  // ---- The RUNTIME top bar (2026-07) ---------------------------------------
-  // Every html_head page bakes only `<div class="topbar" data-b=…
-  // [data-help=…]></div>` (~0.1 KB instead of the ~2.7 KB baked bar × ~4,000
-  // pages) — this renders the full bar from window.AXWAY_TB
-  // (assets/topbar-data.js: the ONE Reports menu string with its "@"
-  // docs-root placeholder, the monitor flag, the CoreId URL template and the
-  // environment LABEL of this site — input/environment.txt, the TEXT OF THE
-  // BRAND link itself; rewritten by every publish, so a MENU change needs no
-  // site-wide page republish). The baked-chrome pages (help pages, the build
-  // report — render_shared_topbar) arrive with a NON-empty topbar div and are
-  // left untouched.
-  function buildTopbar() {
-    var tb = document.querySelector("div.topbar");
-    if (!tb || tb.firstChild) return;                     // baked bar (help/build) — leave it
-    var M = window.AXWAY_TB || {};
-    var b = tb.getAttribute("data-b") || "";   // ONE prefix: back to the docs root (the site is one tree)
-    var help = tb.getAttribute("data-help") || "";
-    function menu(s) { return (s || "").replace(/@/g, b); }
-    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
-    // the ENVIRONMENT LABEL of this site (input/environment.txt via
-    // ensure_assets) IS the brand — the home link's text (2026-09-12, user
-    // request: no separate label beside it); a site without the file says
-    // "Axway ST" (2026-09-29; "Cloud" before)
-    var brand = (typeof M.env === "string" && M.env) ? M.env : "Axway ST";
-    // THE ENVIRONMENT SWITCH (2026-09-12, user request): a RUNTIME checkout
-    // (envkey acceptance|production) leads with the pair "Acceptance /
-    // Production" instead — the active one (.envcur: bold, yellow) links the
-    // home page; the other one carries data-envto + data-root and
-    // window.AXWAY_ENVLINKS() (defined in topbar-data.js — the ONE
-    // implementation, publish_lib.sh ENVSWITCH_JS) fills it with the SAME
-    // PAGE on the other site (localhost -> the local checkouts, elsewhere the
-    // GitHub Pages sites; opened from the file system it REMOVES the other
-    // one and the separator, leaving the active home link alone — 2026-09-14,
-    // user request). KEEP IN STEP with publish_lib.sh render_topbar,
-    // which bakes the identical markup for the help/build pages.
-    var brandHtml, keys = ["acceptance", "production"], ki, kk, pair = "";
-    if (M.envkey === "acceptance" || M.envkey === "production") {
-      for (ki = 0; ki < keys.length; ki++) {
-        kk = keys[ki];
-        if (pair) pair += '<span class="envsep">/</span>';
-        pair += (kk === M.envkey)
-          ? '<a class="envlink envcur" href="' + b + 'index.html">' + kk.charAt(0).toUpperCase() + kk.slice(1) + "</a>"
-          : '<a class="envlink" data-envto="' + kk + '" data-root="' + esc(b) + '" href="#">' + kk.charAt(0).toUpperCase() + kk.slice(1) + "</a>";
-      }
-      brandHtml = '<span class="brand envpair">' + pair + "</span>";
-    } else brandHtml = '<a class="brand" href="' + b + 'index.html">' + esc(brand) + "</a>";
-    tb.innerHTML =
-      brandHtml +
-      // THE DATA PERIOD (2026-09-13, user request): "yyyy-mm-dd / yyyy-mm-dd",
-      // the first and last day of the transfer data (ensure_assets bakes it
-      // as `period`), second — after the environment, before Entities. KEEP
-      // IN STEP with publish_lib.sh render_topbar.
-      (M.period ? '<span class="period" title="The data period: the first and last day of the transfer data">' + esc(M.period) + "</span>" : "") +
-      // THE ENTITIES / ERRORS / FILES CLUSTER (2026-09-29, user request: the
-      // Errors group out of the Reports pulldown, "an own link in the Top
-      // Menu bar before Files", "have Entities, Files, Errors next to each
-      // other"): the three links side by side, then the entity-search icon.
-      // M.errors = the group's first page (publish_lib ERRORS_HREF); Files =
-      // the ALL FILES search (2026-09-28). KEEP IN STEP with publish_lib.sh
-      // render_topbar.
-      // OVERVIEW first (2026-09-29, user request: the Overview group out of
-      // the Reports pulldown, "just before Entities"; M.overview = its first
-      // page, publish_lib OVERVIEW_HREF)
-      '<span class="entgroup">' +
-      (M.overview ? '<a class="entlabel" href="' + b + esc(M.overview) + '">Overview</a>' : "") +
-      '<a class="entlabel" href="' + b + 'transfer/entities/subscription-all.html">Entities</a>' +
-      (M.errors ? '<a class="entlabel" href="' + b + esc(M.errors) + '">Errors</a>' : "") +
-      '<a class="entlabel" href="' + b + 'search/all-files.html">Files</a>' +
-      '<a class="searchbtn" href="' + b + 'search/search.html" title="Search" aria-label="Search">🔍</a></span>' +
-      '<nav class="nav">' +
-      // ONE pulldown, Reports (2026-09-29, user request): Start page + one
-      // line per report group (publish_lib _report_groups); the Transfer
-      // reports / Server reports / Analyses / Goodies four went. KEEP IN STEP
-      // with publish_lib.sh render_topbar.
-      '<div class="dd"><span class="ddlabel" tabindex="0" aria-haspopup="true">Reports ▾</span><div class="ddm">' + menu(M.reports) + "</div></div>" +
-      "</nav>" +
-      '<a class="dashlink" href="' + b + 'dashboards/index.html">Dashboard</a>' +
-      // (the Monitor link — M.monitor — went 2026-09-30 with that dashboard)
-      '<span class="tr-group">' +
-      '<a class="searchbtn" href="' + b + 'tools/sitemap.html" title="Site map" aria-label="Site map">🗺</a>' +
-      (help ? '<a class="helpbtn" href="' + b + "help/" + help + '.html" title="Help" aria-label="Help">?</a>' : "") +
-      "</span>";
-    if (typeof window.AXWAY_ENVLINKS === "function") window.AXWAY_ENVLINKS();   // the switch's other-site href (see above)
-  }
+  // (THE TOP BAR — buildTopbar, fitTopbar and the environment switch — lives
+  // in assets/topbar.js since 2026-09-30: ONE implementation for every page,
+  // the help pages and the build report included; it runs before this file.)
 
   // ---- CSV download (2026-08-30, user request): every table exports itself
   // as a .csv via a small hotspot in the UPPER-RIGHT CORNER of the LAST
@@ -4108,7 +4042,7 @@
   // role), and ONE delegated handler turns Enter / Space on it into the click
   // its own handler already listens for (shift kept: shift+Enter on a header
   // adds a sort key like shift-click). The Reports menu label is focusable in
-  // its markup (buildTopbar / render_topbar): focus opens the menu through the
+  // its markup (assets/topbar.js): focus opens the menu through the
   // CSS :focus-within, Tab walks its links, Escape leaves it. Engine scripts
   // that build such spans after init (sub-files.js) stamp their own.
   var KB_SEL = "span.tab, .csvbtn, .pickbtn, th.sortable";
@@ -4246,8 +4180,6 @@
   function init() {
     attachEntityPayload();  // FIRST of all: the Entities rows get their payload back (see above)
     expandPayload();        // … and every compact attribute its full value
-    buildTopbar();          // FIRST: later setups bind into the bar
-    fitTopbar();            // the body clears the bar at its real (wrapped) height
     setupRelDates();        // "3 days ago" tooltips on date cells, lazily
     entTouch();             // Entities: slide the shared sort's hour on every view
     var tables = document.getElementsByTagName("table");

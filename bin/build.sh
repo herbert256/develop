@@ -99,7 +99,7 @@ bin/check-syntax.sh || exit 1
 # PREFLIGHT (2026-09-28 audit F05): every file the docs/ seed below copies
 # must exist BEFORE anything is cleared — a missing asset used to fail the
 # seed's cp AFTER data/ and docs/ were already gone: no site, no report.
-SEED_ASSETS="style.css report.js slotchart.js all-files-search.js sub-files.js"
+SEED_ASSETS="style.css topbar.js report.js slotchart.js all-files-search.js sub-files.js"
 _miss=""
 for _a in $SEED_ASSETS; do [ -f "assets/$_a" ] || _miss="$_miss assets/$_a"; done
 [ -d assets/help ] || _miss="$_miss assets/help/"
@@ -392,9 +392,9 @@ write_report() {
     fi
     printf 'TIME %5ds  build report: input + cache statistics (%s)\n' "$(( $(date +%s) - _st0 ))" "$out" >&2
     t1=$(date +%s); total=$((t1 - BUILD_T0)); end=$(date '+%Y-%m-%d %H:%M:%S')
-    # The report carries the site's standard fixed top bar (the help pages'
-    # plain-link style — no dropdown machinery, the report must render even
-    # when a build died before any publish). The report's own styles below
+    # The report carries the site's standard fixed top bar (assets/topbar.js,
+    # like every page; a build that died before any publish shows the bar's
+    # defaults — the report itself always renders). The report's own styles below
     # scope to .buildwrap so style.css keeps the body padding that clears the
     # fixed bar; without the stylesheet (a from-scratch clone) the page still
     # renders, just with a plain bar. The report is rendered ONCE with the
@@ -419,8 +419,14 @@ HTML
         # the stylesheet with its ?v= cache-buster — the same cksum as
         # publish_lib ASSET_VER, so a CSS change reaches this page too
         # (2026-09-30 audit L-06; it loaded style.css bare)
-        local _av; _av=$( (cksum docs/assets/style.css docs/assets/report.js docs/assets/slotchart.js docs/assets/all-files-search.js docs/assets/sub-files.js 2>/dev/null || true) | cksum | cut -d' ' -f1 )
+        local _av; _av=$( (cksum docs/assets/style.css docs/assets/topbar.js docs/assets/report.js docs/assets/slotchart.js docs/assets/all-files-search.js docs/assets/sub-files.js 2>/dev/null || true) | cksum | cut -d' ' -f1 )
         printf '<link rel="stylesheet" href="%sassets/style.css%s">\n' "$base" "${_av:+?v=$_av}"
+        # THE TOP BAR (2026-09-30): the site's ONE implementation, assets/
+        # topbar.js + its data file — the baked render_shared_topbar copy and
+        # the plain-link fallback bar are gone. A build that died before any
+        # publish has no data file yet: the bar then shows its defaults.
+        local _tv; _tv=$(cksum < docs/assets/topbar-data.js 2>/dev/null | awk '{ print $1 }')
+        printf '<script src="%sassets/topbar-data.js%s" defer></script>\n<script src="%sassets/topbar.js%s" defer></script>\n' "$base" "${_tv:+?v=$_tv}" "$base" "${_av:+?v=$_av}"
         cat <<'HTML'
 <style>
 .buildwrap{font:14px/1.5 -apple-system,"Segoe UI",Roboto,sans-serif;color:#222;max-width:64rem;margin:0 auto;padding:0 1rem}
@@ -456,21 +462,7 @@ pre{background:#f8f8f8;border:1px solid #eee;padding:.6rem;overflow-x:auto;margi
 </head>
 <body>
 HTML
-        # Top bar: reuse the site's EXACT chrome (render_shared_topbar from
-        # publish_lib.sh — the environment label, dropdowns, Entities + search,
-        # finder/sitemap/help icons), so the build report looks like every other
-        # page. Captured in a subshell so publish_lib's cd/globals stay
-        # isolated; a from-scratch clone (or a build that died before any data)
-        # yields empty strings and we fall back to a plain-link bar.
-        local BUILD_TB
-        BUILD_TB=$( source bin/publish_lib.sh >/dev/null 2>&1; render_shared_topbar "$base" "general" ) || true
-        if [ -n "${BUILD_TB:-}" ]; then printf '%s' "$BUILD_TB"
-        else
-            # (the brand's text is the environment label, like render_topbar)
-            # (the three area start pages went 2026-09-29 — reports/index.html is THE start page)
-            printf '<div class="topbar"><a class="brand" href="%sindex.html">%s</a><nav class="nav"><a href="%sreports/index.html">Reports</a><a href="%sdashboards/index.html">Dashboards</a></nav><span class="tr-group"><span class="tright">Build report</span></span></div><script>(function(){function f(){var b=document.querySelector(".topbar");if(!b||!document.body)return;var h=b.offsetHeight;document.body.style.paddingTop=h>48?(h+12)+"px":""}f();addEventListener("resize",f)})();</script>\n' \
-                "$base" "$(printf '%s' "${ENV_LABEL:-Cloud}" | esc)" "$base" "$base"
-        fi
+        printf '<div class="topbar" data-b="%s" data-help="general"></div>\n' "$base"   # the placeholder topbar.js fills
         # THE TIMINGS LIVE IN THE TITLE (2026-08): start → end and the
         # duration are the h1's tail, not a fact block — the end collapses to
         # its time of day when the build stayed inside one calendar day. The
@@ -848,7 +840,7 @@ echo "build.sh: data/ and docs/ moved aside in $(( $(date +%s) - _fc0 ))s (delet
 # the hand-authored files from the repo-root assets/ (the build report lands
 # back in docs/tools/build.html at the very end, from the EXIT trap —
 # 2026-09-12). assets/ is the ONE place to edit style.css / report.js /
-# slotchart.js / all-files-search.js / sub-files.js and
+# slotchart.js / all-files-search.js / sub-files.js / topbar.js and
 # the help pages (see assets/README.txt); .nojekyll and topbar-data.js stay
 # generated (ensure_assets).
 echo "build.sh: seeding docs/ from assets/ ..." >&2

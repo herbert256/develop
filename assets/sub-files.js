@@ -26,19 +26,15 @@
   var PER = 25;   // rows per page
   var PAR = 4;    // day shards loading at once
 
-  function humanBytes(b) {                      // the site's humanbytes format (all-files-search.js twin)
-    b = +b;
-    if (b < 1024) return b + " B";
-    if (b < 1048576) return (b / 1024).toFixed(2) + " KB";
-    if (b < 1073741824) return (b / 1048576).toFixed(2) + " MB";
-    return (b / 1073741824).toFixed(2) + " GB";
-  }
-  var STATE = { "": "OK", d: "OK", o: "OK", e: "Error", w: "Waiting", x: "Expired" };
-  var TINT = { "": "green", d: "green", o: "orange", e: "red", w: "orange", x: "red" };
-
   function init() {
     var table = document.querySelector("table[data-subfiles]");
     if (!table || !table.rows.length) return;
+    // the byte format, the File State words / row colours and the cell
+    // builder: report.js's ONE copy (window.AXWAY_UTIL, 2026-09-30 — this
+    // file carried its own until then); report.js runs before this file
+    var U = window.AXWAY_UTIL;
+    if (!U) return;
+    var humanBytes = U.humanBytes, STATE = U.fileState, TINT = U.fileTint, cell = U.fileCell;
     var slug = table.getAttribute("data-subfiles"), ver = table.getAttribute("data-v") || "";
     var tb = document.querySelector("div.topbar");
     var root = (tb && tb.getAttribute("data-b")) || "../../";   // back to the docs root
@@ -88,19 +84,6 @@
 
     // ---- one File -> a <tr> ----------------------------------------------
     function whenOf(day, r) { return day + " " + r.tm.substr(0, 2) + ":" + r.tm.substr(2, 2) + ":" + r.tm.substr(4, 2); }
-    function cell(tr, cls, text, href, mono) {
-      var c = document.createElement("td"), t = null, a;
-      if (href) cls = cls ? cls + " cl" : "cl";                 // the whole cell is the link target
-      if (cls) c.className = cls;
-      if (mono) { t = document.createElement("code"); t.textContent = text; }
-      if (href) {
-        a = document.createElement("a"); a.setAttribute("href", href);
-        if (t) a.appendChild(t); else a.textContent = text;
-        c.appendChild(a);
-      } else if (t) c.appendChild(t);
-      else c.textContent = text;
-      tr.appendChild(c);
-    }
     function row(day, r) {
       var tr = document.createElement("tr");
       var fk = r.fl.toLowerCase(), st = STATE[fk] || "OK";

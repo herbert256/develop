@@ -19,6 +19,19 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 source "$ROOT/bin/pda-union.sh"   # SP_AWK: the File attribution UNION (sp_union) — the Top-5 partner tables
+# the slot LABEL + DATE of slot t at spd slots per day -> SL_L / SL_D: "MM-DD
+# HHh" for the hour resolutions, "MM-DD" for a whole day — ONE copy for the
+# four series walks (2026-09-30; the ladder was pasted four times). KEEP IN
+# STEP with charts_lib rc_cards / slotchart.js expandSeries (fmt o / d).
+OV_SLOTLAB_AWK='
+    function slotlab(t, spd) {
+        if (spd == 24)      { SL_D = fromjdn(int(t/24)); SL_L = substr(SL_D,6) sprintf(" %02dh", t%24) }
+        else if (spd == 12) { SL_D = fromjdn(int(t/12)); SL_L = substr(SL_D,6) sprintf(" %02dh", (t%12)*2) }
+        else if (spd == 6)  { SL_D = fromjdn(int(t/6));  SL_L = substr(SL_D,6) sprintf(" %02dh", (t%6)*4) }
+        else if (spd == 4)  { SL_D = fromjdn(int(t/4));  SL_L = substr(SL_D,6) sprintf(" %02dh", (t%4)*6) }
+        else if (spd == 2)  { SL_D = fromjdn(int(t/2));  SL_L = substr(SL_D,6) sprintf(" %02dh", (t%2)*12) }
+        else                { SL_D = fromjdn(t);         SL_L = substr(SL_D,6) }
+    }'
 OUT="$REPORTS_DIR/overview.rpt"
 
 # The four cache/report sources come with the lib; the PeSIT card additionally
@@ -74,7 +87,7 @@ dur24=""; cnt24=""; rate24=""; vol24=""; err24=""; thr24=""; con24=""
 ser_pid=""
 if [ -f "$TR" ]; then
     RWSRC="$RW"; [ -f "$RWSRC" ] || RWSRC=/dev/null
-    awk -F'\t' "$AWKLIB"'
+    awk -F'\t' "$AWKLIB$OV_SLOTLAB_AWK"'
         # O(n log n) — a daily bucket holds thousands of durations, where the
         # insertion sort this replaced would be O(n^2). Tail-recursion on the
         # larger half keeps the depth logarithmic.
@@ -115,12 +128,7 @@ if [ -f "$TR" ]; then
             sd = ""; sc = ""; sr = ""; sv = ""; se = ""; st9 = ""; sn9 = ""
             for (t = tmin[r]; t <= tmax[r]; t++) {
                 k = r SUBSEP t
-                if (spd == 24)     { d = fromjdn(int(t/24)); lab = substr(d,6) sprintf(" %02dh", t%24) }
-                else if (spd == 12) { d = fromjdn(int(t/12)); lab = substr(d,6) sprintf(" %02dh", (t%12)*2) }
-                else if (spd == 6) { d = fromjdn(int(t/6)); lab = substr(d,6) sprintf(" %02dh", (t%6)*4) }
-                else if (spd == 4) { d = fromjdn(int(t/4)); lab = substr(d,6) sprintf(" %02dh", (t%4)*6) }
-                else if (spd == 2) { d = fromjdn(int(t/2)); lab = substr(d,6) sprintf(" %02dh", (t%2)*12) }
-                else               { d = fromjdn(t);        lab = substr(d,6) }
+                slotlab(t, spd); d = SL_D; lab = SL_L
                 if (v[k] != "") {
                     nk = split(v[k], dl, " ")
                     qsort(dl, 1, nk)
@@ -255,7 +263,7 @@ if [ -f "$TR" ]; then
                -v HPF="$XR/_hosts-partners.tsv" \
                -v SUBBF="$DATA/flow-manager/base/_subscriptions.tsv" \
                -v ACCBF="$DATA/flow-manager/base/_accounts.tsv" \
-               -v RFF="$DATA/colour/_redflip.tsv" "$AWKLIB"'
+               -v RFF="$DATA/colour/_redflip.tsv" "$AWKLIB$OV_SLOTLAB_AWK"'
         # a missing file makes getline return -1, so an absent map is simply empty
         function load_pairs(f, M,   l, z, n) {
             while ((getline l < f) > 0) { n = split(l, z, "\t")
@@ -325,12 +333,7 @@ if [ -f "$TR" ]; then
                     else if (ST[e] != st) { if (st) { red++; grn-- } else { grn++; red-- } }
                     ST[e] = st
                 }
-                if (spd == 24)     { d = fromjdn(int(t/24)); lab = substr(d,6) sprintf(" %02dh", t%24) }
-                else if (spd == 12) { d = fromjdn(int(t/12)); lab = substr(d,6) sprintf(" %02dh", (t%12)*2) }
-                else if (spd == 6) { d = fromjdn(int(t/6)); lab = substr(d,6) sprintf(" %02dh", (t%6)*4) }
-                else if (spd == 4) { d = fromjdn(int(t/4)); lab = substr(d,6) sprintf(" %02dh", (t%4)*6) }
-                else if (spd == 2) { d = fromjdn(int(t/2)); lab = substr(d,6) sprintf(" %02dh", (t%2)*12) }
-                else               { d = fromjdn(t);        lab = substr(d,6) }
+                slotlab(t, spd); d = SL_D; lab = SL_L
                 s = s (s==""?"":"|") lab ":" org ":" grn ":" red ":" d
             }
             print "SEEN" kind r "\t" s }
@@ -505,77 +508,48 @@ for u in 1 2 3 4; do
     series_vars "$userr" "S:uc${u}s"
 done
 
-# the PeSIT view: bin classification lives in bin/server/reports/pesit.sh,
-# which writes the 30-minute pesit-slots.tsv sidecar — summed here to the same
-# three resolutions (12 half-hours per 6h bucket, 24 per 12h, 48 per day),
-# zeros filled across the sidecar day span. Plain sums, unlike the transfer
-# percentiles, but kept in one place with them.
+# the PeSIT and EventQueue views: bin/server/reports/pesit.sh and
+# event-queue.sh write the 30-minute pesit-slots.tsv ("date slot out in") /
+# event-queue-slots.tsv ("date slot lines") sidecars — summed here to the six
+# resolutions (2 half-hours per hour … 48 per day), zeros filled across the
+# sidecar day span. Plain sums, unlike the transfer percentiles, but kept in
+# one place with them. ONE summer for both (2026-09-30: the EventQueue block
+# was a copy of the PeSIT one with one value per slot).
+slot_sidecar() {   # $1 sidecar  $2 output prefix (PES|EQ)  $3 value columns (2|1)
+    awk -F'\t' -v P="$2" -v NV="$3" "$AWKLIB$OV_SLOTLAB_AWK"'
+        function bump(r, t,   k) { k = r SUBSEP t
+            if (!(r in tmin) || t < tmin[r]) tmin[r] = t
+            if (!(r in tmax) || t > tmax[r]) tmax[r] = t
+            o[k] += $3; if (NV == 2) i[k] += $4 }
+        function build(r, spd,   t, k, d, lab, s) {
+            s = ""
+            for (t = tmin[r]; t <= tmax[r]; t++) {
+                k = r SUBSEP t
+                slotlab(t, spd); d = SL_D; lab = SL_L
+                s = s (s==""?"":"|") lab ":" o[k]+0 (NV == 2 ? ":" i[k]+0 : "") ":" d
+            }
+            print P r "\t" s
+        }
+        { split($1, p, "-"); j = jdn(p[1]+0, p[2]+0, p[3]+0)
+          bump(1,  j*24 + int($2/2))
+          bump(2,  j*12 + int($2/4))
+          bump(4,  j*6 + int($2/8))
+          bump(6,  j*4 + int($2/12))
+          bump(12, j*2 + int($2/24))
+          bump(24, j) }
+        END { if (6 in tmax) { build(1, 24); build(2, 12); build(4, 6); build(6, 4); build(12, 2); build(24, 1) } }' "$1"
+}
 pes1=""; pes2=""; pes4=""; pes6=""; pes12=""; pes24=""
 PS="$DATA/server/reports/pesit-slots.tsv"
 if [ -s "$PS" ]; then
-    pser=$(awk -F'\t' "$AWKLIB"'
-        function bump(r, t,   k) { k = r SUBSEP t
-            if (!(r in tmin) || t < tmin[r]) tmin[r] = t
-            if (!(r in tmax) || t > tmax[r]) tmax[r] = t
-            o[k] += $3; i[k] += $4 }
-        function build(r, spd,   t, k, d, lab, s) {
-            s = ""
-            for (t = tmin[r]; t <= tmax[r]; t++) {
-                k = r SUBSEP t
-                if (spd == 24)     { d = fromjdn(int(t/24)); lab = substr(d,6) sprintf(" %02dh", t%24) }
-                else if (spd == 12) { d = fromjdn(int(t/12)); lab = substr(d,6) sprintf(" %02dh", (t%12)*2) }
-                else if (spd == 6) { d = fromjdn(int(t/6)); lab = substr(d,6) sprintf(" %02dh", (t%6)*4) }
-                else if (spd == 4) { d = fromjdn(int(t/4)); lab = substr(d,6) sprintf(" %02dh", (t%4)*6) }
-                else if (spd == 2) { d = fromjdn(int(t/2)); lab = substr(d,6) sprintf(" %02dh", (t%2)*12) }
-                else               { d = fromjdn(t);        lab = substr(d,6) }
-                s = s (s==""?"":"|") lab ":" o[k]+0 ":" i[k]+0 ":" d
-            }
-            print "PES" r "\t" s
-        }
-        { split($1, p, "-"); j = jdn(p[1]+0, p[2]+0, p[3]+0)
-          bump(1,  j*24 + int($2/2))
-          bump(2,  j*12 + int($2/4))
-          bump(4,  j*6 + int($2/8))
-          bump(6,  j*4 + int($2/12))
-          bump(12, j*2 + int($2/24))
-          bump(24, j) }
-        END { if (6 in tmax) { build(1, 24); build(2, 12); build(4, 6); build(6, 4); build(12, 2); build(24, 1) } }' "$PS")
+    pser=$(slot_sidecar "$PS" PES 2)
     series_vars "$pser" PES:pes
 fi
-
-# the EventQueue view (2026-09-14, user request): bin/server/reports/event-queue.sh
-# writes the 30-minute event-queue-slots.tsv sidecar ("date slot lines") —
-# summed here like the PeSIT one (a copy of its block, one value per slot)
+# the EventQueue view (2026-09-14, user request)
 eq1=""; eq2=""; eq4=""; eq6=""; eq12=""; eq24=""
 EQS="$DATA/server/reports/event-queue-slots.tsv"
 if [ -s "$EQS" ]; then
-    eqser=$(awk -F'\t' "$AWKLIB"'
-        function bump(r, t,   k) { k = r SUBSEP t
-            if (!(r in tmin) || t < tmin[r]) tmin[r] = t
-            if (!(r in tmax) || t > tmax[r]) tmax[r] = t
-            o[k] += $3 }
-        function build(r, spd,   t, k, d, lab, s) {
-            s = ""
-            for (t = tmin[r]; t <= tmax[r]; t++) {
-                k = r SUBSEP t
-                if (spd == 24)     { d = fromjdn(int(t/24)); lab = substr(d,6) sprintf(" %02dh", t%24) }
-                else if (spd == 12) { d = fromjdn(int(t/12)); lab = substr(d,6) sprintf(" %02dh", (t%12)*2) }
-                else if (spd == 6) { d = fromjdn(int(t/6)); lab = substr(d,6) sprintf(" %02dh", (t%6)*4) }
-                else if (spd == 4) { d = fromjdn(int(t/4)); lab = substr(d,6) sprintf(" %02dh", (t%4)*6) }
-                else if (spd == 2) { d = fromjdn(int(t/2)); lab = substr(d,6) sprintf(" %02dh", (t%2)*12) }
-                else               { d = fromjdn(t);        lab = substr(d,6) }
-                s = s (s==""?"":"|") lab ":" o[k]+0 ":" d
-            }
-            print "EQ" r "\t" s
-        }
-        { split($1, p, "-"); j = jdn(p[1]+0, p[2]+0, p[3]+0)
-          bump(1,  j*24 + int($2/2))
-          bump(2,  j*12 + int($2/4))
-          bump(4,  j*6 + int($2/8))
-          bump(6,  j*4 + int($2/12))
-          bump(12, j*2 + int($2/24))
-          bump(24, j) }
-        END { if (6 in tmax) { build(1, 24); build(2, 12); build(4, 6); build(6, 4); build(12, 2); build(24, 1) } }' "$EQS")
+    eqser=$(slot_sidecar "$EQS" EQ 1)
     series_vars "$eqser" EQ:eq
 fi
 
