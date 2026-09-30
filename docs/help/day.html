@@ -7,9 +7,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: Activity — Axway ST reports</title>
-<link rel="stylesheet" href="../assets/style.css?v=2344066773">
-<script src="../assets/topbar-data.js?v=2259430807" defer></script>
-<script src="../assets/topbar.js?v=2344066773" defer></script>
+<link rel="stylesheet" href="../assets/style.css?v=4283021085">
+<script src="../assets/topbar-data.js?v=973611455" defer></script>
+<script src="../assets/topbar.js?v=4283021085" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="general"></div>
@@ -26,11 +26,11 @@
 <li><strong>Per week</strong> &mdash; Week / From / To / Days / OK Files / Avg/day / Error % / Volume / &Delta; OK Files. One row per ISO week (Monday&ndash;Sunday) by start date; <strong>Days</strong> = days with data.</li>
 <li><strong>Per hour</strong> &mdash; Hour / OK Files / Volume / Load: <strong>OK Files</strong> = the OK Files started in that hour, <strong>Volume</strong> = their bytes, <strong>Load</strong> = a bar against the busiest hour.</li>
 <li><strong>Hour &times; weekday</strong> &mdash; Hour, then Monday&hellip;Sunday: the OK Files starting in that hour on that weekday, tinted by quartile of the busiest cell, so batch windows show as dark blocks.</li>
-<li><strong>Per weekday</strong> &mdash; Weekday / Days / OK Files / Avg/day / Error % / Volume / Load; <strong>Days</strong> = how often that weekday was observed.</li>
+<li><strong>Per weekday</strong> &mdash; Weekday / Days / Files / Avg/day / Volume / Load; <strong>Files</strong> = the OK Files, <strong>Days</strong> = how often that weekday was observed.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li><strong>OK Files</strong> = Processed + Waiting, <strong>Volume</strong> = their bytes; <strong>Error %</strong> = the failures over every File of the week or weekday; <strong>Avg/day</strong> divides OK Files by Days.</li>
+<li><strong>OK Files</strong> = Processed + Waiting, <strong>Volume</strong> = their bytes; <strong>Error %</strong> (Per week) = the failures over every File of the week; <strong>Avg/day</strong> divides OK Files by Days.</li>
 <li><strong>&Delta; OK Files</strong> = the change of OK Files against the previous week, in %; the first week shows &ldquo;-&rdquo;.</li>
 <li><strong>(partial)</strong> after a week marks one observed on fewer than 7 days &mdash; the edges of the data window &mdash; so its &Delta; is not meaningful.</li>
 <li>The date filter re-sums the hour and weekday tabs (the grid re-tinted) and hides the weeks outside the range.</li>

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Help: Waiting &amp; Expired — Axway ST reports</title>
+<link rel="stylesheet" href="../assets/style.css?v=4283021085">
+<script src="../assets/topbar-data.js?v=973611455" defer></script>
+<script src="../assets/topbar.js?v=4283021085" defer></script>
+</head>
+<body>
+<div class="topbar" data-b="../" data-help="general"></div>
+<main class="help-content">
+<a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
+<a class="help-back help-generic" href="general.html">Generic help</a>
+<h1>Waiting &amp; Expired</h1>
+<h2>What it shows</h2>
+<ul>
+<li>Staged <strong>UC2</strong> Files: <strong>Waiting</strong> = staged, the partner has not collected it yet; <strong>Expired</strong> = the nightly File Maintenance sweep (03:00, ~11 days after staging) deleted it before any pickup &mdash; never delivered.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Summary</strong> &mdash; per start day: <strong>Waiting</strong> and <strong>Expired</strong> Files (every File, the <strong>Unknown</strong> subscription&rsquo;s too). From/To narrows it; a count opens that day&rsquo;s 10 newest such Files; the date opens the day page.</li>
+<li><strong>Subscriptions</strong> (beside it) &mdash; <strong>Waiting</strong> and <strong>Expired</strong> (each opens that subscription&rsquo;s list of those Files), <strong>Collected</strong> (delivered Files the partner picked up), <strong>Oldest Waiting</strong> (when its oldest still-waiting File was staged), <strong>Last Expired</strong> (its newest deletion).</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Subscriptions rows: the subscription&rsquo;s current colour. The state at the data&rsquo;s end: no date filter.</li>
+<li>The list pages: Waiting Files orange, longest waiting first (<strong>Waiting for</strong> runs to the data&rsquo;s last record); Expired Files red, last expired first.</li>
+<li>The deletion leaves no transfer-log record: it comes from the server log&rsquo;s File Maintenance &ldquo;Deleted files&rdquo; lines, matched on account and file name.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>A subscription&rsquo;s <a href="entities-subscription.html">Entities</a> Waiting / Expired cell opens this page with its row marked.</li>
+<li>Each partner&rsquo;s overall verdict: <a href="partner-scorecard.html">Partner scorecard</a>.</li>
+</ul>
+</main>
+</body>
+</html>
