@@ -6,15 +6,11 @@
 #                              table — one environment per checkout since
 #                              2026-09-11, so ONE block; the title carries the
 #                              environment label (input/environment.txt)
-#   docs/reports/index.html    the Reports start page (every group, 2026-09-29 —
-#                              it replaced the transfer/, server/ and analyses/
-#                              catalogs)
-#   docs/tools/                What is new, the site map
 #   docs/404.html              the not-found page
 # then the group rows + tags on every member page (apply_report_groups).
-#
-# Labels/descriptions come from _report_groups and each report's DESC
-# (rg_desc). This reads the .rpt files, not the rendered HTML, so it does not
+# (The Reports start page and the site map went 2026-09-30, user request.)
+# Labels come from _report_groups. This reads the .rpt files, not the
+# rendered HTML, so it does not
 # depend on the report pages existing — but because the per-area publish scripts
 # clear docs/<area>/*.html (which includes a previously written index), run this
 # LAST: after bin/transfer/publish.sh, bin/server/publish.sh and
@@ -68,103 +64,12 @@ apply_help_chrome() {
     done
 }
 
-# THE REPORTS START PAGE (docs/reports/index.html, 2026-09-29, user request:
-# one Reports pulldown instead of Transfer reports / Server reports /
-# Analyses / Goodies — it replaced their three start pages transfer/,
-# server/ and analyses/index.html): every report under its group, the
-# _report_groups order, each with its one-line description. The menu's
-# "Start page" line opens it.
-# rg_desc MEMBER -> RG_DESC, the member's one-line description: the report's
-# DESC, or the fixed text of a hand-written page (they carry no .rpt). Sets a
-# global instead of echoing, and reads the DESC lines of every .rpt in ONE awk
-# pass on first use — the start page asks ~50 times, each a subshell plus a
-# field1 fork (2026-09-29 audit: ~1 s). The DESCs land in one
-# variable per .rpt, RGD_<path escaped injectively>
-# (bash 3.2 has no associative arrays, and a glob match over one big string of
-# them took ~0.2 s per lookup in a UTF-8 locale).
-RG_DESC_LOADED=0
-rg_key() {   # $1 path -> RG_KEY, a variable-name-safe injective escape ("" = unsafe path)
-    local k=$1
-    case $k in *[!A-Za-z0-9/_.-]*) RG_KEY=""; return 0 ;; esac
-    k=${k//_/_u}; k=${k//-/_h}; k=${k//\//_s}; k=${k//./_d}; RG_KEY=$k
-}
-rg_desc_load() {
-    local x fs=()
-    RG_DESC_LOADED=1
-    for x in "$DATA"/transfer/reports/*.rpt "$DATA"/transfer/reports/entities/*.rpt "$DATA"/server/reports/*.rpt "$DATA"/analyses/reports/*.rpt; do
-        [ -f "$x" ] && fs+=("$x")
-    done
-    [ ${#fs[@]} -gt 0 ] || return 0
-    # the FIRST DESC line of each file (field1's rule), read with getline so a
-    # file stops at its DESC (line 2) instead of being read whole
-    local p d
-    while IFS=$'\t' read -r p d; do
-        [ -n "$p" ] || continue
-        rg_key "$p"; [ -n "$RG_KEY" ] && printf -v "RGD_$RG_KEY" '%s' "$d"
-    done < <(LC_ALL=C awk 'BEGIN { for (i = 1; i < ARGC; i++) { f = ARGV[i]
-        while ((getline l < f) > 0) if (substr(l, 1, 5) == "DESC\t") { print f "\t" substr(l, 6); break }
-        close(f) } exit }' "${fs[@]}")
-    return 0
-}
-rg_desc() {
-    local m=$1 dir=${1%/*} stem=${1##*/} rpt="" spec
-    RG_DESC=""
-    case $stem in
-        use-cases) RG_DESC="Every use case on one row: who connects, which way the file travels and what triggers it, the configured subscriptions per use case by status — each count opening the Subscriptions page filtered to it — and the FlowManager templates behind them."; return ;;
-        subscriptions) RG_DESC="Every configured subscription on one row, the skip-listed ones included: active or not, its result colour and direction, its Logical, Account, Partner, Domain, Application and BL groups, the endpoint and the From / To folders."; return ;;
-        logical-detection) RG_DESC="How every configured FlowID detected to its Logical flow group — the rule trail the derivation applied, per FlowID."; return ;;
-        accounts) RG_DESC="The accounts (partners) and their communication profiles — naming vs configured type and authentication, insecure and unrestricted endpoints, conflicting host / whitelist setup, and the account and login integrity checks."; return ;;
-        first-seen) RG_DESC="On what day each logical flow, partner, subscription, account, login and remote host was first seen in the transfer logs — the configured names never seen on top; every count links its item list."; return ;;
-        cross) RG_DESC="Every pair of the nine entities cross-tabulated — which values appear together on at least one transfer, the configured-but-never-seen pairs flagged."; return ;;
-        this)                   [ "$dir" = transfer/month-stats ] && { RG_DESC="The nine entities counted over the Files that started this month or the previous one: total, in and out Files, Errors, automatic retries, resubmits OK and Error, Waiting and Expired."; return; } ;;
-    esac
-    case $dir in
-        transfer/entities) rpt="$DATA/transfer/reports/entities/$stem.rpt" ;;
-        transfer|server)   rpt="$DATA/$dir/reports/$stem.rpt" ;;
-        analyses)          for spec in $SUBS_GROUP_REPORTS; do   # the member area its DATA lives in
-                               [ "${spec#*:}" = "$stem" ] && { rpt="$DATA/${spec%%:*}/reports/$stem.rpt"; break; }
-                           done ;;
-    esac
-    [ -n "$rpt" ] && [ -f "$rpt" ] || return 0
-    [ "$RG_DESC_LOADED" = 1 ] || rg_desc_load
-    rg_key "$rpt"
-    if [ -n "$RG_KEY" ]; then eval "RG_DESC=\${RGD_$RG_KEY-}"
-    else RG_DESC=$(field1 DESC "$rpt"); fi
-    return 0
-}
-write_reports_index() {
-    local out="$DOCS/reports/index.html" line e m lbl d el
-    local -a arr
-    mkdir -p "$DOCS/reports"
-    {
-        html_head "Reports" "../assets/style.css" "" "" "index"
-        printf '<h1>Reports</h1>\n'
-        printf '<p class="subtitle">Every report under its group &mdash; the groups of the Reports menu. On a report page the first row of buttons switches between the reports of its group.</p>\n'
-        # data-nosort: a hand-ordered catalog with colspan group bands —
-        # report.js's fallback sort would collapse it (and persist that);
-        # data-nocolmove: the bands span both columns, nothing to reorder.
-        # The FIELD header row comes first: report.js headerRow() takes the
-        # first flat th row — without one it took the "Overview" band (the
-        # csv hotspot sat there, the CSV header read "Overview" and a search
-        # left that band standing over no rows)
-        printf '<div class="tablewrap"><table class="index" data-nosort="1" data-nocolmove="1">\n'
-        printf '<tr><th>Report</th><th>Description</th></tr>\n'
-        while IFS= read -r line; do
-            [ -n "$line" ] || continue
-            esc "${line%%|*}"; printf '<tr><th colspan="2">%s</th></tr>\n' "$ESC"
-            IFS='|' read -r -a arr <<< "${line#*|}"
-            for e in "${arr[@]}"; do
-                m=${e%%=*}; lbl=${e#*=}
-                rg_landing "$m"; rg_rel "reports/index.html" "$RG_LANDING"
-                rg_desc "$m"; d=$RG_DESC
-                esc "$lbl"; el=$ESC; esc "$d"
-                printf '<tr><td><a href="%s">%s</a></td><td class="desc">%s</td></tr>\n' "$RG_REL" "$el" "$ESC"
-            done
-        done < <(_report_groups)
-        printf '</table></div>\n'
-        printf '</body>\n</html>\n'
-    } > "$out"
-}
+# (THE REPORTS START PAGE — docs/reports/index.html, 2026-09-29, every report
+# under its group with its one-line DESC, rg_desc — and THE SITE MAP —
+# docs/tools/sitemap.html, one card per group + Dashboards + Tools — went
+# 2026-09-30, user request: "remove the sitemap and the reports start page";
+# the top bar reaches every group, help/general.html the build report.)
+
 
 # Per-day figures for the home's per-day table (2026-09-29, user request:
 # "Remove the Transfers, UC2 state, First seen subtables, remove the columns
@@ -542,57 +447,6 @@ write_home_errors() {
 # builder and report.js setupReportFinder + the Ctrl+K palette that read it —
 # went 2026-09-29, user request; the KEYWORDS .rpt lines only it read went too.)
 
-# ---- The Site map (docs/tools/sitemap.html) ----------------------------------
-# The whole environment on one page: one CARD per group of _report_groups
-# (the Reports pulldown, 2026-09-29), its members tree-listed beneath, then
-# the Dashboards card and the Tools card — all alike, one flow (2026-09-29).
-# A docs/tools/ page (css depth 1, 2026-09-12) linked from the top-bar map icon.
-write_sitemap() {
-    local out="$DOCS/tools/sitemap.html"   # under docs/tools/ since 2026-09-12 (user request) — every link carries ../, the sibling tools ./
-    mkdir -p "$DOCS/tools"   # before the redirected block below opens $out
-    {
-        html_head "Site Map" "../assets/style.css" "" "" "sitemap"
-        printf '<h1>Site Map</h1>\n'
-        printf '<p class="range">Everything in this environment on one page: one card per report <strong>group</strong> of the Reports menu &mdash; the group name on top, its reports beneath, in the menu order &mdash; then the dashboards and the tools.</p>\n'
-        # ONE FLOW OF CARDS (2026-09-29, user request: "No different sections
-        # for Reports, Dashboards, Tools, all parts are the same"): the Start
-        # page, one card per group of publish_lib _report_groups, the
-        # Dashboards card and the Tools card, all alike, in one multi-column
-        # flow (.smcols). The "Data pages & tools" section became the one
-        # Tools card (its Per-day and Entity detail cards went).
-        printf '<div class="smcols">\n'
-        printf '<div class="smcard"><h3><a href="../reports/index.html">Start page</a></h3></div>\n'
-        local gline gent
-        local -a garr
-        while IFS= read -r gline; do
-            [ -n "$gline" ] || continue
-            IFS='|' read -r -a garr <<< "${gline#*|}"
-            esc "${gline%%|*}"
-            printf '<div class="smcard"><h3>%s <span class="smcount">%d</span></h3><ul>\n' "$ESC" "${#garr[@]}"
-            for gent in "${garr[@]}"; do
-                rg_landing "${gent%%=*}"; esc "${gent#*=}"
-                printf '<li><a href="../%s">%s</a></li>\n' "$RG_LANDING" "$ESC"
-            done
-            printf '</ul></div>\n'
-        done < <(_report_groups)
-        # ONE dashboard (2026-07; the Monitor dashboard went 2026-09-30)
-        printf '<div class="smcard"><h3>Dashboards</h3><ul>\n'
-        printf '<li><a href="../dashboards/index.html">Dashboard</a></li>\n'
-        printf '</ul></div>\n'
-        printf '<div class="smcard"><h3>Tools</h3><ul>\n'
-        printf '<li><a href="../index.html">Home</a> — the shared landing page</li>\n'
-        printf '<li><a href="../search/search.html">Search</a> — find any entity by name</li>\n'
-        printf '<li><a href="../search/all-files.html">All files search</a> — find a File among all the Files of the transfer logs</li>\n'
-        printf '<li><a href="../help/general.html">Help</a> — how to read the site: colours, tables, drill-downs, search (per-report help sits behind each page'\''s <b>?</b> button)</li>\n'
-        # THE BUILD REPORT (2026-09-12, user request): back on the site as
-        # docs/tools/build.html — bin/build.sh writes it LAST, from its EXIT
-        # trap, so the link points at the report of the build that wrote this
-        # page (it left docs/ 2026-08-29 and was local-only until now)
-        printf '<li><a href="./build.html">Build report</a> — the run that built this site: steps and timings, the inbox, the log files</li>\n'
-        printf '</ul></div>\n'
-        printf '</div>\n</body>\n</html>\n'
-    } > "$out"
-}
 
 # (What is new — docs/tools/whats-new.html, write_whats_new and its wn_*
 # helpers, built from git log into the tracked bin/build/whats-new-history.tsv
@@ -629,10 +483,11 @@ write_root_404() {
         printf '<p>There is no page at this address.</p>\n'
         # (2026-09-29) the likeliest dead bookmark is a retired report — the
         # 2026-09-29 consolidation removed the area start pages and many
-        # reports — so the page offers the Reports start page beside the home
-        printf '<p>Reports are renamed, merged or retired now and then (the Transfer / Server / Analyses start pages became one <strong>Reports</strong> page in 2026-09), and the site dropped its environment level in 2026-09 (<code>production/&hellip;</code> became <code>&hellip;</code>), so an older bookmark may need updating.</p>\n'
-        printf '<p><a id="homelink" href="/"><strong>Go to the home page</strong></a> &nbsp;&middot;&nbsp; <a id="reportslink" href="/"><strong>All reports</strong></a></p>\n'
-        printf '<script>(function(){var p=location.pathname,m=p.match(/^(.*?\\/)(?:%s)\\//);var r=m?m[1]:p.replace(/[^/]*$/,"");r=r.replace(/(?:acceptance|production)\\/$/,"");document.getElementById("homelink").href=r+"index.html";document.getElementById("reportslink").href=r+"reports/index.html";})();</script>\n' "$dirs"
+        # reports — so the page explains it (its "All reports" link to the Reports
+        # start page went 2026-09-30 with that page; the home link stays)
+        printf '<p>Reports are renamed, merged or retired now and then, and the site dropped its environment level in 2026-09 (<code>production/&hellip;</code> became <code>&hellip;</code>), so an older bookmark may need updating: the top bar of the home page opens every report group.</p>\n'
+        printf '<p><a id="homelink" href="/"><strong>Go to the home page</strong></a></p>\n'
+        printf '<script>(function(){var p=location.pathname,m=p.match(/^(.*?\\/)(?:%s)\\//);var r=m?m[1]:p.replace(/[^/]*$/,"");r=r.replace(/(?:acceptance|production)\\/$/,"");document.getElementById("homelink").href=r+"index.html";})();</script>\n' "$dirs"
         printf '</body>\n</html>\n'
     } > "$out"
 }
@@ -715,10 +570,6 @@ check_status_consistency() {
 # laps (2026-09-27): TIME lines on the build console, like the other steps
 _bpl0=$(date +%s)
 _bplap() { local _t1; _t1=$(date +%s); printf 'TIME %5ds  index pages: %s\n' "$((_t1 - _bpl0))" "$1" >&2; _bpl0=$_t1; }
-write_reports_index
-_bplap "reports start page"
-write_sitemap
-_bplap "write_sitemap"
 write_root_index
 _bplap "write_root_index"
 write_root_404

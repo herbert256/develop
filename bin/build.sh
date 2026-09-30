@@ -17,8 +17,9 @@
 #   build/step-NN.log   the raw per-step output the report embeds.
 #   docs/tools/build.html the SITE copy of the same report (2026-09-12, user
 #                       request; the docs/ copies were removed 2026-08-29 and the
-#                       report stayed local-only until then), linked from the
-#                       sitemap Tools card — one render, two copies
+#                       report stayed local-only until then), linked from
+#                       help/general.html since 2026-09-30 (the sitemap Tools
+#                       card before) — one render, two copies
 #   (build/step-NN.log stays local)
 #
 # build/ is gitignored like data/ — a per-run local artifact, safe to delete.
@@ -88,7 +89,8 @@ case "${1:-}" in
 esac
 source bin/envlabel.sh   # ENV_LABEL / ENV_KEY / ENV_INBOX from input/environment.txt
 # The report goes to build/index.html AND docs/tools/build.html (2026-09-12 —
-# the site copy, linked from the sitemap Tools card; local-only 2026-08-29..09-12).
+# the site copy, linked from help/general.html — the sitemap Tools card until
+# 2026-09-30; local-only 2026-08-29..09-12).
 # ---- build lock -------------------------------------------------------------
 # SYNTAX GATE (2026-09-27): `bash -n` over every bin/**/*.sh BEFORE anything
 # is cleared or run — /bin/bash 3.2 exits 0 on a syntax error in a script
@@ -400,8 +402,8 @@ write_report() {
     # renders, just with a plain bar. The report is rendered ONCE with the
     # @B@ placeholder for its docs-root prefix and written TWICE (2026-09-12,
     # user request): build/index.html sits OUTSIDE docs/, so there @B@ becomes
-    # ../docs/; docs/tools/build.html is the SITE copy (linked from the
-    # sitemap's Tools card), one level below the root, so there @B@ is ../.
+    # ../docs/; docs/tools/build.html is the SITE copy (linked from
+    # help/general.html), one level below the root, so there @B@ is ../.
     # One render = identical timings in both copies.
     local base="@B@"
     {
@@ -1082,8 +1084,8 @@ if [ ! -f input/.sample-estate ]; then
 fi
 
 # (The report is written by the EXIT trap to build/index.html AND, since
-# 2026-09-12, to the site copy docs/tools/build.html — linked from the sitemap
-# Tools card. The former stage-4 git commit + push was removed 2026-07: the
+# 2026-09-12, to the site copy docs/tools/build.html — linked from
+# help/general.html (the sitemap Tools card until 2026-09-30). The former stage-4 git commit + push was removed 2026-07: the
 # build only renders; committing and pushing docs/ is a separate, manual
 # decision.)
 

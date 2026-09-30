@@ -7,8 +7,9 @@
 #   bin/analyses/publish*.sh  render the analyses pages (+ the partner groups, All files search)
 #   bin/transfer/publish-details.sh  the detail pages
 #   bin/dashboards/publish.sh, bin/day/publish.sh  the Dashboard and the day pages
-#   bin/build/publish.sh      writes the home, the Reports start page, the tools/
-#                             pages and the 404, then the group rows + tags
+#   bin/build/publish.sh      writes the home and the 404, then the group rows
+#                             + tags (the Reports start page and the site map
+#                             went 2026-09-30)
 #
 # Source this (it is not executable on its own). It cd's to the repo root, then
 # computes the shared globals (report order, dates, dataset figures, top-bar menus)
@@ -875,8 +876,8 @@ combine_group_nav() { [ -n "$(group_of "$1" "$2")" ]; }   # $1 area  $2 report n
 # own "topview" report).
 # KEEP IN SYNC: a new/renamed/regrouped report needs its help page created (or
 # an existing one extended) or its help icon 404s — see CLAUDE.md's
-# `docs/help/*.html` bullet; docs/help/index.html is the Reports START PAGE's
-# help text (data-help="index" on docs/reports/index.html) — it catalogs nothing.
+# `docs/help/*.html` bullet. (docs/help/index.html — the Reports start page's
+# help — went 2026-09-30 with that page.)
 help_slug_for() {   # $1 area (transfer|server)  $2 report basename
     local area=$1 n=$2
     case $n in
@@ -1994,9 +1995,9 @@ render_month_stats() {   # $1 area
 # each line landing on the group's FIRST member, and every page of every
 # member carries the group's members as its FIRST row of buttons (injected by
 # bin/build/publish.sh apply_report_groups — Entities keeps its native
-# members | views row). THE SINGLE SOURCE OF TRUTH for the menu, the start
-# page (reports/index.html), the sitemap's group cards, the h1 group tags
-# and the rows.
+# members | views row). THE SINGLE SOURCE OF TRUTH for the h1 group tags
+# and the rows (the pulldown, the start page reports/index.html and the
+# sitemap it fed went 2026-09-30).
 # One line per group: "<Group label>|<member>|<member>|…", member =
 # "<dir>/<stem>=<Label>":
 #   dir   transfer | server | analyses — the docs/ directory the page renders
@@ -2076,8 +2077,8 @@ rg_rel() {
 # THE REPORTS PULLDOWN IS GONE (2026-09-30, user request: "Remove the Reports
 # pulldown"): the top bar links the groups it opened as fixed paths in
 # assets/topbar.js (Duration, Partners, Security, Seen, Configuration, Use
-# cases, Patterns, Activity, …); the Reports start page and the sitemap still
-# list every group. Two top-bar links stay DATA — the Errors and Overview
+# cases, Patterns, Activity, Logons, …; the Reports start page and the
+# sitemap went the same night, so the bar is the way in). Two top-bar links stay DATA — the Errors and Overview
 # groups' landing pages (ERRORS_HREF / OVERVIEW_HREF, topbar-data.js
 # `errors` / `overview`), computed from _report_groups here.
 ERRORS_HREF=""; OVERVIEW_HREF=""

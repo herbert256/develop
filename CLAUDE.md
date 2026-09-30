@@ -86,7 +86,7 @@ day: the Files still staged, Start · Waiting for · File name · CoreId, opened
 cells of Waiting & Expired's Subscriptions table (waiting-expired.sh; waiting.sh until 2026-09-30), default sort = Waiting for descending via the
 cell's `sortval` (the wait in seconds — the humanized text does not sort); no File-page links
 either since 2026-09-29), `server/`, `analyses/`
-(+ `xref/`), `reports/` (the Reports start page, 2026-09-29), `dashboards/`, `day/`, `details/` (one subdir per entity type), `files/`
+(+ `xref/`), `dashboards/`, `day/`, `details/` (one subdir per entity type), `files/`
 (2026-09-21, user request: the ONE directory of the per-File pages — the failed-File error pages
 `<coreid>.html`, the subscription-named error pages `<slug>.html` and the File pages of any
 outcome; the separate `errors/` directory is GONE. Only the DATA stays split —
@@ -141,7 +141,7 @@ verify.sh checks that the shards hold every dated File),
 `first-seen/`, `coverage/` (the per-use-case `use-cases/` pages and the
 `transfers/duration/` record pages went 2026-09-29: a Subscriptions page search and the files/
 pages hold them; `switches/` went 2026-09-06 with the home Red/Green switch group), plus
-`search/` (`search.html` + `search-data.js`, `all-files.html` + the `all/` day shards — 2026-09-12, user request; at the root before) and `tools/` (`sitemap.html` and the build report `build.html` — 2026-09-12; `whats-new.html` went 2026-09-29, user request, user request; at the root before, the build report local-only 2026-08-29..09-12). `input/` carries
+`search/` (`search.html` + `search-data.js`, `all-files.html` + the `all/` day shards — 2026-09-12, user request; at the root before) and `tools/` (the build report `build.html` — 2026-09-12; `sitemap.html` went 2026-09-30; `whats-new.html` went 2026-09-29, user request, user request; at the root before, the build report local-only 2026-08-29..09-12). `input/` carries
 the exports — logs AND the FlowManager JSONs (the real production flows are the HYBRID pattern
 generation: no folder parameters, flowdir from `{source,target}_hybrid_participant`; the sample
 estate carries both shapes). The manual `bin/flow-manager-synth.sh` stays as the fallback for a
@@ -190,7 +190,7 @@ report runners wrap each report in `timed` (sourced `bin/timing.sh` → `TIME Ns
 replayed when it is waited for — a runtime build is profiled from its console alone. Writes an HTML run report to
 `build/index.html` (also on FAILED, EXIT trap) AND, since 2026-09-12 (user request), the SITE copy
 `docs/tools/build.html` — one render with an `@B@` docs-root placeholder, two copies — linked from
-the sitemap Tools card (local-only 2026-08-29..09-12; before that, in `docs/`). A checkout without the two flow-manager JSON exports
+`help/general.html` (the sitemap Tools card until 2026-09-30; local-only 2026-08-29..09-12; before that, in `docs/`). A checkout without the two flow-manager JSON exports
 exits 1 with a hint. **A checkout with the JSONs but NO log CSVs builds fully** (2026-08, the
 config-only estate — what a fresh clone is, the exports being gitignored): both parses write
 EMPTY-but-valid cache sets and exit 0, every report either renders its zero-row tables (the
@@ -1244,7 +1244,7 @@ Analyses (uc-status, polling) get the same treatment via `render_subs_group_page
 pages' `resmaps` tint entity CELLS and must not switch this on for a whole area.
 
 The analyses, dashboards and day publishes hand-render their pages but source publish_lib;
-cross-links use `DLINK_BASE`. **All options, every checkout**: menus, sitemap and group tab bars list
+cross-links use `DLINK_BASE`. **All options, every checkout**: the group tab bars list
 every order-listed report UNCONDITIONALLY, so every checkout's menus are identical; a missing `.rpt`
 gets an "empty report" placeholder page (`render_missing_reports`). Publishes run concurrently
 (`publish-details.sh` beside `publish.sh` — disjoint trees).
@@ -1388,8 +1388,8 @@ the top bar links the groups by FIXED paths in assets/topbar.js — Overview · 
 Duration · Partners · Waiting/Expired · Security (`transfer/security-params.html`) · Seen
 (`analyses/first-seen.html`) · Configuration (`analyses/subscriptions.html`) · Use cases
 (`analyses/use-cases.html`) · Patterns (`transfer/file-journey-patterns.html`) · Activity
-(`transfer/activity-per-week.html`) · Entities · Files; Logons & connections has no top-bar link (the
-Reports start page and the sitemap reach it). `REPORTS_MENU`, topbar-data.js `reports`, the `.dd`
+(`transfer/activity-per-week.html`) · Entities · Files, and Logons (`server/logons-scanners.html`, after
+Partners) since the Reports start page and the sitemap went the same night (see the eighth batch). `REPORTS_MENU`, topbar-data.js `reports`, the `.dd`
 dropdown CSS and report.js's Escape handler went; linkcheck models the fixed links, verify.sh the
 order and the absence. The history below describes the 2026-09-29 pulldown the groups came from.
 
@@ -1416,11 +1416,8 @@ sidecars `_inbound-addr.tsv` / the flat server `_subscriptions.tsv` deleted; nev
 - **`_report_groups`** (`bin/publish_lib.sh`) is THE single source of truth: one line per group,
   `Label|dir/stem=Label|…` — `dir` the docs directory the page renders into (transfer / server /
   analyses, plus `transfer/entities`, `transfer/month-stats` and `analyses/xref`), `stem` the report basename or the
-  hand-written page name. It feeds (the pulldown `REPORTS_MENU` until 2026-09-30) the start page
-  (`write_reports_index` + `rg_desc`: a report's DESC, fixed texts for the hand-written pages),
-  the sitemap (ONE `.smcols` flow of cards since 2026-09-29, user request — no Reports /
-  Dashboards / Tools sections: the Start page card, one card per group, a Dashboards card and
-  the Tools card — "Data pages & tools" until then) and the rows + tags below.
+  hand-written page name. It feeds the rows + tags below (the pulldown `REPORTS_MENU`, the start page
+  `write_reports_index` / `rg_desc` and the sitemap cards it also fed went 2026-09-30).
 - **THE FIRST ROW = the group's members**, on EVERY page of every member, injected by ONE pass
   over the finished site — `apply_report_groups`, run by `bin/build/publish.sh` after every page
   writer (so a MANUAL area re-publish lacks rows until `bin/build/publish.sh` runs): the row lands
@@ -1514,7 +1511,7 @@ both MANUAL.
   aggregating `$PARSED` or `$FILES` into `$REPORTS_DIR/<name>.rpt` (TITLE on line 1, a one-line
   DESC) — no freshness check (every build is fresh; see "No incremental machinery"). Add it to
   `bin/transfer/reports.sh` and `transfer_order` (+ `report_tabs` if multi-table), put it in ONE
-  group of `_report_groups` (without that: no menu line, no first row, no sitemap card;
+  group of `_report_groups` (without that: no first row, no h1 group tag;
   `group_of`/`member_label` matter only for Entities / Cross), and write its help page
   `assets/help/<slug>.html`. Phase 1 unless it reads another report's output (phase 2
   = `showseen.sh` + `ranking.sh`); build.sh overlaps the phases with `details.sh` in the background, so **a new
@@ -1609,8 +1606,8 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
 - `td.bar span` has its own navy `#25405c` so load bars stay visible on tinted cells (the dark
   theme went 2026-09-29).
 - **Help**: the home page opens `help/home.html`; Failed files its own `failed-files.html`.
-- The Reports start page describes a report by its one-line DESC (`rg_desc` for the
-  hand-written pages).
+- (The Reports start page, which described a report by its one-line DESC, went 2026-09-30; the DESC
+  line stays the report's one-line summary.)
 
 ## Rules from the second 2026-09-29 audit ("check every .rpt and every field … technical and logical")
 
@@ -1708,8 +1705,8 @@ macOS on Apple Silicon (10 cores, 16 GB RAM, BSD userland, `/bin/bash` 3.2, Home
   storms' "All sessions"; month stats host pages carry no Waiting / Expired columns; the UC2 tab
   blanks 0 counts like UC1 / UC3 / UC4; Top messages keep a digit run that follows a letter or
   `_` (`UC1_…` stays, not `UCN_…`).
-- **Help**: a help page's "?", the build report's "?" and the sitemap's Help open
-  `help/general.html` (help/index.html is the Reports start page's help); the help SOURCES carry a
+- **Help**: a help page's "?", the build report's "?" open `help/general.html`
+  (which links the build report; help/index.html and help/sitemap.html went 2026-09-30 with their pages); the help SOURCES carry a
   one-link placeholder bar (`apply_help_chrome` swaps in the real one).
 - **No publish catch-up modes** (2026-09-30): `bin/transfer/publish.sh` and `bin/analyses/publish.sh` take no
   argument and render everything once; the only catch-up is `failed.sh catchup`, in the report stage.
@@ -1803,6 +1800,15 @@ front end) then four fix workers with disjoint files. The rules it left:
   `render_subs_group_pages` (the Endpoint help page, their own report key); `apply_report_groups` gives them the
   Partners row by stem. verify.sh checks the rows, the names and the totals. A column change in a writer needs
   its RULES string changed in step (one rule per ROW field from field 3).
+
+## Rules from the eighth 2026-09-30 request ("remove the sitemap and the reports start page")
+
+- **No site map, no Reports start page**: `docs/tools/sitemap.html` (write_sitemap, the top-bar 🗺 icon,
+  the `.smcard` CSS, help/sitemap.html) and `docs/reports/index.html` (write_reports_index, rg_desc,
+  help/index.html) are GONE — never restore. What only they reached got a new way in: **Logons**
+  (`server/logons-scanners.html`, the Logons & connections group) is a top-bar link after Partners, and the
+  **build report** (`tools/build.html`) is linked from `help/general.html`. linkcheck models the Logons
+  edge; verify.sh asserts the absence of both pages, their help pages and every link to them.
 
 ## Rules from the seventh 2026-09-30 batch ("a few different things", user request, late)
 
@@ -2027,8 +2033,7 @@ last 3 errors of a subscription … Move Overview to the top menu bar, just befo
   (`tools/report-finder.html`, FINDER_AWK, `setupReportFinder`, the KEYWORDS directive), the
   Ctrl+K palette, the dark theme (◐ button, `setupTheme`, `bin/darken-css.awk`, the head
   scripts), `bin/build/drill-files.sh`. verify.sh asserts the absence.
-- **The sitemap** is ONE flow of cards (`.smcols`); the last card is **Tools** (Home, Search, All
-  files search, Help, Build report; What is new went later that day).
+- (**The sitemap**, ONE flow of cards ending in Tools, went 2026-09-30 with the Reports start page.)
 - **analyses/accounts.html** has no Breaking naming rules table; **Failed Subscriptions** ends
   with the CoreId / SessionId column.
 - **docs/files/** = the `_filepages.tsv` set (see `files/` above): per subscription the newest OK

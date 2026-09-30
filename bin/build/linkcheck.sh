@@ -18,10 +18,10 @@
 #   - brand -> data-b + index.html
 #   - data-b + dashboards/index.html, search/search.html,
 #     search/all-files.html (the Files link, 2026-09-28),
-#     tools/sitemap.html, transfer/entities/subscription-all.html,
+#     transfer/entities/subscription-all.html (the site map icon went 2026-09-30),
 #     transfer/duration.html + transfer/waiting-expired.html (the Duration and
 #     Waiting/Expired links, 2026-09-30), analyses/partners-in.html (the
-#     Partners link, 2026-09-30), transfer/security-params.html,
+#     Partners link, 2026-09-30), server/logons-scanners.html (Logons), transfer/security-params.html,
 #     analyses/first-seen.html, analyses/subscriptions.html,
 #     analyses/use-cases.html, transfer/file-journey-patterns.html and
 #     transfer/activity-per-week.html (Security · Seen · Configuration · Use
@@ -40,7 +40,8 @@
 #   docs/404.html            what GitHub Pages serves for an unmatched URL;
 #                            nothing should link it.
 #   (the build report is back on the site since 2026-09-12 — docs/tools/build.html,
-#   linked from the sitemap Tools card, so it is REACHABLE, not expected-unreachable)
+#   linked from help/general.html since 2026-09-30 — the sitemap Tools card before —
+#   so it is REACHABLE, not expected-unreachable)
 #
 # Exit status: 1 when a link resolves to nothing, else 0. Unreachable pages
 # beyond the expected set are reported and also fail the run — a page nothing
@@ -149,11 +150,11 @@ awk -v DOCS="$DOCS" '
                     edge(page, b "dashboards/index.html")
                     edge(page, b "search/search.html")
                     edge(page, b "search/all-files.html")   # the Files link (2026-09-28)
-                    edge(page, b "tools/sitemap.html")
                     edge(page, b "transfer/entities/subscription-all.html")
                     edge(page, b "transfer/duration.html")          # the Duration link (2026-09-30)
                     edge(page, b "transfer/waiting-expired.html")   # the Waiting/Expired link (2026-09-30)
                     edge(page, b "analyses/partners-in.html")      # the Partners link (2026-09-30)
+                    edge(page, b "server/logons-scanners.html")    # the Logons link (2026-09-30)
                     # the six links that replaced the Reports pulldown (2026-09-30)
                     edge(page, b "transfer/security-params.html")
                     edge(page, b "analyses/first-seen.html")
