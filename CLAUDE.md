@@ -1807,6 +1807,9 @@ front end) then four fix workers with disjoint files. The rules it left:
 
 ## Rules from the 2026-10-01 batch ("a few different things")
 
+- **Tables at 80%** (user request: "make all the tables a little smaller, 80% of current size"): `table` font-size
+  80%, cell padding 6.4 / 9.6 px (wide 4.8 / 8, dayrows sides 8, pager rows 4.8 / 8), the em-relative cell kinds
+  (file / lines / pre / coreid-cell 0.85em), the Top-5 cards 0.72rem / 0.62rem; the 30 px group gaps unchanged.
 - **First seen**: Date · Subscriptions · Partners · Logical · Accounts · Logins · Hosts (the .rpt keeps its order).
 - **Sizes & types**: By size · Empty files · By type · Duplicates · Largest files — Size regime and Stub shippers
   (size-profile.sh) are GONE; never restore.
