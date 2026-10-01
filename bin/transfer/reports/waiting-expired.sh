@@ -46,6 +46,14 @@
 #     File page (_filepages.tsv — an Unknown File does, kind U). A subscription
 #     slug never takes a date shape (mkslugs bumps it), so the two families
 #     share the directories without a clash.
+#   THE FIRST 10 ROWS OF EVERY LIST PAGE OPEN THEIR FILE PAGE (2026-10-01,
+#   user request: "every file in transfer/waiting/ and transfer/expired/ must
+#   have its first 10 rows in /files/ and the complete row must point to it"):
+#   bin/transfer/filepages.sh kinds W / X select them in THIS file's page
+#   orders (keep the two in step); every list is a rowlink table, a row whose
+#   File has a published page (any kind) carries @data:href — the whole row
+#   opens it — and every other row @data:norowlink (report.js bindRowlink
+#   leaves it alone: its cell links stay as they are).
 #   rendered by bin/transfer/publish.sh. (The dropped tables of the two old
 #   pages — pickup waits, the backlog curve, the retention curve, the sweep
 #   nights, the staging weekday … — went with them, 2026-09-30.)
@@ -66,6 +74,10 @@ SUBRES="$CONFIG_BASE/_subscriptions.tsv"; [ -f "$SUBRES" ] || SUBRES=/dev/null
 
 TMPD=$(mktemp -d "${TMPDIR:-/tmp}/axwe.XXXXXX")
 trap 'rm -rf "$TMPD"' EXIT
+# the CoreIds with a PUBLISHED File page (bin/transfer/filepages.sh; kinds W /
+# X cover the first 10 rows of every list below)
+: > "$TMPD/pages"
+[ -f "$CACHE_DIR/_filepages.tsv" ] && cut -f1 "$CACHE_DIR/_filepages.tsv" > "$TMPD/pages"
 
 # ONE pass over _files.tsv. Emits (pipe-separated; file names go LAST):
 #   D|date|nwait|nexp                             per start day (every File)
@@ -150,24 +162,27 @@ awk -F'|' '$1 == "S" && $4 + 0 > 0 { print $2 }' "$TMPD/agg" | mkslugs > "$TMPD/
 # cell is the one-unit age of fmt.awk hage1 ("37d"), the sortval the seconds.
 rm -rf "$WSUB.new"; mkdir -p "$WSUB.new"
 awk -F'|' '$1 == "F"' "$TMPD/agg" | LC_ALL=C sort -t'|' -k4,4 -k2,2n -k10,10 | awk -F'|' \
-    -v slugs="$TMPD/wslugs" -v dir="$WSUB.new" -v lastdt="$last_dt" "$AWKLIB"'
-    BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
+    -v slugs="$TMPD/wslugs" -v pages="$TMPD/pages" -v dir="$WSUB.new" -v lastdt="$last_dt" "$AWKLIB"'
+    BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs)
+            while ((getline l < pages) > 0) if (l != "") PG[l] = 1
+            close(pages) }
     function clean(s) { gsub(/[\t\r]/, " ", s); return s }
+    function rowto(cid) { return (cid in PG) ? "\t@data:href=../../files/" cid ".html" : "\t@data:norowlink=1" }   # the whole row opens the File page
     function finish() { if (out == "") return; printf "TOTAL\tTotal (%d Files)\t\t\t\n", nr > out; printf "FOOT\n" > out; close(out) }
     ($4 "") != cur {
         finish(); cur = $4; out = ""; nr = 0
         if (!($4 in SL)) next
         out = dir "/" SL[$4] ".rpt"
         printf "TITLE\tWaiting Files: %s\n", $4 > out
-        printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] the partner has not collected yet — still collectable until the nightly File Maintenance retention sweep (~11 days) deletes them. **Waiting for** counts from the staging moment to the last record of the data (%s). Longest waiting first.\n", $4, lastdt > out
+        printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] the partner has not collected yet — still collectable until the nightly File Maintenance retention sweep (~11 days) deletes them. **Waiting for** counts from the staging moment to the last record of the data (%s). Longest waiting first; the first 10 rows open their File page.\n", $4, lastdt > out
         printf "NAV\t0|Waiting & Expired|../waiting-expired.html\n" > out
-        printf "TABLE\tWaiting Files\twide\tnofilter\tsort=1:-1\tpager=25\trestint\n" > out
+        printf "TABLE\tWaiting Files\twide\tnofilter\tsort=1:-1\tpager=25\trestint\trowlink\n" > out
         printf "HEAD\tStart\tWaiting for\tFile name\tCoreId\n" > out
         printf "KIND\ttext\ttext\tmono\tmono\n" > out
     }
     out != "" {
         fn = $11; for (j = 12; j <= NF; j++) fn = fn "|" $j
-        printf "ROW\t%s\t@{sortval=%d}%s\t%s\t%s\t@data:res=orange\n", $3, $9, $8, lit(clean(fn)), $10 > out
+        printf "ROW\t%s\t@{sortval=%d}%s\t%s\t%s\t@data:res=orange%s\n", $3, $9, $8, lit(clean(fn)), $10, rowto($10) > out
         nr++
     }
     END { finish() }'
@@ -177,21 +192,24 @@ awk -F'|' '$1 == "F"' "$TMPD/agg" | LC_ALL=C sort -t'|' -k4,4 -k2,2n -k10,10 | a
 rm -rf "$XSUB.new"; mkdir -p "$XSUB.new"
 awk -F'|' -v OFS='\t' '$1 == "X" { fn = $6; for (j = 7; j <= NF; j++) fn = fn "|" $j; print $2, $3, $4, fn, $5 }' "$TMPD/agg" \
     | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k3,3r -k2,2r -k5,5 | awk -F'\t' \
-    -v slugs="$TMPD/xslugs" -v dir="$XSUB.new" "$AWKLIB"'
-    BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
+    -v slugs="$TMPD/xslugs" -v pages="$TMPD/pages" -v dir="$XSUB.new" "$AWKLIB"'
+    BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs)
+            while ((getline l < pages) > 0) if (l != "") PG[l] = 1
+            close(pages) }
+    function rowto(cid) { return (cid in PG) ? "\t@data:href=../../files/" cid ".html" : "\t@data:norowlink=1" }   # the whole row opens the File page
     function finish() { if (out == "") return; printf "TOTAL\tTotal (%d Files)\t\t\t\n", nr > out; printf "FOOT\n" > out; close(out) }
     ($1 "") != cur {
         finish(); cur = $1; out = ""; nr = 0
         if (!($1 in SL)) next
         out = dir "/" SL[$1] ".rpt"
         printf "TITLE\tExpired Files: %s\n", $1 > out
-        printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] that the nightly File Maintenance retention sweep deleted before the partner collected them — never delivered. Last expired first.\n", $1 > out
+        printf "INTRO\tThe staged File(s) of subscription [[subscriptions/%s]] that the nightly File Maintenance retention sweep deleted before the partner collected them — never delivered. Last expired first; the first 10 rows open their File page.\n", $1 > out
         printf "NAV\t0|Waiting & Expired|../waiting-expired.html\n" > out
-        printf "TABLE\tExpired Files\twide\tnofilter\tsort=1:-1\tpager=25\trestint\n" > out
+        printf "TABLE\tExpired Files\twide\tnofilter\tsort=1:-1\tpager=25\trestint\trowlink\n" > out
         printf "HEAD\tStart\tExpired\tFile name\tCoreId\n" > out
         printf "KIND\ttext\ttext\tmono\tmono\n" > out
     }
-    out != "" { printf "ROW\t%s\t%s\t%s\t%s\t@data:res=red\n", $2, $3, lit($4), $5 > out; nr++ }
+    out != "" { printf "ROW\t%s\t%s\t%s\t%s\t@data:res=red%s\n", $2, $3, lit($4), $5, rowto($5) > out; nr++ }
     END { finish() }'
 
 # ---- the DAY File lists (2026-10-01, user request): one page per START day
@@ -201,24 +219,27 @@ awk -F'|' -v OFS='\t' '$1 == "X" { fn = $6; for (j = 7; j <= NF; j++) fn = fn "|
 # cell links its detail page through KIND site (Unknown has no slugmap entry,
 # so it stays plain); the writers name a CoreId only, render_rpt links it.
 awk -F'|' '$1 == "Y"' "$TMPD/agg" | LC_ALL=C sort -t'|' -k2,2 -k3,3 -k4,4r -k8,8 | awk -F'|' \
-    -v wdir="$WSUB.new" -v xdir="$XSUB.new" -v lastdt="$last_dt" "$AWKLIB"'
+    -v wdir="$WSUB.new" -v xdir="$XSUB.new" -v pages="$TMPD/pages" -v lastdt="$last_dt" "$AWKLIB"'
+    BEGIN { while ((getline l < pages) > 0) if (l != "") PG[l] = 1
+            close(pages) }
     function clean(s) { gsub(/[\t\r]/, " ", s); return s }
+    function rowto(cid) { return (cid in PG) ? "\t@data:href=../../files/" cid ".html" : "\t@data:norowlink=1" }   # the whole row opens the File page
     function finish() { if (out == "") return; printf "TOTAL\tTotal (%d Files)\t\t\t\n", nr > out; printf "FOOT\n" > out; close(out) }
     ($2 SUBSEP $3) != cur {
         finish(); cur = $2 SUBSEP $3; nr = 0
         w = ($2 == "W"); out = (w ? wdir : xdir) "/" $3 ".rpt"
         printf "TITLE\t%s Files: %s\n", (w ? "Waiting" : "Expired"), $3 > out
-        if (w) printf "INTRO\tEvery File that started on **%s** and is still staged — the partner has not collected it by the last record of the data (%s); the Unknown subscription included. Newest first.\n", $3, lastdt > out
-        else   printf "INTRO\tEvery File that started on **%s** whose staged copy the nightly File Maintenance retention sweep deleted before the partner collected it — never delivered; the Unknown subscription included. Newest first.\n", $3 > out
+        if (w) printf "INTRO\tEvery File that started on **%s** and is still staged — the partner has not collected it by the last record of the data (%s); the Unknown subscription included. Newest first; the first 10 rows open their File page.\n", $3, lastdt > out
+        else   printf "INTRO\tEvery File that started on **%s** whose staged copy the nightly File Maintenance retention sweep deleted before the partner collected it — never delivered; the Unknown subscription included. Newest first; the first 10 rows open their File page.\n", $3 > out
         printf "NAV\t0|Waiting & Expired|../waiting-expired.html\n" > out
-        printf "TABLE\t%s Files\twide\tnofilter\tsort=0:-1\tpager=25\trestint\n", (w ? "Waiting" : "Expired") > out
+        printf "TABLE\t%s Files\twide\tnofilter\tsort=0:-1\tpager=25\trestint\trowlink\n", (w ? "Waiting" : "Expired") > out
         printf "HEAD\tDate/time\tSubscription\tFile name\tCoreId\n" > out
         printf "KIND\ttext\tsite\tmono\tmono\n" > out
     }
     {
         fn = $9; for (j = 10; j <= NF; j++) fn = fn "|" $j   # a file name may hold "|"
         res = $6; if (res != "green" && res != "orange" && res != "red") res = (w ? "orange" : "red")
-        printf "ROW\t%s\t%s\t%s\t%s\t@data:res=%s\n", $5, clean($7), lit(clean(fn)), $8, res > out
+        printf "ROW\t%s\t%s\t%s\t%s\t@data:res=%s%s\n", $5, clean($7), lit(clean(fn)), $8, res, rowto($8) > out
         nr++
     }
     END { finish() }'

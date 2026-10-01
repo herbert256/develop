@@ -10,7 +10,7 @@
 #         of the detail pages)
 #     E   one of the subscription's THREE newest FAILED Files (by the start
 #         sortkey, col 6, newest first; Expired Files are pickup problems,
-#         never paged)
+#         never paged as an error — kind X below pages the listed ones)
 #     L   one of the LONGEST FILES (2026-09-30, user request: "Show 250 and
 #         not 50 files, store all 250 files in /files/, show max 10 rows of
 #         the same subscription"): the LONGEST_N (250) longest DELIVERED
@@ -41,6 +41,21 @@
 #         the first 5 rows of every subscription must have a file in /files/"
 #         — THE selection: topview.sh links exactly the listed rows, it does
 #         not select again
+#     W   WAITING Files, X  EXPIRED Files — the first LIST_ROWS (10) rows of
+#         EVERY list page under transfer/waiting/ resp. transfer/expired/
+#         (2026-10-01, user request: "every file in transfer/waiting/ and
+#         transfer/expired/ must have its first 10 rows in /files/ and the
+#         complete row must point to it"; until then a Waiting / Expired File
+#         had a page only by another kind), in the ORDER OF THE PAGE
+#         (waiting-expired.sh — keep the two in step, verify.sh checks it):
+#           subscription lists (col 12 set and not "Unknown", col 4 set)
+#             Waiting   longest waiting first: start date + time to the
+#                       second ascending, CoreId ascending on a tie
+#             Expired   last expired first: the deletion stamp (col 22, to the
+#                       second) descending, then the start (to the second)
+#                       descending, CoreId ascending
+#           day lists (col 4 set, every subscription, Unknown and siteless
+#           included)  newest first: sortkey descending, CoreId ascending
 #
 # per _files.tsv col 12 value ("Unknown" included). This is the ONE list of
 # the CoreIds that have a docs/files/<CoreId>.html page: bin/transfer/publish.sh
@@ -62,6 +77,7 @@ source "$SCRIPT_DIR/lib.sh"
 OUT="$CACHE_DIR/_filepages.tsv"
 LONGEST_N=250 LONGEST_PER_SUB=10   # kind L — the Longest Files page (see the header)
 RECOVERED_PER_SUB=5                # kind A — the recovered day lists (see the header)
+LIST_ROWS=10                       # kinds W / X — the first rows of every Waiting / Expired list page (see the header)
 if [ ! -s "$FILES" ]; then : > "$OUT"; echo "filepages: no transfer cache — no File pages." >&2; exit 0; fi
 {
     # O: the newest Processed File per subscription (strictly newer END wins,
@@ -95,6 +111,18 @@ if [ ! -s "$FILES" ]; then : > "$OUT"; echo "filepages: no transfer cache — no
     LC_ALL=C awk -F'\t' -v OFS='\t' '$26 == "1" && $27 != "1" && $4 != "" && $2 != "Failed" && $2 != "Expired" { print $4, $12, $6, $1 }' "$FILES" \
         | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k3,3r -k4,4 \
         | LC_ALL=C awk -F'\t' -v per="$RECOVERED_PER_SUB" '++n[$1 FS $2] <= per { print $4 "\tA\t" $2 }'
+    # W / X: the first LIST_ROWS rows of every Waiting / Expired list page, in
+    # the page order (see the header) — the subscription lists ...
+    LC_ALL=C awk -F'\t' -v OFS='\t' '$2 == "Waiting" && $12 != "" && $12 != "Unknown" && $4 != "" { print $12, $4 " " substr($5, 1, 8), $1 }' "$FILES" \
+        | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k3,3 \
+        | LC_ALL=C awk -F'\t' -v per="$LIST_ROWS" '++n[$1] <= per { print $3 "\tW\t" $1 }'
+    LC_ALL=C awk -F'\t' -v OFS='\t' '$2 == "Expired" && $12 != "" && $12 != "Unknown" && $4 != "" { print $12, substr($22, 1, 19), $4 " " substr($5, 1, 8), $1 }' "$FILES" \
+        | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2r -k3,3r -k4,4 \
+        | LC_ALL=C awk -F'\t' -v per="$LIST_ROWS" '++n[$1] <= per { print $4 "\tX\t" $1 }'
+    # ... and the day lists (one per state and start day)
+    LC_ALL=C awk -F'\t' -v OFS='\t' '($2 == "Waiting" || $2 == "Expired") && $4 != "" { print ($2 == "Waiting" ? "W" : "X"), $4, $6, $1, $12 }' "$FILES" \
+        | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k3,3r -k4,4 \
+        | LC_ALL=C awk -F'\t' -v per="$LIST_ROWS" '++n[$1 FS $2] <= per { print $4 "\t" $1 "\t" $5 }'
 } | LC_ALL=C sort -u > "$OUT.tmp"
 mv "$OUT.tmp" "$OUT"
-echo "filepages: $(awk -F'\t' '$2 == "O"' "$OUT" | wc -l | tr -d ' ') latest-OK + $(awk -F'\t' '$2 == "E"' "$OUT" | wc -l | tr -d ' ') error + $(awk -F'\t' '$2 == "L"' "$OUT" | wc -l | tr -d ' ') longest + $(awk -F'\t' '$2 == "U"' "$OUT" | wc -l | tr -d ' ') Unknown + $(awk -F'\t' '$2 == "P"' "$OUT" | wc -l | tr -d ' ') one-legged + $(awk -F'\t' '$2 == "R"' "$OUT" | wc -l | tr -d ' ') resubmitted + $(awk -F'\t' '$2 == "A"' "$OUT" | wc -l | tr -d ' ') recovered File page(s) ($(cut -f1 "$OUT" | LC_ALL=C sort -u | wc -l | tr -d ' ') CoreIds)." >&2
+echo "filepages: $(awk -F'\t' '$2 == "O"' "$OUT" | wc -l | tr -d ' ') latest-OK + $(awk -F'\t' '$2 == "E"' "$OUT" | wc -l | tr -d ' ') error + $(awk -F'\t' '$2 == "L"' "$OUT" | wc -l | tr -d ' ') longest + $(awk -F'\t' '$2 == "U"' "$OUT" | wc -l | tr -d ' ') Unknown + $(awk -F'\t' '$2 == "P"' "$OUT" | wc -l | tr -d ' ') one-legged + $(awk -F'\t' '$2 == "R"' "$OUT" | wc -l | tr -d ' ') resubmitted + $(awk -F'\t' '$2 == "A"' "$OUT" | wc -l | tr -d ' ') recovered + $(awk -F'\t' '$2 == "W"' "$OUT" | wc -l | tr -d ' ') waiting + $(awk -F'\t' '$2 == "X"' "$OUT" | wc -l | tr -d ' ') expired File page(s) ($(cut -f1 "$OUT" | LC_ALL=C sort -u | wc -l | tr -d ' ') CoreIds)." >&2

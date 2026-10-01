@@ -266,8 +266,9 @@ rm -rf "$FILEDIR"; mkdir -p "$FILEDIR"
 # DELIVERED File, kind O, the three newest FAILED Files, kind E, and the
 # Longest Files, kind L — 2026-09-30; every dated Unknown File, kind U, and
 # every one-legged File of a real subscription, kind P — 2026-10-01; every
-# resubmitted File, kind R, and the five newest automatically recovered
-# Files per day and subscription, kind A — the same day) has a
+# resubmitted File, kind R, the five newest automatically recovered
+# Files per day and subscription, kind A, and the first 10 rows of every
+# Waiting / Expired list page, kinds W / X — the same day) has a
 # page under docs/files/. An E File the evidence selection below already
 # pages (the leg selection, the window guarantee — errors/, the reasons read
 # them) keeps that drill page (the overlap step drops it here); every other
@@ -277,7 +278,7 @@ rm -rf "$FILEDIR"; mkdir -p "$FILEDIR"
 # (the 2026-09-28 rule). The O pages give the "Latest OK" row of
 # a detail page's Features table its target; no back link (the facts table
 # links the subscription the File belongs to).
-awk -F'\t' '$1 != "" && $2 != "" { print $1 "\t" $2 }' "$FPF" | LC_ALL=C sort > "$TMP/fileside"   # EVERY kind of the set (2026-10-01: + U, P, R, A)
+awk -F'\t' '$1 != "" && $2 != "" { print $1 "\t" $2 }' "$FPF" | LC_ALL=C sort > "$TMP/fileside"   # EVERY kind of the set (2026-10-01: + U, P, R, A, W, X)
 if [ -s "$TMP/fileside" ]; then
     LC_ALL=C awk -F'\t' -v OFS='\t' -v topf="$TMP/all" -v extraf="$TMP/extra" -v sidef="$TMP/fileside" \
         -v setf="$TMP/fileset" -v ovf="$TMP/overlap" '

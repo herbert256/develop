@@ -80,11 +80,11 @@ a trailing `acceptance/`|`production/` stripped for pre-split bookmarks), `asset
 request: one page per subscription with expired Files, Start · Expired · File name · CoreId, opened
 from the Expired cells of **Waiting & Expired**'s Subscriptions table; `waiting-expired.sh`
 (expired.sh until 2026-09-30) writes the `.rpt` set into `data/transfer/reports/expired/`; default sort = Expired descending, baked in that
-order (an Expired File never has a File page, so the CoreIds are plain — the first-5 links and
+order (since 2026-10-01 the first 10 rows of every list page open their File page — kinds W / X, see the second 2026-10-01 batch; from 2026-09-29 until then the CoreIds were plain — the first-5 links and
 their `_expired-files.tsv` list went 2026-09-29 with the File-page rule below); and its twin `waiting/` — the same
 day: the Files still staged, Start · Waiting for · File name · CoreId, opened from the Waiting
 cells of Waiting & Expired's Subscriptions table (waiting-expired.sh; waiting.sh until 2026-09-30), default sort = Waiting for descending via the
-cell's `sortval` (the wait in seconds — the humanized text does not sort); no File-page links
+cell's `sortval` (the wait in seconds — the humanized text does not sort); the first 10 rows open their File page since 2026-10-01, no File-page links
 either since 2026-09-29), `server/`, `analyses/`
 (+ `xref/`), `dashboards/`, `day/`, `details/` (one subdir per entity type), `files/`
 (2026-09-21, user request: the ONE directory of the per-File pages — the failed-File error pages
@@ -96,7 +96,7 @@ first — and `bin/transfer/publish.sh` renders both sets into `docs/files/`, th
 subscription, store only the last 3 errors of a subscription"): `bin/transfer/filepages.sh` (a
 build step right after bookend-ok) writes `data/transfer/cache/_filepages.tsv` — CoreId ⇥ kind ⇥
 subscription, kind `O` = the subscription's newest Processed File (by END, col 24), `E` = its three
-newest Failed Files (by sortkey); Expired / Waiting Files never get a page. It is THE list of the
+newest Failed Files (by sortkey); Expired / Waiting Files got no page of their own until 2026-10-01 (kinds W / X now page the first 10 rows of every Waiting / Expired list). It is THE list of the
 CoreIds with a `docs/files/<coreid>.html`: failed.sh still WRITES its evidence pages under data/
 for every File it classifies (the reasons read them) and pages every set member (an E File the
 leg selection did not page gets a File page under `data/…/files/`), `bin/transfer/publish.sh`
@@ -1864,6 +1864,13 @@ front end) then four fix workers with disjoint files. The rules it left:
   START DAY and subscription (`RECOVERED_PER_SUB`, selected ONLY in filepages.sh; the first five rows of every
   subscription on a recovered list). A recovered row without a page carries `@data:norowlink=1` — report.js
   `bindRowlink` skips it, so it keeps the default cell links instead of falling back to the row's first link.
+- **Waiting / Expired list pages** (user request, later the same day: "every file in transfer/waiting/ and
+  transfer/expired/ must have its first 10 rows in /files/ and the complete row must point to it"): File-page
+  kinds `W` / `X` = the first `LIST_ROWS` (10) rows of EVERY list page, subscription and day lists alike, selected
+  in filepages.sh in the PAGE ORDER of waiting-expired.sh (subscription Waiting: start to the second ascending;
+  subscription Expired: deletion stamp descending, start descending; day lists: sortkey descending; CoreId on a
+  tie) — KEEP THE TWO IN STEP, verify.sh fails on a first-10 row without a page. Every list is a `rowlink` table:
+  a row whose File has a page (any kind) carries `@data:href`, every other row `@data:norowlink=1`.
 - **Entity Search** baked order: Partner · Account · Logical · Login · Host · IP · Subscription · Domain ·
   Application · BL · Source · Target (Logical led before); the type boxes keep their order.
 - **Entities pages**: "Retry / Resubmit" is TWO banner groups with a gap — **Retry** (Auto, 1 column) and

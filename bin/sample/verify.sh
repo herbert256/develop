@@ -1585,6 +1585,24 @@ g=$(awk -F'\t' '$1 == "GHEAD" { print; exit }' "$EA" 2>/dev/null)
 check $([ "$g" = $'GHEAD\t\t@{colspan=4,class=gband gsep}Files\t@{class=gband gsep}Retry\t@{colspan=2,class=gband gsep}Resubmit\t@{colspan=4,class=gband gsep}Duration\t@{colspan=2,class=gband gsep}Volume\t@{colspan=3,class=gband gsep}Transfers' ] && echo 0 || echo 1) "entities/account.rpt GHEAD is '$g' — expected Files · Retry · Resubmit · Duration · Volume · Transfers"
 check $(grep -q '>Retry</th>' docs/transfer/entities/account-all.html 2>/dev/null && grep -q '>Resubmit</th>' docs/transfer/entities/account-all.html 2>/dev/null && ! grep -rqs 'Retry / Resubmit</th>' docs/transfer/entities && echo 0 || echo 1) "transfer/entities/account-all.html lacks the separate Retry and Resubmit banner cells (or a page still shows Retry / Resubmit)"
 
+# 5. THE WAITING / EXPIRED LIST PAGES (2026-10-01, user request): the first 10
+#    rows of EVERY list under transfer/waiting/ and transfer/expired/ —
+#    subscription and day lists alike — open their File page with the whole
+#    row (a rowlink table, @data:href on the row, the page exists); a row
+#    without a page carries @data:norowlink; both families have a list longer
+#    than 10 rows, so the cut-off is exercised
+read -r nl nb nlong nplain <<< "$(awk -F'\t' '
+    FNR == 1 { nl++; n = 0; rl = 0 }
+    $1 == "TABLE" { rl = ($0 ~ /\trowlink(\t|$)/); if (!rl) b++ }
+    $1 == "ROW" { n++; h = ($0 ~ /\t@data:href=\.\.\/\.\.\/files\/[0-9a-f-]+\.html/)
+        if (n <= 10 && !h) b++
+        if (!h) { np++; if ($0 !~ /\t@data:norowlink=1/) b++ }
+        if (n == 11) nlong++ }
+    END { print nl + 0, b + 0, nlong + 0, np + 0 }' data/transfer/reports/waiting/*.rpt data/transfer/reports/expired/*.rpt 2>/dev/null)"
+check $([ "${nl:-0}" -gt 0 ] && [ "${nb:-1}" = 0 ] && [ "${nlong:-0}" -gt 0 ] && [ "${nplain:-0}" -gt 0 ] && echo 0 || echo 1) "the Waiting / Expired list pages: ${nb:-?} problem(s) in ${nl:-0} list(s) (a first-10 row without its File-page link, a list that is no rowlink table, a plain row without norowlink); ${nlong:-0} list(s) over 10 rows, ${nplain:-0} plain row(s)"
+n=$(grep -ho 'data-href="\.\./\.\./files/[0-9a-f-]*\.html"' docs/transfer/waiting/*.html docs/transfer/expired/*.html 2>/dev/null | sed 's/.*files\///; s/"$//' | LC_ALL=C sort -u | while read -r c; do [ -f "docs/files/$c" ] || echo "$c"; done | wc -l | tr -d ' ')
+check $([ "${n:-1}" = 0 ] && [ "$(awk -F'\t' '$2 == "W"' "$FP" 2>/dev/null | wc -l | tr -d ' ')" -gt 0 ] && [ "$(awk -F'\t' '$2 == "X"' "$FP" 2>/dev/null | wc -l | tr -d ' ')" -gt 0 ] && echo 0 || echo 1) "$n File page(s) a Waiting / Expired list row opens do not exist, or _filepages.tsv has no kind W / X row"
+
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2
 else
