@@ -1663,6 +1663,12 @@ read -r nrep nboth <<< "$(awk '
     END { flush(); print rep + 0, both + 0 }' docs/details/*/*.html 2>/dev/null)"
 check $([ "${nrep:-1}" = 0 ] && [ "${nboth:-0}" -gt 0 ] && echo 0 || echo 1) "$nrep detail page(s) whose Last server log errors table only repeats Last server log messages (${nboth:-0} page(s) keep both)"
 
+# 7. THE SERVER LOG CACHE IS TO THE SECOND (2026-10-01, user request): no
+#    time carries milliseconds and no row is in it twice
+n=$(awk -F'\t' '$2 != "" && $2 !~ /^[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/ { n++ } END { print n + 0 }' data/server/cache/_parse.tsv 2>/dev/null)
+m=$(LC_ALL=C sort data/server/cache/_parse.tsv 2>/dev/null | uniq -d | wc -l | tr -d ' ')
+check $([ "${n:-1}" = 0 ] && [ "${m:-1}" = 0 ] && [ -s data/server/cache/_parse.tsv ] && echo 0 || echo 1) "_parse.tsv: ${n:-?} time(s) not HH:MM:SS, ${m:-?} row(s) present more than once"
+
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2
 else

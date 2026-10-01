@@ -1051,7 +1051,16 @@ the logical flow name — parse col 19 keeps one).
 ### Server parse — _parse.tsv
 
 `bin/server/parse.sh` tokenizes `input/server/*.csv` (handling quoted fields with embedded
-newlines) into `data/server/cache/_parse.tsv` — 6 columns: date, time, level (I/W/E),
+newlines) into `data/server/cache/_parse.tsv` — 6 columns: date, time (**to the SECOND** since
+2026-10-01, user request: "remove the milliseconds in the server log cache also, and remove
+duplicates that happen because of it" — two records equal in all six columns are ONE row, so
+same-second twins differing only in their milliseconds or in a field the cache drops (Thread,
+node) and overlapping exports' copies fall out; the old exact-RAW-record dedup kept such twins and
+pages listed them twice. The merge still SORTS on date + time WITH milliseconds — the key the
+tokenizer emits as field 1, without the raw record since that day — so one second's records keep
+their logged order; `sort -u` drops same-millisecond twins, MERGE_SKIP_PROG the rest per second.
+Two lines of one second that differ in their SESSION are two rows and still both show on a page
+that hides the session), level (I/W/E),
 component (T=TM P=PESITD S=SSHD; ADMIN/AUDIT dropped), message (multi-line buffered into one
 row), **session** (CSV field 18 — the SAME connection id `_transfers.tsv` carries in col 24, so a
 file's legs and the server lines of their connection join on it; `""` where the export wrote
@@ -1864,6 +1873,9 @@ front end) then four fix workers with disjoint files. The rules it left:
   START DAY and subscription (`RECOVERED_PER_SUB`, selected ONLY in filepages.sh; the first five rows of every
   subscription on a recovered list). A recovered row without a page carries `@data:norowlink=1` — report.js
   `bindRowlink` skips it, so it keeps the default cell links instead of falling back to the row's first link.
+- **The server log cache is to the SECOND** (user request, the same evening): see "Server parse — _parse.tsv".
+  Consequences: server stamps compare with the transfer ones (milliseconds) as the START of their second; within a
+  second the newest-lines rings (addline) order by message text; the sample dropped 172 records.
 - **A detail page never repeats its server-log table** (user report, the same evening: a production host page
   showed the exact same table twice — every line it logged was an Error): details_writer `srv_redundant` leaves
   "Last server log errors" out when "Last server log messages" holds only Error / Warning rows and already holds

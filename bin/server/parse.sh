@@ -34,11 +34,14 @@
 #   The per-entity mention scan is chunked over the cores the same way.
 # - Accepts DOS (CRLF) or Unix (LF) input; TAB/CR/LF are scrubbed from every
 #   value so each record stays on one TAB-separated output line
-# - Date is ccyy-mm-dd (sortable report key); Time is HH:MM:SS.mmm — together
-#   they order records chronologically, and the cache IS in that order: the
-#   merge sorts on a date+time key (the exports themselves are newest-first
-#   within a file; the per-name rings, the parallel range scans and addline
-#   rely on the sorted cache)
+# - Date is ccyy-mm-dd (sortable report key); Time is HH:MM:SS — to the
+#   SECOND since 2026-10-01 (user request: "remove the milliseconds in the
+#   server log cache also, and remove duplicates that happen because of it");
+#   the cache IS in chronological order: the merge sorts on a date+time key
+#   that still carries the milliseconds, so the records of one second keep
+#   their logged order (the exports themselves are newest-first within a
+#   file; the per-name rings, the parallel range scans, addline and the
+#   logon funnel's anonymous-failure window rely on the sorted cache)
 # - Level and Component are shortened to one letter (see _parse.txt tables)
 #
 # Usage:
@@ -81,7 +84,17 @@ SKIPOUT="$DATA/server/_skipped.tsv"     # skipped _parse.tsv rows (verbatim)
 # the 3 GB cache is not re-read by wc(1) twice after the merge)
 MERGE_SKIP_PROG="$SKIPLIST_AWK"'
     BEGIN { sl_load(skipfile) }
-    { r = substr($0, index($0, "\t") + 1)
+    { p0 = index($0, "\t"); r = substr($0, p0 + 1)
+      # THE CACHE-ROW DEDUP (2026-10-01, user request — see the header): the
+      # rows arrive in sort-key order, so the records of one SECOND are
+      # contiguous and a row equal to one already seen in its second is a
+      # duplicate (the key up to the second; a timeless record keys on its
+      # date). One second never spans two merge groups (a group is whole
+      # date-hours), so the per-group sets are complete.
+      sk = substr($0, 1, (p0 > 20) ? 19 : p0 - 1)
+      if (sk != cursk) { split("", SEEN); cursk = sk }
+      if (r in SEEN) next
+      SEEN[r] = 1
       if (SL_N > 0 && sl_hit("message", $6)) print r >> sc
       else { print r; kept++
           # the TRANSFER-ENDED session ids of the KEPT rows (2026-09-30, lean
@@ -107,10 +120,14 @@ mkdir -p "$CACHE_DIR"
 
 # ---------------------------------------------------------------------------
 # ALWAYS A FULL PARSE (2026-09-28: every build is fresh — the manifest, the
-# parser signature and the incremental append are gone). Exact-duplicate RAW
-# records are dropped so overlapping exports cannot double-count (deduping on
-# the raw record, not the 6-column projection, keeps same-millisecond
-# same-message events from different threads). Three modes, one per
+# parser signature and the incremental append are gone). DUPLICATES ARE
+# DROPPED ON THE CACHE ROW (2026-10-01, user request): two records whose six
+# cache columns are equal — the time to the second, so two lines of one
+# second that differ only in their milliseconds or in a field the cache does
+# not keep (Thread, node) — are ONE row; an overlapping export's copies fall
+# out the same way. (Until then only an identical RAW record was a
+# duplicate, which kept such same-second twins and showed them twice on
+# every page that lists server-log lines.) Three modes, one per
 # bin/build.sh step:
 #   (default)              tokenize + merge the cache, then the mention caches
 #   AXWAY_SKIP_MENTIONS=1  tokenize + merge only — the build starts it BESIDE
@@ -179,9 +196,11 @@ ENT_CHUNK_DIR="$CACHE_DIR/_parse.entchunks.$$"
 trap 'rm -rf "$CHUNK_DIR" "$ENT_CHUNK_DIR"' EXIT
 
 # The CSV tokenizer, one awk program run per input file (see tok_one below).
-# Emits one line per record: the SCRUBBED RAW RECORD as field 1 followed by
-# the 6 projected cache columns — the raw prefix exists only for the dedup
-# and is cut away before the rows reach the cache.
+# Emits one line per record: the SORT KEY (date + time WITH milliseconds) as
+# field 1 followed by the 6 projected cache columns (the time to the second)
+# — the key only orders the records and is cut away before the rows reach
+# the cache. (The scrubbed RAW record rode along in the key until 2026-10-01,
+# for the exact-raw dedup the cache-row dedup replaced.)
 TOK_PROG=$(cat <<'AWK_EOF'
 # ---- the NOISE filter (2026-08) ---------------------------------------------
 # The message shapes the platform emits for every session and every transfer
@@ -476,14 +495,17 @@ FNR == 1 { rec = ""; buffering = 0; next }
     }
     # (`total` counts EMITTED records only, so the duplicate-drop arithmetic
     # below the parse stays about duplicates — noise never enters it)
-    # Sort key (field 1, dropped by `cut -f2-`): the CHRONOLOGICAL ccyy-mm-dd+time
-    # FOLLOWED by the raw record. Sorting orders the cache truly chronologically —
-    # across a year boundary too (the raw MM/DD/YYYY head alone sorted 01/…2027
-    # before 12/…2026), which is what the per-name "newest 25" ring relies on. The
-    # raw record still trails, so `sort -u` dedups exact-duplicate lines exactly as
-    # before (byte-identical within a single year, where both keys agree).
+    # Sort key (field 1, stripped by the merge): the CHRONOLOGICAL ccyy-mm-dd +
+    # time WITH its milliseconds. Sorting orders the cache truly
+    # chronologically — across a year boundary too (the raw MM/DD/YYYY head
+    # alone sorted 01/…2027 before 12/…2026), which is what the per-name
+    # "newest 25" ring relies on — and keeps the logged order of the records
+    # of one second. The cache column itself is the time to the SECOND
+    # (2026-10-01): two records equal in all six columns are one row — `sort
+    # -u` drops the same-millisecond ones here, the merge the rest of one
+    # second (MERGE_SKIP_PROG).
     od = isodate(f[1]); ot = timeofday(f[1])
-    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", od " " ot " " sv(rec), od, ot, lvl(f[2]), comp(f[3]), sv(f[5]), sid(f[18])
+    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", od " " ot, od, substr(ot, 1, 8), lvl(f[2]), comp(f[3]), sv(f[5]), sid(f[18])
     total++
 }
 
@@ -994,13 +1016,12 @@ fi
 echo "Parsing ${#files[@]} file(s) into $OUT ..." >&2
 
 # Tokenize + per-chunk dedup, in parallel. tok_one pipes TOK_PROG's output —
-# one line per record: the SCRUBBED RAW RECORD as field 1 followed by the 6
-# projected cache columns; the raw prefix exists only for the dedup step
-# (identical raw = a true duplicate; two same-millisecond events differing
-# only in a discarded field like Thread must BOTH survive) and is cut away
-# before the rows reach the cache — straight into that chunk's
-# `LC_ALL=C sort -u`. tokenize_batch fans a file list out over the pool and
-# tracks the cumulative raw-record count for the drop notes.
+# one line per record: the SORT KEY (date + time with milliseconds) as field
+# 1 followed by the 6 cache columns (the time to the second) — straight into
+# that chunk's `LC_ALL=C sort -u` (equal key AND row: a same-millisecond
+# duplicate; the merge drops the rest of each second's duplicates).
+# tokenize_batch fans a file list out over the pool and tracks the
+# cumulative record count for the drop notes.
 TOK_TOTAL=0
 CHUNK_N=0
 # THE PART SPLITTER (perl since 2026-09-28, build-speed round 16): the sorted
@@ -1139,24 +1160,22 @@ tokenize_batch() {   # tokenize every argument file into its own chunk
     echo "records: $((TOK_TOTAL - prev))" >&2
 }
 
-# RAW-record dedupe (mirrors bin/transfer/parse.sh's seen[$0]): drop rows whose
-# ENTIRE raw record is identical, so overlapping exports cannot double-count —
-# but two real events in the same millisecond with the same level/component/
-# message (per-thread bursts differ only in the discarded Thread field) BOTH
-# survive; deduping the 6-column projection destroyed ~85k such records. The
-# raw record rides along as field 1 of every chunk and `cut -f2-` strips it
-# after the merge (identical raw => identical whole line). Each chunk is
-# already sorted+deduped, so `sort -m -u` over the chunks equals the former
-# single `sort -u` over their concatenation — same total order, same
-# survivors, byte-identical cache. The sort key leads with the ISO date +
-# time, so the cache comes out CHRONOLOGICAL (see the tokenizer's sort key).
+# THE CACHE-ROW DEDUP (2026-10-01, user request — it replaced the RAW-record
+# dedupe, which mirrored bin/transfer/parse.sh's seen[$0] and kept per-thread
+# bursts that differ only in a field the cache drops): a row equal in all six
+# cache columns — the time to the second — to a row already kept is dropped,
+# so overlapping exports cannot double-count and no page lists one line
+# twice. Each chunk is sorted + `-u` (same millisecond), the merge's `sort -m
+# -u` the same across chunks, and MERGE_SKIP_PROG the rest of each second.
+# The sort key leads with the ISO date + time with milliseconds, so the cache
+# comes out CHRONOLOGICAL (see the tokenizer's sort key).
 {
     tokenize_batch "${files[@]}"
     _slap "tokenize (per file)"
     n_raw=$TOK_TOTAL
     # SKIP LIST: split the deduped cache into kept ($OUT) and skipped ($SKIPOUT,
-    # rebuilt from scratch on a full parse). dropped = the raw duplicates
-    # sort -u removed = n_raw - (kept + skipped).
+    # rebuilt from scratch on a full parse). dropped = the duplicates the
+    # sorts and the per-second dedup removed = n_raw - (kept + skipped).
     #
     # PARALLEL MERGE (2026-07): one `sort -m -u | cut | skip-awk` job PER DATE
     # over the job pool, instead of one single-threaded global merge (which
@@ -1229,7 +1248,7 @@ tokenize_batch() {   # tokenize every argument file into its own chunk
     # cache is newer). The merge counted the kept rows; no second pass.
     printf '%s\n' "$n_out" > "$COUNTF"
     dropped=$(( n_raw - n_out - skipped_n ))
-    [ "$dropped" -gt 0 ] && echo "NOTE: dropped $dropped exact-duplicate raw record(s) (kept one of each)." >&2
+    [ "$dropped" -gt 0 ] && echo "NOTE: dropped $dropped duplicate server record(s) — equal to the second (kept one of each)." >&2
     [ "$skipped_n" -gt 0 ] && echo "Skip list: set aside $skipped_n server record(s) -> $SKIPOUT." >&2
 }
 _slap "merge (per date)"
@@ -1243,7 +1262,9 @@ newest-first within a file). _parse.count holds the row count.
 
 col  name        description
   1  date        Record date as ccyy-mm-dd
-  2  time        Record time as HH:MM:SS.mmm ("" if absent)
+  2  time        Record time as HH:MM:SS — to the second, the milliseconds
+                 dropped ("" if absent); records equal in all six columns
+                 are one row
   3  level       Level, one letter (see table)
   4  component   Component, one letter (see table)
   5  message     Message (TAB/CR/LF scrubbed to spaces)
