@@ -1864,6 +1864,12 @@ front end) then four fix workers with disjoint files. The rules it left:
   START DAY and subscription (`RECOVERED_PER_SUB`, selected ONLY in filepages.sh; the first five rows of every
   subscription on a recovered list). A recovered row without a page carries `@data:norowlink=1` — report.js
   `bindRowlink` skips it, so it keeps the default cell links instead of falling back to the row's first link.
+- **A detail page never repeats its server-log table** (user report, the same evening: a production host page
+  showed the exact same table twice — every line it logged was an Error): details_writer `srv_redundant` leaves
+  "Last server log errors" out when "Last server log messages" holds only Error / Warning rows and already holds
+  each of its rows (as often); an Info row in the first table, or an errors row it lacks (an older error, a
+  connected entity's line after the last transfer), keeps both — the 2026-09-16 rule that a recent error shows in
+  both stands. The sample dropped it on 83 pages (28 identical, 55 a cut-short copy); verify.sh checks it.
 - **The home Errors table** (user request, the same evening): first header **Entity** (was Subscription); besides
   the red failed.rpt rows it lists every RED host and login (base col 3 — the Entities Remote hosts / Logins Error
   views) EXCEPT one connected to a subscription of a red failed.rpt row whose use case (name prefix, else

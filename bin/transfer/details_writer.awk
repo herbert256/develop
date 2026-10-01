@@ -149,7 +149,38 @@ function emit_srv_table(title, cutoff,   i, ewf, nA, nB, nda, ndb, l) {
     }
     srv_sort(DA, nda); srv_sort(DB, ndb)
     emit_srv_rows(title, DA, nda)
-    emit_srv_rows("Last server log errors", DB, ndb)
+    # the errors table only when it can show something the first one does not
+    # (2026-10-01, user report: a host page carried the exact same table
+    # twice — every line it logged was an Error)
+    if (!srv_redundant(DA, nda, DB, ndb)) emit_srv_rows("Last server log errors", DB, ndb)
+}
+# the displayed row of a cache line — date, time, level, component and the
+# message as emit_srv_rows shows it (TAB-split message parts folded back, the
+# session id left out, 300 characters)
+function srv_key(l,   m, C, tj) {
+    m = split(l, C, "\t")
+    for (tj = 6; tj < m; tj++) C[5] = C[5] " " C[tj]
+    return C[1] "\t" C[2] "\t" C[3] "\t" C[4] "\t" substr(C[5], 1, 300)
+}
+# REDUNDANT errors table: the messages table holds only Error / Warning lines
+# AND every row of the errors table is already one of its rows (as often as
+# the errors table holds it) — the second table would repeat the first, whole
+# or cut short. Any Info line in the first table, or any errors row it lacks
+# (an older error, a connected entity's line after the last transfer), keeps
+# both tables: a line that is both recent and an error still shows in both
+# (the 2026-09-16 rule).
+function srv_redundant(A, na, B, nb,   i, k, K, lv) {
+    if (nb == 0) return 1
+    split("", K)
+    for (i = 1; i <= na; i++) { lv = keyf(keyf_rest2(A[i]), 1); if (lv != "E" && lv != "W") return 0; K[srv_key(A[i])]++ }
+    for (i = 1; i <= nb; i++) { k = srv_key(B[i]); if (K[k] + 0 < 1) return 0; K[k]-- }
+    return 1
+}
+# the line from its THIRD field on (the level first)
+function keyf_rest2(l,   i1, r, i2) {
+    i1 = index(l, "\t"); if (i1 == 0) return ""
+    r = substr(l, i1 + 1); i2 = index(r, "\t"); if (i2 == 0) return ""
+    return substr(r, i2 + 1)
 }
 # one rendered table out of L[1..n], newest first, every line kept
 function emit_srv_rows(title, L, n,   i, m, C5, lvl, cmp, body, nrows, tj) {

@@ -1642,6 +1642,27 @@ check $([ "${nl:-0}" -gt 0 ] && [ "${nb:-1}" = 0 ] && [ "${nlong:-0}" -gt 0 ] &&
 n=$(grep -ho 'data-href="\.\./\.\./files/[0-9a-f-]*\.html"' docs/transfer/waiting/*.html docs/transfer/expired/*.html 2>/dev/null | sed 's/.*files\///; s/"$//' | LC_ALL=C sort -u | while read -r c; do [ -f "docs/files/$c" ] || echo "$c"; done | wc -l | tr -d ' ')
 check $([ "${n:-1}" = 0 ] && [ "$(awk -F'\t' '$2 == "W"' "$FP" 2>/dev/null | wc -l | tr -d ' ')" -gt 0 ] && [ "$(awk -F'\t' '$2 == "X"' "$FP" 2>/dev/null | wc -l | tr -d ' ')" -gt 0 ] && echo 0 || echo 1) "$n File page(s) a Waiting / Expired list row opens do not exist, or _filepages.tsv has no kind W / X row"
 
+# 6. A DETAIL PAGE NEVER REPEATS ITS SERVER-LOG TABLE (2026-10-01, user
+#    report: a host page showed the exact same table twice — every line it
+#    logged was an Error): "Last server log errors" is left out when the
+#    messages table holds only Error / Warning rows and already holds each of
+#    its rows; both tables still show where the errors table adds a row
+read -r nrep nboth <<< "$(awk '
+    FNR == 1 { flush(); split("", A); split("", B); na = nb = 0; t = 0; fn = FILENAME }
+    /<h2>Last server log messages<\/h2>/ { t = 1; next }
+    /<h2>Last server log errors<\/h2>/ { t = 2; next }
+    t && /<\/table>/ { t = 0 }
+    t && /<td/ { r = $0; gsub(/<[^>]*>/, "|", r); if (r ~ /Total \(/) next
+                 if (t == 1) { A[r]++; na++; if (r !~ /\|(Error|Warning)\|/) info = 1 } else { B[r]++; nb++ } }
+    function flush(   k, sub9) {
+        if (na == 0 || nb == 0) { info = 0; return }
+        both++; sub9 = 1
+        for (k in B) if (B[k] > A[k] + 0) sub9 = 0
+        if (sub9 && !info) { rep++; print "  " fn " repeats its server-log table" > "/dev/stderr" }
+        info = 0 }
+    END { flush(); print rep + 0, both + 0 }' docs/details/*/*.html 2>/dev/null)"
+check $([ "${nrep:-1}" = 0 ] && [ "${nboth:-0}" -gt 0 ] && echo 0 || echo 1) "$nrep detail page(s) whose Last server log errors table only repeats Last server log messages (${nboth:-0} page(s) keep both)"
+
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2
 else
