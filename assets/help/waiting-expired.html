@@ -5,16 +5,18 @@
 </ul>
 <h2>Columns</h2>
 <ul>
-<li><strong>Summary</strong> &mdash; per start day: <strong>Waiting</strong> and <strong>Expired</strong> Files (every File, the <strong>Unknown</strong> subscription&rsquo;s too). From/To narrows it; a count opens that day&rsquo;s 10 newest such Files; the date opens the day page.</li>
-<li><strong>Subscriptions</strong> (beside it) &mdash; <strong>Waiting</strong> and <strong>Expired</strong> (each opens that subscription&rsquo;s list of those Files), <strong>Collected</strong> (delivered Files the partner picked up), <strong>Oldest Waiting</strong> (how long its oldest still-waiting File has waited) and <strong>Last Expired</strong> (how long ago its newest deletion was), both up to the data&rsquo;s last record in one unit <strong>Oldest Waiting</strong> (when its oldest still-waiting File was staged), <strong>Last Expired</strong> (its newest deletion).</li>mdash; <strong>5d</strong>, <strong>16h</strong>, <strong>14m</strong>. Sorted by Oldest Waiting; an Expired count is red.</li>
+<li><strong>Summary</strong> &mdash; per start day: <strong>Waiting</strong> and <strong>Expired</strong> Files (every File, the <strong>Unknown</strong> subscription&rsquo;s too). From/To narrows it; a count opens that day&rsquo;s list of those Files; the date opens the day page.</li>
+<li><strong>Subscriptions</strong> (beside it) &mdash; <strong>Waiting</strong> and <strong>Expired</strong> (each opens that subscription&rsquo;s list of those Files), <strong>Collected</strong> (delivered Files the partner picked up), <strong>Oldest Waiting</strong> (how long its oldest still-waiting File has waited) and <strong>Last Expired</strong> (how long ago its newest deletion was), both up to the data&rsquo;s last record in one unit &mdash; <strong>5d</strong>, <strong>16h</strong>, <strong>14m</strong>. Sorted by Oldest Waiting; an Expired count is red.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
 <li>Subscriptions rows: the subscription&rsquo;s current colour. The state at the data&rsquo;s end: no date filter.</li>
-<li>The list pages: Waiting Files orange, longest waiting first (<strong>Waiting for</strong> runs to the data&rsquo;s last record, in one unit: 5d, 16h, 14m); Expired Files red, last expired first; each with a Total row and a button back to Waiting &amp; Expired.</li>
+<li>Subscription lists: Waiting Files orange, longest waiting first (<strong>Waiting for</strong> runs to the data&rsquo;s last record, in one unit: 5d, 16h, 14m); Expired Files red, last expired first.</li>
+<li>Day lists: every Waiting (orange) or Expired (red) File that started that day &mdash; <strong>Date/time</strong>, <strong>Subscription</strong> (Unknown included, not linked), <strong>File name</strong>, <strong>CoreId</strong> &mdash; newest first; as many rows as the Summary cell counts. A CoreId with its own File page links it.</li>
+<li>Every list has a Total row and a button back to Waiting &amp; Expired.</li>
 <li>The deletion leaves no transfer-log record: it comes from the server log&rsquo;s File Maintenance &ldquo;Deleted files&rdquo; lines, matched on account and file name.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>A subscription&rsquo;s <a href="entities-subscription.html">Entities</a> Waiting / Expired cell opens this page with its row marked.</li>
+<li>A subscription detail page&rsquo;s Waiting / Expired count opens this page with its row marked.</li>
 </ul>

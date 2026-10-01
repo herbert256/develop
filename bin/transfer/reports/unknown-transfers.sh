@@ -21,12 +21,13 @@
 #                no movement (col 17 comes from the subscription config)
 #   Legs         col 10
 #   State        col 2: OK (Processed) / Error (Failed) / Waiting / Expired —
-#                the words of the Files tables; opens the File's page
-#                (files/<CoreId>.html) when it has one
+#                the words of the Files tables
 #   Volume       col 8
 #   CoreId       col 1 (report.js adds the File Tracking link + copy icon)
 #   Filename     col 11
-# Rows tint by the FILE colour (col 25: green / orange / red).
+# Rows tint by the FILE colour (col 25: green / orange / red). EVERY row has a
+# File page (2026-10-01, user request: bin/transfer/filepages.sh kind U = every
+# dated Unknown File) and the WHOLE row opens it (rowlink + @data:href).
 # Table 2, one row per account: Files, OK, Error (the outcome policy: Error =
 # Failed or Expired), First / Last start.
 # The account rows tint by the ACCOUNT's result colour (base/_accounts.tsv
@@ -80,12 +81,12 @@ agg=$(LC_ALL=C awk -F'\t' -v PAGES="$pages" -v ACCB="$ACCB" "$AWKLIB"'
     $12 == "Unknown" && $4 != "" {
         cid = $1; n++
         st = ($2 == "Processed") ? "OK" : ($2 == "Failed") ? "Error" : $2
-        if (cid in PG) st = "@{href=../files/" cid ".html}" st
         side = ($16 == "in" || $16 == "out") ? $16 : ""   # lowercase like every in / out value (2026-09-30: "In" / "Out" before)
         # the remote host: a raw IPv4 opens its incoming connection page (no
         # page = the renderer leaves it plain), a name keeps KIND host
         hc = clean($15); if (hc ~ /^[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+$/) hc = "@{alink=incoming_connections/" hc "}" hc
         res = $25; tint = (res == "green" || res == "orange" || res == "red") ? "\t@data:res=" res : ""
+        if (cid in PG) tint = tint "\t@data:href=../files/" cid ".html"   # the whole row opens the File page
         printf "F\t%s\tROW\t%s %s\t%s\t%s\t%s\t%s\t%s\t%s\t@{sortval=%d}%s\t@{class=mono}%s\t%s%s\n", \
             $6, $4, $5, clean($3), clean($14), hc, side, $10 + 0, st, $8 + 0, hbytes0($8), cid, lit(clean($11)), tint
         a = $3; err = ($2 == "Failed" || $2 == "Expired")
@@ -116,7 +117,7 @@ T=$(printf '\t')
 
 {
     printf 'TITLE\tUnknown transfers\n'
-    printf 'TABLE\tFiles\twide\tsort=0:-1\tpager=500\trestint\n'
+    printf 'TABLE\tFiles\twide\tsort=0:-1\tpager=500\trestint\trowlink\n'
     printf 'HEAD\tDate/time\tAccount\tLogin\tRemote host\tSide\tLegs\tState\tVolume\tCoreId\tFilename\n'
     printf 'KIND\ttext\tacct\tlogin\thost\ttext\tnum\ttext\tnum\ttext\ttext\n'
     if [ "${nf:-0}" -gt 0 ]; then

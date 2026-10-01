@@ -1,8 +1,8 @@
 <h1>Month stats</h1>
 <h2>What it shows</h2>
 <ul>
-<li>One row per name of one entity type, counting the Files that <strong>started</strong> in one calendar month; busiest first, each name linking its detail page.</li>
-<li>One tab row: the month &mdash; <strong>Current month (yyyy-mm)</strong> &middot; <strong>Previous month (yyyy-mm)</strong> &mdash; then, after a separator, the nine entities (Subscriptions &hellip; BL): 18 pages.</li>
+<li>One row per name of one entity type, counting the Files that <strong>started</strong> in one calendar month: busiest first, then every configured name with no File that month (blank counts), each name linking its detail page.</li>
+<li>One tab row: the month &mdash; up to three buttons, newest first, each just <strong>yyyy-mm</strong> (an older month only when the data has Files in it) &mdash; then, after a separator, the nine entities (Subscriptions &hellip; BL).</li>
 </ul>
 <h2>Columns</h2>
 <ul>
@@ -15,9 +15,9 @@
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Current month = the month of the newest File start in the data, not the calendar.</li>
-<li>A File is attributed to names exactly as on the <a href="entities-subscription.html">Entities</a> pages; only names with a File in the month are listed.</li>
-<li>The total row counts each File once, except for subscriptions, logins and hosts, where it sums the rows.</li>
+<li>The newest month = the month of the newest File start in the data, not the calendar.</li>
+<li>A File is attributed to names exactly as on the <a href="entities-subscription.html">Entities</a> pages.</li>
+<li>The total row counts each File once, except for subscriptions, logins and hosts, where it sums the rows; its label counts every row shown.</li>
 <li>Rows tint by the name&rsquo;s result colour (green / orange / red); an unconfigured name stays untinted.</li>
 <li>No From/To: a page is one month.</li>
 </ul>

@@ -11,7 +11,9 @@
 #                  axis, so From/To narrows it and its totals equal the
 #                  outcome counts): Date · Waiting · Expired; every dated
 #                  Waiting / Expired File, the "Unknown" subscription's too;
-#                  the counts drill to the day's 10 newest such Files.
+#                  a count opens that day's File list (below) from anywhere in
+#                  its cell (2026-10-01, user request; a drill to the day's 10
+#                  newest Files until then).
 #   Subscriptions  Subscription · Waiting · Expired · Collected · Oldest
 #                  Waiting · Last Expired — the state at the data's end
 #                  (nofilter), one row per subscription with a Waiting or
@@ -29,13 +31,28 @@
 #     CoreId, longest waiting first; Waiting for runs to the data's last record)
 #   data/transfer/reports/expired/<slug>.rpt  -> transfer/expired/<slug>.html
 #     its Expired Files (Start · Expired · File name · CoreId, last expired first)
+#   THE DAY FILE LISTS (2026-10-01, user request: "a Waiting or Expired cell
+#   of the Summary opens transfer/waiting/yyyy-mm-dd.html resp.
+#   transfer/expired/yyyy-mm-dd.html with the columns date/time, subscription,
+#   file name, coreid"):
+#   data/transfer/reports/waiting/<date>.rpt  -> transfer/waiting/<date>.html
+#   data/transfer/reports/expired/<date>.rpt  -> transfer/expired/<date>.html
+#     ALL the Waiting resp. Expired Files that STARTED that day — the Files
+#     its Summary cell counts, so the row count equals the cell, the Unknown
+#     subscription's included (plain text: no detail page; a siteless File
+#     shows an empty Subscription) — Date/time · Subscription · File name ·
+#     CoreId, newest first, tinted by the File colour (col 25: Waiting orange,
+#     Expired red); render_rpt links a CoreId (and its file name) that has a
+#     File page (_filepages.tsv — an Unknown File does, kind U). A subscription
+#     slug never takes a date shape (mkslugs bumps it), so the two families
+#     share the directories without a clash.
 #   rendered by bin/transfer/publish.sh. (The dropped tables of the two old
 #   pages — pickup waits, the backlog curve, the retention curve, the sweep
 #   nights, the staging weekday … — went with them, 2026-09-30.)
 #
 # Reads data/transfer/cache/_files.tsv (1 coreid, 2 outcome, 3 account,
 # 4 date, 5 time, 6 sortkey, 8 size, 11 file, 12 subscription, 21 wait_ms,
-# 22 expired-at) + the base subscription colours.
+# 22 expired-at, 25 File colour) + the base subscription colours.
 #
 set -euo pipefail
 
@@ -51,21 +68,24 @@ TMPD=$(mktemp -d "${TMPDIR:-/tmp}/axwe.XXXXXX")
 trap 'rm -rf "$TMPD"' EXIT
 
 # ONE pass over _files.tsv. Emits (pipe-separated; file names go LAST):
-#   D|date|nwait|nexp|waitdrill|expdrill          per start day (every File)
+#   D|date|nwait|nexp                             per start day (every File)
+#   Y|W or X|date|sortkey|datetime|colour|site|coreid|file
+#                                                 each dated Waiting (W) / Expired
+#                                                 (X) File (its day list page)
 #   S|site|nwait|nexp|ncoll|oldest_age|lastexp_age  per subscription (W or X > 0);
 #                                                 the ages in seconds, -1 = none
 #   F|stagesec|staged_dt|site|acct|bytes|size|wait_for|wait_sec|coreid|file
 #                                                 each Waiting File (its list page)
 #   X|site|staged|expired|coreid|file             each Expired File (its list page)
 #   TOT|lastdt
-awk -F'\t' "$COREIDS_AWK$AWKLIB"'
+awk -F'\t' "$AWKLIB"'
     function tsec(d,t){ split(d,p,"-"); return jdn(p[1]+0,p[2]+0,p[3]+0)*86400 + substr(t,1,2)*3600 + substr(t,4,2)*60 + substr(t,7,2) }
     $2 == "Waiting" || $2 == "Expired" {
-        if ($4 != "") {   # the Summary: every dated Waiting / Expired File
+        if ($4 != "") {   # the Summary + the day lists: every dated Waiting / Expired File
             d = $4
             if (!(d in DW) && !(d in DX)) DL[++nd] = d
-            if ($2 == "Waiting") { DW[d]++; addtop("W" SUBSEP d, $6, $4 " " $5, $1) }
-            else                 { DX[d]++; addtop("X" SUBSEP d, $6, $4 " " $5, $1) }
+            if ($2 == "Waiting") DW[d]++; else DX[d]++
+            printf "Y|%s|%s|%s|%s %s|%s|%s|%s|%s\n", ($2 == "Waiting" ? "W" : "X"), d, $6, d, substr($5, 1, 8), $25, $12, $1, $11
         }
     }
     $12 == "" || $12 == "Unknown" || $4 == "" { next }   # no subscription (2026-09-29): no row, no list page
@@ -88,7 +108,7 @@ awk -F'\t' "$COREIDS_AWK$AWKLIB"'
     }
     END {
         for (i = 1; i <= nd; i++) { d = DL[i]
-            printf "D|%s|%d|%d|%s|%s\n", d, DW[d] + 0, DX[d] + 0, buildlist(top["W" SUBSEP d]), buildlist(top["X" SUBSEP d]) }
+            printf "D|%s|%d|%d\n", d, DW[d] + 0, DX[d] + 0 }
         for (i = 1; i <= ns; i++) { s = SL[i]
             # the two ages to the last record of the data (-1 = none): the wait
             # of the oldest still-waiting File (the longest Waiting for of its list
@@ -109,11 +129,13 @@ awk -F'\t' "$COREIDS_AWK$AWKLIB"'
 last_dt=$(awk -F'|' '$1 == "TOT" { print $2 }' "$TMPD/agg")
 
 # ---- the slugs (the site-wide slugify over the C-SORTED names, so a separator
-# twin's numeric bump is stable) — one map per list family ---------------------
+# twin's numeric bump is stable) — one map per list family; a slug never takes
+# the yyyy-mm-dd shape of the day lists that share the directory (2026-10-01:
+# a subscription named like a date is bumped, "2026-09-12-2") ------------------
 mkslugs() { LC_ALL=C sort -u | awk "$AWKLIB"'
     { base = slugof($0); if (base == "") base = "subscription"
       slug = base; n = 1
-      while (slug in used) { n++; slug = base "-" n }
+      while ((slug in used) || slug ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) { n++; slug = base "-" n }
       used[slug] = 1
       printf "%s\t%s\n", $0, slug }'; }
 awk -F'|' '$1 == "S" && $3 + 0 > 0 { print $2 }' "$TMPD/agg" | mkslugs > "$TMPD/wslugs"
@@ -149,7 +171,6 @@ awk -F'|' '$1 == "F"' "$TMPD/agg" | LC_ALL=C sort -t'|' -k4,4 -k2,2n -k10,10 | a
         nr++
     }
     END { finish() }'
-rm -rf "$WSUB"; mv "$WSUB.new" "$WSUB"
 
 # ---- the Expired File lists: last expired first (the page's declared sort on
 # the Expired column), ties by Start descending then CoreId; every row RED.
@@ -172,22 +193,54 @@ awk -F'|' -v OFS='\t' '$1 == "X" { fn = $6; for (j = 7; j <= NF; j++) fn = fn "|
     }
     out != "" { printf "ROW\t%s\t%s\t%s\t%s\t@data:res=red\n", $2, $3, lit($4), $5 > out; nr++ }
     END { finish() }'
+
+# ---- the DAY File lists (2026-10-01, user request): one page per START day
+# with a Waiting resp. Expired File, opened from that Summary cell — every
+# such File of the day (the cell's count), newest first (sortkey descending,
+# CoreId ascending on a tie), tinted by the File colour; the Subscription
+# cell links its detail page through KIND site (Unknown has no slugmap entry,
+# so it stays plain); the writers name a CoreId only, render_rpt links it.
+awk -F'|' '$1 == "Y"' "$TMPD/agg" | LC_ALL=C sort -t'|' -k2,2 -k3,3 -k4,4r -k8,8 | awk -F'|' \
+    -v wdir="$WSUB.new" -v xdir="$XSUB.new" -v lastdt="$last_dt" "$AWKLIB"'
+    function clean(s) { gsub(/[\t\r]/, " ", s); return s }
+    function finish() { if (out == "") return; printf "TOTAL\tTotal (%d Files)\t\t\t\n", nr > out; printf "FOOT\n" > out; close(out) }
+    ($2 SUBSEP $3) != cur {
+        finish(); cur = $2 SUBSEP $3; nr = 0
+        w = ($2 == "W"); out = (w ? wdir : xdir) "/" $3 ".rpt"
+        printf "TITLE\t%s Files: %s\n", (w ? "Waiting" : "Expired"), $3 > out
+        if (w) printf "INTRO\tEvery File that started on **%s** and is still staged — the partner has not collected it by the last record of the data (%s); the Unknown subscription included. Newest first.\n", $3, lastdt > out
+        else   printf "INTRO\tEvery File that started on **%s** whose staged copy the nightly File Maintenance retention sweep deleted before the partner collected it — never delivered; the Unknown subscription included. Newest first.\n", $3 > out
+        printf "NAV\t0|Waiting & Expired|../waiting-expired.html\n" > out
+        printf "TABLE\t%s Files\twide\tnofilter\tsort=0:-1\tpager=25\trestint\n", (w ? "Waiting" : "Expired") > out
+        printf "HEAD\tDate/time\tSubscription\tFile name\tCoreId\n" > out
+        printf "KIND\ttext\tsite\tmono\tmono\n" > out
+    }
+    {
+        fn = $9; for (j = 10; j <= NF; j++) fn = fn "|" $j   # a file name may hold "|"
+        res = $6; if (res != "green" && res != "orange" && res != "red") res = (w ? "orange" : "red")
+        printf "ROW\t%s\t%s\t%s\t%s\t@data:res=%s\n", $5, clean($7), lit(clean(fn)), $8, res > out
+        nr++
+    }
+    END { finish() }'
+rm -rf "$WSUB"; mv "$WSUB.new" "$WSUB"
 rm -rf "$XSUB"; mv "$XSUB.new" "$XSUB"
 
 # ---- the report ---------------------------------------------------------------
 {
     printf 'TITLE\tWaiting & Expired\n'   # = its Reports menu label
 
-    # Summary — per START day, newest first; the counts drill to the day's Files
-    # (an Expired 0 goes out as "0": the renderer z-blanks it, so a day without an
-    # Expired File shows no red — an EMPTY errc cell would keep the pink, 2026-09-30)
-    printf 'TABLE\tSummary\tkeephead\tsxs\tdrillcols=wait:1:Waiting_Files,exp:2:Expired_Files\n'
+    # Summary — per START day, newest first; a count opens the day's File list
+    # (waiting/<date>.html, expired/<date>.html — the whole cell is the link,
+    # 2026-10-01; an Expired 0 goes out as "0": the renderer z-blanks it, so a
+    # day without an Expired File shows no red — an EMPTY errc cell would keep
+    # the pink, 2026-09-30)
+    printf 'TABLE\tSummary\tkeephead\tsxs\n'
     printf 'HEAD\tDate\tWaiting\tExpired\n'
     printf 'KIND\ttext\tnumwarn\tnumerr\n'
     awk -F'|' '$1 == "D"' "$TMPD/agg" | LC_ALL=C sort -t'|' -k2,2r | awk -F'|' '
         { tw += $3; tx += $4; n++
-          printf "ROW\t@{href=../day/%s.html}%s\t%s\t%s\t@data:coreids-wait=%s\t@data:coreids-exp=%s\n", \
-              $2, $2, ($3 > 0 ? $3 : ""), $4 + 0, ($3 > 0 ? $5 : ""), ($4 > 0 ? $6 : "") }
+          printf "ROW\t@{href=../day/%s.html}%s\t%s\t%s\n", $2, $2, \
+              ($3 > 0 ? "@{href=waiting/" $2 ".html}" $3 : ""), ($4 > 0 ? "@{href=expired/" $2 ".html}" $4 : "0") }
         END { if (n == 0) printf "ROW\t@{colspan=3}No Waiting or Expired Files in this data window.\n"
               printf "TOTAL\tTotal (%d day(s))\t@{class=num warn}%s\t@{class=num errc}%s\n", n, (tw > 0 ? tw : ""), tx + 0 }'
 

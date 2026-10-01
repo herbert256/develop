@@ -1455,7 +1455,7 @@ blocks into an EXISTING report before its first SUMMARY/FOOT (with `-f`, 2026-09
 after its SUMMARY — how Security Parameters takes the ssh-crypto + ssh-sessions tables) — the server Top view carries the
 errors-day levels-per-component table that way. **The 2026-09-29 consolidation** ("too many
 reports", user request) folded pages into tabs and stacked tables (`tab=KEY`) instead of
-separate pages: Sizes (files + top-transfers + size-profile), File in - File out (+ UC4 to UC2),
+separate pages: Sizes (files + top-transfers; size-profile went 2026-10-01), File in - File out (+ UC4 to UC2 — gone 2026-09-30),
 Retries (+ Recovered files), Recovered flows (`merge-episodes.sh`; its Episodes tab went
 2026-09-29), UC status UC2 /
 UC3 tabs (+ UC2 pickup visits, Pickups, No remote dir / files), Failed Subscriptions (+ From
@@ -1466,7 +1466,7 @@ errors (+ Deploy errors), Polling (+ Missing cronjobs as Schedule "no cron"), En
 Boxes pages 2026-07..09-29 — are ordinary group members since the one Reports pulldown; went-kaput is pageless.) The full
 merged-component list is in ARCHITECTURE.md.
 
-(**Month stats** — 18 pages, 2026-09-13, `entities.sh` (its `month_stats` part; `month-stats.sh` until 2026-09-30) → `docs/transfer/month-stats/` — and
+(**Month stats** — up to 27 pages since 2026-10-01 (18 from 2026-09-13), `entities.sh` (its `month_stats` part; `month-stats.sh` until 2026-09-30) → `docs/transfer/month-stats/` — and
 **Missing entities** — the five unknown-* tables, `missing-entities.sh` — went the morning of
 2026-09-29 and CAME BACK the same day, user request: Month stats in Activity & volume (its member
 `transfer/month-stats/this` is special-cased in `rg_landing` / `apply_report_groups` —
@@ -1805,6 +1805,35 @@ front end) then four fix workers with disjoint files. The rules it left:
   Partners row by stem. verify.sh checks the rows, the names and the totals. A column change in a writer needs
   its RULES string changed in step (one rule per ROW field from field 3).
 
+## Rules from the 2026-10-01 batch ("a few different things")
+
+- **First seen**: Date · Subscriptions · Partners · Logical · Accounts · Logins · Hosts (the .rpt keeps its order).
+- **Sizes & types**: By size · Empty files · By type · Duplicates · Largest files — Size regime and Stub shippers
+  (size-profile.sh) are GONE; never restore.
+- **Transfer Top view** TOTAL label "Total" (not "Total for N days").
+- **Duration** per day: Date · Files | Median · Average | p10…p100 (both views); the home still reads p50…p99 from
+  ROW fields 8/9/10/11/13.
+- **Day pages**: "Outbound logon failures … us being refused by the partner" (no reasons list); "No remote
+  files N poll(s) by M UC3 subscription(s) that did not find a file"; the "went quiet" fact only on days more
+  than 14 days before the newest data day.
+- **From/To blink**: a page that opens on a narrowed From/To (not the full range) blinks both selects once
+  (`select.dateblink`, ~1 s; a static highlight under prefers-reduced-motion) — on load only.
+- **Month stats**: up to three months — `this-<entity>` = the month of the newest File start, `previous-` /
+  `previous2-` = the two before it, written only when they have Files; buttons "yyyy-mm", newest first. Every page
+  lists ALL configured names of its type (busy rows first, then the zero-traffic rows with blank counts, tinted
+  by the result colour); Unknown never; "Total (N noun(s))" counts every row shown; the landing stays
+  `this-subscription.html`, no view carry.
+- **Waiting & Expired › Summary**: a Waiting / Expired count opens `transfer/waiting/<date>.html` /
+  `transfer/expired/<date>.html` — every such File of that START day (Date/time · Subscription · File name · CoreId),
+  newest first, File-colour tint, TOTAL, NAV back; Unknown included as plain text; the row count equals the
+  cell; the Summary drill went; a subscription slug never takes a date shape (bumped `-2`).
+- **The published File-page set** (`_filepages.tsv`) has two more kinds: `U` = every dated Unknown File, `P` =
+  every one-legged File of a real subscription (a CoreId may carry two kinds; failed.sh pages every kind).
+  **Unknown transfers** rows and the new **One-legged per-subscription pages** (`transfer/pirates/<slug>.html`,
+  pirates.sh → transfer/publish.sh; Date/time · File name · CoreId · State, date-aware, opened from the
+  pirates-details row) link their File page with the WHOLE row. Since a File with a page takes its Reason
+  from that page's own log lines, these pages moved 17 sample reasons off One-legged / Unknown subscription.
+
 ## Rules from the eleventh 2026-09-30 request ("a few different things")
 
 - **Entities pages** = Name + Files · Retry / Resubmit · Duration · Volume · Transfers — the State (Waiting ·
@@ -1851,7 +1880,7 @@ browser, front end + gates), then four fix workers with disjoint files, each pro
 - **Entity row tints everywhere** — `bin/rpt-tint.awk` is the ONE row-tint pass: a writer runs it on its
   finished .rpt with the TABLES to tint, the BASE cache and the name COLUMN (restint + `@data:res` from the
   entity's result colour; an unknown name stays untinted). Users: connection-efficiency, dwell-time,
-  recovered, files (Empty files), size-profile, pirates, retry, resubmissions, recovered-files,
+  recovered, files (Empty files), pirates, retry, resubmissions, recovered-files,
   security-outreach (+ the secparams value pages), went-quiet, stale-accounts. Month stats (entities.sh),
   Unknown transfers › Per account and io-errors per folder tint in their own writers. Anomalies colours the
   "× typical" CELL (red failed / amber warn), never the row.

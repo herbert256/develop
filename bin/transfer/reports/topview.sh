@@ -138,7 +138,7 @@ case "$agg" in R1*|*"${nl}R1"*) : ;; *) echo "No usable records found." >&2; exi
 rows=$(printf '%s\n' "$agg" | grep '^R1' | cut -f2-)
 IFS='|' read -r _ tC tP tRVF tF tfp tT tTP tTF ttp wP wF wW wX ndays tRVA tRVM tRSO tRSF tVOL \
     <<< "$(printf '%s\n' "$agg" | grep '^TOT|')"
-[ "$ndays" -eq 1 ] && total_label="Total for 1 day" || total_label="Total for $ndays days"
+total_label="Total"   # "Total for N days" until 2026-10-01 (user request: "Do not give \"Total for 31 days\"")
 
 {
     printf 'TITLE\tTransfer top view\n'   # = its Reports menu label (2026-09-29)

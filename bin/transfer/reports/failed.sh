@@ -264,7 +264,8 @@ rm -rf "$FILEDIR"; mkdir -p "$FILEDIR"
 # THE PUBLISHED SET GETS ITS PAGES (2026-09-29): every CoreId of
 # _filepages.tsv (bin/transfer/filepages.sh — per subscription the newest
 # DELIVERED File, kind O, the three newest FAILED Files, kind E, and the
-# Longest Files, kind L — 2026-09-30) has a
+# Longest Files, kind L — 2026-09-30; every dated Unknown File, kind U, and
+# every one-legged File of a real subscription, kind P — 2026-10-01) has a
 # page under docs/files/. An E File the evidence selection below already
 # pages (the leg selection, the window guarantee — errors/, the reasons read
 # them) keeps that drill page (the overlap step drops it here); every other
@@ -274,7 +275,7 @@ rm -rf "$FILEDIR"; mkdir -p "$FILEDIR"
 # (the 2026-09-28 rule). The O pages give the "Latest OK" row of
 # a detail page's Features table its target; no back link (the facts table
 # links the subscription the File belongs to).
-awk -F'\t' '$2 == "O" || $2 == "E" || $2 == "L" { print $1 "\t" $2 }' "$FPF" | LC_ALL=C sort > "$TMP/fileside"
+awk -F'\t' '$1 != "" && $2 != "" { print $1 "\t" $2 }' "$FPF" | LC_ALL=C sort > "$TMP/fileside"   # EVERY kind of the set (2026-10-01: + U, P)
 if [ -s "$TMP/fileside" ]; then
     LC_ALL=C awk -F'\t' -v OFS='\t' -v topf="$TMP/all" -v extraf="$TMP/extra" -v sidef="$TMP/fileside" \
         -v setf="$TMP/fileset" -v ovf="$TMP/overlap" '

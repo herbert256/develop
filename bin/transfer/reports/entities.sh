@@ -12,8 +12,9 @@
 # (user decision; proven byte-identical): showseen.sh, entity-search.sh,
 # home.sh and the server rosters read them; they render no page. And the
 # MONTH STATS (month_stats, at the bottom — month-stats.sh folded in the same
-# day, lean round 1, byte-identical): the 18 data/transfer/reports/month-stats/
-# {this,previous}-<entity>.rpt (render_month_stats) and the all-time sidecar
+# day, lean round 1, byte-identical): the data/transfer/reports/month-stats/
+# {this,previous,previous2}-<entity>.rpt — 9 per month, up to 3 months
+# (render_month_stats) and the all-time sidecar
 # data/transfer/reports/_alltime.tsv (the analyses Subscriptions page) — sums
 # of the same rows' per-day buckets.
 #
@@ -61,7 +62,7 @@
 #
 # Usage:
 #   ./entities.sh    # reads the caches, writes data/transfer/reports/entities/<entity>.rpt + data/transfer/reports/<entity>.rpt (nine each)
-#                    # + data/transfer/reports/month-stats/*.rpt (18) + _alltime.tsv
+#                    # + data/transfer/reports/month-stats/*.rpt (9 per month, up to 27) + _alltime.tsv
 #
 # (Until 2026-09-13 this was entities2.sh, the twin experiment; the S| / T|
 # streams and the display rules below are its.)
@@ -92,15 +93,25 @@ echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 # THE MONTH STATS months (month-stats.sh until 2026-09-30): THIS month = the
 # month of the newest File start date in the cache (the data, not the wall
 # clock — a lagging export must not show an empty month); an empty cache
-# falls back to the calendar month. PREVIOUS = the month before. Over EVERY
-# File with a start date (not only the attributed ones).
+# falls back to the calendar month. Since 2026-10-01 (user request: "Keep 3
+# months of history (if available)") up to THREE months: THIS, PREVIOUS (the
+# month before) and PREVIOUS2 (the month before that) — each of the two older
+# ones only when a dated File started in it (MS_MONTHS = the "which:month"
+# pairs written, newest first). Over EVERY File with a start date (not only
+# the attributed ones).
 MSDIR="$REPORTS_DIR/month-stats"
 ALLF="$REPORTS_DIR/_alltime.tsv"   # beside the .rpt files (2026-09-29 — not in month-stats/)
 mkdir -p "$MSDIR"
-rm -f "$MSDIR"/*.rpt.tmp "$MSDIR"/.agg.tmp "$ALLF".tmp "$ALLF".tmp2
-MS_NEWEST=$(awk -F'\t' '$4 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ && $4 > m { m = $4 } END { print m }' "$FILES")
+rm -f "$MSDIR"/*.rpt "$MSDIR"/*.rpt.tmp "$MSDIR"/.agg.tmp "$ALLF".tmp "$ALLF".tmp2   # a month that went out of the window leaves no page
+read -r MS_NEWEST MS_HAVE <<< "$(awk -F'\t' '$4 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ { if ($4 > m) m = $4; H[substr($4, 1, 7)] = 1 }
+    END { s = ","; for (k in H) s = s k ","; print (m == "" ? "-" : m), s }' "$FILES")"
+[ "$MS_NEWEST" = "-" ] && MS_NEWEST=""
 if [ -n "$MS_NEWEST" ]; then MS_THIS=${MS_NEWEST:0:7}; else MS_THIS=$(date '+%Y-%m'); fi
-MS_PREV=$(awk -v m="$MS_THIS" 'BEGIN { y = substr(m, 1, 4) + 0; mo = substr(m, 6, 2) + 0; mo--; if (mo == 0) { mo = 12; y-- } printf "%04d-%02d", y, mo }')
+ms_before() { awk -v m="$1" 'BEGIN { y = substr(m, 1, 4) + 0; mo = substr(m, 6, 2) + 0; mo--; if (mo == 0) { mo = 12; y-- } printf "%04d-%02d", y, mo }'; }
+MS_PREV=$(ms_before "$MS_THIS"); MS_PREV2=$(ms_before "$MS_PREV")
+MS_MONTHS="this:$MS_THIS"   # THIS always (a config-only estate still gets its zero-traffic rows)
+case $MS_HAVE in *",$MS_PREV,"*) MS_MONTHS="$MS_MONTHS previous:$MS_PREV" ;; esac
+case $MS_HAVE in *",$MS_PREV2,"*) MS_MONTHS="$MS_MONTHS previous2:$MS_PREV2" ;; esac
 
 AGG="$OUTDIR/.agg.tmp"
 # ---------------------------------------------------------------------------
@@ -446,9 +457,11 @@ classic_dim() {
 }
 # THE MONTH STATS (2026-09-13, user request; month-stats.sh until 2026-09-30,
 # folded in here — lean round 1, byte-identical): the nine entity types
-# counted over the Files that STARTED in one calendar month — THIS month and
-# the PREVIOUS one — 18 .rpt files under data/transfer/reports/month-stats/
-#   {this,previous}-{account,subscription,login,remote-host,logical,partner,application,domain,bl}.rpt
+# counted over the Files that STARTED in one calendar month — THIS month, the
+# PREVIOUS one and (2026-10-01, user request: "Keep 3 months of history (if
+# available)") PREVIOUS2, each older month only when it has data (MS_MONTHS) —
+# 9 .rpt files per month under data/transfer/reports/month-stats/
+#   {this,previous,previous2}-{account,subscription,login,remote-host,logical,partner,application,domain,bl}.rpt
 # rendered by publish_lib's render_month_stats into docs/transfer/month-stats/,
 # PLUS the ALL-TIME sidecar _alltime.tsv — every File, the same nine counts per
 # (type, name), "type<TAB>name<TAB>total in out errors auto rmok rmerr waiting
@@ -460,17 +473,23 @@ classic_dim() {
 # month (date:files:in:out:ferr:bytes:tok:terr:rauto:rmok:rmerr:waiting:expired:legs),
 # a type's month total the sum of its TOTAL row's per-day DISTINCT buckets
 # (tot(): per (name, File) pair for subscription / login / remote-host, once
-# per File for the rest — the classic rule month-stats.sh had), the name count
-# the names with a File in the month.
+# per File for the rest — the classic rule month-stats.sh had). Every page lists
+# ALL the entities of its base cache (2026-10-01, user request: "Also add rows
+# with no traffic") — the ones without a File in the month after the busy ones,
+# blank — and the TOTAL label counts the rows shown.
 month_stats() {
     local MSA="$MSDIR/.agg.tmp" which mon dim title chead nkind noun OUT rows hstate kstate tstate bf bfp
     local tc tin tout tfe tra tmo tme twt tex ns
     local aggs=() d
     for d in $DIMS; do [ -f "$AGG.$d" ] && aggs+=("$AGG.$d"); done
     : > "$ALLF.tmp"; : > "$MSA"
-    awk -F'|' -v THIS="$MS_THIS" -v PREV="$MS_PREV" -v MSA="$MSA" -v ALLF="$ALLF.tmp" -v DIMS="$DIMS" '
+    # MONS = the months written, newest first (MS_MONTHS: "which:month" pairs)
+    local mons="" p
+    for p in $MS_MONTHS; do mons="$mons ${p#*:}"; done
+    awk -F'|' -v MONS="${mons# }" -v MSA="$MSA" -v ALLF="$ALLF.tmp" -v DIMS="$DIMS" '
         # the month sums of one per-day bucket list into M[1..9] (files in out
         # ferr rauto rmok rmerr waiting expired = bucket fields 2 3 4 5 9 10 11 12 13)
+        BEGIN { NM = split(MONS, MO, " ") }
         function msum(bl, mon,   n, B, i, z) { for (i = 1; i <= 9; i++) M[i] = 0
             n = split(bl, B, ",")
             for (i = 1; i <= n; i++) { if (substr(B[i], 1, 7) != mon) continue
@@ -480,24 +499,25 @@ month_stats() {
             # the all-time counters are the row own totals (S| 4 files 10 in 11 out
             # 12 ferr 13 rauto 14 rmok 15 rmerr 16 waiting 17 expired)
             printf "%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", $2, $3, $4, $10, $11, $12, $13, $14, $15, $16, $17 > ALLF
-            for (m = 1; m <= 2; m++) { mon = (m == 1) ? THIS : PREV; msum($19, mon)
+            for (m = 1; m <= NM; m++) { mon = MO[m]; msum($19, mon)
                 if (M[1] == 0) continue
                 NSN[mon SUBSEP $2]++
                 printf "S|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d\n", mon, $2, $3, M[1], M[2], M[3], M[4], M[5], M[6], M[7], M[8], M[9] > MSA }
             next }
-        $1 == "T" { for (m = 1; m <= 2; m++) { mon = (m == 1) ? THIS : PREV; msum($21, mon)
+        $1 == "T" { for (m = 1; m <= NM; m++) { mon = MO[m]; msum($21, mon)
                 for (i = 1; i <= 9; i++) TT[mon SUBSEP $2 SUBSEP i] = M[i] }
             next }
         END { n2 = split(DIMS, TL, " ")
-            for (m = 1; m <= 2; m++) { mon = (m == 1) ? THIS : PREV
+            for (m = 1; m <= NM; m++) { mon = MO[m]
                 for (i2 = 1; i2 <= n2; i2++) { t = TL[i2]; k = mon SUBSEP t
                     printf "T|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d\n", mon, t, TT[k SUBSEP 1]+0, TT[k SUBSEP 2]+0, TT[k SUBSEP 3]+0, TT[k SUBSEP 4]+0, TT[k SUBSEP 5]+0, TT[k SUBSEP 6]+0, TT[k SUBSEP 7]+0, TT[k SUBSEP 8]+0, TT[k SUBSEP 9]+0, NSN[k]+0 > MSA } } }
     ' ${aggs[@]+"${aggs[@]}"} < /dev/null
     LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 "$ALLF.tmp" > "$ALLF.tmp2" && mv "$ALLF.tmp2" "$ALLF" && rm -f "$ALLF.tmp"
 
     nz0() { [ "${1:-0}" = 0 ] || printf '%s' "$1"; }   # a count cell shows blank, never 0
-    for which in this previous; do
-        [ "$which" = this ] && mon=$MS_THIS || mon=$MS_PREV
+    local p nrow
+    for p in $MS_MONTHS; do
+        which=${p%%:*}; mon=${p#*:}
         for dim in $DIMS; do
             case $dim in
                 account)      title="Accounts";      chead="Account";      nkind=acct;  noun="account";  bf=_accounts ;;
@@ -519,13 +539,25 @@ month_stats() {
             # case-insensitively; an unconfigured name stays untinted (restint)
             bfp="$CONFIG_BASE/$bf.tsv"; [ -f "$bfp" ] || bfp=/dev/null
             # rows busiest first (Files desc, name tiebreak); no count cell
-            # ever shows a 0 (2026-09-29: only In / Out were blanked)
+            # ever shows a 0 (2026-09-29: only In / Out were blanked). THE ROWS
+            # WITH NO TRAFFIC (2026-10-01, user request): every entity of the base
+            # cache that started no File in the month follows, name order, all
+            # count cells blank, tinted like the others (Unknown is no entity)
             rows=$({ grep "^S|$mon|$dim|" "$MSA" || true; } | LC_ALL=C sort -t'|' -k5,5nr -k4,4f -k4,4 | awk -F'|' -v BF="$bfp" '
-                BEGIN { while ((getline l < BF) > 0) { n9 = split(l, a9, "\t"); if (n9 >= 3 && a9[1] != "" && (a9[3] == "green" || a9[3] == "orange" || a9[3] == "red")) RES[toupper(a9[1])] = a9[3] }
+                BEGIN { while ((getline l < BF) > 0) { n9 = split(l, a9, "\t"); if (a9[1] == "") continue
+                            BN[++NB] = a9[1]   # the base list, for the rows with no traffic
+                            if (n9 >= 3 && (a9[3] == "green" || a9[3] == "orange" || a9[3] == "red")) RES[toupper(a9[1])] = a9[3] }
                         close(BF) }
                 function nz(x) { return (x + 0 == 0) ? "" : x + 0 }
                 $4 == "" { next }
-                { r9 = toupper($4); printf "ROW\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\n", $4, $5, nz($6), nz($7), nz($8), nz($9), nz($10), nz($11), nz($12), nz($13), ((r9 in RES) ? "\t@data:res=" RES[r9] : "") }')
+                { r9 = toupper($4); SEEN[r9] = 1
+                  printf "ROW\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\n", $4, $5, nz($6), nz($7), nz($8), nz($9), nz($10), nz($11), nz($12), nz($13), ((r9 in RES) ? "\t@data:res=" RES[r9] : "") }
+                END { n0 = 0
+                      for (i = 1; i <= NB; i++) { k9 = toupper(BN[i]); if (k9 in SEEN || BN[i] == "Unknown") continue; SEEN[k9] = 1; Z[++n0] = BN[i] }
+                      for (i = 2; i <= n0; i++) { v = Z[i]; j = i - 1
+                          while (j >= 1 && (toupper(Z[j]) > toupper(v) || (toupper(Z[j]) == toupper(v) && Z[j] > v))) { Z[j + 1] = Z[j]; j-- }
+                          Z[j + 1] = v }
+                      for (i = 1; i <= n0; i++) { r9 = toupper(Z[i]); printf "ROW\t%s\t\t\t\t\t\t\t\t\t%s\n", Z[i], ((r9 in RES) ? "\t@data:res=" RES[r9] : "") } }')
             # the HOST pages have no Waiting / Expired columns (2026-09-29 audit):
             # a host counts OUT-connection Files, and Waiting / Expired are UC2
             # pickups — Files the partner connects IN for — so the two were blank
@@ -550,14 +582,17 @@ month_stats() {
                 printf 'HEAD\t%s\tFiles\tIn Files\tOut Files\tError\tAutomatic\tResubmit Ok\tResubmit Error%s\n' "$chead" "$hstate"
                 printf 'KIND\t%s\tnum\tnum\tnum\tnumfailed\tnumwarn\tnumwarn\tnumfailed%s\n' "$nkind" "$kstate"
                 [ -n "$rows" ] && printf '%s\n' "$rows"
+                # the label counts the ROWS shown — the zero-traffic rows included
+                # (2026-10-01); the sums stay the traffic of the month
+                nrow=$(printf '%s\n' "$rows" | grep -c '^ROW' || true)
                 printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s%s\n' \
-                    "$ns" "$noun" "$tc" "$(nz0 "$tin")" "$(nz0 "$tout")" "$(nz0 "$tfe")" "$(nz0 "$tra")" "$(nz0 "$tmo")" "$(nz0 "$tme")" "$tstate"
+                    "$nrow" "$noun" "$tc" "$(nz0 "$tin")" "$(nz0 "$tout")" "$(nz0 "$tfe")" "$(nz0 "$tra")" "$(nz0 "$tmo")" "$(nz0 "$tme")" "$tstate"
                 printf 'FOOT\n'
             } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
         done
     done
     rm -f "$MSA"
-    echo "Data written to $MSDIR (this month $MS_THIS, previous $MS_PREV, 18 report(s)) + $ALLF." >&2
+    echo "Data written to $MSDIR (months: $MS_MONTHS — 9 report(s) each) + $ALLF." >&2
 }
 FMT_PIDS=()
 month_stats & FMT_PIDS+=("$!")

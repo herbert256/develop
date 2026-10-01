@@ -56,6 +56,7 @@ source bin/awklib.sh    # $AWKLIB: the shared awk helpers (date.awk + fmt.awk)
 # same-weekday delta (2026-09-30: both carried a pasted copy)
 DAY_FN_AWK='
     function wdname(d,   p){ split(d,p,"-"); return WD[jdn(p[1]+0,p[2]+0,p[3]+0) % 7] }
+    function dayjdn(d,   p){ split(d,p,"-"); return jdn(p[1]+0,p[2]+0,p[3]+0) }
     function pctd(v, avg,   p) { if (avg <= 0) return ""; p = (v - avg) * 100 / avg; if (p > -0.5 && p < 0.5) return "0%"; return sprintf("%+.0f%%", p) }'
 DATA="data"
 
@@ -369,7 +370,10 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             if (nnew > 0 && d != D[1])
                 printf "FACT\t**%d account(s) first seen** on this day: %s%s.\n", nnew, joins(L6, nnew), (nnew > 6 ? ", …" : "") >> out
             ngone = pickacc(d, amax, L6)
-            if (ngone > 0 && d != D[nd])
+            # only for a day MORE than 14 days before the newest data day
+            # (2026-10-01, user request): an account last seen on a recent day
+            # has not gone quiet yet, it just had no transfer since
+            if (ngone > 0 && dayjdn(D[nd]) - dayjdn(d) > 14)
                 printf "FACT\t**%d account(s) went quiet** after this day (no transfers since): %s%s.\n", ngone, joins(L6, ngone), (ngone > 6 ? ", …" : "") >> out
             if (RSUB[d] + 0 >= 10)
                 printf "FACT\t**%d resubmitted transfer legs** — someone (or something) was retrying.\n", RSUB[d] >> out
@@ -722,7 +726,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             if (LGF[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../analyses/partners-in.html\tLogon screening failures\t**%d** disallowed / bad-key / locked / auth-failed SSH logons — the incoming screening funnel\n", LGF[d] >> out
             if (LGO[d] + 0 > 0)
-                printf "PROBLEM\tserver\t../analyses/partners-out.html\tOutbound logon failures\t**%d** failed authentications AT remote hosts — us being refused by the partner (expired password, refused key, certificate policy)\n", LGO[d] >> out
+                printf "PROBLEM\tserver\t../analyses/partners-out.html\tOutbound logon failures\t**%d** failed authentications AT remote hosts — us being refused by the partner\n", LGO[d] >> out
             if (CF[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../server/failure-flows.html" q "\tConnection failures\t**%d** connection-failure messages — retry storms toward an unreachable partner\n", CF[d] >> out
             # the ARSP0001 lines are rows of Routing errors (one dated row per
@@ -734,7 +738,7 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             if (NRDE[d] + 0 > 0)
                 printf "PROBLEM\tserver\t../analyses/uc-status-uc3.html" q "\tNo remote dir\t**%d** failed listing(s) on **%d** subscription(s) whose configured remote directory does not exist — the partner answered \"No such file\", so no transfer was ever started\n", NRDE[d], NRDS[d] >> out
             if (NRFP[d] + 0 > 0)
-                printf "PROBLEM\tserver\t../analyses/uc-status-uc3.html" q "\tNo remote files\t**%d** poll(s) by **%d** UC3 subscription(s) that have NEVER found a file — the listing works, the remote directory is always empty\n", NRFP[d], NRFS[d] >> out
+                printf "PROBLEM\tserver\t../analyses/uc-status-uc3.html" q "\tNo remote files\t**%d** poll(s) by **%d** UC3 subscription(s) that did not find a file\n", NRFP[d], NRFS[d] >> out
             # (the "Trouble after success" line — went-kaput.rpt — went
             # 2026-09-30 with that .rpt: it never fired on the runtime data)
             # A day with NO transfer data got no hero from the transfer pass:

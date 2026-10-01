@@ -271,6 +271,48 @@ n=$(cat data/*/reports/*.rpt data/*/reports/*/*.rpt 2>/dev/null | command grep -
 check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n DESC line(s) still written (nothing reads a DESC since 2026-09-30)"
 check $(! grep -q ' data-res="' docs/transfer/anomalies.html 2>/dev/null && grep -qE 'class="num (failed|warn)' docs/transfer/anomalies.html 2>/dev/null && echo 0 || echo 1) "anomalies.html: rows tinted by severity, or no coloured × typical cell"
 check $(awk -F'\t' '$1 == "TABLE" { t++ } t == 1 && $1 == "ROW" && !/@data:res=/ { n++ } END { print n + 0 }' data/server/reports/io-errors.rpt 2>/dev/null | grep -qx 0 && echo 0 || echo 1) "io-errors per-folder rows without the account tint"
+# THE DAY / SUBSCRIPTION FILE LISTS and the whole-row File links (2026-10-01,
+# user request): every Waiting / Expired Summary cell with a value opens
+# waiting|expired/<yyyy-mm-dd>.html holding exactly that many rows (orange /
+# red, the File colour); the Summary has no drill any more; every Unknown
+# transfers Files row and every transfer/pirates/<slug>.html row opens an
+# existing files/<coreid>.html; every One-legged › Details row opens its
+# pirates/<slug>.html, whose row count is the row's One-legged Files
+n=0; bad=0
+while read -r k h c; do
+    [ -n "$k" ] || continue
+    n=$((n + 1)); col=orange; [ "$k" = X ] && col=red
+    r=$(grep -o "<tr data-res=\"$col\"" "docs/transfer/$h" 2>/dev/null | wc -l | tr -d ' ')
+    [ -n "$h" ] && [ "$r" = "$c" ] || bad=$((bad + 1))
+done <<< "$(awk -F'\t' '$1 == "TABLE" { t++ } t == 1 && $1 == "ROW" { for (i = 3; i <= 4; i++) { c = $i; h = ""; if (match(c, /^@\{href=[^}]*\}/)) { h = substr(c, 8, RLENGTH - 8); c = substr(c, RLENGTH + 1) } if (c + 0 > 0) print (i == 3 ? "W" : "X"), h, c + 0 } }' data/transfer/reports/waiting-expired.rpt 2>/dev/null)"
+check $([ "$n" -gt 0 ] && [ "$bad" = 0 ] && ! grep -q 'coreids-wait\|coreids-exp' docs/transfer/waiting-expired.html && echo 0 || echo 1) "waiting-expired Summary: $bad of $n Waiting / Expired cell(s) without a day list page of that many orange / red rows (or the old drill is back)"
+# rowlinks <regex of the docs-root prefix>, the <tr …> tags on stdin ->
+# "<rows> <rows with data-href> <data-href targets missing under docs/>"
+rowlinks() { awk -v pre="$1" '/data-res="/ { r++ } match($0, /data-href="[^"]*"/) { h++; q = substr($0, RSTART + 11, RLENGTH - 12); sub("^" pre, "", q); if ((getline x < ("docs/" q)) < 0) m++; else close("docs/" q) } END { print r + 0, h + 0, m + 0 }'; }
+read -r r h m <<< "$(awk 'BEGIN { RS = "<table" } NR == 2' docs/transfer/unknown-transfers.html 2>/dev/null | grep -o '<tr [^>]*>' | rowlinks '\\.\\./')"
+ur=$(awk -F'\t' '$12 == "Unknown" && $4 != ""' "$F" 2>/dev/null | wc -l | tr -d ' ')
+rl=$(awk 'BEGIN { RS = "<table" } NR == 2 { print substr($0, 1, 300); exit }' docs/transfer/unknown-transfers.html 2>/dev/null | grep -c 'data-rowlink' || true)
+check $([ "$r" -gt 0 ] && [ "$r" = "$ur" ] && [ "$h" = "$r" ] && [ "$m" = 0 ] && [ "${rl:-0}" = 1 ] && echo 0 || echo 1) "Unknown transfers Files: $r row(s) ($ur dated Unknown Files), $h opening a File page, $m to a missing page, rowlink ${rl:-0}"
+np=0; bad=0; tot=0
+for p in docs/transfer/pirates/*.html; do
+    [ -f "$p" ] || continue; np=$((np + 1)); b=${p##*/}
+    read -r r h m <<< "$(grep -o '<tr [^>]*>' "$p" | rowlinks '\\.\\./\\.\\./')"; tot=$((tot + r))
+    c=$(grep -o "<tr [^>]*data-href=\"pirates/$b\"[^>]*><td[^>]*>.*" docs/transfer/pirates-details.html | sed 's#^[^<]*<tr[^>]*><td.*</td><td class="num[^"]*">\([0-9]*\)</td>.*#\1#' | head -1)
+    [ "$r" -gt 0 ] && [ "$h" = "$r" ] && [ "$m" = 0 ] && [ "${c:-x}" = "$r" ] || { bad=$((bad + 1)); echo "  pirates/$b: $r row(s), $h linked, $m missing, Details count ${c:-?}" >&2; }
+done
+nd=$(grep -o '<tr [^>]*data-href="pirates/[^"]*"' docs/transfer/pirates-details.html 2>/dev/null | wc -l | tr -d ' ')
+po=$(awk -F'\t' '$10 == 1 && $12 != "" && $12 != "Unknown"' "$F" 2>/dev/null | wc -l | tr -d ' ')
+check $([ "$np" -gt 0 ] && [ "$bad" = 0 ] && [ "$nd" = "$np" ] && [ "$tot" = "$po" ] && echo 0 || echo 1) "One-legged: $np pirates/ page(s) ($bad wrong), $nd Details row(s) opening one, $tot row(s) for $po one-legged Files of a real subscription"
+# THE 2026-10-01 BATCH: First seen column order, the Size regime / Stub
+# shippers tabs gone, the Top view TOTAL label, Duration Median before
+# Average, the day-page wordings, the From/To blink on load
+h=$(grep -o '<th[^>]*>[^<]*</th>' docs/analyses/first-seen.html 2>/dev/null | head -7 | sed 's/<[^>]*>//g' | tr '\n' '|')
+check $([ "$h" = "Date|Subscriptions|Partners|Logical|Accounts|Logins|Hosts|" ] && echo 0 || echo 1) "first-seen.html header is '${h:-?}', expected Date|Subscriptions|Partners|Logical|Accounts|Logins|Hosts|"
+check $([ ! -e docs/transfer/files-size-regime.html ] && [ ! -e docs/transfer/files-stub-shippers.html ] && [ ! -e bin/transfer/reports/size-profile.sh ] && ! grep -rqsE 'files-(size-regime|stub-shippers)\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "the Size regime / Stub shippers pages (size-profile.sh) are back or still linked"
+check $(awk -F'\t' '$1 == "TOTAL" { v = $2; sub(/^@\{[^}]*\}/, "", v); print v; exit }' data/transfer/reports/topview.rpt 2>/dev/null | grep -qx 'Total' && echo 0 || echo 1) "the transfer Top view TOTAL label is not 'Total'"
+check $(grep -q $'^HEAD\tDate\tFiles\tMedian\tAverage\t' data/transfer/reports/duration.rpt 2>/dev/null && echo 0 || echo 1) "duration.rpt does not head Date · Files · Median · Average"
+check $(! grep -lqsE '\(expired password|NEVER found a file' docs/day/*.html && echo 0 || echo 1) "a day page still says '(expired password …' or 'NEVER found a file'"
+check $(grep -q 'dateblink' docs/assets/report.js 2>/dev/null && grep -q 'dateblink' docs/assets/style.css 2>/dev/null && echo 0 || echo 1) "report.js / style.css lack the From/To blink on load (dateblink)"
 # the three partner study reports are GONE (2026-09-30, user request): no
 # writer, .rpt, page or help page may come back
 n=$(ls bin/analyses/reports/partner-scorecard.sh bin/analyses/reports/blast-radius.sh bin/analyses/reports/app-partners.sh data/analyses/reports/partner-scorecard.rpt data/analyses/reports/blast-radius.rpt data/analyses/reports/app-partners.rpt docs/analyses/partner-scorecard.html docs/analyses/blast-radius.html docs/analyses/app-partners.html docs/help/partner-scorecard.html docs/help/blast-radius.html docs/help/app-partners.html 2>/dev/null | wc -l | tr -d ' ')
@@ -1297,7 +1339,8 @@ check $([ ! -d "docs/use-cases" ] && [ ! -d "docs/transfers" ] && echo 0 || echo
 # brought back the same day (2026-09-29, user request): Month stats (18 pages,
 # Activity & volume group) and Missing entities (five tabs, Coverage group)
 n=$(ls docs/transfer/month-stats/*.html 2>/dev/null | wc -l | tr -d " ")
-check $([ "${n:-0}" = 18 ] && echo 0 || echo 1) "docs/transfer/month-stats holds ${n:-0} page(s), expected the 18 Month stats pages"
+months=$(ls docs/transfer/month-stats/*-subscription.html 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${months:-0}" -ge 1 ] && [ "${months:-0}" -le 3 ] && [ "${n:-0}" = $((months * 9)) ] && echo 0 || echo 1) "docs/transfer/month-stats holds ${n:-0} page(s), expected 9 per month (${months:-0} month(s), up to 3 since 2026-10-01)"
 check $(grep -q "grouptag\">&larr; Activity &amp; volume" docs/transfer/month-stats/previous-bl.html 2>/dev/null && echo 0 || echo 1) "transfer/month-stats/previous-bl.html lacks the Activity & volume group tag"
 n=$(ls docs/server/missing-entities-*.html 2>/dev/null | wc -l | tr -d " ")
 check $([ "${n:-0}" = 5 ] && echo 0 || echo 1) "docs/server holds ${n:-0} Missing entities tab page(s), expected 5"

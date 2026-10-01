@@ -1,7 +1,7 @@
 <h1>Sizes &amp; types</h1>
 <h2>What it shows</h2>
 <ul>
-<li>The files themselves: sizes, types, repeated names, the largest Files, and flows whose typical size changed or that ship stubs.</li>
+<li>The files themselves: sizes, types, repeated names and the largest Files.</li>
 </ul>
 <h2>Tabs</h2>
 <ul>
@@ -10,17 +10,14 @@
 <li><strong>By type</strong> &mdash; per extension: Transfers / Error / OK / Volume / % of transfers; counts legs.</li>
 <li><strong>Duplicates</strong> &mdash; names transferred more than once, any outcome: Files / Error / <strong>Accounts</strong> (distinct senders) / First / Last; full period.</li>
 <li><strong>Largest files</strong> &mdash; the 50 largest Files: Size / Throughput (size &divide; wall-clock span) / Start / Account / Subscription / Outcome / File, in the <a href="general.html#colours">File colour</a>.</li>
-<li><strong>Size regime</strong> &mdash; flows with 20+ Files whose median size changed 3&times;+ between the first and second half of their Files; &infin; = a first-half median of 0 B.</li>
-<li><strong>Stub shippers</strong> &mdash; flows with 10%+ stubs, files smaller than the <strong>Stub limit</strong> = max(1 KB, 1% of the flow&rsquo;s median).</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Empty files delivered OK, Size regime changed and Stub shippers: rows tint by the subscription&rsquo;s result colour. A size bucket without Files shows empty cells.</li>
+<li>Empty files delivered OK: rows tint by the subscription&rsquo;s result colour. A size bucket without Files shows empty cells.</li>
 <li>All tabs but By type count Files; Error = Failed or Expired.</li>
 <li>The 0 B bucket holds every empty File, failed or not; only the OK ones reach Empty files.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
 <li>Duplicates with Error below Files usually mean a failed transfer was re-sent successfully.</li>
-<li>A data file plus a 0-byte semaphore gives a steady ~50% stub share by design; a sudden surge is the interesting row.</li>
 </ul>

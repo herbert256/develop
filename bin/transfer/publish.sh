@@ -157,8 +157,9 @@ fi
 # .rpt per subscription with expired Files into data/transfer/reports/expired/,
 # listing those Files; render each to docs/transfer/expired/<slug>.html
 # (2 levels deep -> ../../ css). The Expired cells of the Waiting & Expired
-# report's Subscriptions table link here via @{href=expired/...}. No date
-# filter (a current-state list).
+# report's Subscriptions table link here via @{href=expired/...}; the DAY lists
+# expired/<yyyy-mm-dd>.html (2026-10-01) render from the same directory, opened
+# from the Summary's Expired cells. No date filter (a current-state list).
 shopt -s nullglob
 expp=("$DATA"/transfer/reports/expired/*.rpt)
 shopt -u nullglob
@@ -174,15 +175,17 @@ if [ ${#expp[@]} -gt 0 ]; then
     done
     pub_wait
     CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"
-    echo "Rendered docs/transfer/expired/ (${#expp[@]} subscription page(s))." >&2
+    echo "Rendered docs/transfer/expired/ (${#expp[@]} subscription + day page(s))." >&2
 fi
 
 # Waiting SUBSCRIPTION pages (2026-09-21, user request — the Expired pages'
 # twin): waiting-expired.sh (waiting.sh until 2026-09-30) writes one .rpt per subscription with Files still staged into
 # data/transfer/reports/waiting/; render each to docs/transfer/waiting/<slug>.html
 # (2 levels deep -> ../../ css). The Waiting cells of the Waiting & Expired
-# report's Subscriptions table link here via @{href=waiting/...}. No date filter (Waiting is a
-# state at the dataset's end).
+# report's Subscriptions table link here via @{href=waiting/...}; the DAY lists
+# waiting/<yyyy-mm-dd>.html (2026-10-01) render from the same directory, opened
+# from the Summary's Waiting cells. No date filter (Waiting is a state at the
+# dataset's end).
 shopt -s nullglob
 waip=("$DATA"/transfer/reports/waiting/*.rpt)
 shopt -u nullglob
@@ -198,7 +201,32 @@ if [ ${#waip[@]} -gt 0 ]; then
     done
     pub_wait
     CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"
-    echo "Rendered docs/transfer/waiting/ (${#waip[@]} subscription page(s))." >&2
+    echo "Rendered docs/transfer/waiting/ (${#waip[@]} subscription + day page(s))." >&2
+fi
+
+# One-legged SUBSCRIPTION pages (2026-10-01, user request: "clicking a row
+# [of One-legged › Details] must give a page transfer/pirates/<subscription>.html
+# with the files"): pirates.sh writes one .rpt per subscription with
+# one-legged Files into data/transfer/reports/pirates/; render each to
+# docs/transfer/pirates/<slug>.html (2 levels deep -> ../../ css), each row
+# opening its File page. DATE-AWARE (the transfer date list), like the
+# Details count the row opens from.
+shopt -s nullglob
+pirp=("$DATA"/transfer/reports/pirates/*.rpt)
+shopt -u nullglob
+# clear even when THIS run has no .rpt set (stale pages would survive forever)
+mkdir -p "$DOCS/transfer/pirates"
+rm -f "$DOCS"/transfer/pirates/*.html
+if [ ${#pirp[@]} -gt 0 ]; then
+    CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../../details/"
+    for f in "${pirp[@]}"; do
+        b=${f##*/}; b=${b%.rpt}
+        # one report key per subscription: a remembered search or sort belongs to THAT flow's page
+        pub_run render_rpt "$f" "$DOCS/transfer/pirates/$b.html" "../../assets/style.css" "../../index.html" "TRANSFER - One-legged" "" "pirates" "pirates-$b"
+    done
+    pub_wait
+    DLINK_BASE="../details/"
+    echo "Rendered docs/transfer/pirates/ (${#pirp[@]} subscription page(s))." >&2
 fi
 
 # THE FILE PAGES — docs/files/ (render_file_pages above), from the errors/ +

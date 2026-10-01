@@ -18,7 +18,7 @@
 #                        menu/index entry)
 #
 # Tables (per view, SIDE BY SIDE):
-#   Duration per day — percentiles: Date · Files | Average · Median | p10 /
+#   Duration per day — percentiles: Date · Files | Median · Average | p10 /
 #     p25 / p50 / p75 / p90 / p95 / p98 / p99 / p100 — the former "min / avg
 #     / median / max" table MERGED in (2026-09-30, user request: after Files
 #     some extra space, then Average and Median, then some extra space — the
@@ -221,17 +221,19 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
     # (min avg median max p10 p25 p50 p75 p90 p95 p98 p99), $16-$28
     # their drill lists (L first, shared by the Date and Files cells).
     # Each view picks its columns; drill-cell-N is the view's own cell index.
-    # THE MERGED ROW (2026-09-30): Date · Files · Average ($5) · Median ($6)
+    # THE MERGED ROW (2026-09-30): Date · Files · Median ($6) · Average ($5)
+    # (Median first since 2026-10-01, user request: "Switch the Average and
+    # Median columns")
     # · p10..p99 ($8..$15) · p100 — the day's longest File, the Max cell ($7)
     # and its drill list ($20) reused, so p100 equals the former Max to the
     # ms. The home per-day table reads p50/p75/p90/p95/p99 from this table by
     # POSITION (bin/build/publish.sh, ROW fields 8/9/10/11/13).
     local perday_pp; perday_pp=$(printf '%s\n' "$agg" | awk -F'\t' 'BEGIN{OFS="\t"} $1=="1"{
-        row="ROW" OFS $2 OFS $3 OFS $5 OFS $6
+        row="ROW" OFS $2 OFS $3 OFS $6 OFS $5   # Median before Average (2026-10-01, user request)
         for(i=8;i<=15;i++) row=row OFS $i
         row=row OFS $7
         row=row OFS "@data:drill-cell-0=" $16 OFS "@data:drill-cell-1=" $16
-        row=row OFS "@data:drill-cell-2=" $18 OFS "@data:drill-cell-3=" $19
+        row=row OFS "@data:drill-cell-2=" $19 OFS "@data:drill-cell-3=" $18   # Median / Average drill lists
         for(i=4;i<=11;i++) row=row OFS "@data:drill-cell-" i "=" $(i+17)
         row=row OFS "@data:drill-cell-12=" $20
         print row
@@ -251,16 +253,16 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
         # from hdc() carrying their own dur-<unit> class, and the renderer adds
         # the num alignment to those itself.
         # TWO TABLES SIDE BY SIDE (2026-09-30, user request): the per-day
-        # table FIRST — Date · Files | Average · Median | p10 … p100, the
-        # gsep= dividers giving the extra space after Files and after Median
+        # table FIRST — Date · Files | Median · Average | p10 … p100, the
+        # gsep= dividers giving the extra space after Files and after Average
         # (the home per-day table reads its p50/p75/p90/p95/p99 by TITLE and
         # position — bin/build/publish.sh — so the title stays) — then the
         # duration distribution of this view's Files; both `sxs`.
         printf 'TABLE\tDuration per day — percentiles\twide\tsxs\ttotaltop\tgsep=2,4\tnoagg=2,3,4,5,6,7,8,9,10,11,12\n'
-        printf 'HEAD\tDate\tFiles\tAverage\tMedian\tp10\tp25\tp50\tp75\tp90\tp95\tp98\tp99\tp100\n'
+        printf 'HEAD\tDate\tFiles\tMedian\tAverage\tp10\tp25\tp50\tp75\tp90\tp95\tp98\tp99\tp100\n'
         printf 'KIND\ttext\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tnum\n'
         printf 'TOTAL\tOverall (%s days)\t@{class=num}%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-            "$g_days" "$g_n" "$h_avg" "$h_p50" "$h_p10" "$h_p25" "$h_p50" "$h_p75" "$h_p90" "$h_p95" "$h_p98" "$h_p99" "$h_max"
+            "$g_days" "$g_n" "$h_p50" "$h_avg" "$h_p10" "$h_p25" "$h_p50" "$h_p75" "$h_p90" "$h_p95" "$h_p98" "$h_p99" "$h_max"
         printf '%s\n' "$perday_pp"
         # the distribution (duration-distribution.sh until 2026-09-30): each
         # band's per-day counts re-aggregate for the From/To range

@@ -474,20 +474,24 @@ write_first_seen_page() {
         fi
     }
     local members=(logicals partners subscriptions accounts logins hosts)
+    # the DISPLAY order (2026-10-01, user request: "Make subscriptions the
+    # first column, make partners the second column"): positions into
+    # members / the .rpt fields (which keep their order)
+    local order=(3 2 1 4 5 6) o
     {
         html_head "First seen" "../assets/style.css" "" "ANALYSES" "first-seen"
         printf '<h1>First seen</h1>\n'
         # NOT class="index": index tables get report.js whole-row links, which
         # would make the Date cell navigate to the row's first cell page.
         printf '<div class="tablewrap"><table class="fit" data-nosort="1">\n'
-        local thead='<tr><th>Date</th><th class="num">Logical</th><th class="num">Partners</th><th class="num">Subscriptions</th><th class="num">Accounts</th><th class="num">Logins</th><th class="num">Hosts</th></tr>'
+        local thead='<tr><th>Date</th><th class="num">Subscriptions</th><th class="num">Partners</th><th class="num">Logical</th><th class="num">Accounts</th><th class="num">Logins</th><th class="num">Hosts</th></tr>'
         printf '%s\n' "$thead"
         # the Total row renders TWICE — above the Not seen row and as the
         # footer — so the column totals are in view from the top
         total_row() {
             local i=0 m
             printf '<tr class="total"><td>Total</td>'
-            for m in "${members[@]}"; do i=$((i+1)); eval "fscell \"\$t$i\" $m ${kp}total"; done
+            for o in "${order[@]}"; do eval "fscell \"\$t$o\" ${members[$((o-1))]} ${kp}total"; done
             printf '</tr>\n'
         }
         local t1 t2 t3 t4 t5 t6
@@ -500,18 +504,18 @@ write_first_seen_page() {
                     # SEEN/NOTSEEN carry no date column: shift the read fields
                     v6=$v5; v5=$v4; v4=$v3; v3=$v2; v2=$v1; v1=$d
                     printf '<tr data-res="green"><td>Seen</td>'
-                    i=0; for m in "${members[@]}"; do i=$((i+1)); eval "fscell \"\$v$i\" $m ${kp}seen"; done
+                    for o in "${order[@]}"; do eval "fscell \"\$v$o\" ${members[$((o-1))]} ${kp}seen"; done
                     printf '</tr>\n' ;;
                 NOTSEEN)
                     v6=$v5; v5=$v4; v4=$v3; v3=$v2; v2=$v1; v1=$d
                     printf '<tr data-res="orange"><td>Not seen</td>'
-                    i=0; for m in "${members[@]}"; do i=$((i+1)); eval "fscell \"\$v$i\" $m ${kp}notseen"; done
+                    for o in "${order[@]}"; do eval "fscell \"\$v$o\" ${members[$((o-1))]} ${kp}notseen"; done
                     printf '</tr>\n' ;;
                 # (NODATE — the "Seen, no date" row — went 2026-09-30, user
                 # request; its names still count into Seen)
                 ROW)
                     printf '<tr><td>%s</td>' "$d"
-                    i=0; for m in "${members[@]}"; do i=$((i+1)); eval "fscell \"\$v$i\" $m \"$kp$d\""; done
+                    for o in "${order[@]}"; do eval "fscell \"\$v$o\" ${members[$((o-1))]} \"$kp$d\""; done
                     printf '</tr>\n' ;;
                 TOTAL)
                     total_row ;;

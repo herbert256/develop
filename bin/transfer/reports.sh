@@ -43,7 +43,6 @@ pool_run "$SCRIPT_DIR/reports/entities.sh"   # the Entities PAGES (the grouped l
 pool_run "$SCRIPT_DIR/reports/topview.sh"
 pool_run "$SCRIPT_DIR/reports/stale-accounts.sh"
 pool_run "$SCRIPT_DIR/reports/went-quiet.sh"
-pool_run "$SCRIPT_DIR/reports/size-profile.sh"
 pool_run "$SCRIPT_DIR/reports/connection-efficiency.sh"
 pool_run "$SCRIPT_DIR/reports/recovered.sh"
 pool_run "$SCRIPT_DIR/reports/recovered-files.sh"

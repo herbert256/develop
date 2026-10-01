@@ -27,7 +27,6 @@ _merge_pad() {
     case $(basename "$1" .rpt) in
         hourly) echo 2 ;;   # (legs-count and protocol-journey went 2026-09-30 with the Flow patterns group)   # (error-reasons stays 1: its 2026-09-28 second table, Reasons over time, rides its tab — tab=reasons)
         resubmissions) echo 3 ;;   # resubmissions 2->3 (2026-08: + server-log outcomes); dwell-time.sh writes duration-dwell.rpt itself (merge-duration-dwell.sh went 2026-09-30)
-        size-profile) echo 2 ;;   # a Sizes component (the Trends components trend / duration-trend went with their page, 2026-09-29)
         # errors-day 2->1 and error-timing 3->1 (2026-09-28: the per-day table = the Top view; hour + weekday folded into the heatmap)
         attempts) echo 4 ;;               # (logon, 2->4 in 2026-08, is merged no more: logon.rpt is pageless since 2026-09-30)
         size-dist) echo 2 ;;

@@ -2492,6 +2492,18 @@
       to.value = String(urlHi);
       apply();
     } else if (!resetDates && !urlRow && restoreSel()) apply();
+    // THE NARROWED-RANGE BLINK (2026-10-01, user request: "after loading a
+    // page and there are date period selection fields with a selection other
+    // then 'All' highlight and blink the from/to dates for a second"): a page
+    // that OPENS on less than the full range (a remembered or linked From/To)
+    // flashes its From / To once, so the reader sees the data is narrowed.
+    // On load only — a user change never blinks (style.css select.dateblink;
+    // prefers-reduced-motion gets a static highlight for the second instead).
+    if (dates.length && (String(from.value) !== String(epochOf[dates[0]]) ||
+                         String(to.value) !== String(epochOf[dates[dates.length - 1]]))) {
+      from.classList.add("dateblink"); to.classList.add("dateblink");
+      setTimeout(function () { from.classList.remove("dateblink"); to.classList.remove("dateblink"); }, 1100);
+    }
 
     // DASHBOARDS MODE (2026-08): on the dashboards the controls lead the
     // page — right under the title, before the KPI row — because EVERYTHING

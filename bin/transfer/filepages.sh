@@ -19,6 +19,14 @@
 #         is one group), ms descending, CoreId ascending on a tie — THE
 #         selection: bin/transfer/reports/duration-longest.sh lists exactly
 #         these rows, it does not select again
+#     U   every dated File of the "Unknown" subscription (2026-10-01, user
+#         request: "every row of unknown-transfers must have an entry in
+#         /files/, the complete row must link to it") — the Unknown transfers
+#         Files table lists exactly these (col 12 == "Unknown", col 4 set)
+#     P   every ONE-LEGGED File of a real subscription (col 10 == 1, col 12
+#         set and not "Unknown"; 2026-10-01, user request) — the rows of the
+#         per-subscription One-legged pages transfer/pirates/<slug>.html
+#         (pirates.sh), each opening its File page
 #
 # per _files.tsv col 12 value ("Unknown" included). This is the ONE list of
 # the CoreIds that have a docs/files/<CoreId>.html page: bin/transfer/publish.sh
@@ -58,6 +66,11 @@ if [ ! -s "$FILES" ]; then : > "$OUT"; echo "filepages: no transfer cache — no
     LC_ALL=C awk -F'\t' -v OFS='\t' '$2 == "Processed" && ($9 + 0) > 0 { print $9 + 0, $1, $12 }' "$FILES" \
         | LC_ALL=C sort -t"$(printf '\t')" -k1,1nr -k2,2 \
         | LC_ALL=C awk -F'\t' -v n="$LONGEST_N" -v per="$LONGEST_PER_SUB" 'k < n && ++c[$3] <= per { k++; print $2 "\tL\t" $3 }'
+    # U: every dated Unknown File; P: every one-legged File of a real
+    # subscription (see the header — a CoreId may carry two kinds; every
+    # reader takes the CoreId column only)
+    LC_ALL=C awk -F'\t' '$12 == "Unknown" && $4 != "" { print $1 "\tU\t" $12 }
+        $10 == 1 && $12 != "" && $12 != "Unknown" { print $1 "\tP\t" $12 }' "$FILES"
 } | LC_ALL=C sort -u > "$OUT.tmp"
 mv "$OUT.tmp" "$OUT"
-echo "filepages: $(awk -F'\t' '$2 == "O"' "$OUT" | wc -l | tr -d ' ') latest-OK + $(awk -F'\t' '$2 == "E"' "$OUT" | wc -l | tr -d ' ') error + $(awk -F'\t' '$2 == "L"' "$OUT" | wc -l | tr -d ' ') longest File page(s)." >&2
+echo "filepages: $(awk -F'\t' '$2 == "O"' "$OUT" | wc -l | tr -d ' ') latest-OK + $(awk -F'\t' '$2 == "E"' "$OUT" | wc -l | tr -d ' ') error + $(awk -F'\t' '$2 == "L"' "$OUT" | wc -l | tr -d ' ') longest + $(awk -F'\t' '$2 == "U"' "$OUT" | wc -l | tr -d ' ') Unknown + $(awk -F'\t' '$2 == "P"' "$OUT" | wc -l | tr -d ' ') one-legged File page(s) ($(cut -f1 "$OUT" | LC_ALL=C sort -u | wc -l | tr -d ' ') CoreIds)." >&2

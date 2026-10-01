@@ -238,7 +238,7 @@ report_tabs() {
         cross-application)  cross_tabs "Accounts|Logins|Subscriptions|Hosts|Logical|Partners|Domains|BL" ;;
         cross-domain)       cross_tabs "Accounts|Logins|Subscriptions|Hosts|Logical|Partners|Applications|BL" ;;
         cross-bl)           cross_tabs "Accounts|Logins|Subscriptions|Hosts|Logical|Partners|Applications|Domains" ;;
-        files)         echo "By size|Empty files|By type|Duplicates|Largest files|Size regime|Stub shippers" ;;   # 2026-09-29: + top-transfers and size-profile
+        files)         echo "By size|Empty files|By type|Duplicates|Largest files" ;;   # 2026-09-29: + top-transfers (size-profile, its Size regime + Stub shippers tabs, went 2026-10-01)
         went-quiet)    echo "Subscriptions|Accounts" ;;   # 2026-07 Tier 3: + stale-accounts
         # ---- the 2026-07 MERGED reports: one tab per component TABLE, in
         # component order — the tab count MUST equal the merged rpt's TABLE count
@@ -1931,28 +1931,37 @@ entry_label() {   # $1 area  $2 basename
     t=${t#Transfer }; echo "${t% Counts}"
 }
 # ---- Month stats (2026-09-13, user request) ---------------------------------
-# The 18 pages of the month stats (bin/transfer/reports/entities.sh's
-# month_stats part; month-stats.sh until 2026-09-30) — {this,previous} × the
-# nine entities — under docs/<area>/month-stats/, a member of the
-# Activity & volume group (retired and brought back 2026-09-29). Two tab rows: the MONTH (Current month · Previous month, each
-# with its yyyy-mm from the .rpt META) and the ENTITY (the Entities order).
-# No date filter (a page IS one month); no prose (help page month-stats).
+# The pages of the month stats (bin/transfer/reports/entities.sh's
+# month_stats part; month-stats.sh until 2026-09-30) — up to THREE months
+# (this / previous / previous2, the older two only when they have data,
+# 2026-10-01) × the nine entities — under docs/<area>/month-stats/, a member
+# of the Activity & volume group (retired and brought back 2026-09-29). Two
+# tab rows: the MONTH — one button per month written, newest first, labelled
+# just "yyyy-mm" (2026-10-01, user request; "Current month (…)" / "Previous
+# month (…)" until then), the month from the subscription .rpt's META — and
+# the ENTITY (the Entities order). No date filter (a page IS one month); no
+# prose (help page month-stats).
 render_month_stats() {   # $1 area
     local area=$1
     local rdir="$DATA/$area/reports/month-stats" odir="$DOCS/$area/month-stats"
     mkdir -p "$odir"; rm -f "$odir"/*.html
     [ -f "$rdir/this-subscription.rpt" ] || { echo "  (no month-stats .rpt yet — bin/transfer/reports/entities.sh writes them)" >&2; return 0; }
     local ents="subscription logical partner account login remote-host domain application bl"
-    local w e a rpt tmp nav row1 row2 lbl n=0 mon_this mon_prev
-    mon_this=$(meta_val "$rdir/this-subscription.rpt" month); mon_prev=$(meta_val "$rdir/previous-subscription.rpt" month)
+    local w e a rpt tmp nav row1 row2 lbl n=0 ws="" mw
+    # the months written, newest first, and their labels (MONL_<which>)
+    for w in this previous previous2; do
+        [ -f "$rdir/$w-subscription.rpt" ] || continue
+        ws="$ws $w"; mw=$(meta_val "$rdir/$w-subscription.rpt" month)
+        eval "MONL_$w=\$mw"
+    done
     local saved_dates=${CUR_DATES:-} saved_dl=${DLINK_BASE:-}
     CUR_DATES=""; DLINK_BASE="../../details/"
-    for w in this previous; do
+    for w in $ws; do
         for e in $ents; do
             rpt="$rdir/$w-$e.rpt"; [ -f "$rpt" ] || continue
             row1=""
-            for a in this previous; do
-                if [ "$a" = this ]; then lbl="Current month ($mon_this)"; else lbl="Previous month ($mon_prev)"; fi   # "Current", like the date preset (2026-09-29)
+            for a in $ws; do
+                eval "lbl=\${MONL_$a:-$a}"
                 if [ "$a" = "$w" ]; then row1+=$'\t'"1|$lbl|$a-$e.html"; else row1+=$'\t'"0|$lbl|$a-$e.html"; fi
             done
             row2=""
@@ -2161,7 +2170,7 @@ apply_report_groups() {
             case $dir in
                 transfer/entities) for f in "$DOCS/$dir/$stem"-*.html; do [ -f "$f" ] && fam+=("$f"); done ;;
                 analyses/xref)     for f in "$DOCS/$dir/cross"-*.html; do [ -f "$f" ] && fam+=("$f"); done ;;
-                transfer/month-stats) for f in "$DOCS/$dir"/*.html; do [ -f "$f" ] && fam+=("$f"); done ;;   # this-* AND previous-*
+                transfer/month-stats) for f in "$DOCS/$dir"/*.html; do [ -f "$f" ] && fam+=("$f"); done ;;   # this-*, previous-* AND previous2-* (2026-10-01)
                 *)  for f in "$DOCS/$dir/$stem.html" "$DOCS/$dir/$stem"-*.html; do
                         [ -f "$f" ] || continue
                         b=${f##*/}; b=${b%.html}; best=""

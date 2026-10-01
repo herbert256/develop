@@ -9,7 +9,7 @@ source "$SCRIPT_DIR/../lib.sh"
 source "$SCRIPT_DIR/../../merge_rpt.sh"
 OUT="$REPORTS_DIR/files.rpt"
 comps=()
-for c in size-dist file-type duplicate-files top-transfers size-profile; do   # + Largest files and Size profile (2026-09-29: their own pages went)
+for c in size-dist file-type duplicate-files top-transfers; do   # + Largest files (2026-09-29: its own page went); size-profile (Size regime + Stub shippers) went 2026-10-01, user request
     comps+=("$REPORTS_DIR/$c.rpt")
 done
 merge_rpt "$OUT" "Sizes & types" "${comps[@]}"
