@@ -45,59 +45,60 @@ pre{background:#f8f8f8;border:1px solid #eee;padding:.6rem;overflow-x:auto;margi
 <body>
 <div class="topbar" data-b="../" data-help="general"></div>
 <div class="buildwrap">
-<h1>Build report &mdash; Sample &mdash; 2026-10-01 14:59:54 &rarr; 15:00:25 &middot; 31 s</h1>
+<h1>Build report &mdash; Sample &mdash; 2026-10-01 15:10:58 &rarr; 15:11:31 &middot; 33 s</h1>
 <p class="banner ok">Build succeeded</p>
 <div class="bstats bsrow">
 <div class="bs"><h3>Input</h3><table><tr><th scope="row">Server logs</th><td class="v">68 files, 194,626 lines, 90.7 MB</td></tr><tr><th scope="row">Transfer logs</th><td class="v">68 files, 83,863 lines, 73.0 MB</td></tr></table></div>
-<div class="bs"><h3>Cached files</h3><table><tr><th scope="row">Server <code>_parse.tsv</code></th><td class="v">189,629 lines, 42.9 MB</td></tr><tr><th scope="row">Transfer <code>_files.tsv</code></th><td class="v">33,801 lines, 9.5 MB</td></tr></table></div>
+<div class="bs"><h3>Cached files</h3><table><tr><th scope="row">Server <code>_parse.tsv</code></th><td class="v">189,457 lines, 42.1 MB</td></tr><tr><th scope="row">Transfer <code>_files.tsv</code></th><td class="v">33,801 lines, 9.5 MB</td></tr></table></div>
 <div class="bs"><h3>Output</h3><table><tr><th scope="row">HTML files</th><td class="v">2,588</td></tr><tr><th scope="row">Size</th><td class="v">39.1 MB</td></tr></table></div>
 </div>
 <h2>Inbox</h2>
 <p class="bsnote">Not read on the sample estate (develop) — the inbox is runtime-only.</p>
 <table>
 <tr><th>#</th><th>Step</th><th>Command</th><th>Started</th><th>Duration</th><th>Status</th></tr>
-<tr><td class="r">1</td><td>parse: server log cache</td><td class="cmd">env AXWAY_SKIP_MENTIONS=1 bin/server/parse.sh</td><td class="r">14:59:54</td><td class="r">4 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">2</td><td>config: extract the configured entity lists</td><td class="cmd">bin/flow-manager.sh</td><td class="r">14:59:54</td><td class="r">2 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">3</td><td>parse: transfer log cache</td><td class="cmd">bin/transfer/parse.sh</td><td class="r">14:59:56</td><td class="r">2 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">4</td><td>result: discover the transfer-log hosts (before the mention scan)</td><td class="cmd">bin/build/result.sh discover-hosts</td><td class="r">14:59:58</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">5</td><td>parse: server mention caches</td><td class="cmd">env AXWAY_MENTIONS_ONLY=1 bin/server/parse.sh</td><td class="r">14:59:58</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">6</td><td>server log: logon summary (per login + per address)</td><td class="cmd">bin/build/logon-summary.sh</td><td class="r">14:59:58</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">7</td><td>server log -&gt; transfer: the ok bookends + reason lines (extract)</td><td class="cmd">bin/bookend-ok.sh extract</td><td class="r">14:59:58</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">8</td><td>server log -&gt; transfer: attribute Unknown flows by session</td><td class="cmd">bin/session-sites.sh</td><td class="r">14:59:58</td><td class="r">2 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">9</td><td>result: discover the transfer-log subscriptions (+ re-check the hosts)</td><td class="cmd">bin/build/result.sh discover</td><td class="r">15:00:00</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">10</td><td>server log -&gt; transfer: mark expired staged files</td><td class="cmd">bin/expire-files.sh</td><td class="r">15:00:00</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">11</td><td>server log -&gt; transfer: settle failed Files by ok bookend</td><td class="cmd">bin/bookend-ok.sh settle</td><td class="r">15:00:00</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">12</td><td>transfer: the published File pages (newest OK + 3 errors per subscription)</td><td class="cmd">bin/transfer/filepages.sh</td><td class="r">15:00:00</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">13</td><td>transfer: the newest-first cache copies</td><td class="cmd">bin/build/newest-caches.sh</td><td class="r">15:00:01</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">14</td><td>result: subscription outcomes -&gt; base caches</td><td class="cmd">bin/build/result.sh</td><td class="r">15:00:01</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">15</td><td>kaput evidence (early — the failed/details Reason evidence)</td><td class="cmd">bin/build/kaput-evidence.sh</td><td class="r">15:00:02</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">16</td><td>report: detail pages .rpt files</td><td class="cmd">env AXWAY_WAIT_FAILED=1 bin/transfer/reports/details.sh</td><td class="r">15:00:02</td><td class="r">4 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">17</td><td>report: transfer .rpt files (phase 1)</td><td class="cmd">bin/transfer/reports.sh phase1</td><td class="r">15:00:02</td><td class="r">4 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">18</td><td>report: server .rpt files</td><td class="cmd">bin/server/reports.sh</td><td class="r">15:00:06</td><td class="r">2 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">19</td><td>reason boxes (the Reason fallback sidecar)</td><td class="cmd">bin/build/reason-boxes.sh</td><td class="r">15:00:08</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">20</td><td>report catch-up: failed subscriptions (the Reason columns)</td><td class="cmd">bin/transfer/reports/failed.sh catchup</td><td class="r">15:00:08</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">21</td><td>report: dashboards + day pages .rpt files</td><td class="cmd">bash -c bin/dashboards/reports.sh &amp; d=$!; bin/day/reports.sh; s=$?; wait "$d" || s=$?; exit "$s"</td><td class="r">15:00:08</td><td class="r">2 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">22</td><td>report: transfer .rpt files (phase 2)</td><td class="cmd">bin/transfer/reports.sh phase2</td><td class="r">15:00:08</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">23</td><td>report: analyses .rpt files</td><td class="cmd">bin/analyses/reports.sh</td><td class="r">15:00:08</td><td class="r">2 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">24</td><td>publish: detail pages</td><td class="cmd">bin/transfer/publish-details.sh</td><td class="r">15:00:10</td><td class="r">4 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">25</td><td>publish: transfer report pages</td><td class="cmd">bin/transfer/publish.sh</td><td class="r">15:00:10</td><td class="r">7 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">26</td><td>publish: partner group pages</td><td class="cmd">bin/analyses/publish-partner-groups.sh</td><td class="r">15:00:17</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">27</td><td>publish: server report pages</td><td class="cmd">bin/server/publish.sh</td><td class="r">15:00:17</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">28</td><td>publish: analyses + coverage pages</td><td class="cmd">bin/analyses/publish.sh</td><td class="r">15:00:17</td><td class="r">2 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">29</td><td>publish: all files search + dashboards + day pages</td><td class="cmd">bash -c bin/analyses/publish-all-files.sh &amp; a=$!; bin/dashboards/publish.sh &amp;&amp; bin/day/publish.sh; s=$?; wait "$a" || s=$?; exit "$s"</td><td class="r">15:00:19</td><td class="r">3 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">30</td><td>publish: index pages + home</td><td class="cmd">bin/build/publish.sh</td><td class="r">15:00:22</td><td class="r">2 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">31</td><td>publish: display sweep (no milliseconds, input/rename.txt)</td><td class="cmd">bin/build/display-rename.sh</td><td class="r">15:00:24</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr class="total"><td></td><td>Total (31 steps)</td><td></td><td></td><td class="r">31 s</td><td></td></tr>
+<tr><td class="r">1</td><td>parse: server log cache</td><td class="cmd">env AXWAY_SKIP_MENTIONS=1 bin/server/parse.sh</td><td class="r">15:10:58</td><td class="r">5 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">2</td><td>config: extract the configured entity lists</td><td class="cmd">bin/flow-manager.sh</td><td class="r">15:10:58</td><td class="r">2 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">3</td><td>parse: transfer log cache</td><td class="cmd">bin/transfer/parse.sh</td><td class="r">15:11:00</td><td class="r">3 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">4</td><td>result: discover the transfer-log hosts (before the mention scan)</td><td class="cmd">bin/build/result.sh discover-hosts</td><td class="r">15:11:03</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">5</td><td>parse: server mention caches</td><td class="cmd">env AXWAY_MENTIONS_ONLY=1 bin/server/parse.sh</td><td class="r">15:11:03</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">6</td><td>server log: logon summary (per login + per address)</td><td class="cmd">bin/build/logon-summary.sh</td><td class="r">15:11:03</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">7</td><td>server log -&gt; transfer: the ok bookends + reason lines (extract)</td><td class="cmd">bin/bookend-ok.sh extract</td><td class="r">15:11:03</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">8</td><td>server log -&gt; transfer: attribute Unknown flows by session</td><td class="cmd">bin/session-sites.sh</td><td class="r">15:11:03</td><td class="r">2 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">9</td><td>result: discover the transfer-log subscriptions (+ re-check the hosts)</td><td class="cmd">bin/build/result.sh discover</td><td class="r">15:11:05</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">10</td><td>server log -&gt; transfer: mark expired staged files</td><td class="cmd">bin/expire-files.sh</td><td class="r">15:11:05</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">11</td><td>server log -&gt; transfer: settle failed Files by ok bookend</td><td class="cmd">bin/bookend-ok.sh settle</td><td class="r">15:11:05</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">12</td><td>transfer: the published File pages (newest OK + 3 errors per subscription)</td><td class="cmd">bin/transfer/filepages.sh</td><td class="r">15:11:05</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">13</td><td>transfer: the newest-first cache copies</td><td class="cmd">bin/build/newest-caches.sh</td><td class="r">15:11:06</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">14</td><td>result: subscription outcomes -&gt; base caches</td><td class="cmd">bin/build/result.sh</td><td class="r">15:11:06</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">15</td><td>kaput evidence (early — the failed/details Reason evidence)</td><td class="cmd">bin/build/kaput-evidence.sh</td><td class="r">15:11:07</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">16</td><td>report: detail pages .rpt files</td><td class="cmd">env AXWAY_WAIT_FAILED=1 bin/transfer/reports/details.sh</td><td class="r">15:11:07</td><td class="r">5 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">17</td><td>report: transfer .rpt files (phase 1)</td><td class="cmd">bin/transfer/reports.sh phase1</td><td class="r">15:11:07</td><td class="r">4 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">18</td><td>report: server .rpt files</td><td class="cmd">bin/server/reports.sh</td><td class="r">15:11:11</td><td class="r">2 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">19</td><td>reason boxes (the Reason fallback sidecar)</td><td class="cmd">bin/build/reason-boxes.sh</td><td class="r">15:11:13</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">20</td><td>report catch-up: failed subscriptions (the Reason columns)</td><td class="cmd">bin/transfer/reports/failed.sh catchup</td><td class="r">15:11:13</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">21</td><td>report: dashboards + day pages .rpt files</td><td class="cmd">bash -c bin/dashboards/reports.sh &amp; d=$!; bin/day/reports.sh; s=$?; wait "$d" || s=$?; exit "$s"</td><td class="r">15:11:13</td><td class="r">2 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">22</td><td>report: transfer .rpt files (phase 2)</td><td class="cmd">bin/transfer/reports.sh phase2</td><td class="r">15:11:13</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">23</td><td>report: analyses .rpt files</td><td class="cmd">bin/analyses/reports.sh</td><td class="r">15:11:14</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">24</td><td>publish: detail pages</td><td class="cmd">bin/transfer/publish-details.sh</td><td class="r">15:11:15</td><td class="r">5 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">25</td><td>publish: transfer report pages</td><td class="cmd">bin/transfer/publish.sh</td><td class="r">15:11:15</td><td class="r">8 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">26</td><td>publish: partner group pages</td><td class="cmd">bin/analyses/publish-partner-groups.sh</td><td class="r">15:11:23</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">27</td><td>publish: server report pages</td><td class="cmd">bin/server/publish.sh</td><td class="r">15:11:23</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">28</td><td>publish: analyses + coverage pages</td><td class="cmd">bin/analyses/publish.sh</td><td class="r">15:11:23</td><td class="r">2 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">29</td><td>publish: all files search + dashboards + day pages</td><td class="cmd">bash -c bin/analyses/publish-all-files.sh &amp; a=$!; bin/dashboards/publish.sh &amp;&amp; bin/day/publish.sh; s=$?; wait "$a" || s=$?; exit "$s"</td><td class="r">15:11:25</td><td class="r">3 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">30</td><td>publish: index pages + home</td><td class="cmd">bin/build/publish.sh</td><td class="r">15:11:28</td><td class="r">2 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">31</td><td>publish: display sweep (no milliseconds, input/rename.txt)</td><td class="cmd">bin/build/display-rename.sh</td><td class="r">15:11:30</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr class="total"><td></td><td>Total (31 steps)</td><td></td><td></td><td class="r">33 s</td><td></td></tr>
 </table>
 <h2>Step output</h2>
-<details><summary>1. parse: server log cache &mdash; 4 s &mdash; OK</summary><pre>Parsing 68 file(s) into /Users/herbert/axway/develop/data/server/cache/_parse.tsv ...
-TIME     1s  server parse: tokenize, slowest of 68 parts (its awk 1s; all parts: awk 4s + sort/split 2s)
+<details><summary>1. parse: server log cache &mdash; 5 s &mdash; OK</summary><pre>Parsing 68 file(s) into /Users/herbert/axway/develop/data/server/cache/_parse.tsv ...
+TIME     1s  server parse: tokenize, slowest of 68 parts (its awk 0s; all parts: awk 2s + sort/split 1s)
 TIME     0s  server parse: tokenizer paths — 190940 records (90 MB): fast split 190940 (90 MB), walk 0 (0 MB; per-character 0 + 0), multi-line 778 (0 MB); dropped ADMIN/AUDIT 136, noise 1073
 records: 189731
 TIME     2s  server parse: tokenize (per file)
+NOTE: dropped 172 duplicate server record(s) — equal to the second (kept one of each).
 Skip list: set aside 102 server record(s) -&gt; /Users/herbert/axway/develop/data/server/_skipped.tsv.
 TIME     2s  server parse: merge (per date)
-Wrote /Users/herbert/axway/develop/data/server/cache/_parse.tsv (189629 record(s)) and /Users/herbert/axway/develop/data/server/cache/_parse.txt.
+Wrote /Users/herbert/axway/develop/data/server/cache/_parse.tsv (189457 record(s)) and /Users/herbert/axway/develop/data/server/cache/_parse.txt.
 TIME     0s  server parse: per-entity mention caches
 </pre></details>
 <details><summary>2. config: extract the configured entity lists &mdash; 2 s &mdash; OK</summary><pre>TIME     0s  flow-manager: skip list, entity lists, pair tags
@@ -215,10 +216,10 @@ TIME     1s  flow-manager: PDA derivation
   data/flow-manager/xref/_subscriptions-ucderived.tsv: 13 pair(s)
   data/flow-manager/xref/_logical-rules.tsv: 153 pair(s)
   data/flow-manager/xref/_templates.tsv: 0 template(s)
-TIME     1s  flow-manager: directions, BL, the rest
+TIME     0s  flow-manager: directions, BL, the rest
 flow-manager.sh: wrote 11 entity caches to data/flow-manager/base/ + 95 pair caches (every read pair both ways) + the patterns and templates maps to data/flow-manager/xref/
 </pre></details>
-<details><summary>3. parse: transfer log cache &mdash; 2 s &mdash; OK</summary><pre>TIME     0s  parse: setup
+<details><summary>3. parse: transfer log cache &mdash; 3 s &mdash; OK</summary><pre>TIME     0s  parse: setup
 Parsing 68 file(s) into /Users/herbert/axway/develop/data/transfer/cache/_transfers0.tsv ...
 Endpoint addresses: 0 new outgoing address(es) recorded from the configured host, 64 already mapped.
 TIME     1s  parse: tokenize (+ address map)
@@ -233,10 +234,10 @@ TIME     0s  parse: still-under-way filter
 Wrote /Users/herbert/axway/develop/data/transfer/cache/_transfers.tsv (83447 record(s)), /Users/herbert/axway/develop/data/transfer/cache/_files.tsv (33982 transfer(s)), /Users/herbert/axway/develop/data/transfer/cache/_transfers.txt, /Users/herbert/axway/develop/data/transfer/cache/_files.txt.
 </pre></details>
 <details><summary>4. result: discover the transfer-log hosts (before the mention scan) &mdash; 0 s &mdash; OK</summary><pre>(no output)</pre></details>
-<details><summary>5. parse: server mention caches &mdash; 1 s &mdash; OK</summary><pre>TIME     0s  server parse: mentions: transfer-ended sessions
+<details><summary>5. parse: server mention caches &mdash; 1 s &mdash; OK</summary><pre>TIME     1s  server parse: mentions: transfer-ended sessions
   transfer-ended sessions: 271 (their Error/Warning lines stay out of the err/warn rings).
 TIME     0s  server parse: mentions: scan (10 parts)
-TIME     0s  server parse: mentions: memo replay 171997 of 188919 records
+TIME     0s  server parse: mentions: memo replay 171825 of 188747 records
 TIME     0s  server parse: mentions: lists + rings
 Wrote the per-entity server caches:
   accounts/: 104 per-name detail file(s) (+ 62 err/warn)
@@ -273,14 +274,14 @@ expire-files: rewrote /Users/herbert/axway/develop/data/transfer/cache/_files.ts
 <details><summary>11. server log -&gt; transfer: settle failed Files by ok bookend &mdash; 0 s &mdash; OK</summary><pre>bookend-ok: 13 file(s) settled Processed by an ok bookend, 0 reverted (13 row(s) changed).
 bookend-ok: rewrote /Users/herbert/axway/develop/data/transfer/cache/_files.tsv.
 </pre></details>
-<details><summary>12. transfer: the published File pages (newest OK + 3 errors per subscription) &mdash; 1 s &mdash; OK</summary><pre>filepages: 112 latest-OK + 210 error + 250 longest + 127 Unknown + 77 one-legged + 48 resubmitted + 18 recovered + 91 waiting + 360 expired File page(s) (1258 CoreIds).
+<details><summary>12. transfer: the published File pages (newest OK + 3 errors per subscription) &mdash; 0 s &mdash; OK</summary><pre>filepages: 112 latest-OK + 210 error + 250 longest + 127 Unknown + 77 one-legged + 48 resubmitted + 18 recovered + 91 waiting + 360 expired File page(s) (1258 CoreIds).
 </pre></details>
 <details><summary>13. transfer: the newest-first cache copies &mdash; 0 s &mdash; OK</summary><pre>newest-caches: wrote /Users/herbert/axway/develop/data/transfer/cache/newest/_files.tsv + _transfers.tsv (newest-first copies).
 </pre></details>
 <details><summary>14. result: subscription outcomes -&gt; base caches &mdash; 1 s &mdash; OK</summary><pre>TIME   0.2s  result: UC3 poll evidence
-TIME   0.1s  result: leg hosts, observed pairs, discovery
+TIME   0.2s  result: leg hosts, observed pairs, discovery
 TIME   0.2s  result: own last Files + connected rings attributed (ringattr)
-TIME   0.1s  result: trouble-after-success evidence (kaputflip)
+TIME   0.0s  result: trouble-after-success evidence (kaputflip)
 TIME   0.0s  result: the red flips (after last transfer, cannot connect)
 TIME   0.1s  result: rollups: accounts / logins / hosts / white
 TIME   0.1s  result: prune withdrawn discoveries
@@ -303,16 +304,16 @@ result.sh: result column filled for the 10 base caches.
 <details><summary>15. kaput evidence (early — the failed/details Reason evidence) &mdash; 0 s &mdash; OK</summary><pre>Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Wrote /Users/herbert/axway/develop/data/server/reports/_kaput-evidence.tsv (3 subscription(s) with server-log evidence after their last OK transfer, 1 of them not green; 0 UC3 cleared by a newer successful poll).
 </pre></details>
-<details><summary>16. report: detail pages .rpt files &mdash; 4 s &mdash; OK</summary><pre>Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', building per-entity detail files...
+<details><summary>16. report: detail pages .rpt files &mdash; 5 s &mdash; OK</summary><pre>Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', building per-entity detail files...
 TIME     1s  details: setup (cleanup, side inputs)
 TIME     0s  details: producer direction_rows
-TIME     0s  details: producer whitelist_rows
-TIME     3s  details: producer aggregate_files (PTN BL LOGIN HOST DOM)
+TIME     1s  details: producer whitelist_rows
 TIME     3s  details: producer compute_extras
+TIME     3s  details: producer aggregate_files (PTN BL LOGIN HOST DOM)
 TIME     3s  details: producer aggregate_files (SITE LGC ACC APP)
 TIME     3s  details: prep producers (parallel: files aggregation, extras, directions, whitelist + side scans)
 TIME     0s  details: stream sort + config rows
-TIME     0s  details: wait for transfer phase 1 (failed.sh's map)
+TIME     1s  details: wait for transfer phase 1 (failed.sh's map)
 TIME     0s  details: twins, stream slicing, side tables
 TIME     0s  details: logon summary (ensure_logons)
 TIME     0s  details: writer ACC
@@ -337,115 +338,115 @@ Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Data written to /Users/herbert/axway/develop/data/transfer/reports/stale-accounts.rpt (98 account(s), 8 stale).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/went-quiet-src.rpt (8 of 112 subscription(s) quiet for more than 7 days).
-TIME     0s  stale-accounts.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/stale-accounts.rpt (98 account(s), 8 stale).
 TIME     0s  went-quiet.sh  [cpu 0s]
+TIME     0s  stale-accounts.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/transfer/reports/failure-heatmap.rpt (33801 CoreId(s), 1558 failed).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/day.rpt (68 day(s) with records).
-TIME     0s  failure-heatmap.sh  [cpu 0s]
-TIME     0s  day.sh  [cpu 0s]
+TIME     1s  failure-heatmap.sh  [cpu 0s]
+TIME     1s  day.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/topview.rpt (68 day(s), 33801 file(s), 83447 row(s); + 26 resubmit / 16 recovered day list(s)).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/recovered.rpt (85 of 105 green subscription(s) recovered from a red episode).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/recovered-files.rpt (28 recovered file(s)).
-TIME     0s  recovered.sh  [cpu 0s]
+TIME     1s  topview.sh  [cpu 0s]
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-TIME     0s  recovered-files.sh  [cpu 0s]
+TIME     1s  recovered.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/recovered-files.rpt (28 recovered file(s)).
+TIME     1s  recovered-files.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/transfer/reports/not-in-flow-manager.rpt.
 TIME     1s  not-in-flow-manager.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/_red-run.tsv (7 went red from green, 0 never delivered).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/topview.rpt (68 day(s), 33801 file(s), 83447 row(s); + 26 resubmit / 16 recovered day list(s)).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/weekly.rpt (10 week(s), 33801 OK File(s)).
-TIME     1s  topview.sh  [cpu 0s]
-TIME     1s  red-run.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/_red-run.tsv (7 went red from green, 0 never delivered).
 TIME     1s  weekly.sh  [cpu 0s]
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+TIME     0s  red-run.sh  [cpu 0s]
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Data written to /Users/herbert/axway/develop/data/transfer/reports/missing-cronjobs.rpt (3 subscription(s) with no cron expression).
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-TIME     1s  missing-cronjobs.sh  [cpu 0s]
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Data written to /Users/herbert/axway/develop/data/transfer/reports/waiting-expired.rpt (+ 43 waiting / 77 expired list page(s)).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/punctuality-src.rpt (112 subscription(s): 15 clockwork, 3 regular, 19 loose, 75 irregular).
-TIME     1s  waiting-expired.sh  [cpu 0s]
+TIME     0s  missing-cronjobs.sh  [cpu 0s]
 TIME     0s  punctuality.sh  [cpu 0s]
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Data written to /Users/herbert/axway/develop/data/transfer/reports/waiting-expired.rpt (+ 43 waiting / 77 expired list page(s)).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/pirates.rpt (77 one-legged File(s); 4 subscription page(s)).
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+TIME     0s  waiting-expired.sh  [cpu 0s]
 TIME     0s  pirates.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/connection-efficiency.rpt (54392 sessions, 1.00 Files/connection, 99.9% single-File).
+TIME     1s  connection-efficiency.sh  [cpu 1s]
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Data written to /Users/herbert/axway/develop/data/transfer/reports/resubmissions.rpt (48 resubmitted leg(s)).
 TIME     0s  resubmissions.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/file-type.rpt (6 file type(s)).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/protocol.rpt (83447 record(s)).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/retry.rpt (78 failing flow(s), 0 never succeeded).
+TIME     0s  file-type.sh  [cpu 0s]
 TIME     0s  protocol.sh  [cpu 0s]
-TIME     0s  retry.sh  [cpu 0s]
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Data written to /Users/herbert/axway/develop/data/transfer/reports/size-dist.rpt (33801 record(s)).
 TIME     0s  size-dist.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/file-type.rpt (6 file type(s)).
-TIME     0s  file-type.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/weekday.rpt (32243 OK File(s)).
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-TIME     0s  weekday.sh  [cpu 0s]
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Data written to /Users/herbert/axway/develop/data/transfer/reports/hourly.rpt (33801 File(s)).
 TIME     0s  hourly.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/connection-efficiency.rpt (54392 sessions, 1.00 Files/connection, 99.9% single-File).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/duration-longest.rpt (250 of 32152 delivered Files).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/retry.rpt (78 failing flow(s), 0 never succeeded).
+TIME     0s  retry.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/weekday.rpt (32243 OK File(s)).
+TIME     0s  weekday.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/transfer/reports/anomalies.rpt.
-TIME     1s  connection-efficiency.sh  [cpu 1s]
-TIME     0s  duration-longest.sh  [cpu 0s]
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 TIME     0s  anomalies.sh  [cpu 0s]
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-TIME     0s  failed: the failed Files, the drill + File pages
+Data written to /Users/herbert/axway/develop/data/transfer/reports/duration-longest.rpt (250 of 32152 delivered Files).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/attempts.rpt (32243 + 1558 File(s)).
+TIME     1s  duration-longest.sh  [cpu 0s]
+TIME     1s  attempts.sh  [cpu 0s]
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+TIME     1s  failed: the failed Files, the drill + File pages
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 TIME     0s  failed: the server-failing set
-TIME     0s  attempts.sh  [cpu 0s]
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Data written to /Users/herbert/axway/develop/data/transfer/reports/top-transfers.rpt (top 50 largest &amp; slowest).
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Building the incoming-connection (whitelisted IP) detail pages...
-TIME     1s  top-transfers.sh  [cpu 0s]
-TIME     1s  failed: server log pass 1 (what the server log said)
+Data written to /Users/herbert/axway/develop/data/transfer/reports/top-transfers.rpt (top 50 largest &amp; slowest).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/duration.rpt (32152 Files over 68 days).
+TIME     1s  top-transfers.sh  [cpu 0s]
+TIME     0s  failed: server log pass 1 (what the server log said)
 Data written to /Users/herbert/axway/develop/data/transfer/reports/details/incoming_connections (55 incoming-connection page(s)).
-TIME     1s  incoming-connections.sh  [cpu 0s]
+TIME     0s  incoming-connections.sh  [cpu 0s]
 TIME     0s  failed: server log pass 2 (the reddening sessions)
 Data written to /Users/herbert/axway/develop/data/transfer/reports/duration-all.rpt (33801 Files over 68 days).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/av-scan.rpt (19 blocked, 19278 allowed, 2522 off-model leg(s)).
 TIME     1s  duration.sh  [cpu 1s]
-TIME     1s  av-scan.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/transfer/reports/duplicate-files.rpt (3125 group(s), 12471 transfer(s) in groups).
-TIME     1s  duplicate-files.sh  [cpu 0s]
-TIME     0s  failed: server-failing pages + the reasons
+Data written to /Users/herbert/axway/develop/data/transfer/reports/av-scan.rpt (19 blocked, 19278 allowed, 2522 off-model leg(s)).
 TIME     2s  entities: aggregate login account
+TIME     1s  duplicate-files.sh  [cpu 0s]
+TIME     1s  av-scan.sh  [cpu 0s]
+TIME     0s  failed: server-failing pages + the reasons
+TIME     2s  entities: aggregate subscription remote-host
 TIME     2s  entities: aggregate partner logical
-Data written to /Users/herbert/axway/develop/data/transfer/reports/duration-dwell.rpt (26989 measurable, median 3.07 s, p95 37.19 s, max 21.1 min).
-TIME     1s  dwell-time.sh  [cpu 1s]
 File pages: 984 written to /Users/herbert/axway/develop/data/transfer/reports/files/ + 274 served by their failed-File page (the Transfer patterns links).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/failed.rpt + failed-sub-all.rpt (1558 failed file(s), 107 subscription/legs combination(s)) and /Users/herbert/axway/develop/data/transfer/reports/errors/ (576 drill page(s), 469 for the newest 30 days; server-log sections: 1506 by session/id carrying 3670 line(s), 0 on the time-window fallback).
 TIME     0s  failed: the two lists + the File pages
 TIME     1s  failed.sh  [cpu 1s]
-TIME     2s  entities: aggregate subscription remote-host
-Data written to /Users/herbert/axway/develop/data/transfer/reports/security-outreach.rpt (45 outreach row(s), 46 upgrade pair(s), 46 mixed).
 TIME     2s  entities: aggregate application domain bl
-Wrote 13 security-param value page(s) to /Users/herbert/axway/develop/data/transfer/reports/secparams.
-Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/login.rpt (33 login(s), 20114 file(s)).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/partner.rpt (25 partner(s), 21305 file(s)).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/remote-host.rpt (27 remote host(s), 19901 file(s)).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/application.rpt (78 application(s), 21305 file(s)).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/domain.rpt (22 domain(s), 21305 file(s)).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/subscription.rpt (112 subscription(s), 33674 file(s)).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/bl.rpt (30 BL(s), 28666 file(s)).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/security-params.rpt.
+Data written to /Users/herbert/axway/develop/data/transfer/reports/duration-dwell.rpt (26989 measurable, median 3.07 s, p95 37.19 s, max 21.1 min).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/logical.rpt (92 logical(s), 33674 file(s)).
-TIME     2s  security-params.sh  [cpu 1s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/domain.rpt (22 domain(s), 21305 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/remote-host.rpt (27 remote host(s), 19901 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/security-outreach.rpt (45 outreach row(s), 46 upgrade pair(s), 46 mixed).
+TIME     2s  dwell-time.sh  [cpu 1s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/bl.rpt (30 BL(s), 28666 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/partner.rpt (25 partner(s), 21305 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/application.rpt (78 application(s), 21305 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/login.rpt (33 login(s), 20114 file(s)).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/account.rpt (98 account(s), 33801 file(s)).
+Wrote 13 security-param value page(s) to /Users/herbert/axway/develop/data/transfer/reports/secparams.
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/subscription.rpt (112 subscription(s), 33674 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/security-params.rpt.
+TIME     1s  security-params.sh  [cpu 1s]
 Data written to /Users/herbert/axway/develop/data/transfer/reports/month-stats (months: this:2026-08 previous:2026-07 previous2:2026-06 — 9 report(s) each) + /Users/herbert/axway/develop/data/transfer/reports/_alltime.tsv.
 Data written to /Users/herbert/axway/develop/data/transfer/reports/{account,subscription,login,remote-host,logical,partner,application,domain,bl}.rpt (the classic records).
 TIME     3s  entities.sh  [cpu 5s]
@@ -466,50 +467,50 @@ Data written to /Users/herbert/axway/develop/data/server/reports/auth-activity.r
 TIME     0s  auth-activity.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/server/reports/uc4-status.rpt (34 UC4 subscription(s): 23 ok, 0 error, 0 ok-error, 11 not-seen).
 TIME     0s  uc4-status.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/server/reports/uc2-status.rpt (0 never-collected, 1 no-files, 21 both, 1 ok, 6 nothing, 0 file(s) uncollected).
 Data written to /Users/herbert/axway/develop/data/server/reports/ssh-crypto.rpt (7960 negotiation(s), 28 deprecated warning(s)).
-TIME     0s  uc2-status.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/server/reports/logon.rpt (49 login(s): 7970 allowed, 1621 re-screen(s), 7961 authenticated, 10 disallowed, 0 no-account, 10 bad-key, 0 key-failure, 9 locked, 18 session error(s); 72 outbound failure(s)).
 TIME     0s  ssh-crypto.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/server/reports/uc2-status.rpt (0 never-collected, 1 no-files, 21 both, 1 ok, 6 nothing, 0 file(s) uncollected).
+Data written to /Users/herbert/axway/develop/data/server/reports/logon.rpt (49 login(s): 7970 allowed, 1621 re-screen(s), 7961 authenticated, 10 disallowed, 0 no-account, 10 bad-key, 0 key-failure, 9 locked, 18 session error(s); 72 outbound failure(s)).
+TIME     0s  uc2-status.sh  [cpu 0s]
 TIME     0s  logon.sh  [cpu 0s]
+TIME     1s  server-cache subsets (10 jobs)
+TIME     1s  subsets.sh  [cpu 1s]
 Data written to /Users/herbert/axway/develop/data/server/reports/unknown-sites.rpt (13 unknown subscription(s), 1189 mention(s)).
 Data written to /Users/herbert/axway/develop/data/server/reports/unknown-accounts.rpt (6 unknown account(s), 178 mention(s)).
 Data written to /Users/herbert/axway/develop/data/server/reports/unknown-logins.rpt (4 unknown login(s), 142 mention(s)).
 Data written to /Users/herbert/axway/develop/data/server/reports/unknown-hosts.rpt (0 unknown host(s), 0 mention(s)).
 Data written to /Users/herbert/axway/develop/data/server/reports/unknown-whitelisting.rpt (4 unknown IP(s), 57 mention(s)).
-TIME     0s  unknown-entities.sh  [cpu 1s]
-TIME     0s  server-cache subsets (10 jobs)
-TIME     0s  subsets.sh  [cpu 1s]
+Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
+TIME     1s  unknown-entities.sh  [cpu 1s]
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
-Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
-Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
-Data written to /Users/herbert/axway/develop/data/server/reports/event-queue-slots.tsv (121 EventQueue line(s)).
 Data written to /Users/herbert/axway/develop/data/server/reports/errors-day.rpt (68 day(s), 2589 error(s)).
-Data written to /Users/herbert/axway/develop/data/server/reports/site-failures.tsv (46 subscription(s) with connection failures).
-Data written to /Users/herbert/axway/develop/data/server/reports/topview.rpt (68 day(s), 189629 record(s)).
-Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
+Data written to /Users/herbert/axway/develop/data/server/reports/topview.rpt (68 day(s), 189457 record(s)).
+Data written to /Users/herbert/axway/develop/data/server/reports/event-queue-slots.tsv (121 EventQueue line(s)).
 Data written to /Users/herbert/axway/develop/data/server/reports/pesit-slots.tsv (129 nonzero 30-minute slot(s)).
-TIME     1s  errors-day.sh  [cpu 0s]
-TIME     1s  event-queue.sh  [cpu 0s]
-TIME     1s  site-failures.sh  [cpu 0s]
-TIME     1s  topview.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/server/reports/site-failures.tsv (46 subscription(s) with connection failures).
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
-Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
+TIME     0s  errors-day.sh  [cpu 0s]
+TIME     0s  site-failures.sh  [cpu 0s]
+TIME     0s  topview.sh  [cpu 0s]
 TIME     0s  pesit.sh  [cpu 0s]
+TIME     0s  event-queue.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/server/reports/error-timing.rpt (3450 msg(s): 2589 err, 861 warn).
 TIME     0s  error-timing.sh  [cpu 0s]
+Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Data written to /Users/herbert/axway/develop/data/server/reports/error-reasons.rpt (2589 error(s), 11 reason(s)).
-Data written to /Users/herbert/axway/develop/data/server/reports/failure-flows.rpt (1617 of 2589 error(s) attributed, 57 flow(s), 58 pair(s)).
 TIME     0s  error-reasons.sh  [cpu 0s]
-TIME     0s  failure-flows.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/server/reports/no-remote-files.rpt (8 subscription(s), 363 empty poll(s)).
-Data written to /Users/herbert/axway/develop/data/server/reports/no-remote-dir.rpt (136 error(s), 1 subscription(s), 1 director(y/ies)).
 TIME     0s  no-remote-files.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/server/reports/no-remote-dir.rpt (136 error(s), 1 subscription(s), 1 director(y/ies)).
 TIME     0s  no-remote-dir.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/server/reports/failure-flows.rpt (1617 of 2589 error(s) attributed, 57 flow(s), 58 pair(s)).
+TIME     0s  failure-flows.sh  [cpu 0s]
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
@@ -518,17 +519,17 @@ Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 No session-lifecycle messages found — writing an empty report.
-TIME     0s  ssh-sessions.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/server/reports/io-errors.rpt (53 IO error line(s), 1 folder(s)).
 Data written to /Users/herbert/axway/develop/data/server/reports/routing-errors.rpt (100 line(s), 4 entit(ies), 40 shown).
-TIME     0s  io-errors.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/server/reports/deploy-errors.rpt (1 unresolved of 3; 2 recovered).
+TIME     0s  ssh-sessions.sh  [cpu 0s]
 TIME     0s  routing-errors.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/server/reports/top-messages.rpt (427 shape(s), top 50 listed).
 Data written to /Users/herbert/axway/develop/data/server/reports/uc1-status.rpt (51 UC1 subscription(s): 35 ok, 0 error, 6 ok-error, 10 not-seen).
-TIME     0s  deploy-errors.sh  [cpu 0s]
-TIME     0s  top-messages.sh  [cpu 0s]
 TIME     0s  uc1-status.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/server/reports/deploy-errors.rpt (1 unresolved of 3; 2 recovered).
+Data written to /Users/herbert/axway/develop/data/server/reports/io-errors.rpt (53 IO error line(s), 1 folder(s)).
+Data written to /Users/herbert/axway/develop/data/server/reports/top-messages.rpt (427 shape(s), top 50 listed).
+TIME     0s  deploy-errors.sh  [cpu 0s]
+TIME     0s  io-errors.sh  [cpu 0s]
+TIME     0s  top-messages.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/server/reports/remote-poll.rpt (41950 poll(s), 38658 empty, 34 subscription(s)).
 TIME     0s  remote-poll.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/server/reports/uc3-status.rpt (40 UC3 subscription(s): 24 ok, 1 error, 2 ok-error, 13 not-seen).
@@ -558,67 +559,66 @@ Wrote data/dashboards/reports/overview.rpt
 TIME     2s  overview.sh  [cpu 2s]
 All dashboards reports done.
 </pre></details>
-<details><summary>22. report: transfer .rpt files (phase 2) &mdash; 0 s &mdash; OK</summary><pre>Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+<details><summary>22. report: transfer .rpt files (phase 2) &mdash; 1 s &mdash; OK</summary><pre>Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Building the Ranking report from the detail-page sidecars...
 Data written to /Users/herbert/axway/develop/data/transfer/reports/coverage/accounts.tsv.
 Data written to /Users/herbert/axway/develop/data/transfer/reports/coverage/subscriptions.tsv.
 Data written to /Users/herbert/axway/develop/data/transfer/reports/coverage/logins.tsv.
 Data written to /Users/herbert/axway/develop/data/transfer/reports/coverage/hosts.tsv.
-TIME     0s  showseen.sh  [cpu 0s]
+TIME     1s  showseen.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/transfer/reports/ranking.rpt (517 ranked entity row(s)).
-TIME     0s  ranking.sh  [cpu 0s]
+TIME     1s  ranking.sh  [cpu 0s]
 </pre></details>
-<details><summary>23. report: analyses .rpt files &mdash; 2 s &mdash; OK</summary><pre>Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+<details><summary>23. report: analyses .rpt files &mdash; 1 s &mdash; OK</summary><pre>Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', building entity coverage...
 Data written to data/analyses/reports/failing-reasons.rpt (23 reason row(s)).
-TIME     1s  failing-reasons.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/skipped.rpt (136 no-subscription/http line(s)).
+TIME     0s  failing-reasons.sh  [cpu 0s]
 Data written to data/analyses/reports/fe-overview.rpt (50 login(s): 19 UC2, 26 UC4, 3 UC2/UC4; 36 logged on here, 5 with a gateway logon, 1 old-gateway only; 11196 in, 8791 out, 91 waiting, 8288 retrieved).
-TIME     1s  skipped.sh  [cpu 0s]
-TIME     1s  fe-overview.sh  [cpu 0s]
+TIME     0s  fe-overview.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/transfer/reports/entity-coverage.rpt (6 view(s)).
-TIME     1s  entity-coverage.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/skipped.rpt (136 no-subscription/http line(s)).
+TIME     0s  entity-coverage.sh  [cpu 0s]
 Data written to data/analyses/reports/partners-out.rpt (30 host(s): 9622 outbound connection(s), 72 failed logon(s)).
+TIME     0s  skipped.sh  [cpu 0s]
 Data written to data/analyses/reports/partners-out-accounts.rpt (89 accounts; 0 host row(s) in no accounts view).
 Data written to data/analyses/reports/partners-out-partners.rpt (27 partners; 1 host row(s) in no partners view).
+TIME     0s  partners-out.sh  [cpu 0s]
 Wrote 5 coverage cell .rpt file(s) to data/coverage/.
-TIME     1s  partners-out.sh  [cpu 0s]
-TIME     1s  coverage.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/transfer/reports/cross-*.rpt (9 file(s), 8 crosstabs each).
-TIME     1s  cross-reference.sh  [cpu 0s]
+TIME     0s  coverage.sh  [cpu 0s]
+TIME     0s  cross-reference.sh  [cpu 0s]
 Data written to data/analyses/reports/first-seen.rpt (+ 21 cell rpt(s) in data/first-seen).
-TIME     0s  first-seen.sh  [cpu 0s]
+TIME     1s  first-seen.sh  [cpu 0s]
 Wrote data/analyses/reports/home.rpt (9 member(s)).
 TIME     0s  home.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/transfer/reports/entity-search.rpt.
-TIME     1s  entity-search.sh  [cpu 0s]
+TIME     0s  entity-search.sh  [cpu 0s]
 Data written to data/analyses/reports/partners-in.rpt (50 login(s): 50 from the FE overview, 0 funnel-only).
 Data written to data/analyses/reports/partners-in-accounts.rpt (50 accounts; 1 login row(s) in no accounts view).
 Data written to data/analyses/reports/partners-in-partners.rpt (25 partners; 2 login row(s) in no partners view).
 TIME     0s  partners-in.sh  [cpu 0s]
 All analyses reports done.
 </pre></details>
-<details><summary>24. publish: detail pages &mdash; 4 s &mdash; OK</summary><pre>Subscription verdicts: 156 flow(s) described.
+<details><summary>24. publish: detail pages &mdash; 5 s &mdash; OK</summary><pre>Subscription verdicts: 156 flow(s) described.
 Rendered docs/details/ (per-entity pages).
 </pre></details>
-<details><summary>25. publish: transfer report pages &mdash; 7 s &mdash; OK</summary><pre>TIME     2s  render transfer/remote-host
-TIME     3s  render transfer/domain
-TIME     2s  render transfer/cross-account
-TIME     3s  render transfer/partner
-TIME     3s  render transfer/bl
-TIME     4s  render transfer/login
-TIME     2s  render transfer/cross-login
-TIME     4s  render transfer/account
+<details><summary>25. publish: transfer report pages &mdash; 8 s &mdash; OK</summary><pre>TIME     2s  render transfer/cross-account
+TIME     3s  render transfer/login
+TIME     4s  render transfer/domain
+TIME     4s  render transfer/bl
+TIME     4s  render transfer/remote-host
+TIME     4s  render transfer/partner
 TIME     4s  render transfer/application
-TIME     4s  render transfer/logical
-TIME     4s  render transfer/subscription
+TIME     5s  render transfer/account
+TIME     5s  render transfer/logical
+TIME     5s  render transfer/subscription
 Rendered docs/transfer/secparams/ (13 value page(s)).
 Rendered docs/transfer/expired/ (77 subscription + day page(s)).
 Rendered docs/transfer/waiting/ (43 subscription + day page(s)).
 Rendered docs/transfer/pirates/ (4 subscription page(s)).
 Rendered docs/resubmit/ (26 day page(s)).
 Rendered docs/recovered/ (16 day page(s)).
-TIME     5s  transfer publish: report pages + sub-pages
+TIME     6s  transfer publish: report pages + sub-pages
 Rendered docs/files/ (276 failed-file page(s) + 984 File page(s)).
 TIME     1s  transfer publish: files/ pages
 Rendered docs/transfer/month-stats/ (27 page(s)).
@@ -634,9 +634,9 @@ TIME     1s  analyses publish: coverage pages
 Wrote 21 First-seen cell page(s) to docs/first-seen/.
 TIME     0s  analyses publish: use cases, first seen, configuration pages
 Rendered 6 Subscriptions group page(s) into docs/analyses/.
-TIME     1s  analyses publish: subscription group pages
+TIME     0s  analyses publish: subscription group pages
 TIME     0s  analyses publish: failed pages
-TIME     0s  analyses publish: partners view pages
+TIME     1s  analyses publish: partners view pages
 TIME     0s  analyses publish: the rest
 Wrote docs/analyses (the analysis pages), docs/first-seen and docs/coverage.
 </pre></details>
@@ -652,7 +652,7 @@ TIME     0s  index pages: apply_report_groups (the group rows + h1 tags)
 TIME     1s  index pages: apply_help_chrome
 Wrote index pages (root + the Reports start page).
 </pre></details>
-<details><summary>31. publish: display sweep (no milliseconds, input/rename.txt) &mdash; 0 s &mdash; OK</summary><pre>display-rename: milliseconds dropped from the times on 1949 page(s) / payload(s).
+<details><summary>31. publish: display sweep (no milliseconds, input/rename.txt) &mdash; 0 s &mdash; OK</summary><pre>display-rename: milliseconds dropped from the times on 1890 page(s) / payload(s).
 display-rename: docs: applied 1 rule(s) to 85 page(s).
 </pre></details>
 <h2>Log files</h2>
@@ -802,7 +802,7 @@ display-rename: docs: applied 1 rule(s) to 85 page(s).
 <tr><td><code>transferLog_08-29.csv</code></td><td>2026-08-29 00:00:35</td><td>2026-08-29 23:57:49</td><td class="r">713</td></tr>
 </table></div>
 </div>
-<p>Written by <code>bin/build.sh</code> &mdash; raw step logs in <code>build/step-NN.log</code>. Build finished at 2026-10-01 15:00:25.</p>
+<p>Written by <code>bin/build.sh</code> &mdash; raw step logs in <code>build/step-NN.log</code>. Build finished at 2026-10-01 15:11:31.</p>
 </div>
 </body>
 </html>
