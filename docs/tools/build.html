@@ -45,216 +45,216 @@ pre{background:#f8f8f8;border:1px solid #eee;padding:.6rem;overflow-x:auto;margi
 <body>
 <div class="topbar" data-b="../" data-help="general"></div>
 <div class="buildwrap">
-<h1>Build report &mdash; Sample &mdash; 2026-10-01 12:01:04 &rarr; 12:01:28 &middot; 24 s</h1>
+<h1>Build report &mdash; Sample &mdash; 2026-10-01 12:33:03 &rarr; 12:33:33 &middot; 30 s</h1>
 <p class="banner ok">Build succeeded</p>
 <div class="bstats bsrow">
-<div class="bs"><h3>Input</h3><table><tr><th scope="row">Server logs</th><td class="v">68 files, 193,538 lines, 90.2 MB</td></tr><tr><th scope="row">Transfer logs</th><td class="v">68 files, 83,501 lines, 72.7 MB</td></tr></table></div>
-<div class="bs"><h3>Cached files</h3><table><tr><th scope="row">Server <code>_parse.tsv</code></th><td class="v">188,541 lines, 42.6 MB</td></tr><tr><th scope="row">Transfer <code>_files.tsv</code></th><td class="v">33,620 lines, 9.5 MB</td></tr></table></div>
-<div class="bs"><h3>Output</h3><table><tr><th scope="row">HTML files</th><td class="v">2,566</td></tr><tr><th scope="row">Size</th><td class="v">38.8 MB</td></tr></table></div>
+<div class="bs"><h3>Input</h3><table><tr><th scope="row">Server logs</th><td class="v">68 files, 194,626 lines, 90.7 MB</td></tr><tr><th scope="row">Transfer logs</th><td class="v">68 files, 83,863 lines, 73.0 MB</td></tr></table></div>
+<div class="bs"><h3>Cached files</h3><table><tr><th scope="row">Server <code>_parse.tsv</code></th><td class="v">189,629 lines, 42.9 MB</td></tr><tr><th scope="row">Transfer <code>_files.tsv</code></th><td class="v">33,801 lines, 9.5 MB</td></tr></table></div>
+<div class="bs"><h3>Output</h3><table><tr><th scope="row">HTML files</th><td class="v">2,588</td></tr><tr><th scope="row">Size</th><td class="v">39.4 MB</td></tr></table></div>
 </div>
 <h2>Inbox</h2>
 <p class="bsnote">Not read on the sample estate (develop) — the inbox is runtime-only.</p>
 <table>
 <tr><th>#</th><th>Step</th><th>Command</th><th>Started</th><th>Duration</th><th>Status</th></tr>
-<tr><td class="r">1</td><td>parse: server log cache</td><td class="cmd">env AXWAY_SKIP_MENTIONS=1 bin/server/parse.sh</td><td class="r">12:01:04</td><td class="r">3 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">2</td><td>config: extract the configured entity lists</td><td class="cmd">bin/flow-manager.sh</td><td class="r">12:01:04</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">3</td><td>parse: transfer log cache</td><td class="cmd">bin/transfer/parse.sh</td><td class="r">12:01:05</td><td class="r">2 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">4</td><td>result: discover the transfer-log hosts (before the mention scan)</td><td class="cmd">bin/build/result.sh discover-hosts</td><td class="r">12:01:07</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">5</td><td>parse: server mention caches</td><td class="cmd">env AXWAY_MENTIONS_ONLY=1 bin/server/parse.sh</td><td class="r">12:01:08</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">6</td><td>server log: logon summary (per login + per address)</td><td class="cmd">bin/build/logon-summary.sh</td><td class="r">12:01:08</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">7</td><td>server log -&gt; transfer: the ok bookends + reason lines (extract)</td><td class="cmd">bin/bookend-ok.sh extract</td><td class="r">12:01:08</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">8</td><td>server log -&gt; transfer: attribute Unknown flows by session</td><td class="cmd">bin/session-sites.sh</td><td class="r">12:01:08</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">9</td><td>result: discover the transfer-log subscriptions (+ re-check the hosts)</td><td class="cmd">bin/build/result.sh discover</td><td class="r">12:01:09</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">10</td><td>server log -&gt; transfer: mark expired staged files</td><td class="cmd">bin/expire-files.sh</td><td class="r">12:01:09</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">11</td><td>server log -&gt; transfer: settle failed Files by ok bookend</td><td class="cmd">bin/bookend-ok.sh settle</td><td class="r">12:01:09</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">12</td><td>transfer: the published File pages (newest OK + 3 errors per subscription)</td><td class="cmd">bin/transfer/filepages.sh</td><td class="r">12:01:09</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">13</td><td>transfer: the newest-first cache copies</td><td class="cmd">bin/build/newest-caches.sh</td><td class="r">12:01:09</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">14</td><td>result: subscription outcomes -&gt; base caches</td><td class="cmd">bin/build/result.sh</td><td class="r">12:01:09</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">15</td><td>kaput evidence (early — the failed/details Reason evidence)</td><td class="cmd">bin/build/kaput-evidence.sh</td><td class="r">12:01:10</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">16</td><td>report: detail pages .rpt files</td><td class="cmd">env AXWAY_WAIT_FAILED=1 bin/transfer/reports/details.sh</td><td class="r">12:01:10</td><td class="r">4 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">17</td><td>report: transfer .rpt files (phase 1)</td><td class="cmd">bin/transfer/reports.sh phase1</td><td class="r">12:01:10</td><td class="r">3 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">18</td><td>report: server .rpt files</td><td class="cmd">bin/server/reports.sh</td><td class="r">12:01:13</td><td class="r">2 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">19</td><td>reason boxes (the Reason fallback sidecar)</td><td class="cmd">bin/build/reason-boxes.sh</td><td class="r">12:01:15</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">20</td><td>report catch-up: failed subscriptions (the Reason columns)</td><td class="cmd">bin/transfer/reports/failed.sh catchup</td><td class="r">12:01:15</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">21</td><td>report: dashboards + day pages .rpt files</td><td class="cmd">bash -c bin/dashboards/reports.sh &amp; d=$!; bin/day/reports.sh; s=$?; wait "$d" || s=$?; exit "$s"</td><td class="r">12:01:15</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">22</td><td>report: transfer .rpt files (phase 2)</td><td class="cmd">bin/transfer/reports.sh phase2</td><td class="r">12:01:15</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">23</td><td>report: analyses .rpt files</td><td class="cmd">bin/analyses/reports.sh</td><td class="r">12:01:15</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">24</td><td>publish: detail pages</td><td class="cmd">bin/transfer/publish-details.sh</td><td class="r">12:01:16</td><td class="r">3 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">25</td><td>publish: transfer report pages</td><td class="cmd">bin/transfer/publish.sh</td><td class="r">12:01:16</td><td class="r">5 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">26</td><td>publish: partner group pages</td><td class="cmd">bin/analyses/publish-partner-groups.sh</td><td class="r">12:01:21</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">27</td><td>publish: server report pages</td><td class="cmd">bin/server/publish.sh</td><td class="r">12:01:22</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">28</td><td>publish: analyses + coverage pages</td><td class="cmd">bin/analyses/publish.sh</td><td class="r">12:01:22</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">29</td><td>publish: all files search + dashboards + day pages</td><td class="cmd">bash -c bin/analyses/publish-all-files.sh &amp; a=$!; bin/dashboards/publish.sh &amp;&amp; bin/day/publish.sh; s=$?; wait "$a" || s=$?; exit "$s"</td><td class="r">12:01:23</td><td class="r">2 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">30</td><td>publish: index pages + home</td><td class="cmd">bin/build/publish.sh</td><td class="r">12:01:25</td><td class="r">1 s</td><td class="ok">OK</td></tr>
-<tr><td class="r">31</td><td>publish: display sweep (no milliseconds, input/rename.txt)</td><td class="cmd">bin/build/display-rename.sh</td><td class="r">12:01:26</td><td class="r">0 s</td><td class="ok">OK</td></tr>
-<tr class="total"><td></td><td>Total (31 steps)</td><td></td><td></td><td class="r">24 s</td><td></td></tr>
+<tr><td class="r">1</td><td>parse: server log cache</td><td class="cmd">env AXWAY_SKIP_MENTIONS=1 bin/server/parse.sh</td><td class="r">12:33:03</td><td class="r">4 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">2</td><td>config: extract the configured entity lists</td><td class="cmd">bin/flow-manager.sh</td><td class="r">12:33:03</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">3</td><td>parse: transfer log cache</td><td class="cmd">bin/transfer/parse.sh</td><td class="r">12:33:04</td><td class="r">3 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">4</td><td>result: discover the transfer-log hosts (before the mention scan)</td><td class="cmd">bin/build/result.sh discover-hosts</td><td class="r">12:33:07</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">5</td><td>parse: server mention caches</td><td class="cmd">env AXWAY_MENTIONS_ONLY=1 bin/server/parse.sh</td><td class="r">12:33:07</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">6</td><td>server log: logon summary (per login + per address)</td><td class="cmd">bin/build/logon-summary.sh</td><td class="r">12:33:07</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">7</td><td>server log -&gt; transfer: the ok bookends + reason lines (extract)</td><td class="cmd">bin/bookend-ok.sh extract</td><td class="r">12:33:07</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">8</td><td>server log -&gt; transfer: attribute Unknown flows by session</td><td class="cmd">bin/session-sites.sh</td><td class="r">12:33:07</td><td class="r">2 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">9</td><td>result: discover the transfer-log subscriptions (+ re-check the hosts)</td><td class="cmd">bin/build/result.sh discover</td><td class="r">12:33:09</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">10</td><td>server log -&gt; transfer: mark expired staged files</td><td class="cmd">bin/expire-files.sh</td><td class="r">12:33:09</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">11</td><td>server log -&gt; transfer: settle failed Files by ok bookend</td><td class="cmd">bin/bookend-ok.sh settle</td><td class="r">12:33:09</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">12</td><td>transfer: the published File pages (newest OK + 3 errors per subscription)</td><td class="cmd">bin/transfer/filepages.sh</td><td class="r">12:33:09</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">13</td><td>transfer: the newest-first cache copies</td><td class="cmd">bin/build/newest-caches.sh</td><td class="r">12:33:09</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">14</td><td>result: subscription outcomes -&gt; base caches</td><td class="cmd">bin/build/result.sh</td><td class="r">12:33:09</td><td class="r">2 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">15</td><td>kaput evidence (early — the failed/details Reason evidence)</td><td class="cmd">bin/build/kaput-evidence.sh</td><td class="r">12:33:11</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">16</td><td>report: detail pages .rpt files</td><td class="cmd">env AXWAY_WAIT_FAILED=1 bin/transfer/reports/details.sh</td><td class="r">12:33:11</td><td class="r">4 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">17</td><td>report: transfer .rpt files (phase 1)</td><td class="cmd">bin/transfer/reports.sh phase1</td><td class="r">12:33:11</td><td class="r">3 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">18</td><td>report: server .rpt files</td><td class="cmd">bin/server/reports.sh</td><td class="r">12:33:14</td><td class="r">2 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">19</td><td>reason boxes (the Reason fallback sidecar)</td><td class="cmd">bin/build/reason-boxes.sh</td><td class="r">12:33:16</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">20</td><td>report catch-up: failed subscriptions (the Reason columns)</td><td class="cmd">bin/transfer/reports/failed.sh catchup</td><td class="r">12:33:16</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">21</td><td>report: dashboards + day pages .rpt files</td><td class="cmd">bash -c bin/dashboards/reports.sh &amp; d=$!; bin/day/reports.sh; s=$?; wait "$d" || s=$?; exit "$s"</td><td class="r">12:33:17</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">22</td><td>report: transfer .rpt files (phase 2)</td><td class="cmd">bin/transfer/reports.sh phase2</td><td class="r">12:33:17</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">23</td><td>report: analyses .rpt files</td><td class="cmd">bin/analyses/reports.sh</td><td class="r">12:33:17</td><td class="r">1 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">24</td><td>publish: detail pages</td><td class="cmd">bin/transfer/publish-details.sh</td><td class="r">12:33:18</td><td class="r">4 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">25</td><td>publish: transfer report pages</td><td class="cmd">bin/transfer/publish.sh</td><td class="r">12:33:18</td><td class="r">7 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">26</td><td>publish: partner group pages</td><td class="cmd">bin/analyses/publish-partner-groups.sh</td><td class="r">12:33:25</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">27</td><td>publish: server report pages</td><td class="cmd">bin/server/publish.sh</td><td class="r">12:33:25</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">28</td><td>publish: analyses + coverage pages</td><td class="cmd">bin/analyses/publish.sh</td><td class="r">12:33:25</td><td class="r">2 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">29</td><td>publish: all files search + dashboards + day pages</td><td class="cmd">bash -c bin/analyses/publish-all-files.sh &amp; a=$!; bin/dashboards/publish.sh &amp;&amp; bin/day/publish.sh; s=$?; wait "$a" || s=$?; exit "$s"</td><td class="r">12:33:27</td><td class="r">3 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">30</td><td>publish: index pages + home</td><td class="cmd">bin/build/publish.sh</td><td class="r">12:33:30</td><td class="r">2 s</td><td class="ok">OK</td></tr>
+<tr><td class="r">31</td><td>publish: display sweep (no milliseconds, input/rename.txt)</td><td class="cmd">bin/build/display-rename.sh</td><td class="r">12:33:32</td><td class="r">0 s</td><td class="ok">OK</td></tr>
+<tr class="total"><td></td><td>Total (31 steps)</td><td></td><td></td><td class="r">30 s</td><td></td></tr>
 </table>
 <h2>Step output</h2>
-<details><summary>1. parse: server log cache &mdash; 3 s &mdash; OK</summary><pre>Parsing 68 file(s) into /Users/herbert/axway/develop/data/server/cache/_parse.tsv ...
-TIME     0s  server parse: tokenize, slowest of 68 parts (its awk 0s; all parts: awk 0s + sort/split 0s)
-TIME     0s  server parse: tokenizer paths — 189852 records (90 MB): fast split 189852 (90 MB), walk 0 (0 MB; per-character 0 + 0), multi-line 778 (0 MB); dropped ADMIN/AUDIT 136, noise 1073
-records: 188643
-TIME     1s  server parse: tokenize (per file)
+<details><summary>1. parse: server log cache &mdash; 4 s &mdash; OK</summary><pre>Parsing 68 file(s) into /Users/herbert/axway/develop/data/server/cache/_parse.tsv ...
+TIME     1s  server parse: tokenize, slowest of 68 parts (its awk 0s; all parts: awk 4s + sort/split 2s)
+TIME     0s  server parse: tokenizer paths — 190940 records (90 MB): fast split 190940 (90 MB), walk 0 (0 MB; per-character 0 + 0), multi-line 778 (0 MB); dropped ADMIN/AUDIT 136, noise 1073
+records: 189731
+TIME     2s  server parse: tokenize (per file)
 Skip list: set aside 102 server record(s) -&gt; /Users/herbert/axway/develop/data/server/_skipped.tsv.
 TIME     2s  server parse: merge (per date)
-Wrote /Users/herbert/axway/develop/data/server/cache/_parse.tsv (188541 record(s)) and /Users/herbert/axway/develop/data/server/cache/_parse.txt.
+Wrote /Users/herbert/axway/develop/data/server/cache/_parse.tsv (189629 record(s)) and /Users/herbert/axway/develop/data/server/cache/_parse.txt.
 TIME     0s  server parse: per-entity mention caches
 </pre></details>
 <details><summary>2. config: extract the configured entity lists &mdash; 1 s &mdash; OK</summary><pre>TIME     0s  flow-manager: skip list, entity lists, pair tags
-TIME     1s  flow-manager: endpoint DNS lookups
-TIME     1s  flow-manager: logical flows, pair caches (to the DNS step)
-TIME     0s  flow-manager: PDA derivation
-  data/flow-manager/base/_accounts.tsv: 136 entr(y/ies)
-  data/flow-manager/base/_logins.tsv: 48 entr(y/ies)
-  data/flow-manager/base/_hosts.tsv: 29 entr(y/ies)
+TIME     0s  flow-manager: endpoint DNS lookups
+TIME     0s  flow-manager: logical flows, pair caches (to the DNS step)
+TIME     1s  flow-manager: PDA derivation
+  data/flow-manager/base/_accounts.tsv: 140 entr(y/ies)
+  data/flow-manager/base/_logins.tsv: 49 entr(y/ies)
+  data/flow-manager/base/_hosts.tsv: 30 entr(y/ies)
   data/flow-manager/base/_white.tsv: 118 entr(y/ies)
-  data/flow-manager/base/_subscriptions.tsv: 152 entr(y/ies)
-  data/flow-manager/base/_profiles.tsv: 149 entr(y/ies)
-  data/flow-manager/base/_logicals.tsv: 128 entr(y/ies)
+  data/flow-manager/base/_subscriptions.tsv: 156 entr(y/ies)
+  data/flow-manager/base/_profiles.tsv: 153 entr(y/ies)
+  data/flow-manager/base/_logicals.tsv: 132 entr(y/ies)
   data/flow-manager/base/_partners.tsv: 29 entr(y/ies)
-  data/flow-manager/base/_apps.tsv: 84 entr(y/ies)
+  data/flow-manager/base/_apps.tsv: 87 entr(y/ies)
   data/flow-manager/base/_domains.tsv: 22 entr(y/ies)
   data/flow-manager/base/_bl.tsv: 30 entr(y/ies)
-  data/flow-manager/xref/_accounts-subscriptions.tsv: 152 pair(s)
-  data/flow-manager/xref/_accounts-profiles.tsv: 150 pair(s)
-  data/flow-manager/xref/_accounts-logins.tsv: 49 pair(s)
-  data/flow-manager/xref/_accounts-hosts.tsv: 88 pair(s)
-  data/flow-manager/xref/_accounts-logicals.tsv: 136 pair(s)
-  data/flow-manager/xref/_accounts-partners.tsv: 134 pair(s)
-  data/flow-manager/xref/_accounts-apps.tsv: 135 pair(s)
-  data/flow-manager/xref/_accounts-domains.tsv: 134 pair(s)
-  data/flow-manager/xref/_accounts-bl.tsv: 124 pair(s)
-  data/flow-manager/xref/_accounts-white.tsv: 218 pair(s)
-  data/flow-manager/xref/_subscriptions-profiles.tsv: 152 pair(s)
-  data/flow-manager/xref/_subscriptions-logins.tsv: 61 pair(s)
-  data/flow-manager/xref/_subscriptions-hosts.tsv: 90 pair(s)
-  data/flow-manager/xref/_subscriptions-logicals.tsv: 152 pair(s)
-  data/flow-manager/xref/_subscriptions-partners.tsv: 148 pair(s)
-  data/flow-manager/xref/_subscriptions-apps.tsv: 148 pair(s)
-  data/flow-manager/xref/_subscriptions-domains.tsv: 148 pair(s)
-  data/flow-manager/xref/_subscriptions-bl.tsv: 136 pair(s)
-  data/flow-manager/xref/_subscriptions-white.tsv: 281 pair(s)
-  data/flow-manager/xref/_profiles-logins.tsv: 60 pair(s)
-  data/flow-manager/xref/_profiles-hosts.tsv: 89 pair(s)
-  data/flow-manager/xref/_profiles-logicals.tsv: 149 pair(s)
-  data/flow-manager/xref/_profiles-partners.tsv: 145 pair(s)
-  data/flow-manager/xref/_profiles-apps.tsv: 145 pair(s)
-  data/flow-manager/xref/_profiles-domains.tsv: 145 pair(s)
-  data/flow-manager/xref/_profiles-white.tsv: 275 pair(s)
+  data/flow-manager/xref/_accounts-subscriptions.tsv: 156 pair(s)
+  data/flow-manager/xref/_accounts-profiles.tsv: 154 pair(s)
+  data/flow-manager/xref/_accounts-logins.tsv: 51 pair(s)
+  data/flow-manager/xref/_accounts-hosts.tsv: 90 pair(s)
+  data/flow-manager/xref/_accounts-logicals.tsv: 140 pair(s)
+  data/flow-manager/xref/_accounts-partners.tsv: 138 pair(s)
+  data/flow-manager/xref/_accounts-apps.tsv: 139 pair(s)
+  data/flow-manager/xref/_accounts-domains.tsv: 138 pair(s)
+  data/flow-manager/xref/_accounts-bl.tsv: 128 pair(s)
+  data/flow-manager/xref/_accounts-white.tsv: 228 pair(s)
+  data/flow-manager/xref/_subscriptions-profiles.tsv: 156 pair(s)
+  data/flow-manager/xref/_subscriptions-logins.tsv: 63 pair(s)
+  data/flow-manager/xref/_subscriptions-hosts.tsv: 92 pair(s)
+  data/flow-manager/xref/_subscriptions-logicals.tsv: 156 pair(s)
+  data/flow-manager/xref/_subscriptions-partners.tsv: 152 pair(s)
+  data/flow-manager/xref/_subscriptions-apps.tsv: 152 pair(s)
+  data/flow-manager/xref/_subscriptions-domains.tsv: 152 pair(s)
+  data/flow-manager/xref/_subscriptions-bl.tsv: 140 pair(s)
+  data/flow-manager/xref/_subscriptions-white.tsv: 291 pair(s)
+  data/flow-manager/xref/_profiles-logins.tsv: 62 pair(s)
+  data/flow-manager/xref/_profiles-hosts.tsv: 91 pair(s)
+  data/flow-manager/xref/_profiles-logicals.tsv: 153 pair(s)
+  data/flow-manager/xref/_profiles-partners.tsv: 149 pair(s)
+  data/flow-manager/xref/_profiles-apps.tsv: 149 pair(s)
+  data/flow-manager/xref/_profiles-domains.tsv: 149 pair(s)
+  data/flow-manager/xref/_profiles-white.tsv: 285 pair(s)
   data/flow-manager/xref/_logins-hosts.tsv: 1 pair(s)
-  data/flow-manager/xref/_logins-logicals.tsv: 49 pair(s)
-  data/flow-manager/xref/_logins-partners.tsv: 47 pair(s)
-  data/flow-manager/xref/_logins-apps.tsv: 48 pair(s)
-  data/flow-manager/xref/_logins-domains.tsv: 47 pair(s)
-  data/flow-manager/xref/_logins-bl.tsv: 42 pair(s)
-  data/flow-manager/xref/_logins-white.tsv: 212 pair(s)
-  data/flow-manager/xref/_hosts-logicals.tsv: 82 pair(s)
-  data/flow-manager/xref/_hosts-partners.tsv: 32 pair(s)
-  data/flow-manager/xref/_hosts-apps.tsv: 80 pair(s)
-  data/flow-manager/xref/_hosts-domains.tsv: 62 pair(s)
-  data/flow-manager/xref/_hosts-bl.tsv: 61 pair(s)
+  data/flow-manager/xref/_logins-logicals.tsv: 51 pair(s)
+  data/flow-manager/xref/_logins-partners.tsv: 48 pair(s)
+  data/flow-manager/xref/_logins-apps.tsv: 50 pair(s)
+  data/flow-manager/xref/_logins-domains.tsv: 48 pair(s)
+  data/flow-manager/xref/_logins-bl.tsv: 43 pair(s)
+  data/flow-manager/xref/_logins-white.tsv: 217 pair(s)
+  data/flow-manager/xref/_hosts-logicals.tsv: 84 pair(s)
+  data/flow-manager/xref/_hosts-partners.tsv: 33 pair(s)
+  data/flow-manager/xref/_hosts-apps.tsv: 82 pair(s)
+  data/flow-manager/xref/_hosts-domains.tsv: 63 pair(s)
+  data/flow-manager/xref/_hosts-bl.tsv: 62 pair(s)
   data/flow-manager/xref/_hosts-white.tsv: 1 pair(s)
-  data/flow-manager/xref/_logicals-partners.tsv: 127 pair(s)
-  data/flow-manager/xref/_logicals-apps.tsv: 127 pair(s)
-  data/flow-manager/xref/_logicals-domains.tsv: 127 pair(s)
-  data/flow-manager/xref/_logicals-bl.tsv: 119 pair(s)
-  data/flow-manager/xref/_logicals-white.tsv: 222 pair(s)
-  data/flow-manager/xref/_partners-apps.tsv: 122 pair(s)
+  data/flow-manager/xref/_logicals-partners.tsv: 131 pair(s)
+  data/flow-manager/xref/_logicals-apps.tsv: 131 pair(s)
+  data/flow-manager/xref/_logicals-domains.tsv: 131 pair(s)
+  data/flow-manager/xref/_logicals-bl.tsv: 123 pair(s)
+  data/flow-manager/xref/_logicals-white.tsv: 232 pair(s)
+  data/flow-manager/xref/_partners-apps.tsv: 126 pair(s)
   data/flow-manager/xref/_partners-domains.tsv: 101 pair(s)
   data/flow-manager/xref/_partners-bl.tsv: 94 pair(s)
   data/flow-manager/xref/_partners-white.tsv: 117 pair(s)
-  data/flow-manager/xref/_apps-domains.tsv: 123 pair(s)
-  data/flow-manager/xref/_apps-bl.tsv: 113 pair(s)
-  data/flow-manager/xref/_apps-white.tsv: 221 pair(s)
+  data/flow-manager/xref/_apps-domains.tsv: 126 pair(s)
+  data/flow-manager/xref/_apps-bl.tsv: 117 pair(s)
+  data/flow-manager/xref/_apps-white.tsv: 231 pair(s)
   data/flow-manager/xref/_domains-bl.tsv: 27 pair(s)
   data/flow-manager/xref/_domains-white.tsv: 204 pair(s)
   data/flow-manager/xref/_bl-white.tsv: 186 pair(s)
-  data/flow-manager/xref/_subscriptions-accounts.tsv: 152 pair(s)
-  data/flow-manager/xref/_profiles-accounts.tsv: 150 pair(s)
-  data/flow-manager/xref/_logins-accounts.tsv: 49 pair(s)
-  data/flow-manager/xref/_hosts-accounts.tsv: 88 pair(s)
-  data/flow-manager/xref/_logicals-accounts.tsv: 136 pair(s)
-  data/flow-manager/xref/_partners-accounts.tsv: 134 pair(s)
-  data/flow-manager/xref/_apps-accounts.tsv: 135 pair(s)
-  data/flow-manager/xref/_domains-accounts.tsv: 134 pair(s)
-  data/flow-manager/xref/_bl-accounts.tsv: 124 pair(s)
-  data/flow-manager/xref/_white-accounts.tsv: 218 pair(s)
-  data/flow-manager/xref/_profiles-subscriptions.tsv: 152 pair(s)
-  data/flow-manager/xref/_logins-subscriptions.tsv: 61 pair(s)
-  data/flow-manager/xref/_hosts-subscriptions.tsv: 90 pair(s)
-  data/flow-manager/xref/_logicals-subscriptions.tsv: 152 pair(s)
-  data/flow-manager/xref/_partners-subscriptions.tsv: 148 pair(s)
-  data/flow-manager/xref/_apps-subscriptions.tsv: 148 pair(s)
-  data/flow-manager/xref/_domains-subscriptions.tsv: 148 pair(s)
-  data/flow-manager/xref/_bl-subscriptions.tsv: 136 pair(s)
-  data/flow-manager/xref/_logins-profiles.tsv: 60 pair(s)
-  data/flow-manager/xref/_hosts-profiles.tsv: 89 pair(s)
+  data/flow-manager/xref/_subscriptions-accounts.tsv: 156 pair(s)
+  data/flow-manager/xref/_profiles-accounts.tsv: 154 pair(s)
+  data/flow-manager/xref/_logins-accounts.tsv: 51 pair(s)
+  data/flow-manager/xref/_hosts-accounts.tsv: 90 pair(s)
+  data/flow-manager/xref/_logicals-accounts.tsv: 140 pair(s)
+  data/flow-manager/xref/_partners-accounts.tsv: 138 pair(s)
+  data/flow-manager/xref/_apps-accounts.tsv: 139 pair(s)
+  data/flow-manager/xref/_domains-accounts.tsv: 138 pair(s)
+  data/flow-manager/xref/_bl-accounts.tsv: 128 pair(s)
+  data/flow-manager/xref/_white-accounts.tsv: 228 pair(s)
+  data/flow-manager/xref/_profiles-subscriptions.tsv: 156 pair(s)
+  data/flow-manager/xref/_logins-subscriptions.tsv: 63 pair(s)
+  data/flow-manager/xref/_hosts-subscriptions.tsv: 92 pair(s)
+  data/flow-manager/xref/_logicals-subscriptions.tsv: 156 pair(s)
+  data/flow-manager/xref/_partners-subscriptions.tsv: 152 pair(s)
+  data/flow-manager/xref/_apps-subscriptions.tsv: 152 pair(s)
+  data/flow-manager/xref/_domains-subscriptions.tsv: 152 pair(s)
+  data/flow-manager/xref/_bl-subscriptions.tsv: 140 pair(s)
+  data/flow-manager/xref/_logins-profiles.tsv: 62 pair(s)
+  data/flow-manager/xref/_hosts-profiles.tsv: 91 pair(s)
   data/flow-manager/xref/_hosts-logins.tsv: 1 pair(s)
-  data/flow-manager/xref/_logicals-logins.tsv: 49 pair(s)
-  data/flow-manager/xref/_partners-logins.tsv: 47 pair(s)
-  data/flow-manager/xref/_apps-logins.tsv: 48 pair(s)
-  data/flow-manager/xref/_domains-logins.tsv: 47 pair(s)
-  data/flow-manager/xref/_bl-logins.tsv: 42 pair(s)
-  data/flow-manager/xref/_logicals-hosts.tsv: 82 pair(s)
-  data/flow-manager/xref/_partners-hosts.tsv: 32 pair(s)
-  data/flow-manager/xref/_apps-hosts.tsv: 80 pair(s)
-  data/flow-manager/xref/_domains-hosts.tsv: 62 pair(s)
-  data/flow-manager/xref/_bl-hosts.tsv: 61 pair(s)
-  data/flow-manager/xref/_partners-logicals.tsv: 127 pair(s)
-  data/flow-manager/xref/_apps-logicals.tsv: 127 pair(s)
-  data/flow-manager/xref/_domains-logicals.tsv: 127 pair(s)
-  data/flow-manager/xref/_bl-logicals.tsv: 119 pair(s)
-  data/flow-manager/xref/_apps-partners.tsv: 122 pair(s)
+  data/flow-manager/xref/_logicals-logins.tsv: 51 pair(s)
+  data/flow-manager/xref/_partners-logins.tsv: 48 pair(s)
+  data/flow-manager/xref/_apps-logins.tsv: 50 pair(s)
+  data/flow-manager/xref/_domains-logins.tsv: 48 pair(s)
+  data/flow-manager/xref/_bl-logins.tsv: 43 pair(s)
+  data/flow-manager/xref/_logicals-hosts.tsv: 84 pair(s)
+  data/flow-manager/xref/_partners-hosts.tsv: 33 pair(s)
+  data/flow-manager/xref/_apps-hosts.tsv: 82 pair(s)
+  data/flow-manager/xref/_domains-hosts.tsv: 63 pair(s)
+  data/flow-manager/xref/_bl-hosts.tsv: 62 pair(s)
+  data/flow-manager/xref/_partners-logicals.tsv: 131 pair(s)
+  data/flow-manager/xref/_apps-logicals.tsv: 131 pair(s)
+  data/flow-manager/xref/_domains-logicals.tsv: 131 pair(s)
+  data/flow-manager/xref/_bl-logicals.tsv: 123 pair(s)
+  data/flow-manager/xref/_apps-partners.tsv: 126 pair(s)
   data/flow-manager/xref/_domains-partners.tsv: 101 pair(s)
   data/flow-manager/xref/_bl-partners.tsv: 94 pair(s)
-  data/flow-manager/xref/_domains-apps.tsv: 123 pair(s)
-  data/flow-manager/xref/_bl-apps.tsv: 113 pair(s)
+  data/flow-manager/xref/_domains-apps.tsv: 126 pair(s)
+  data/flow-manager/xref/_bl-apps.tsv: 117 pair(s)
   data/flow-manager/xref/_bl-domains.tsv: 27 pair(s)
-  data/flow-manager/xref/_subscriptions-patterns.tsv: 152 pair(s)
-  data/flow-manager/xref/_subscriptions-flowdir.tsv: 152 pair(s)
+  data/flow-manager/xref/_subscriptions-patterns.tsv: 156 pair(s)
+  data/flow-manager/xref/_subscriptions-flowdir.tsv: 156 pair(s)
   data/flow-manager/xref/_subscriptions-ucderived.tsv: 13 pair(s)
-  data/flow-manager/xref/_logical-rules.tsv: 149 pair(s)
+  data/flow-manager/xref/_logical-rules.tsv: 153 pair(s)
   data/flow-manager/xref/_templates.tsv: 0 template(s)
 TIME     0s  flow-manager: directions, BL, the rest
 flow-manager.sh: wrote 11 entity caches to data/flow-manager/base/ + 95 pair caches (every read pair both ways) + the patterns and templates maps to data/flow-manager/xref/
 </pre></details>
-<details><summary>3. parse: transfer log cache &mdash; 2 s &mdash; OK</summary><pre>TIME     0s  parse: setup
+<details><summary>3. parse: transfer log cache &mdash; 3 s &mdash; OK</summary><pre>TIME     0s  parse: setup
 Parsing 68 file(s) into /Users/herbert/axway/develop/data/transfer/cache/_transfers0.tsv ...
-Endpoint addresses: 0 new outgoing address(es) recorded from the configured host, 63 already mapped.
-TIME     2s  parse: tokenize (+ address map)
-NOTE: xref single-value fallback filled CoreId-group entities: account=10796 login=623 profile=309 fake-site=364
+Endpoint addresses: 0 new outgoing address(es) recorded from the configured host, 64 already mapped.
+TIME     1s  parse: tokenize (+ address map)
+NOTE: xref single-value fallback filled CoreId-group entities: account=10882 login=623 profile=309 fake-site=364
 TIME     0s  parse: derive: propagation + fallbacks
 No-subscription/http/probe skip: dropped 136 CoreId(s) (136 empty outbound ssh probe(s)); raw line(s) -&gt; /Users/herbert/axway/develop/data/transfer/_skipped.csv.
 Skip list: set aside 210 transfer record(s) -&gt; /Users/herbert/axway/develop/data/transfer/_skipped.tsv.
-TIME     0s  parse: derive: no-subscription / http / probe skip + skip list
+TIME     1s  parse: derive: no-subscription / http / probe skip + skip list
 TIME     0s  parse: collapse to Files + config join
 Still under way: removed 1 File(s) started within 10 minutes of the newest transfer, and their legs.
 TIME     0s  parse: still-under-way filter
-Wrote /Users/herbert/axway/develop/data/transfer/cache/_transfers.tsv (83085 record(s)), /Users/herbert/axway/develop/data/transfer/cache/_files.tsv (33801 transfer(s)), /Users/herbert/axway/develop/data/transfer/cache/_transfers.txt, /Users/herbert/axway/develop/data/transfer/cache/_files.txt.
+Wrote /Users/herbert/axway/develop/data/transfer/cache/_transfers.tsv (83447 record(s)), /Users/herbert/axway/develop/data/transfer/cache/_files.tsv (33982 transfer(s)), /Users/herbert/axway/develop/data/transfer/cache/_transfers.txt, /Users/herbert/axway/develop/data/transfer/cache/_files.txt.
 </pre></details>
-<details><summary>4. result: discover the transfer-log hosts (before the mention scan) &mdash; 1 s &mdash; OK</summary><pre>(no output)</pre></details>
-<details><summary>5. parse: server mention caches &mdash; 0 s &mdash; OK</summary><pre>TIME     0s  server parse: mentions: transfer-ended sessions
+<details><summary>4. result: discover the transfer-log hosts (before the mention scan) &mdash; 0 s &mdash; OK</summary><pre>(no output)</pre></details>
+<details><summary>5. parse: server mention caches &mdash; 1 s &mdash; OK</summary><pre>TIME     0s  server parse: mentions: transfer-ended sessions
   transfer-ended sessions: 271 (their Error/Warning lines stay out of the err/warn rings).
-TIME     0s  server parse: mentions: scan (10 parts)
-TIME     0s  server parse: mentions: memo replay 171248 of 187831 records
+TIME     1s  server parse: mentions: scan (10 parts)
+TIME     0s  server parse: mentions: memo replay 171997 of 188919 records
 TIME     0s  server parse: mentions: lists + rings
 Wrote the per-entity server caches:
-  accounts/: 100 per-name detail file(s) (+ 62 err/warn)
+  accounts/: 104 per-name detail file(s) (+ 62 err/warn)
   subscriptions/: 91 per-name detail file(s) (+ 58 err/warn)
-  logins/: 35 per-name detail file(s) (+ 7 err/warn)
-  hosts/: 22 per-name detail file(s) (+ 22 err/warn)
+  logins/: 36 per-name detail file(s) (+ 8 err/warn)
+  hosts/: 23 per-name detail file(s) (+ 23 err/warn)
 TIME     0s  server parse: per-entity mention caches
 </pre></details>
-<details><summary>6. server log: logon summary (per login + per address) &mdash; 0 s &mdash; OK</summary><pre>TIME     0s  ensure_logons (the logon summary)
+<details><summary>6. server log: logon summary (per login + per address) &mdash; 1 s &mdash; OK</summary><pre>TIME     1s  ensure_logons (the logon summary)
 </pre></details>
-<details><summary>7. server log -&gt; transfer: the ok bookends + reason lines (extract) &mdash; 0 s &mdash; OK</summary><pre>bookend-ok: extracted 251 ok bookend(s) and 2435 classifying error/warning line(s) from the server cache.
+<details><summary>7. server log -&gt; transfer: the ok bookends + reason lines (extract) &mdash; 0 s &mdash; OK</summary><pre>bookend-ok: extracted 251 ok bookend(s) and 2437 classifying error/warning line(s) from the server cache.
 </pre></details>
-<details><summary>8. server log -&gt; transfer: attribute Unknown flows by session &mdash; 1 s &mdash; OK</summary><pre>TIME     0s  session-sites: server log scan (10 jobs)
+<details><summary>8. server log -&gt; transfer: attribute Unknown flows by session &mdash; 2 s &mdash; OK</summary><pre>TIME     1s  session-sites: server log scan (10 jobs)
 session-sites: 547 Unknown-subscription session(s) scanned, map now 56 entry/-ies; 258 lone leg(s), 181 re-keyed — re-deriving the transfer caches.
 Rebuilding the derived caches from /Users/herbert/axway/develop/data/transfer/cache/_transfers0.tsv ...
 TIME     0s  parse: setup
 TIME     0s  parse: tokenize (+ address map)
-NOTE: xref single-value fallback filled CoreId-group entities: account=10615 login=442 profile=309 site-by-session=56 fake-site=127
+NOTE: xref single-value fallback filled CoreId-group entities: account=10701 login=442 profile=309 site-by-session=56 fake-site=127
 NOTE: moved 181 re-keyed leg(s) back into the CoreId their transfer started under.
 TIME     0s  parse: derive: propagation + fallbacks
 No-subscription/http/probe skip: dropped 136 CoreId(s) (136 empty outbound ssh probe(s)); raw line(s) -&gt; /Users/herbert/axway/develop/data/transfer/_skipped.csv.
@@ -263,7 +263,7 @@ TIME     0s  parse: derive: no-subscription / http / probe skip + skip list
 TIME     1s  parse: collapse to Files + config join
 Still under way: removed 1 File(s) started within 10 minutes of the newest transfer, and their legs.
 TIME     0s  parse: still-under-way filter
-Wrote /Users/herbert/axway/develop/data/transfer/cache/_transfers.tsv (83085 record(s)), /Users/herbert/axway/develop/data/transfer/cache/_files.tsv (33620 transfer(s)), /Users/herbert/axway/develop/data/transfer/cache/_transfers.txt, /Users/herbert/axway/develop/data/transfer/cache/_files.txt.
+Wrote /Users/herbert/axway/develop/data/transfer/cache/_transfers.tsv (83447 record(s)), /Users/herbert/axway/develop/data/transfer/cache/_files.tsv (33801 transfer(s)), /Users/herbert/axway/develop/data/transfer/cache/_transfers.txt, /Users/herbert/axway/develop/data/transfer/cache/_files.txt.
 </pre></details>
 <details><summary>9. result: discover the transfer-log subscriptions (+ re-check the hosts) &mdash; 0 s &mdash; OK</summary><pre>(no output)</pre></details>
 <details><summary>10. server log -&gt; transfer: mark expired staged files &mdash; 0 s &mdash; OK</summary><pre>expire-files: extracted 384 deletion entrie(s) from the server cache.
@@ -273,27 +273,29 @@ expire-files: rewrote /Users/herbert/axway/develop/data/transfer/cache/_files.ts
 <details><summary>11. server log -&gt; transfer: settle failed Files by ok bookend &mdash; 0 s &mdash; OK</summary><pre>bookend-ok: 13 file(s) settled Processed by an ok bookend, 0 reverted (13 row(s) changed).
 bookend-ok: rewrote /Users/herbert/axway/develop/data/transfer/cache/_files.tsv.
 </pre></details>
-<details><summary>12. transfer: the published File pages (newest OK + 3 errors per subscription) &mdash; 0 s &mdash; OK</summary><pre>filepages: 108 latest-OK + 210 error + 250 longest + 127 Unknown + 77 one-legged + 48 resubmitted + 18 recovered + 91 waiting + 360 expired File page(s) (1253 CoreIds).
+<details><summary>12. transfer: the published File pages (newest OK + 3 errors per subscription) &mdash; 0 s &mdash; OK</summary><pre>filepages: 112 latest-OK + 210 error + 250 longest + 127 Unknown + 77 one-legged + 48 resubmitted + 18 recovered + 91 waiting + 360 expired File page(s) (1258 CoreIds).
 </pre></details>
-<details><summary>13. transfer: the newest-first cache copies &mdash; 0 s &mdash; OK</summary><pre>newest-caches: wrote /Users/herbert/axway/develop/data/transfer/cache/newest/_files.tsv + _transfers.tsv (newest-first copies).
+<details><summary>13. transfer: the newest-first cache copies &mdash; 1 s &mdash; OK</summary><pre>newest-caches: wrote /Users/herbert/axway/develop/data/transfer/cache/newest/_files.tsv + _transfers.tsv (newest-first copies).
 </pre></details>
-<details><summary>14. result: subscription outcomes -&gt; base caches &mdash; 1 s &mdash; OK</summary><pre>TIME   0.1s  result: UC3 poll evidence
+<details><summary>14. result: subscription outcomes -&gt; base caches &mdash; 2 s &mdash; OK</summary><pre>TIME   0.2s  result: UC3 poll evidence
 TIME   0.1s  result: leg hosts, observed pairs, discovery
-TIME   0.1s  result: own last Files + connected rings attributed (ringattr)
-TIME   0.0s  result: trouble-after-success evidence (kaputflip)
+TIME   0.2s  result: own last Files + connected rings attributed (ringattr)
+TIME   0.1s  result: trouble-after-success evidence (kaputflip)
 TIME   0.0s  result: the red flips (after last transfer, cannot connect)
 TIME   0.0s  result: rollups: accounts / logins / hosts / white
 TIME   0.1s  result: prune withdrawn discoveries
-TIME   0.0s  result: orphan reds
+result.sh: 1 hosts row(s) reddened by server Errors no flow could claim.
+result.sh: 1 logins row(s) reddened by server Errors no flow could claim.
+TIME   0.1s  result: orphan reds
 TIME   0.0s  result: rollups: logical / PDA / BL
-  _subscriptions.tsv: 100 green, 9 red, 43 orange, 0 unknown
-  _accounts.tsv: 84 green, 9 red, 43 orange, 0 unknown
-  _logins.tsv: 31 green, 0 red, 17 orange, 0 unknown
-  _hosts.tsv: 10 green, 7 red, 12 orange, 0 unknown
+  _subscriptions.tsv: 104 green, 9 red, 43 orange, 0 unknown
+  _accounts.tsv: 88 green, 9 red, 43 orange, 0 unknown
+  _logins.tsv: 31 green, 1 red, 17 orange, 0 unknown
+  _hosts.tsv: 10 green, 8 red, 12 orange, 0 unknown
   _white.tsv: 54 green, 1 red, 63 orange, 0 unknown
-  _logicals.tsv: 79 green, 9 red, 40 orange, 0 unknown
+  _logicals.tsv: 83 green, 9 red, 40 orange, 0 unknown
   _partners.tsv: 6 green, 8 red, 15 orange, 0 unknown
-  _apps.tsv: 42 green, 8 red, 34 orange, 0 unknown
+  _apps.tsv: 45 green, 8 red, 34 orange, 0 unknown
   _domains.tsv: 4 green, 8 red, 10 orange, 0 unknown
   _bl.tsv: 13 green, 8 red, 9 orange, 0 unknown
 result.sh: result column filled for the 10 base caches.
@@ -305,8 +307,8 @@ Wrote /Users/herbert/axway/develop/data/server/reports/_kaput-evidence.tsv (3 su
 TIME     0s  details: setup (cleanup, side inputs)
 TIME     1s  details: producer direction_rows
 TIME     1s  details: producer whitelist_rows
-TIME     4s  details: producer aggregate_files (PTN BL LOGIN HOST DOM)
-TIME     4s  details: producer compute_extras
+TIME     3s  details: producer aggregate_files (PTN BL LOGIN HOST DOM)
+TIME     3s  details: producer compute_extras
 TIME     4s  details: producer aggregate_files (SITE LGC ACC APP)
 TIME     4s  details: prep producers (parallel: files aggregation, extras, directions, whitelist + side scans)
 TIME     0s  details: stream sort + config rows
@@ -323,7 +325,7 @@ TIME     0s  details: writer LOGIN
 TIME     0s  details: writer PTN
 TIME     0s  details: writer SITE
 TIME     0s  details: writers (per type, in parallel)
-Wrote 713 detail file(s) across accounts/subscriptions/logins/hosts/logicals/partners/applications/domains/bl.
+Wrote 730 detail file(s) across accounts/subscriptions/logins/hosts/logicals/partners/applications/domains/bl.
 </pre></details>
 <details><summary>17. report: transfer .rpt files (phase 1) &mdash; 3 s &mdash; OK</summary><pre>Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
@@ -335,115 +337,115 @@ Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Data written to /Users/herbert/axway/develop/data/transfer/reports/went-quiet-src.rpt (4 of 108 subscription(s) quiet for more than 7 days).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/stale-accounts.rpt (94 account(s), 4 stale).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/went-quiet-src.rpt (8 of 112 subscription(s) quiet for more than 7 days).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/stale-accounts.rpt (98 account(s), 8 stale).
 TIME     0s  went-quiet.sh  [cpu 0s]
 TIME     0s  stale-accounts.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/failure-heatmap.rpt (33801 CoreId(s), 1558 failed).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/day.rpt (68 day(s) with records).
-TIME     0s  day.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/failure-heatmap.rpt (33620 CoreId(s), 1558 failed).
 TIME     0s  failure-heatmap.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/not-in-flow-manager.rpt.
-TIME     0s  not-in-flow-manager.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/recovered.rpt (85 of 101 green subscription(s) recovered from a red episode).
+TIME     0s  day.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/topview.rpt (68 day(s), 33801 file(s), 83447 row(s); + 26 resubmit / 16 recovered day list(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/recovered.rpt (85 of 105 green subscription(s) recovered from a red episode).
+TIME     0s  topview.sh  [cpu 0s]
+TIME     0s  recovered.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/transfer/reports/recovered-files.rpt (28 recovered file(s)).
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 TIME     0s  recovered-files.sh  [cpu 0s]
-TIME     0s  recovered.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/topview.rpt (68 day(s), 33620 file(s), 83085 row(s); + 26 resubmit / 16 recovered day list(s)).
-TIME     0s  topview.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/missing-cronjobs.rpt (3 subscription(s) with no cron expression).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/not-in-flow-manager.rpt.
+TIME     0s  not-in-flow-manager.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/weekly.rpt (10 week(s), 33801 OK File(s)).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/_red-run.tsv (7 went red from green, 0 never delivered).
+TIME     0s  weekly.sh  [cpu 0s]
+TIME     0s  red-run.sh  [cpu 0s]
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Data written to /Users/herbert/axway/develop/data/transfer/reports/missing-cronjobs.rpt (3 subscription(s) with no cron expression).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/connection-efficiency.rpt (54392 sessions, 1.00 Files/connection, 99.9% single-File).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/punctuality-src.rpt (112 subscription(s): 15 clockwork, 3 regular, 19 loose, 75 irregular).
 TIME     1s  missing-cronjobs.sh  [cpu 0s]
-TIME     1s  red-run.sh  [cpu 0s]
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Data written to /Users/herbert/axway/develop/data/transfer/reports/weekly.rpt (10 week(s), 33620 OK File(s)).
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-TIME     1s  weekly.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/waiting-expired.rpt (+ 43 waiting / 77 expired list page(s)).
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-TIME     1s  waiting-expired.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/punctuality-src.rpt (108 subscription(s): 15 clockwork, 3 regular, 19 loose, 71 irregular).
-TIME     0s  punctuality.sh  [cpu 0s]
+TIME     1s  connection-efficiency.sh  [cpu 1s]
+TIME     1s  punctuality.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/transfer/reports/pirates.rpt (77 one-legged File(s); 4 subscription page(s)).
-TIME     0s  pirates.sh  [cpu 0s]
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+TIME     1s  pirates.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/waiting-expired.rpt (+ 43 waiting / 77 expired list page(s)).
+TIME     1s  waiting-expired.sh  [cpu 0s]
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Data written to /Users/herbert/axway/develop/data/transfer/reports/size-dist.rpt (33620 record(s)).
-TIME     0s  size-dist.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/transfer/reports/resubmissions.rpt (48 resubmitted leg(s)).
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 TIME     0s  resubmissions.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/protocol.rpt (83085 record(s)).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/file-type.rpt (6 file type(s)).
-TIME     0s  protocol.sh  [cpu 0s]
-TIME     0s  file-type.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/size-dist.rpt (33801 record(s)).
+TIME     0s  size-dist.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/transfer/reports/retry.rpt (78 failing flow(s), 0 never succeeded).
-TIME     0s  retry.sh  [cpu 0s]
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Data written to /Users/herbert/axway/develop/data/transfer/reports/file-type.rpt (6 file type(s)).
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Data written to /Users/herbert/axway/develop/data/transfer/reports/hourly.rpt (33620 File(s)).
+TIME     1s  retry.sh  [cpu 0s]
+TIME     0s  file-type.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/protocol.rpt (83447 record(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/hourly.rpt (33801 File(s)).
+TIME     0s  protocol.sh  [cpu 0s]
 TIME     0s  hourly.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/duration-longest.rpt (250 of 31971 delivered Files).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/weekday.rpt (32243 OK File(s)).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/anomalies.rpt.
-Data written to /Users/herbert/axway/develop/data/transfer/reports/weekday.rpt (32062 OK File(s)).
-TIME     0s  duration-longest.sh  [cpu 0s]
-TIME     0s  anomalies.sh  [cpu 0s]
 TIME     0s  weekday.sh  [cpu 0s]
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Data written to /Users/herbert/axway/develop/data/transfer/reports/connection-efficiency.rpt (54030 sessions, 1.00 Files/connection, 99.9% single-File).
-TIME     1s  connection-efficiency.sh  [cpu 1s]
+TIME     0s  anomalies.sh  [cpu 0s]
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Data written to /Users/herbert/axway/develop/data/transfer/reports/top-transfers.rpt (top 50 largest &amp; slowest).
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Data written to /Users/herbert/axway/develop/data/transfer/reports/duration-longest.rpt (250 of 32152 delivered Files).
+TIME     0s  duration-longest.sh  [cpu 0s]
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
+Data written to /Users/herbert/axway/develop/data/transfer/reports/attempts.rpt (32243 + 1558 File(s)).
 TIME     0s  failed: the failed Files, the drill + File pages
+Data written to /Users/herbert/axway/develop/data/transfer/reports/top-transfers.rpt (top 50 largest &amp; slowest).
+TIME     0s  attempts.sh  [cpu 0s]
 TIME     0s  top-transfers.sh  [cpu 0s]
 TIME     0s  failed: the server-failing set
 Building the incoming-connection (whitelisted IP) detail pages...
 TIME     0s  failed: server log pass 1 (what the server log said)
-Data written to /Users/herbert/axway/develop/data/transfer/reports/attempts.rpt (32062 + 1558 File(s)).
-TIME     0s  attempts.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/duration.rpt (31971 Files over 68 days).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/details/incoming_connections (55 incoming-connection page(s)).
 TIME     0s  incoming-connections.sh  [cpu 0s]
-TIME     1s  failed: server log pass 2 (the reddening sessions)
-Data written to /Users/herbert/axway/develop/data/transfer/reports/av-scan.rpt (19 blocked, 19117 allowed, 2522 off-model leg(s)).
-TIME     0s  failed: server-failing pages + the reasons
-TIME     1s  av-scan.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/duration.rpt (32152 Files over 68 days).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/duplicate-files.rpt (3125 group(s), 12471 transfer(s) in groups).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/duration-all.rpt (33620 Files over 68 days).
-File pages: 979 written to /Users/herbert/axway/develop/data/transfer/reports/files/ + 274 served by their failed-File page (the Transfer patterns links).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/failed.rpt + failed-sub-all.rpt (1558 failed file(s), 107 subscription/legs combination(s)) and /Users/herbert/axway/develop/data/transfer/reports/errors/ (576 drill page(s), 469 for the newest 30 days; server-log sections: 1501 by session/id carrying 3655 line(s), 0 on the time-window fallback).
-TIME     0s  failed: the two lists + the File pages
 TIME     1s  duplicate-files.sh  [cpu 0s]
-TIME     1s  duration.sh  [cpu 1s]
-TIME     1s  failed.sh  [cpu 1s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/av-scan.rpt (19 blocked, 19278 allowed, 2522 off-model leg(s)).
+TIME     1s  failed: server log pass 2 (the reddening sessions)
+TIME     1s  av-scan.sh  [cpu 0s]
 TIME     2s  entities: aggregate login account
 TIME     2s  entities: aggregate partner logical
 TIME     2s  entities: aggregate subscription remote-host
-Data written to /Users/herbert/axway/develop/data/transfer/reports/duration-dwell.rpt (26808 measurable, median 3.07 s, p95 36.88 s, max 21.1 min).
-TIME     1s  dwell-time.sh  [cpu 1s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/security-outreach.rpt (45 outreach row(s), 46 upgrade pair(s), 46 mixed).
-Wrote 13 security-param value page(s) to /Users/herbert/axway/develop/data/transfer/reports/secparams.
+Data written to /Users/herbert/axway/develop/data/transfer/reports/duration-all.rpt (33801 Files over 68 days).
+TIME     1s  duration.sh  [cpu 1s]
 TIME     2s  entities: aggregate application domain bl
+TIME     0s  failed: server-failing pages + the reasons
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/subscription.rpt (112 subscription(s), 33674 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/partner.rpt (25 partner(s), 21305 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/application.rpt (78 application(s), 21305 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/domain.rpt (22 domain(s), 21305 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/login.rpt (33 login(s), 20114 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/remote-host.rpt (27 remote host(s), 19901 file(s)).
+File pages: 984 written to /Users/herbert/axway/develop/data/transfer/reports/files/ + 274 served by their failed-File page (the Transfer patterns links).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/failed.rpt + failed-sub-all.rpt (1558 failed file(s), 107 subscription/legs combination(s)) and /Users/herbert/axway/develop/data/transfer/reports/errors/ (576 drill page(s), 469 for the newest 30 days; server-log sections: 1506 by session/id carrying 3670 line(s), 0 on the time-window fallback).
+TIME     0s  failed: the two lists + the File pages
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/account.rpt (98 account(s), 33801 file(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/security-outreach.rpt (45 outreach row(s), 46 upgrade pair(s), 46 mixed).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/bl.rpt (30 BL(s), 28666 file(s)).
+TIME     2s  failed.sh  [cpu 1s]
+Data written to /Users/herbert/axway/develop/data/transfer/reports/duration-dwell.rpt (26989 measurable, median 3.07 s, p95 37.19 s, max 21.1 min).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/logical.rpt (92 logical(s), 33674 file(s)).
+TIME     1s  dwell-time.sh  [cpu 1s]
+Wrote 13 security-param value page(s) to /Users/herbert/axway/develop/data/transfer/reports/secparams.
 Data written to /Users/herbert/axway/develop/data/transfer/reports/security-params.rpt.
 TIME     1s  security-params.sh  [cpu 1s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/login.rpt (32 login(s), 20019 file(s)).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/remote-host.rpt (26 remote host(s), 19815 file(s)).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/domain.rpt (22 domain(s), 21124 file(s)).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/partner.rpt (25 partner(s), 21124 file(s)).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/bl.rpt (30 BL(s), 28485 file(s)).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/application.rpt (75 application(s), 21124 file(s)).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/account.rpt (94 account(s), 33620 file(s)).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/subscription.rpt (108 subscription(s), 33493 file(s)).
-Data written to /Users/herbert/axway/develop/data/transfer/reports/entities/logical.rpt (88 logical(s), 33493 file(s)).
 Data written to /Users/herbert/axway/develop/data/transfer/reports/month-stats (months: this:2026-08 previous:2026-07 previous2:2026-06 — 9 report(s) each) + /Users/herbert/axway/develop/data/transfer/reports/_alltime.tsv.
 Data written to /Users/herbert/axway/develop/data/transfer/reports/{account,subscription,login,remote-host,logical,partner,application,domain,bl}.rpt (the classic records).
 TIME     3s  entities.sh  [cpu 5s]
@@ -460,22 +462,22 @@ Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
-Data written to /Users/herbert/axway/develop/data/server/reports/auth-activity.rpt + auth-logins.tsv (7866 successful SSH logon(s)).
+Data written to /Users/herbert/axway/develop/data/server/reports/auth-activity.rpt + auth-logins.tsv (7961 successful SSH logon(s)).
 TIME     0s  auth-activity.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/server/reports/uc4-status.rpt (32 UC4 subscription(s): 21 ok, 0 error, 0 ok-error, 11 not-seen).
-TIME     0s  uc4-status.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/server/reports/uc4-status.rpt (34 UC4 subscription(s): 23 ok, 0 error, 0 ok-error, 11 not-seen).
+TIME     1s  uc4-status.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/server/reports/uc2-status.rpt (0 never-collected, 1 no-files, 21 both, 1 ok, 6 nothing, 0 file(s) uncollected).
+Data written to /Users/herbert/axway/develop/data/server/reports/logon.rpt (49 login(s): 7970 allowed, 1621 re-screen(s), 7961 authenticated, 10 disallowed, 0 no-account, 10 bad-key, 0 key-failure, 9 locked, 18 session error(s); 72 outbound failure(s)).
 Data written to /Users/herbert/axway/develop/data/server/reports/unknown-sites.rpt (13 unknown subscription(s), 1189 mention(s)).
+TIME     1s  uc2-status.sh  [cpu 0s]
+TIME     1s  logon.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/server/reports/ssh-crypto.rpt (7960 negotiation(s), 28 deprecated warning(s)).
 Data written to /Users/herbert/axway/develop/data/server/reports/unknown-accounts.rpt (6 unknown account(s), 178 mention(s)).
+TIME     1s  ssh-crypto.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/server/reports/unknown-logins.rpt (4 unknown login(s), 142 mention(s)).
 Data written to /Users/herbert/axway/develop/data/server/reports/unknown-hosts.rpt (0 unknown host(s), 0 mention(s)).
 Data written to /Users/herbert/axway/develop/data/server/reports/unknown-whitelisting.rpt (4 unknown IP(s), 57 mention(s)).
 TIME     1s  unknown-entities.sh  [cpu 1s]
-Data written to /Users/herbert/axway/develop/data/server/reports/ssh-crypto.rpt (7865 negotiation(s), 28 deprecated warning(s)).
-TIME     1s  ssh-crypto.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/server/reports/logon.rpt (48 login(s): 7875 allowed, 1621 re-screen(s), 7866 authenticated, 10 disallowed, 0 no-account, 10 bad-key, 0 key-failure, 9 locked, 18 session error(s); 72 outbound failure(s)).
-TIME     1s  logon.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/server/reports/uc2-status.rpt (0 never-collected, 1 no-files, 21 both, 1 ok, 6 nothing, 0 file(s) uncollected).
-TIME     1s  uc2-status.sh  [cpu 0s]
 TIME     1s  server-cache subsets (10 jobs)
 TIME     1s  subsets.sh  [cpu 1s]
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
@@ -483,54 +485,54 @@ Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
-Data written to /Users/herbert/axway/develop/data/server/reports/errors-day.rpt (68 day(s), 2587 error(s)).
-Data written to /Users/herbert/axway/develop/data/server/reports/site-failures.tsv (46 subscription(s) with connection failures).
 Data written to /Users/herbert/axway/develop/data/server/reports/event-queue-slots.tsv (121 EventQueue line(s)).
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
+Data written to /Users/herbert/axway/develop/data/server/reports/topview.rpt (68 day(s), 189629 record(s)).
+Data written to /Users/herbert/axway/develop/data/server/reports/errors-day.rpt (68 day(s), 2589 error(s)).
+Data written to /Users/herbert/axway/develop/data/server/reports/site-failures.tsv (46 subscription(s) with connection failures).
+Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Data written to /Users/herbert/axway/develop/data/server/reports/pesit-slots.tsv (129 nonzero 30-minute slot(s)).
-Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
-TIME     0s  errors-day.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/server/reports/topview.rpt (68 day(s), 188541 record(s)).
-Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
-TIME     0s  site-failures.sh  [cpu 0s]
-TIME     0s  event-queue.sh  [cpu 0s]
-TIME     0s  pesit.sh  [cpu 0s]
-Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 TIME     0s  topview.sh  [cpu 0s]
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
-Data written to /Users/herbert/axway/develop/data/server/reports/error-timing.rpt (3448 msg(s): 2587 err, 861 warn).
+TIME     0s  event-queue.sh  [cpu 0s]
+TIME     0s  site-failures.sh  [cpu 0s]
+TIME     0s  errors-day.sh  [cpu 0s]
+Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
+TIME     0s  pesit.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/server/reports/error-timing.rpt (3450 msg(s): 2589 err, 861 warn).
 TIME     0s  error-timing.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/server/reports/error-reasons.rpt (2587 error(s), 11 reason(s)).
-Data written to /Users/herbert/axway/develop/data/server/reports/failure-flows.rpt (1617 of 2587 error(s) attributed, 57 flow(s), 58 pair(s)).
+Data written to /Users/herbert/axway/develop/data/server/reports/error-reasons.rpt (2589 error(s), 11 reason(s)).
+Data written to /Users/herbert/axway/develop/data/server/reports/failure-flows.rpt (1617 of 2589 error(s) attributed, 57 flow(s), 58 pair(s)).
 TIME     0s  error-reasons.sh  [cpu 0s]
 TIME     0s  failure-flows.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/server/reports/no-remote-files.rpt (8 subscription(s), 363 empty poll(s)).
-Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 TIME     0s  no-remote-files.sh  [cpu 0s]
-Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
-Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
-Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Data written to /Users/herbert/axway/develop/data/server/reports/no-remote-dir.rpt (136 error(s), 1 subscription(s), 1 director(y/ies)).
+TIME     0s  no-remote-dir.sh  [cpu 0s]
+Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 Found 68 file(s) in '/Users/herbert/axway/develop/input/server', processing...
 No session-lifecycle messages found — writing an empty report.
-TIME     0s  no-remote-dir.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/server/reports/routing-errors.rpt (100 line(s), 4 entit(ies), 40 shown).
 TIME     0s  ssh-sessions.sh  [cpu 0s]
+Data written to /Users/herbert/axway/develop/data/server/reports/routing-errors.rpt (100 line(s), 4 entit(ies), 40 shown).
 TIME     0s  routing-errors.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/server/reports/top-messages.rpt (425 shape(s), top 50 listed).
 Data written to /Users/herbert/axway/develop/data/server/reports/io-errors.rpt (53 IO error line(s), 1 folder(s)).
-TIME     0s  top-messages.sh  [cpu 0s]
 TIME     0s  io-errors.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/server/reports/uc1-status.rpt (49 UC1 subscription(s): 33 ok, 0 error, 6 ok-error, 10 not-seen).
-TIME     0s  uc1-status.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/server/reports/deploy-errors.rpt (1 unresolved of 3; 2 recovered).
+Data written to /Users/herbert/axway/develop/data/server/reports/uc1-status.rpt (51 UC1 subscription(s): 35 ok, 0 error, 6 ok-error, 10 not-seen).
+Data written to /Users/herbert/axway/develop/data/server/reports/top-messages.rpt (427 shape(s), top 50 listed).
 TIME     0s  deploy-errors.sh  [cpu 0s]
+TIME     0s  uc1-status.sh  [cpu 0s]
+TIME     0s  top-messages.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/server/reports/remote-poll.rpt (41950 poll(s), 38658 empty, 34 subscription(s)).
-TIME     0s  remote-poll.sh  [cpu 0s]
+TIME     1s  remote-poll.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/server/reports/uc3-status.rpt (40 UC3 subscription(s): 24 ok, 1 error, 2 ok-error, 13 not-seen).
-TIME     0s  uc3-status.sh  [cpu 0s]
+TIME     1s  uc3-status.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/server/reports/errors.rpt (4 table(s), 3 component slot(s)).
 Data written to /Users/herbert/axway/develop/data/server/reports/missing-entities.rpt (5 table(s), 5 component slot(s)).
 uc3-polling: building the UC3 tab's polling tables ...
@@ -543,7 +545,7 @@ Data written to /Users/herbert/axway/develop/data/server/reports/uc-status.rpt (
 </pre></details>
 <details><summary>19. reason boxes (the Reason fallback sidecar) &mdash; 0 s &mdash; OK</summary><pre>Wrote the box-reason sidecar data/analyses/reports/_subs-boxes.tsv.
 </pre></details>
-<details><summary>20. report catch-up: failed subscriptions (the Reason columns) &mdash; 0 s &mdash; OK</summary><pre>TIME     0s  failed: the server-failing set
+<details><summary>20. report catch-up: failed subscriptions (the Reason columns) &mdash; 1 s &mdash; OK</summary><pre>TIME     1s  failed: the server-failing set
 TIME     0s  failed: server-failing pages + the reasons
 Data written to /Users/herbert/axway/develop/data/transfer/reports/failed.rpt + failed-sub-all.rpt, 2 server-failing page(s) (the catch-up: reasons + lists; the drill and File pages are the full run's).
 TIME     0s  failed: the two lists (catch-up)
@@ -563,70 +565,70 @@ Data written to /Users/herbert/axway/develop/data/transfer/reports/coverage/subs
 Data written to /Users/herbert/axway/develop/data/transfer/reports/coverage/logins.tsv.
 Data written to /Users/herbert/axway/develop/data/transfer/reports/coverage/hosts.tsv.
 TIME     0s  showseen.sh  [cpu 0s]
-Data written to /Users/herbert/axway/develop/data/transfer/reports/ranking.rpt (500 ranked entity row(s)).
+Data written to /Users/herbert/axway/develop/data/transfer/reports/ranking.rpt (517 ranked entity row(s)).
 TIME     0s  ranking.sh  [cpu 0s]
 </pre></details>
-<details><summary>23. report: analyses .rpt files &mdash; 1 s &mdash; OK</summary><pre>Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
-Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', building entity coverage...
+<details><summary>23. report: analyses .rpt files &mdash; 1 s &mdash; OK</summary><pre>Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', building entity coverage...
+Found 68 file(s) in '/Users/herbert/axway/develop/input/transfer', processing...
 Data written to data/analyses/reports/failing-reasons.rpt (23 reason row(s)).
 TIME     0s  failing-reasons.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/transfer/reports/entity-coverage.rpt (6 view(s)).
-Data written to data/analyses/reports/fe-overview.rpt (49 login(s): 19 UC2, 25 UC4, 3 UC2/UC4; 35 logged on here, 5 with a gateway logon, 1 old-gateway only; 11101 in, 8791 out, 91 waiting, 8288 retrieved).
+Data written to data/analyses/reports/fe-overview.rpt (50 login(s): 19 UC2, 26 UC4, 3 UC2/UC4; 36 logged on here, 5 with a gateway logon, 1 old-gateway only; 11196 in, 8791 out, 91 waiting, 8288 retrieved).
+TIME     0s  fe-overview.sh  [cpu 0s]
 TIME     0s  entity-coverage.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/transfer/reports/skipped.rpt (136 no-subscription/http line(s)).
-TIME     0s  fe-overview.sh  [cpu 0s]
 TIME     0s  skipped.sh  [cpu 0s]
-Wrote 5 coverage cell .rpt file(s) to data/coverage/.
-TIME     0s  coverage.sh  [cpu 0s]
-Data written to data/analyses/reports/partners-out.rpt (29 host(s): 9536 outbound connection(s), 72 failed logon(s)).
-Data written to data/analyses/reports/partners-out-accounts.rpt (87 accounts; 0 host row(s) in no accounts view).
+Data written to data/analyses/reports/partners-out.rpt (30 host(s): 9622 outbound connection(s), 72 failed logon(s)).
+Data written to data/analyses/reports/partners-out-accounts.rpt (89 accounts; 0 host row(s) in no accounts view).
 Data written to data/analyses/reports/partners-out-partners.rpt (27 partners; 1 host row(s) in no partners view).
 TIME     0s  partners-out.sh  [cpu 0s]
+Wrote 5 coverage cell .rpt file(s) to data/coverage/.
+TIME     0s  coverage.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/transfer/reports/cross-*.rpt (9 file(s), 8 crosstabs each).
-TIME     1s  cross-reference.sh  [cpu 0s]
+TIME     0s  cross-reference.sh  [cpu 0s]
 Data written to data/analyses/reports/first-seen.rpt (+ 21 cell rpt(s) in data/first-seen).
 TIME     1s  first-seen.sh  [cpu 0s]
 Wrote data/analyses/reports/home.rpt (9 member(s)).
 TIME     0s  home.sh  [cpu 0s]
 Data written to /Users/herbert/axway/develop/data/transfer/reports/entity-search.rpt.
 TIME     0s  entity-search.sh  [cpu 0s]
-Data written to data/analyses/reports/partners-in.rpt (49 login(s): 49 from the FE overview, 0 funnel-only).
-Data written to data/analyses/reports/partners-in-accounts.rpt (48 accounts; 1 login row(s) in no accounts view).
+Data written to data/analyses/reports/partners-in.rpt (50 login(s): 50 from the FE overview, 0 funnel-only).
+Data written to data/analyses/reports/partners-in-accounts.rpt (50 accounts; 1 login row(s) in no accounts view).
 Data written to data/analyses/reports/partners-in-partners.rpt (25 partners; 2 login row(s) in no partners view).
 TIME     0s  partners-in.sh  [cpu 0s]
 All analyses reports done.
 </pre></details>
-<details><summary>24. publish: detail pages &mdash; 3 s &mdash; OK</summary><pre>Subscription verdicts: 152 flow(s) described.
+<details><summary>24. publish: detail pages &mdash; 4 s &mdash; OK</summary><pre>Subscription verdicts: 156 flow(s) described.
 Rendered docs/details/ (per-entity pages).
 </pre></details>
-<details><summary>25. publish: transfer report pages &mdash; 5 s &mdash; OK</summary><pre>TIME     2s  render transfer/login
-TIME     2s  render transfer/domain
-TIME     3s  render transfer/partner
+<details><summary>25. publish: transfer report pages &mdash; 7 s &mdash; OK</summary><pre>TIME     3s  render transfer/partner
+TIME     3s  render transfer/domain
+TIME     3s  render transfer/login
 TIME     3s  render transfer/remote-host
-TIME     3s  render transfer/bl
-TIME     3s  render transfer/application
-TIME     3s  render transfer/logical
-TIME     3s  render transfer/subscription
-TIME     3s  render transfer/account
+TIME     4s  render transfer/bl
+TIME     4s  render transfer/application
+TIME     4s  render transfer/subscription
+TIME     4s  render transfer/logical
+TIME     4s  render transfer/account
 Rendered docs/transfer/secparams/ (13 value page(s)).
 Rendered docs/transfer/expired/ (77 subscription + day page(s)).
 Rendered docs/transfer/waiting/ (43 subscription + day page(s)).
 Rendered docs/transfer/pirates/ (4 subscription page(s)).
 Rendered docs/resubmit/ (26 day page(s)).
 Rendered docs/recovered/ (16 day page(s)).
-TIME     4s  transfer publish: report pages + sub-pages
-Rendered docs/files/ (276 failed-file page(s) + 979 File page(s)).
+TIME     5s  transfer publish: report pages + sub-pages
+Rendered docs/files/ (276 failed-file page(s) + 984 File page(s)).
 TIME     1s  transfer publish: files/ pages
 Rendered docs/transfer/month-stats/ (27 page(s)).
 Rendered docs/transfer/ (44 report(s)).
-TIME     0s  transfer publish: month stats + placeholders
+TIME     1s  transfer publish: month stats + placeholders
 </pre></details>
-<details><summary>26. publish: partner group pages &mdash; 1 s &mdash; OK</summary><pre>publish-partner-groups: no partner groups configured.
+<details><summary>26. publish: partner group pages &mdash; 0 s &mdash; OK</summary><pre>publish-partner-groups: no partner groups configured.
 </pre></details>
 <details><summary>27. publish: server report pages &mdash; 0 s &mdash; OK</summary><pre>Rendered docs/server/ (6 report(s)).
 </pre></details>
-<details><summary>28. publish: analyses + coverage pages &mdash; 1 s &mdash; OK</summary><pre>Wrote 5 coverage cell page(s) to docs/coverage/.
-TIME     0s  analyses publish: coverage pages
+<details><summary>28. publish: analyses + coverage pages &mdash; 2 s &mdash; OK</summary><pre>Wrote 5 coverage cell page(s) to docs/coverage/.
+TIME     1s  analyses publish: coverage pages
 Wrote 21 First-seen cell page(s) to docs/first-seen/.
 TIME     0s  analyses publish: use cases, first seen, configuration pages
 Rendered 6 Subscriptions group page(s) into docs/analyses/.
@@ -636,19 +638,19 @@ TIME     0s  analyses publish: partners view pages
 TIME     0s  analyses publish: the rest
 Wrote docs/analyses (the analysis pages), docs/first-seen and docs/coverage.
 </pre></details>
-<details><summary>29. publish: all files search + dashboards + day pages &mdash; 2 s &mdash; OK</summary><pre>Wrote search/all-files.html + search/all/ (68 day shard(s), 33620 File(s), 108 subscription day list(s)).
+<details><summary>29. publish: all files search + dashboards + day pages &mdash; 3 s &mdash; OK</summary><pre>Wrote search/all-files.html + search/all/ (68 day shard(s), 33801 File(s), 112 subscription day list(s)).
 Wrote 1 dashboard page(s) to docs/dashboards/.
 Wrote 68 combined day page(s) to docs/day/.
 </pre></details>
-<details><summary>30. publish: index pages + home &mdash; 1 s &mdash; OK</summary><pre>TIME     0s  index pages: write_root_index
+<details><summary>30. publish: index pages + home &mdash; 2 s &mdash; OK</summary><pre>TIME     0s  index pages: write_root_index
 TIME     0s  index pages: write_root_404
 Home status figures verified against their linked pages.
 TIME     1s  index pages: check_status_consistency
 TIME     0s  index pages: apply_report_groups (the group rows + h1 tags)
-TIME     0s  index pages: apply_help_chrome
+TIME     1s  index pages: apply_help_chrome
 Wrote index pages (root + the Reports start page).
 </pre></details>
-<details><summary>31. publish: display sweep (no milliseconds, input/rename.txt) &mdash; 0 s &mdash; OK</summary><pre>display-rename: milliseconds dropped from the times on 1927 page(s) / payload(s).
+<details><summary>31. publish: display sweep (no milliseconds, input/rename.txt) &mdash; 0 s &mdash; OK</summary><pre>display-rename: milliseconds dropped from the times on 1949 page(s) / payload(s).
 display-rename: docs: applied 1 rule(s) to 85 page(s).
 </pre></details>
 <h2>Log files</h2>
@@ -656,59 +658,59 @@ display-rename: docs: applied 1 rule(s) to 85 page(s).
 <div class="sxscol"><h3>Server log files</h3>
 <table>
 <tr><th>Name</th><th>First</th><th>Last</th><th class="r">Lines</th></tr>
-<tr><td><code>logEntry_06-23.csv</code></td><td>2026-06-23 00:05:10</td><td>2026-06-23 23:59:31</td><td class="r">3,241</td></tr>
-<tr><td><code>logEntry_06-24.csv</code></td><td>2026-06-24 00:02:22</td><td>2026-06-24 23:59:58</td><td class="r">3,099</td></tr>
-<tr><td><code>logEntry_06-25.csv</code></td><td>2026-06-25 00:04:59</td><td>2026-06-25 23:56:52</td><td class="r">2,971</td></tr>
-<tr><td><code>logEntry_06-26.csv</code></td><td>2026-06-26 00:00:46</td><td>2026-06-26 23:59:34</td><td class="r">3,195</td></tr>
+<tr><td><code>logEntry_06-23.csv</code></td><td>2026-06-23 00:05:10</td><td>2026-06-23 23:59:31</td><td class="r">3,258</td></tr>
+<tr><td><code>logEntry_06-24.csv</code></td><td>2026-06-24 00:02:22</td><td>2026-06-24 23:59:58</td><td class="r">3,112</td></tr>
+<tr><td><code>logEntry_06-25.csv</code></td><td>2026-06-25 00:04:59</td><td>2026-06-25 23:56:52</td><td class="r">2,996</td></tr>
+<tr><td><code>logEntry_06-26.csv</code></td><td>2026-06-26 00:00:46</td><td>2026-06-26 23:59:34</td><td class="r">3,227</td></tr>
 <tr><td><code>logEntry_06-27.csv</code></td><td>2026-06-27 00:01:34</td><td>2026-06-27 23:52:14</td><td class="r">1,787</td></tr>
-<tr><td><code>logEntry_06-28.csv</code></td><td>2026-06-28 00:02:22</td><td>2026-06-28 23:52:18</td><td class="r">1,615</td></tr>
-<tr><td><code>logEntry_06-29.csv</code></td><td>2026-06-29 00:02:10</td><td>2026-06-29 23:52:18</td><td class="r">3,124</td></tr>
-<tr><td><code>logEntry_06-30.csv</code></td><td>2026-06-30 00:03:58</td><td>2026-06-30 23:52:01</td><td class="r">3,031</td></tr>
-<tr><td><code>logEntry_07-01.csv</code></td><td>2026-07-01 00:04:46</td><td>2026-07-01 23:57:43</td><td class="r">3,125</td></tr>
-<tr><td><code>logEntry_07-02.csv</code></td><td>2026-07-02 00:01:06</td><td>2026-07-02 23:55:26</td><td class="r">3,245</td></tr>
-<tr><td><code>logEntry_07-03.csv</code></td><td>2026-07-03 00:00:22</td><td>2026-07-03 23:52:21</td><td class="r">3,050</td></tr>
-<tr><td><code>logEntry_07-04.csv</code></td><td>2026-07-04 00:01:10</td><td>2026-07-04 23:52:09</td><td class="r">1,662</td></tr>
-<tr><td><code>logEntry_07-05.csv</code></td><td>2026-07-05 00:05:03</td><td>2026-07-05 23:52:01</td><td class="r">1,747</td></tr>
-<tr><td><code>logEntry_07-06.csv</code></td><td>2026-07-06 00:04:36</td><td>2026-07-06 23:52:12</td><td class="r">3,376</td></tr>
-<tr><td><code>logEntry_07-07.csv</code></td><td>2026-07-07 00:05:05</td><td>2026-07-07 23:52:17</td><td class="r">3,033</td></tr>
-<tr><td><code>logEntry_07-08.csv</code></td><td>2026-07-08 00:05:01</td><td>2026-07-08 23:59:18</td><td class="r">2,956</td></tr>
-<tr><td><code>logEntry_07-09.csv</code></td><td>2026-07-09 00:04:13</td><td>2026-07-09 23:53:14</td><td class="r">2,964</td></tr>
-<tr><td><code>logEntry_07-10.csv</code></td><td>2026-07-10 00:03:08</td><td>2026-07-10 23:52:07</td><td class="r">3,103</td></tr>
+<tr><td><code>logEntry_06-28.csv</code></td><td>2026-06-28 00:02:22</td><td>2026-06-28 23:52:18</td><td class="r">1,622</td></tr>
+<tr><td><code>logEntry_06-29.csv</code></td><td>2026-06-29 00:02:10</td><td>2026-06-29 23:52:18</td><td class="r">3,148</td></tr>
+<tr><td><code>logEntry_06-30.csv</code></td><td>2026-06-30 00:03:58</td><td>2026-06-30 23:52:01</td><td class="r">3,057</td></tr>
+<tr><td><code>logEntry_07-01.csv</code></td><td>2026-07-01 00:04:46</td><td>2026-07-01 23:57:43</td><td class="r">3,140</td></tr>
+<tr><td><code>logEntry_07-02.csv</code></td><td>2026-07-02 00:01:06</td><td>2026-07-02 23:55:26</td><td class="r">3,267</td></tr>
+<tr><td><code>logEntry_07-03.csv</code></td><td>2026-07-03 00:00:22</td><td>2026-07-03 23:52:21</td><td class="r">3,074</td></tr>
+<tr><td><code>logEntry_07-04.csv</code></td><td>2026-07-04 00:01:10</td><td>2026-07-04 23:52:09</td><td class="r">1,671</td></tr>
+<tr><td><code>logEntry_07-05.csv</code></td><td>2026-07-05 00:05:03</td><td>2026-07-05 23:52:01</td><td class="r">1,761</td></tr>
+<tr><td><code>logEntry_07-06.csv</code></td><td>2026-07-06 00:04:36</td><td>2026-07-06 23:52:12</td><td class="r">3,406</td></tr>
+<tr><td><code>logEntry_07-07.csv</code></td><td>2026-07-07 00:05:05</td><td>2026-07-07 23:52:17</td><td class="r">3,053</td></tr>
+<tr><td><code>logEntry_07-08.csv</code></td><td>2026-07-08 00:05:01</td><td>2026-07-08 23:59:18</td><td class="r">2,974</td></tr>
+<tr><td><code>logEntry_07-09.csv</code></td><td>2026-07-09 00:04:13</td><td>2026-07-09 23:53:14</td><td class="r">2,988</td></tr>
+<tr><td><code>logEntry_07-10.csv</code></td><td>2026-07-10 00:03:08</td><td>2026-07-10 23:52:07</td><td class="r">3,121</td></tr>
 <tr><td><code>logEntry_07-11.csv</code></td><td>2026-07-11 00:05:10</td><td>2026-07-11 23:52:16</td><td class="r">1,773</td></tr>
 <tr><td><code>logEntry_07-12.csv</code></td><td>2026-07-12 00:05:05</td><td>2026-07-12 23:52:09</td><td class="r">1,768</td></tr>
-<tr><td><code>logEntry_07-13.csv</code></td><td>2026-07-13 00:05:06</td><td>2026-07-13 23:50:11</td><td class="r">3,053</td></tr>
-<tr><td><code>logEntry_07-14.csv</code></td><td>2026-07-14 00:01:10</td><td>2026-07-14 23:52:18</td><td class="r">3,113</td></tr>
-<tr><td><code>logEntry_07-15.csv</code></td><td>2026-07-15 00:02:30</td><td>2026-07-15 23:52:13</td><td class="r">3,214</td></tr>
-<tr><td><code>logEntry_07-16.csv</code></td><td>2026-07-16 00:05:09</td><td>2026-07-16 23:55:01</td><td class="r">2,972</td></tr>
-<tr><td><code>logEntry_07-17.csv</code></td><td>2026-07-17 00:04:59</td><td>2026-07-17 23:59:53</td><td class="r">2,966</td></tr>
-<tr><td><code>logEntry_07-18.csv</code></td><td>2026-07-18 00:05:01</td><td>2026-07-18 23:52:17</td><td class="r">1,759</td></tr>
-<tr><td><code>logEntry_07-19.csv</code></td><td>2026-07-19 00:01:02</td><td>2026-07-19 23:52:09</td><td class="r">1,769</td></tr>
-<tr><td><code>logEntry_07-20.csv</code></td><td>2026-07-20 00:05:00</td><td>2026-07-20 23:58:41</td><td class="r">3,005</td></tr>
-<tr><td><code>logEntry_07-21.csv</code></td><td>2026-07-21 00:02:30</td><td>2026-07-21 23:52:13</td><td class="r">3,037</td></tr>
-<tr><td><code>logEntry_07-22.csv</code></td><td>2026-07-22 00:05:02</td><td>2026-07-22 23:56:21</td><td class="r">2,919</td></tr>
-<tr><td><code>logEntry_07-23.csv</code></td><td>2026-07-23 00:04:31</td><td>2026-07-23 23:56:31</td><td class="r">6,085</td></tr>
-<tr><td><code>logEntry_07-24.csv</code></td><td>2026-07-24 00:00:23</td><td>2026-07-24 23:59:38</td><td class="r">3,197</td></tr>
-<tr><td><code>logEntry_07-25.csv</code></td><td>2026-07-25 00:05:05</td><td>2026-07-25 23:52:01</td><td class="r">1,705</td></tr>
-<tr><td><code>logEntry_07-26.csv</code></td><td>2026-07-26 00:05:00</td><td>2026-07-26 23:52:02</td><td class="r">1,691</td></tr>
-<tr><td><code>logEntry_07-27.csv</code></td><td>2026-07-27 00:05:01</td><td>2026-07-27 23:52:51</td><td class="r">3,101</td></tr>
-<tr><td><code>logEntry_07-28.csv</code></td><td>2026-07-28 00:03:53</td><td>2026-07-28 23:53:03</td><td class="r">3,293</td></tr>
-<tr><td><code>logEntry_07-29.csv</code></td><td>2026-07-29 00:00:13</td><td>2026-07-29 23:50:18</td><td class="r">2,944</td></tr>
-<tr><td><code>logEntry_07-30.csv</code></td><td>2026-07-30 00:03:01</td><td>2026-07-30 23:52:19</td><td class="r">3,127</td></tr>
-<tr><td><code>logEntry_07-31.csv</code></td><td>2026-07-31 00:05:06</td><td>2026-07-31 23:55:39</td><td class="r">3,013</td></tr>
-<tr><td><code>logEntry_08-01.csv</code></td><td>2026-08-01 00:02:25</td><td>2026-08-01 23:52:06</td><td class="r">1,713</td></tr>
-<tr><td><code>logEntry_08-02.csv</code></td><td>2026-08-02 00:05:08</td><td>2026-08-02 23:58:55</td><td class="r">1,751</td></tr>
-<tr><td><code>logEntry_08-03.csv</code></td><td>2026-08-03 00:05:09</td><td>2026-08-03 23:52:01</td><td class="r">3,071</td></tr>
-<tr><td><code>logEntry_08-04.csv</code></td><td>2026-08-04 00:04:59</td><td>2026-08-04 23:52:10</td><td class="r">3,060</td></tr>
-<tr><td><code>logEntry_08-05.csv</code></td><td>2026-08-05 00:04:12</td><td>2026-08-05 23:57:38</td><td class="r">3,349</td></tr>
-<tr><td><code>logEntry_08-06.csv</code></td><td>2026-08-06 00:01:47</td><td>2026-08-06 23:52:00</td><td class="r">3,121</td></tr>
-<tr><td><code>logEntry_08-07.csv</code></td><td>2026-08-07 00:02:41</td><td>2026-08-07 23:52:24</td><td class="r">3,032</td></tr>
-<tr><td><code>logEntry_08-08.csv</code></td><td>2026-08-08 00:02:26</td><td>2026-08-08 23:50:19</td><td class="r">1,736</td></tr>
-<tr><td><code>logEntry_08-09.csv</code></td><td>2026-08-09 00:05:02</td><td>2026-08-09 23:52:19</td><td class="r">1,631</td></tr>
-<tr><td><code>logEntry_08-10.csv</code></td><td>2026-08-10 00:00:19</td><td>2026-08-10 23:57:18</td><td class="r">3,079</td></tr>
-<tr><td><code>logEntry_08-11.csv</code></td><td>2026-08-11 00:02:13</td><td>2026-08-11 23:57:27</td><td class="r">3,224</td></tr>
-<tr><td><code>logEntry_08-12.csv</code></td><td>2026-08-12 00:00:27</td><td>2026-08-12 23:52:15</td><td class="r">6,126</td></tr>
-<tr><td><code>logEntry_08-13.csv</code></td><td>2026-08-13 00:01:06</td><td>2026-08-13 23:52:04</td><td class="r">2,953</td></tr>
-<tr><td><code>logEntry_08-14.csv</code></td><td>2026-08-14 00:05:01</td><td>2026-08-14 23:50:17</td><td class="r">2,971</td></tr>
+<tr><td><code>logEntry_07-13.csv</code></td><td>2026-07-13 00:05:06</td><td>2026-07-13 23:50:11</td><td class="r">3,077</td></tr>
+<tr><td><code>logEntry_07-14.csv</code></td><td>2026-07-14 00:01:10</td><td>2026-07-14 23:59:36</td><td class="r">3,145</td></tr>
+<tr><td><code>logEntry_07-15.csv</code></td><td>2026-07-15 00:02:30</td><td>2026-07-15 23:52:13</td><td class="r">3,236</td></tr>
+<tr><td><code>logEntry_07-16.csv</code></td><td>2026-07-16 00:05:09</td><td>2026-07-16 23:55:01</td><td class="r">2,998</td></tr>
+<tr><td><code>logEntry_07-17.csv</code></td><td>2026-07-17 00:04:59</td><td>2026-07-17 23:59:53</td><td class="r">2,996</td></tr>
+<tr><td><code>logEntry_07-18.csv</code></td><td>2026-07-18 00:05:01</td><td>2026-07-18 23:52:17</td><td class="r">1,762</td></tr>
+<tr><td><code>logEntry_07-19.csv</code></td><td>2026-07-19 00:01:02</td><td>2026-07-19 23:52:09</td><td class="r">1,777</td></tr>
+<tr><td><code>logEntry_07-20.csv</code></td><td>2026-07-20 00:05:00</td><td>2026-07-20 23:58:41</td><td class="r">3,024</td></tr>
+<tr><td><code>logEntry_07-21.csv</code></td><td>2026-07-21 00:02:30</td><td>2026-07-21 23:52:13</td><td class="r">3,060</td></tr>
+<tr><td><code>logEntry_07-22.csv</code></td><td>2026-07-22 00:05:02</td><td>2026-07-22 23:56:21</td><td class="r">2,942</td></tr>
+<tr><td><code>logEntry_07-23.csv</code></td><td>2026-07-23 00:04:31</td><td>2026-07-23 23:56:31</td><td class="r">6,160</td></tr>
+<tr><td><code>logEntry_07-24.csv</code></td><td>2026-07-24 00:00:23</td><td>2026-07-24 23:59:38</td><td class="r">3,227</td></tr>
+<tr><td><code>logEntry_07-25.csv</code></td><td>2026-07-25 00:05:05</td><td>2026-07-25 23:52:01</td><td class="r">1,713</td></tr>
+<tr><td><code>logEntry_07-26.csv</code></td><td>2026-07-26 00:05:00</td><td>2026-07-26 23:52:02</td><td class="r">1,699</td></tr>
+<tr><td><code>logEntry_07-27.csv</code></td><td>2026-07-27 00:05:01</td><td>2026-07-27 23:52:51</td><td class="r">3,135</td></tr>
+<tr><td><code>logEntry_07-28.csv</code></td><td>2026-07-28 00:03:53</td><td>2026-07-28 23:53:03</td><td class="r">3,313</td></tr>
+<tr><td><code>logEntry_07-29.csv</code></td><td>2026-07-29 00:00:13</td><td>2026-07-29 23:50:18</td><td class="r">2,960</td></tr>
+<tr><td><code>logEntry_07-30.csv</code></td><td>2026-07-30 00:03:01</td><td>2026-07-30 23:52:19</td><td class="r">3,146</td></tr>
+<tr><td><code>logEntry_07-31.csv</code></td><td>2026-07-31 00:05:06</td><td>2026-07-31 23:55:39</td><td class="r">3,038</td></tr>
+<tr><td><code>logEntry_08-01.csv</code></td><td>2026-08-01 00:02:25</td><td>2026-08-01 23:52:06</td><td class="r">1,721</td></tr>
+<tr><td><code>logEntry_08-02.csv</code></td><td>2026-08-02 00:05:08</td><td>2026-08-02 23:58:55</td><td class="r">1,759</td></tr>
+<tr><td><code>logEntry_08-03.csv</code></td><td>2026-08-03 00:05:09</td><td>2026-08-03 23:52:01</td><td class="r">3,094</td></tr>
+<tr><td><code>logEntry_08-04.csv</code></td><td>2026-08-04 00:04:59</td><td>2026-08-04 23:52:10</td><td class="r">3,092</td></tr>
+<tr><td><code>logEntry_08-05.csv</code></td><td>2026-08-05 00:04:12</td><td>2026-08-05 23:57:38</td><td class="r">3,387</td></tr>
+<tr><td><code>logEntry_08-06.csv</code></td><td>2026-08-06 00:01:47</td><td>2026-08-06 23:52:00</td><td class="r">3,135</td></tr>
+<tr><td><code>logEntry_08-07.csv</code></td><td>2026-08-07 00:02:41</td><td>2026-08-07 23:52:24</td><td class="r">3,051</td></tr>
+<tr><td><code>logEntry_08-08.csv</code></td><td>2026-08-08 00:02:26</td><td>2026-08-08 23:50:19</td><td class="r">1,744</td></tr>
+<tr><td><code>logEntry_08-09.csv</code></td><td>2026-08-09 00:05:02</td><td>2026-08-09 23:52:19</td><td class="r">1,643</td></tr>
+<tr><td><code>logEntry_08-10.csv</code></td><td>2026-08-10 00:00:19</td><td>2026-08-10 23:57:18</td><td class="r">3,110</td></tr>
+<tr><td><code>logEntry_08-11.csv</code></td><td>2026-08-11 00:02:13</td><td>2026-08-11 23:57:27</td><td class="r">3,250</td></tr>
+<tr><td><code>logEntry_08-12.csv</code></td><td>2026-08-12 00:00:27</td><td>2026-08-12 23:52:15</td><td class="r">6,168</td></tr>
+<tr><td><code>logEntry_08-13.csv</code></td><td>2026-08-13 00:01:06</td><td>2026-08-13 23:52:04</td><td class="r">2,970</td></tr>
+<tr><td><code>logEntry_08-14.csv</code></td><td>2026-08-14 00:05:01</td><td>2026-08-14 23:50:17</td><td class="r">2,996</td></tr>
 <tr><td><code>logEntry_08-15.csv</code></td><td>2026-08-15 00:05:02</td><td>2026-08-15 23:52:11</td><td class="r">1,766</td></tr>
 <tr><td><code>logEntry_08-16.csv</code></td><td>2026-08-16 00:05:09</td><td>2026-08-16 23:52:11</td><td class="r">1,788</td></tr>
 <tr><td><code>logEntry_08-17.csv</code></td><td>2026-08-17 00:05:05</td><td>2026-08-17 23:55:20</td><td class="r">3,138</td></tr>
@@ -720,7 +722,7 @@ display-rename: docs: applied 1 rule(s) to 85 page(s).
 <tr><td><code>logEntry_08-23.csv</code></td><td>2026-08-23 00:01:19</td><td>2026-08-23 23:52:04</td><td class="r">1,799</td></tr>
 <tr><td><code>logEntry_08-24.csv</code></td><td>2026-08-24 00:03:48</td><td>2026-08-24 23:52:13</td><td class="r">3,158</td></tr>
 <tr><td><code>logEntry_08-25.csv</code></td><td>2026-08-25 00:04:59</td><td>2026-08-25 23:52:04</td><td class="r">3,276</td></tr>
-<tr><td><code>logEntry_08-26.csv</code></td><td>2026-08-26 00:05:02</td><td>2026-08-26 23:59:01</td><td class="r">2,986</td></tr>
+<tr><td><code>logEntry_08-26.csv</code></td><td>2026-08-26 00:05:02</td><td>2026-08-26 23:59:01</td><td class="r">2,988</td></tr>
 <tr><td><code>logEntry_08-27.csv</code></td><td>2026-08-27 00:05:02</td><td>2026-08-27 23:54:53</td><td class="r">3,062</td></tr>
 <tr><td><code>logEntry_08-28.csv</code></td><td>2026-08-28 00:01:54</td><td>2026-08-28 23:52:13</td><td class="r">3,000</td></tr>
 <tr><td><code>logEntry_08-29.csv</code></td><td>2026-08-29 00:01:59</td><td>2026-08-29 23:57:52</td><td class="r">1,766</td></tr>
@@ -728,59 +730,59 @@ display-rename: docs: applied 1 rule(s) to 85 page(s).
 <div class="sxscol"><h3>Transfer log files</h3>
 <table>
 <tr><th>Name</th><th>First</th><th>Last</th><th class="r">Lines</th></tr>
-<tr><td><code>transferLog_06-23.csv</code></td><td>2026-06-23 00:09:27</td><td>2026-06-23 23:59:30</td><td class="r">1,324</td></tr>
-<tr><td><code>transferLog_06-24.csv</code></td><td>2026-06-24 00:01:15</td><td>2026-06-24 23:50:33</td><td class="r">1,293</td></tr>
-<tr><td><code>transferLog_06-25.csv</code></td><td>2026-06-25 00:00:52</td><td>2026-06-25 23:56:47</td><td class="r">1,307</td></tr>
-<tr><td><code>transferLog_06-26.csv</code></td><td>2026-06-26 00:18:52</td><td>2026-06-26 23:59:34</td><td class="r">1,378</td></tr>
+<tr><td><code>transferLog_06-23.csv</code></td><td>2026-06-23 00:09:27</td><td>2026-06-23 23:59:30</td><td class="r">1,330</td></tr>
+<tr><td><code>transferLog_06-24.csv</code></td><td>2026-06-24 00:01:15</td><td>2026-06-24 23:50:33</td><td class="r">1,297</td></tr>
+<tr><td><code>transferLog_06-25.csv</code></td><td>2026-06-25 00:00:52</td><td>2026-06-25 23:56:47</td><td class="r">1,315</td></tr>
+<tr><td><code>transferLog_06-26.csv</code></td><td>2026-06-26 00:18:52</td><td>2026-06-26 23:59:34</td><td class="r">1,388</td></tr>
 <tr><td><code>transferLog_06-27.csv</code></td><td>2026-06-27 00:01:48</td><td>2026-06-27 23:35:15</td><td class="r">712</td></tr>
-<tr><td><code>transferLog_06-28.csv</code></td><td>2026-06-28 00:04:58</td><td>2026-06-28 23:35:37</td><td class="r">697</td></tr>
-<tr><td><code>transferLog_06-29.csv</code></td><td>2026-06-29 00:01:20</td><td>2026-06-29 23:55:50</td><td class="r">1,389</td></tr>
-<tr><td><code>transferLog_06-30.csv</code></td><td>2026-06-30 00:00:53</td><td>2026-06-30 23:47:22</td><td class="r">1,309</td></tr>
-<tr><td><code>transferLog_07-01.csv</code></td><td>2026-07-01 00:00:42</td><td>2026-07-01 23:57:38</td><td class="r">1,359</td></tr>
-<tr><td><code>transferLog_07-02.csv</code></td><td>2026-07-02 00:01:57</td><td>2026-07-02 23:55:22</td><td class="r">1,446</td></tr>
-<tr><td><code>transferLog_07-03.csv</code></td><td>2026-07-03 00:00:51</td><td>2026-07-03 23:52:24</td><td class="r">1,329</td></tr>
-<tr><td><code>transferLog_07-04.csv</code></td><td>2026-07-04 00:00:42</td><td>2026-07-04 23:35:13</td><td class="r">690</td></tr>
-<tr><td><code>transferLog_07-05.csv</code></td><td>2026-07-05 00:02:37</td><td>2026-07-05 23:35:16</td><td class="r">710</td></tr>
-<tr><td><code>transferLog_07-06.csv</code></td><td>2026-07-06 00:01:02</td><td>2026-07-06 23:50:38</td><td class="r">1,390</td></tr>
-<tr><td><code>transferLog_07-07.csv</code></td><td>2026-07-07 00:00:46</td><td>2026-07-07 23:52:14</td><td class="r">1,321</td></tr>
-<tr><td><code>transferLog_07-08.csv</code></td><td>2026-07-08 00:00:53</td><td>2026-07-08 23:59:16</td><td class="r">1,289</td></tr>
-<tr><td><code>transferLog_07-09.csv</code></td><td>2026-07-09 00:00:43</td><td>2026-07-09 23:53:26</td><td class="r">1,276</td></tr>
-<tr><td><code>transferLog_07-10.csv</code></td><td>2026-07-10 00:00:35</td><td>2026-07-10 23:47:47</td><td class="r">1,346</td></tr>
+<tr><td><code>transferLog_06-28.csv</code></td><td>2026-06-28 00:04:58</td><td>2026-06-28 23:35:37</td><td class="r">699</td></tr>
+<tr><td><code>transferLog_06-29.csv</code></td><td>2026-06-29 00:01:20</td><td>2026-06-29 23:55:50</td><td class="r">1,397</td></tr>
+<tr><td><code>transferLog_06-30.csv</code></td><td>2026-06-30 00:00:53</td><td>2026-06-30 23:47:22</td><td class="r">1,319</td></tr>
+<tr><td><code>transferLog_07-01.csv</code></td><td>2026-07-01 00:00:42</td><td>2026-07-01 23:57:38</td><td class="r">1,365</td></tr>
+<tr><td><code>transferLog_07-02.csv</code></td><td>2026-07-02 00:01:57</td><td>2026-07-02 23:55:22</td><td class="r">1,454</td></tr>
+<tr><td><code>transferLog_07-03.csv</code></td><td>2026-07-03 00:00:51</td><td>2026-07-03 23:52:24</td><td class="r">1,337</td></tr>
+<tr><td><code>transferLog_07-04.csv</code></td><td>2026-07-04 00:00:42</td><td>2026-07-04 23:35:13</td><td class="r">694</td></tr>
+<tr><td><code>transferLog_07-05.csv</code></td><td>2026-07-05 00:02:37</td><td>2026-07-05 23:35:16</td><td class="r">714</td></tr>
+<tr><td><code>transferLog_07-06.csv</code></td><td>2026-07-06 00:01:02</td><td>2026-07-06 23:50:38</td><td class="r">1,400</td></tr>
+<tr><td><code>transferLog_07-07.csv</code></td><td>2026-07-07 00:00:46</td><td>2026-07-07 23:52:14</td><td class="r">1,327</td></tr>
+<tr><td><code>transferLog_07-08.csv</code></td><td>2026-07-08 00:00:53</td><td>2026-07-08 23:59:16</td><td class="r">1,295</td></tr>
+<tr><td><code>transferLog_07-09.csv</code></td><td>2026-07-09 00:00:43</td><td>2026-07-09 23:53:26</td><td class="r">1,284</td></tr>
+<tr><td><code>transferLog_07-10.csv</code></td><td>2026-07-10 00:00:35</td><td>2026-07-10 23:47:47</td><td class="r">1,352</td></tr>
 <tr><td><code>transferLog_07-11.csv</code></td><td>2026-07-11 00:01:04</td><td>2026-07-11 23:35:36</td><td class="r">657</td></tr>
 <tr><td><code>transferLog_07-12.csv</code></td><td>2026-07-12 00:00:42</td><td>2026-07-12 23:35:19</td><td class="r">706</td></tr>
-<tr><td><code>transferLog_07-13.csv</code></td><td>2026-07-13 00:00:35</td><td>2026-07-13 23:35:30</td><td class="r">1,311</td></tr>
-<tr><td><code>transferLog_07-14.csv</code></td><td>2026-07-14 00:01:02</td><td>2026-07-14 23:50:08</td><td class="r">1,358</td></tr>
-<tr><td><code>transferLog_07-15.csv</code></td><td>2026-07-15 00:00:47</td><td>2026-07-15 23:40:07</td><td class="r">1,329</td></tr>
-<tr><td><code>transferLog_07-16.csv</code></td><td>2026-07-16 00:00:37</td><td>2026-07-16 23:51:16</td><td class="r">1,336</td></tr>
-<tr><td><code>transferLog_07-17.csv</code></td><td>2026-07-17 00:00:59</td><td>2026-07-17 23:59:51</td><td class="r">1,306</td></tr>
-<tr><td><code>transferLog_07-18.csv</code></td><td>2026-07-18 00:00:36</td><td>2026-07-18 23:35:13</td><td class="r">669</td></tr>
-<tr><td><code>transferLog_07-19.csv</code></td><td>2026-07-19 00:01:05</td><td>2026-07-19 23:26:40</td><td class="r">699</td></tr>
-<tr><td><code>transferLog_07-20.csv</code></td><td>2026-07-20 00:00:48</td><td>2026-07-20 23:58:35</td><td class="r">1,349</td></tr>
-<tr><td><code>transferLog_07-21.csv</code></td><td>2026-07-21 00:00:36</td><td>2026-07-21 23:51:23</td><td class="r">1,309</td></tr>
-<tr><td><code>transferLog_07-22.csv</code></td><td>2026-07-22 00:01:02</td><td>2026-07-22 23:56:41</td><td class="r">1,304</td></tr>
-<tr><td><code>transferLog_07-23.csv</code></td><td>2026-07-23 00:00:41</td><td>2026-07-23 23:56:27</td><td class="r">2,835</td></tr>
-<tr><td><code>transferLog_07-24.csv</code></td><td>2026-07-24 00:00:38</td><td>2026-07-24 23:59:32</td><td class="r">1,347</td></tr>
-<tr><td><code>transferLog_07-25.csv</code></td><td>2026-07-25 00:00:59</td><td>2026-07-25 23:35:24</td><td class="r">712</td></tr>
-<tr><td><code>transferLog_07-26.csv</code></td><td>2026-07-26 00:00:46</td><td>2026-07-26 23:51:46</td><td class="r">673</td></tr>
-<tr><td><code>transferLog_07-27.csv</code></td><td>2026-07-27 00:00:38</td><td>2026-07-27 23:52:51</td><td class="r">1,369</td></tr>
-<tr><td><code>transferLog_07-28.csv</code></td><td>2026-07-28 00:00:49</td><td>2026-07-28 23:47:27</td><td class="r">1,398</td></tr>
-<tr><td><code>transferLog_07-29.csv</code></td><td>2026-07-29 00:00:29</td><td>2026-07-29 23:40:12</td><td class="r">1,257</td></tr>
-<tr><td><code>transferLog_07-30.csv</code></td><td>2026-07-30 00:01:02</td><td>2026-07-30 23:48:31</td><td class="r">1,354</td></tr>
-<tr><td><code>transferLog_07-31.csv</code></td><td>2026-07-31 00:06:45</td><td>2026-07-31 23:35:28</td><td class="r">1,325</td></tr>
-<tr><td><code>transferLog_08-01.csv</code></td><td>2026-08-01 00:06:41</td><td>2026-08-01 23:31:05</td><td class="r">644</td></tr>
-<tr><td><code>transferLog_08-02.csv</code></td><td>2026-08-02 00:01:20</td><td>2026-08-02 23:35:13</td><td class="r">699</td></tr>
-<tr><td><code>transferLog_08-03.csv</code></td><td>2026-08-03 00:00:46</td><td>2026-08-03 23:53:15</td><td class="r">1,327</td></tr>
-<tr><td><code>transferLog_08-04.csv</code></td><td>2026-08-04 00:02:11</td><td>2026-08-04 23:50:28</td><td class="r">1,378</td></tr>
-<tr><td><code>transferLog_08-05.csv</code></td><td>2026-08-05 00:01:18</td><td>2026-08-05 23:57:38</td><td class="r">1,417</td></tr>
-<tr><td><code>transferLog_08-06.csv</code></td><td>2026-08-06 00:00:53</td><td>2026-08-06 23:35:20</td><td class="r">1,337</td></tr>
-<tr><td><code>transferLog_08-07.csv</code></td><td>2026-08-07 00:01:25</td><td>2026-08-07 23:52:18</td><td class="r">1,395</td></tr>
-<tr><td><code>transferLog_08-08.csv</code></td><td>2026-08-08 00:00:47</td><td>2026-08-08 23:35:20</td><td class="r">711</td></tr>
-<tr><td><code>transferLog_08-09.csv</code></td><td>2026-08-09 00:00:39</td><td>2026-08-09 23:40:17</td><td class="r">687</td></tr>
-<tr><td><code>transferLog_08-10.csv</code></td><td>2026-08-10 00:01:23</td><td>2026-08-10 23:57:18</td><td class="r">1,444</td></tr>
-<tr><td><code>transferLog_08-11.csv</code></td><td>2026-08-11 00:00:55</td><td>2026-08-11 23:57:21</td><td class="r">1,432</td></tr>
-<tr><td><code>transferLog_08-12.csv</code></td><td>2026-08-12 00:00:29</td><td>2026-08-12 23:50:06</td><td class="r">2,884</td></tr>
-<tr><td><code>transferLog_08-13.csv</code></td><td>2026-08-13 00:01:21</td><td>2026-08-13 23:35:19</td><td class="r">1,318</td></tr>
-<tr><td><code>transferLog_08-14.csv</code></td><td>2026-08-14 00:00:54</td><td>2026-08-14 23:37:50</td><td class="r">1,283</td></tr>
+<tr><td><code>transferLog_07-13.csv</code></td><td>2026-07-13 00:00:35</td><td>2026-07-13 23:35:30</td><td class="r">1,319</td></tr>
+<tr><td><code>transferLog_07-14.csv</code></td><td>2026-07-14 00:01:02</td><td>2026-07-14 23:59:33</td><td class="r">1,368</td></tr>
+<tr><td><code>transferLog_07-15.csv</code></td><td>2026-07-15 00:00:47</td><td>2026-07-15 23:40:07</td><td class="r">1,337</td></tr>
+<tr><td><code>transferLog_07-16.csv</code></td><td>2026-07-16 00:00:37</td><td>2026-07-16 23:51:16</td><td class="r">1,344</td></tr>
+<tr><td><code>transferLog_07-17.csv</code></td><td>2026-07-17 00:00:59</td><td>2026-07-17 23:59:51</td><td class="r">1,316</td></tr>
+<tr><td><code>transferLog_07-18.csv</code></td><td>2026-07-18 00:00:36</td><td>2026-07-18 23:35:13</td><td class="r">671</td></tr>
+<tr><td><code>transferLog_07-19.csv</code></td><td>2026-07-19 00:01:05</td><td>2026-07-19 23:26:40</td><td class="r">703</td></tr>
+<tr><td><code>transferLog_07-20.csv</code></td><td>2026-07-20 00:00:48</td><td>2026-07-20 23:58:35</td><td class="r">1,357</td></tr>
+<tr><td><code>transferLog_07-21.csv</code></td><td>2026-07-21 00:00:36</td><td>2026-07-21 23:51:23</td><td class="r">1,317</td></tr>
+<tr><td><code>transferLog_07-22.csv</code></td><td>2026-07-22 00:01:02</td><td>2026-07-22 23:56:41</td><td class="r">1,312</td></tr>
+<tr><td><code>transferLog_07-23.csv</code></td><td>2026-07-23 00:00:41</td><td>2026-07-23 23:56:27</td><td class="r">2,861</td></tr>
+<tr><td><code>transferLog_07-24.csv</code></td><td>2026-07-24 00:00:38</td><td>2026-07-24 23:59:32</td><td class="r">1,357</td></tr>
+<tr><td><code>transferLog_07-25.csv</code></td><td>2026-07-25 00:00:59</td><td>2026-07-25 23:35:24</td><td class="r">714</td></tr>
+<tr><td><code>transferLog_07-26.csv</code></td><td>2026-07-26 00:00:46</td><td>2026-07-26 23:51:46</td><td class="r">675</td></tr>
+<tr><td><code>transferLog_07-27.csv</code></td><td>2026-07-27 00:00:38</td><td>2026-07-27 23:52:51</td><td class="r">1,379</td></tr>
+<tr><td><code>transferLog_07-28.csv</code></td><td>2026-07-28 00:00:49</td><td>2026-07-28 23:47:27</td><td class="r">1,404</td></tr>
+<tr><td><code>transferLog_07-29.csv</code></td><td>2026-07-29 00:00:29</td><td>2026-07-29 23:40:12</td><td class="r">1,263</td></tr>
+<tr><td><code>transferLog_07-30.csv</code></td><td>2026-07-30 00:01:02</td><td>2026-07-30 23:48:31</td><td class="r">1,360</td></tr>
+<tr><td><code>transferLog_07-31.csv</code></td><td>2026-07-31 00:06:45</td><td>2026-07-31 23:35:28</td><td class="r">1,333</td></tr>
+<tr><td><code>transferLog_08-01.csv</code></td><td>2026-08-01 00:06:41</td><td>2026-08-01 23:31:05</td><td class="r">646</td></tr>
+<tr><td><code>transferLog_08-02.csv</code></td><td>2026-08-02 00:01:20</td><td>2026-08-02 23:35:13</td><td class="r">701</td></tr>
+<tr><td><code>transferLog_08-03.csv</code></td><td>2026-08-03 00:00:46</td><td>2026-08-03 23:53:15</td><td class="r">1,335</td></tr>
+<tr><td><code>transferLog_08-04.csv</code></td><td>2026-08-04 00:02:11</td><td>2026-08-04 23:50:28</td><td class="r">1,388</td></tr>
+<tr><td><code>transferLog_08-05.csv</code></td><td>2026-08-05 00:01:18</td><td>2026-08-05 23:57:38</td><td class="r">1,429</td></tr>
+<tr><td><code>transferLog_08-06.csv</code></td><td>2026-08-06 00:00:53</td><td>2026-08-06 23:35:20</td><td class="r">1,343</td></tr>
+<tr><td><code>transferLog_08-07.csv</code></td><td>2026-08-07 00:01:25</td><td>2026-08-07 23:52:18</td><td class="r">1,403</td></tr>
+<tr><td><code>transferLog_08-08.csv</code></td><td>2026-08-08 00:00:47</td><td>2026-08-08 23:35:20</td><td class="r">715</td></tr>
+<tr><td><code>transferLog_08-09.csv</code></td><td>2026-08-09 00:00:39</td><td>2026-08-09 23:40:17</td><td class="r">691</td></tr>
+<tr><td><code>transferLog_08-10.csv</code></td><td>2026-08-10 00:01:23</td><td>2026-08-10 23:57:18</td><td class="r">1,454</td></tr>
+<tr><td><code>transferLog_08-11.csv</code></td><td>2026-08-11 00:00:55</td><td>2026-08-11 23:57:21</td><td class="r">1,440</td></tr>
+<tr><td><code>transferLog_08-12.csv</code></td><td>2026-08-12 00:00:29</td><td>2026-08-12 23:50:06</td><td class="r">2,898</td></tr>
+<tr><td><code>transferLog_08-13.csv</code></td><td>2026-08-13 00:01:21</td><td>2026-08-13 23:35:19</td><td class="r">1,322</td></tr>
+<tr><td><code>transferLog_08-14.csv</code></td><td>2026-08-14 00:00:54</td><td>2026-08-14 23:37:50</td><td class="r">1,289</td></tr>
 <tr><td><code>transferLog_08-15.csv</code></td><td>2026-08-15 00:00:42</td><td>2026-08-15 23:35:41</td><td class="r">712</td></tr>
 <tr><td><code>transferLog_08-16.csv</code></td><td>2026-08-16 00:02:00</td><td>2026-08-16 23:42:03</td><td class="r">666</td></tr>
 <tr><td><code>transferLog_08-17.csv</code></td><td>2026-08-17 00:00:39</td><td>2026-08-17 23:55:17</td><td class="r">1,408</td></tr>
@@ -798,7 +800,7 @@ display-rename: docs: applied 1 rule(s) to 85 page(s).
 <tr><td><code>transferLog_08-29.csv</code></td><td>2026-08-29 00:00:35</td><td>2026-08-29 23:57:49</td><td class="r">713</td></tr>
 </table></div>
 </div>
-<p>Written by <code>bin/build.sh</code> &mdash; raw step logs in <code>build/step-NN.log</code>. Build finished at 2026-10-01 12:01:28.</p>
+<p>Written by <code>bin/build.sh</code> &mdash; raw step logs in <code>build/step-NN.log</code>. Build finished at 2026-10-01 12:33:33.</p>
 </div>
 </body>
 </html>
