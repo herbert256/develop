@@ -585,7 +585,7 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 (unused)  $5 (unused)  [
     # callers use for the CSS depth, so no caller needs a new argument.
     local rarea=""
     case $out in
-        "$DOCS"/transfer/*|"$DOCS"/details/*|"$DOCS"/search/all-files.html) rarea="transfer" ;;   # all-files.html: the shared transfer From/To (2026-09-27)
+        "$DOCS"/transfer/*|"$DOCS"/details/*|"$DOCS"/resubmit/*|"$DOCS"/recovered/*|"$DOCS"/search/all-files.html) rarea="transfer" ;;   # all-files.html: the shared transfer From/To (2026-09-27)
         "$DOCS"/server/*)                     rarea="server" ;;
     esac
     # (a page outside those trees that carries a date list — the analyses
@@ -968,7 +968,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # twin under transfer/entities2/, then made THE layout; the classic Name ·
     # Direction · Files · Volume · OK · Retry · Resubmit · Error · Last seen
     # pages are gone): the .rpt is already in display order — Name, then the
-    # Files / Retry-Resubmit / Duration / Volume / Transfers column groups (State
+    # Files / Retry / Resubmit / Duration / Volume / Transfers column groups (State
     # and Dates went 2026-09-30, user request) (a GHEAD banner + gsep dividers) — its rows baked
     # busiest-first with no sort= marker. Below: the views, the
     # subset totals re-summing the grouped columns (entity_res_block), an
@@ -1268,9 +1268,11 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
             { if (held != "") { print held; held = "" } print }
             END { if (held != "") print held }'
     }
-    # HIDE an EMPTY group (2026-09-13, user request) — the Retry /
-    # Resubmit group (Auto · Ok · Error, .rpt fields 7-9, display columns
-    # 5-7, banner cell 4; the State group went 2026-09-30) — on a view whose
+    # HIDE an EMPTY group (2026-09-13, user request) — the Retry group (Auto,
+    # .rpt field 7, display column 5, banner cell 4) and the Resubmit group
+    # (Ok · Error, fields 8-9, display columns 6-7, banner cell 5), EACH ON
+    # ITS OWN since 2026-10-01 (user request: the one "Retry / Resubmit" group
+    # became two; the State group went 2026-09-30) — on a view whose
     # rows carry no such value at all. At the full range that holds for every narrower
     # range too, so the page drops the columns for good: the fields of every
     # HEAD/KIND/RECALC/ROW/TOTAL line (a trailing Reason column shifts left
@@ -1297,13 +1299,15 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
             function keep(   out, i) { out = ""; for (i = 1; i <= NF; i++) { if (i in DF) continue; out = out (i == 1 ? "" : OFS) $i } return out }
             { L[++n] = $0
               if ($1 == "HEAD" && NF < 10) skip = 1
-              if ($1 == "ROW") { for (i = 7; i <= 9; i++) { v = $i; gsub(/[^0-9]/, "", v); if (v + 0 > 0) hasR = 1 } } }
+              if ($1 == "ROW") { v = $7; gsub(/[^0-9]/, "", v); if (v + 0 > 0) hasT = 1
+                                 for (i = 8; i <= 9; i++) { v = $i; gsub(/[^0-9]/, "", v); if (v + 0 > 0) hasR = 1 } } }
             END {
-                if (skip || hasR) { for (k = 1; k <= n; k++) print L[k]; exit }
+                if (skip || (hasT && hasR)) { for (k = 1; k <= n; k++) print L[k]; exit }
                 # DF = the .rpt fields to drop, DD = the same as display columns, DB = the
-                # banner cells: GHEAD $3 Files · $4 Retry / Resubmit · $5 Duration ·
-                # $6 Volume · $7 Transfers (the State and Dates groups went 2026-09-30)
-                DF[7] = 1; DF[8] = 1; DF[9] = 1; DD[5] = 1; DD[6] = 1; DD[7] = 1; DB[4] = 1
+                # banner cells: GHEAD $3 Files · $4 Retry · $5 Resubmit · $6 Duration ·
+                # $7 Volume · $8 Transfers (the State and Dates groups went 2026-09-30)
+                if (!hasT) { DF[7] = 1; DD[5] = 1; DB[4] = 1 }
+                if (!hasR) { DF[8] = 1; DF[9] = 1; DD[6] = 1; DD[7] = 1; DB[5] = 1 }
                 for (k = 1; k <= n; k++) { $0 = L[k]
                     if ($1 == "TABLE") {
                         for (i = 3; i <= NF; i++) {

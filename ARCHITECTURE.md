@@ -553,6 +553,19 @@ publish_lib's `area_dates`, `bin/build/publish.sh`, `bin/dashboards/lib.sh`,
 resubmitted leg, by outcome) | Transfers (Count · Ok · Error · Error %) | State (Processed ·
 Failed · Waiting · Expired) | Volume (since 2026-09-29, when Activity's per-day tab went) — ROW
 fields 2-21 in that order; the home page's Cured cell is Automatic + Manual (fields 9-10).
+**The day cells LINK since 2026-10-01** (user request; a 0 / blank cell stays plain, each value
+then leads with `@{href=…}` — the positional readers strip it, `pv()` in `bin/build/publish.sh`):
+Files Error → `failed-files.html?axway_date=<day>` (its File drill went; the Ok cell keeps its
+drill), Recovered Automatic → `../recovered/<day>.html`, Recovered Manual and Resubmit Ok / Error →
+`../resubmit/<day>.html`, Waiting / Expired → `waiting-expired.html?axway_row=<day>` (the Summary
+row of that day marked), Volume → `files-by-size.html?axway_date=<day>`. **The two day File lists**
+(`topview.sh` → `data/transfer/reports/{resubmit,recovered}/<day>.rpt`, rendered by
+`bin/transfer/publish.sh` into the docs ROOT directories `resubmit/` and `recovered/`): Date/time ·
+Subscription · File · CoreId, newest first, tinted by the File colour, TOTAL + NAV back. Resubmit =
+every File of the day with a resubmitted leg, OK and Error alike (= Resubmit Ok + Error), every
+row with a File page (`_filepages.tsv` kind `R`) the whole row opens; Recovered = the day's
+Automatic ones, the first five rows of every subscription with a File page (kind `A`, selected by
+`filepages.sh`) — a row without a page carries `@data:norowlink` and keeps its plain cell links.
 
 ## Click-to-expand drill-down
 
@@ -634,8 +647,11 @@ positionally — and render no page; since 2026-09-30 `entities.sh` writes them 
 from its own S| rows — the five classic writers `account.sh`, `subscription.sh`, `login.sh`,
 `remote-host.sh`, `pda-entities.sh` were folded in, byte-identical).
 
-THE GROUPED LAYOUT — Name, then seven column groups (a `GHEAD` banner row + `gsep=` dividers like
-the Top view), ONE table per view:
+THE GROUPED LAYOUT — Name, then the column groups (a `GHEAD` banner row + `gsep=` dividers like
+the Top view), ONE table per view. (The table below is the 2026-09-13 layout: State and Dates
+went 2026-09-30, and since 2026-10-01 — user request — "Retry / Resubmit" is TWO groups with a gap
+between them: **Retry** (Auto, one column) and **Resubmit** (Ok · Error); `gsep=1,5,6,8,12,14`,
+`autohide=Retry;Resubmit`, each hidden on its own when empty.)
 
 | Name | Files | Retry / Resubmit | Duration | Volume | Transfers | State | Dates |
 |---|---|---|---|---|---|---|---|
@@ -960,7 +976,7 @@ the newest 30 data days gets its evidence page under `data/transfer/reports/{err
 2026-09-29) is PUBLISHED as `docs/files/<coreid>.html`, and the all-files shards flag and link
 exactly that set.
 
-- **Entity Search** — `docs/search/search.html` (+ `search/search-data.js`; at the root until 2026-09-12). Columns: Name · Direction · Type · Error · OK ·
+- **Entity Search** — `docs/search/search.html` (+ `search/search-data.js`; at the root until 2026-09-12). Baked row order by type: Partner, Account, Logical, Login, Host, IP, Subscription, Domain, Application, BL, Source, Target (Logical led until 2026-10-01, user request), name-sorted within a type. Columns: Name · Direction · Type · Error · OK ·
   Last seen (Direction = the same `XXX/YYY` pair that titles the detail page; a row with no page
   of its own inherits the pair/counts/tint of the page it links to; Last seen = the newest
   `_files.tsv` entry attributed to the entity as `ccyy-mm-dd hh:mm:ss`, the site's union

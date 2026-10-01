@@ -27,14 +27,29 @@
 #         set and not "Unknown"; 2026-10-01, user request) — the rows of the
 #         per-subscription One-legged pages transfer/pirates/<slug>.html
 #         (pirates.sh), each opening its File page
+#     R   every dated File with a RESUBMITTED leg (col 27 == "1", col 4 set;
+#         2026-10-01, user request: "docs/resubmit/<day>.html — all rows must
+#         have a file in /files/, the complete row must link to it") — the
+#         rows of the Top view's day lists docs/resubmit/<date>.html
+#         (topview.sh), whatever the File's outcome
+#     A   the AUTOMATICALLY RECOVERED Files (an OK File — not Failed / Expired
+#         — with a failed leg, col 26, and no resubmitted leg; the Top view's
+#         Recovered › Automatic rule): the RECOVERED_PER_SUB (5) newest per
+#         START DAY and subscription (col 4 + col 12, an empty subscription is
+#         one group; sortkey descending, CoreId ascending on a tie — the order
+#         of the page), 2026-10-01, user request: "docs/recovered/<day>.html —
+#         the first 5 rows of every subscription must have a file in /files/"
+#         — THE selection: topview.sh links exactly the listed rows, it does
+#         not select again
 #
 # per _files.tsv col 12 value ("Unknown" included). This is the ONE list of
 # the CoreIds that have a docs/files/<CoreId>.html page: bin/transfer/publish.sh
 # renders exactly these (+ the subscription-named server-log error pages), and
 # every writer that links a File page tests membership here — failed.sh's
 # lists, failed-files, unknown-transfers, io-errors, patterns, Longest Files,
-# the Expired / Waiting pages, the all files search and (through render_rpt's
-# data-fp row attribute) the drill cells. failed.sh still WRITES its evidence
+# the Expired / Waiting pages, the Top view's resubmit / recovered day lists,
+# the all files search and (through render_rpt's data-fp row attribute) the
+# drill cells. failed.sh still WRITES its evidence
 # pages for every File it classifies (the reasons read them); only this set
 # is published. A pure function of _files.tsv — run by bin/build.sh right
 # after bookend-ok, when the outcomes are final, before any reader.
@@ -46,6 +61,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"
 OUT="$CACHE_DIR/_filepages.tsv"
 LONGEST_N=250 LONGEST_PER_SUB=10   # kind L — the Longest Files page (see the header)
+RECOVERED_PER_SUB=5                # kind A — the recovered day lists (see the header)
 if [ ! -s "$FILES" ]; then : > "$OUT"; echo "filepages: no transfer cache — no File pages." >&2; exit 0; fi
 {
     # O: the newest Processed File per subscription (strictly newer END wins,
@@ -71,6 +87,14 @@ if [ ! -s "$FILES" ]; then : > "$OUT"; echo "filepages: no transfer cache — no
     # reader takes the CoreId column only)
     LC_ALL=C awk -F'\t' '$12 == "Unknown" && $4 != "" { print $1 "\tU\t" $12 }
         $10 == 1 && $12 != "" && $12 != "Unknown" { print $1 "\tP\t" $12 }' "$FILES"
+    # R: every dated File with a resubmitted leg (any outcome)
+    LC_ALL=C awk -F'\t' '$27 == "1" && $4 != "" { print $1 "\tR\t" $12 }' "$FILES"
+    # A: the automatically recovered Files — the newest RECOVERED_PER_SUB per
+    # start day and subscription (the order of the recovered/<date> page:
+    # sortkey descending, CoreId ascending on a tie)
+    LC_ALL=C awk -F'\t' -v OFS='\t' '$26 == "1" && $27 != "1" && $4 != "" && $2 != "Failed" && $2 != "Expired" { print $4, $12, $6, $1 }' "$FILES" \
+        | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k3,3r -k4,4 \
+        | LC_ALL=C awk -F'\t' -v per="$RECOVERED_PER_SUB" '++n[$1 FS $2] <= per { print $4 "\tA\t" $2 }'
 } | LC_ALL=C sort -u > "$OUT.tmp"
 mv "$OUT.tmp" "$OUT"
-echo "filepages: $(awk -F'\t' '$2 == "O"' "$OUT" | wc -l | tr -d ' ') latest-OK + $(awk -F'\t' '$2 == "E"' "$OUT" | wc -l | tr -d ' ') error + $(awk -F'\t' '$2 == "L"' "$OUT" | wc -l | tr -d ' ') longest + $(awk -F'\t' '$2 == "U"' "$OUT" | wc -l | tr -d ' ') Unknown + $(awk -F'\t' '$2 == "P"' "$OUT" | wc -l | tr -d ' ') one-legged File page(s) ($(cut -f1 "$OUT" | LC_ALL=C sort -u | wc -l | tr -d ' ') CoreIds)." >&2
+echo "filepages: $(awk -F'\t' '$2 == "O"' "$OUT" | wc -l | tr -d ' ') latest-OK + $(awk -F'\t' '$2 == "E"' "$OUT" | wc -l | tr -d ' ') error + $(awk -F'\t' '$2 == "L"' "$OUT" | wc -l | tr -d ' ') longest + $(awk -F'\t' '$2 == "U"' "$OUT" | wc -l | tr -d ' ') Unknown + $(awk -F'\t' '$2 == "P"' "$OUT" | wc -l | tr -d ' ') one-legged + $(awk -F'\t' '$2 == "R"' "$OUT" | wc -l | tr -d ' ') resubmitted + $(awk -F'\t' '$2 == "A"' "$OUT" | wc -l | tr -d ' ') recovered File page(s) ($(cut -f1 "$OUT" | LC_ALL=C sort -u | wc -l | tr -d ' ') CoreIds)." >&2

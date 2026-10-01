@@ -20,7 +20,35 @@
 #                 Transfers group moved BEFORE State on request.) Every
 #                 per-File figure credits the File's START day. Readers of
 #                 the ROW fields by index: bin/build/publish.sh (home per-day
-#                 table + log-exports facts), bin/day/reports.sh.
+#                 table + log-exports facts), bin/day/reports.sh — a linked
+#                 cell leads with @{href=…}, which a reader strips.
+#                 THE DAY CELLS LINK (2026-10-01, user request), each from
+#                 anywhere in its cell, a 0 / blank cell stays plain:
+#                   Files Error            failed-files.html narrowed to the day
+#                                          (its File drill went)
+#                   Recovered Automatic    ../recovered/<date>.html (below)
+#                   Recovered Manual,
+#                   Resubmit Ok / Error    ../resubmit/<date>.html (below)
+#                   Waiting, Expired       waiting-expired.html, that day's
+#                                          Summary row marked (?axway_row)
+#                   Volume                 files-by-size.html narrowed to the day
+#
+# THE DAY FILE LISTS (2026-10-01, user request), rendered by
+# bin/transfer/publish.sh into the docs ROOT directories resubmit/ and
+# recovered/ — Date/time · Subscription · File · CoreId, newest first (sortkey
+# descending, CoreId ascending on a tie), tinted by the File colour (col 25),
+# a TOTAL row and a NAV row back to the Top view:
+#   data/transfer/reports/resubmit/<date>.rpt  -> resubmit/<date>.html
+#     EVERY File that started that day and carries a resubmitted leg (col 27),
+#     OK and Error alike — the day's Resubmit Ok + Error count. Every row has
+#     a File page (bin/transfer/filepages.sh kind R) and the WHOLE row opens it.
+#   data/transfer/reports/recovered/<date>.rpt -> recovered/<date>.html
+#     the day's AUTOMATICALLY recovered Files (an OK File with a failed leg
+#     and no resubmitted leg) — the Recovered › Automatic count. The first
+#     five rows of every subscription have a File page (filepages.sh kind A —
+#     THE selection) and the whole row opens it; any other row whose File has
+#     a page (another kind) does the same, the rest keep the default cell
+#     links (@data:norowlink — report.js bindRowlink leaves the row alone).
 #
 # Each row is one calendar day (gaps filled) — the date only since
 # 2026-09-30 (user request: the First / Last time columns and the
@@ -66,7 +94,7 @@ agg=$(awk -F'\t' "$COREIDS_AWK$AWKLIB"'
         C[d]++; if($4+0==0) F[d]++; else P[d]++
         if(!(d in FI)||$3<FI[d]) FI[d]=$3; if(!(d in LA)||$3>LA[d]) LA[d]=$3
         allday[d]=1; tC++; if($4+0==0) tF++; else tP++
-        addtop(d SUBSEP ($4+0==0 ? "F" : "P"), $6, $1 " " $3, $7)   # drill: 10 most recent of each outcome, that day
+        if ($4+0 != 0) addtop(d SUBSEP "P", $6, $1 " " $3, $7)   # drill: the 10 most recent OK Files of the day (the Error cell links Failed files instead, 2026-10-01)
         next
     }
     fno==2 {   # _files.tsv: the 4-state split per start day + outcome per CoreId
@@ -108,16 +136,26 @@ agg=$(awk -F'\t' "$COREIDS_AWK$AWKLIB"'
                 # pages, which have no date filter — a day of 5 opened 384);
                 # the TOTAL row cells keep theirs (full period = full period).
                 # Zero stays a plain blank / 0
-                wcell = (WW[d]+0>0 ? WW[d]+0 : "")
-                xcell = (WX[d]+0>0 ? WX[d]+0 : "0")
+                # THE DAY CELL LINKS (2026-10-01, user request — see the
+                # header): a nonzero cell leads with @{href=…}; Waiting /
+                # Expired open Waiting & Expired with the Summary row of that day
+                # marked (?axway_row — the 2026-09-30 "no link" rule T-15 was
+                # about the unmarked full-period page)
+                wex = "@{href=waiting-expired.html?axway_row=" d "}"
+                rsb9 = "@{href=../resubmit/" d ".html}"
+                ecell = (F[d]+0>0 ? "@{href=failed-files.html?axway_date=" d "&axway_search=}" (F[d]+0) : "0")
+                wcell = (WW[d]+0>0 ? wex (WW[d]+0) : "")
+                xcell = (WX[d]+0>0 ? wex (WX[d]+0) : "0")
+                vcell = hb(VOL[d]); if (vcell != "") vcell = "@{href=files-by-size.html?axway_date=" d "}" vcell
                 # the amber Recovered cells (Automatic / Manual) are blank on 0
-                printf "R1\tROW\t@{href=../day/%s.html}%s\t%d\t%d\t%d\t%s%%\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s%%\t%d\t%d\t%s\t%s\t%s\t@data:coreids-failed=%s\t@data:coreids-processed=%s\n", \
+                printf "R1\tROW\t@{href=../day/%s.html}%s\t%d\t%d\t%s\t%s%%\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%s%%\t%d\t%d\t%s\t%s\t%s\t@data:coreids-processed=%s\n", \
                     d, d, \
-                    C[d], P[d]+0, F[d]+0, pr(F[d]+0, C[d]), \
-                    (RVA[d]+0>0 ? RVA[d]+0 : ""), (RVM[d]+0>0 ? RVM[d]+0 : ""), RSO[d]+0, RSF[d]+0, \
+                    C[d], P[d]+0, ecell, pr(F[d]+0, C[d]), \
+                    (RVA[d]+0>0 ? "@{href=../recovered/" d ".html}" (RVA[d]+0) : ""), (RVM[d]+0>0 ? rsb9 (RVM[d]+0) : ""), \
+                    (RSO[d]+0>0 ? rsb9 (RSO[d]+0) : "0"), (RSF[d]+0>0 ? rsb9 (RSF[d]+0) : "0"), \
                     TC[d]+0, TP2[d]+0, TF2[d]+0, pr(TF2[d]+0, TC[d]+0), \
-                    WP[d]+0, WF[d]+0, wcell, xcell, hb(VOL[d]), \
-                    buildlist(top[d SUBSEP "F"]), buildlist(top[d SUBSEP "P"])
+                    WP[d]+0, WF[d]+0, wcell, xcell, vcell, \
+                    buildlist(top[d SUBSEP "P"])
             } else {
                 printf "R1\tROW\t%s\t0\t0\t0\t0.0%%\t\t\t0\t0\t0\t0\t0\t0.0%%\t0\t0\t\t0\t\n", d   # empty Recovered / Waiting / Volume cells: blank
             }
@@ -126,6 +164,49 @@ agg=$(awk -F'\t' "$COREIDS_AWK$AWKLIB"'
             tC,tP,tRVF+0,tF,pr(tF,tC), tT,tTP,tTF,pr(tTF,tT), wP+0,wF+0,wW+0,wX+0, ndays, tRVA+0,tRVM+0,tRSO+0,tRSF+0, hb(tVOL)
     }
 ' <(activity_stream) "$FILES" "$PARSED")
+
+# ---- THE DAY FILE LISTS (see the header): resubmit/<date>.rpt and
+# recovered/<date>.rpt, one per start day with such a File, staged in *.new/
+# and swapped in. The rules are the table's own: Resubmit = a resubmitted leg
+# (col 27), any outcome; Recovered (Automatic) = an OK File with a failed leg
+# (col 26) and no resubmitted one. A row whose File has a published page
+# (_filepages.tsv — kind R covers every resubmit row, kind A the first five
+# recovered rows of each subscription) carries @data:href, the whole-row link;
+# a recovered row without one carries @data:norowlink (rowlink would fall
+# back to the row's first link, the Subscription cell).
+RSUB="$REPORTS_DIR/resubmit"
+VSUB="$REPORTS_DIR/recovered"
+FPL="$CACHE_DIR/_filepages.tsv"; [ -f "$FPL" ] || FPL=/dev/null
+rm -rf "$RSUB.new" "$VSUB.new"; mkdir -p "$RSUB.new" "$VSUB.new"
+LC_ALL=C awk -F'\t' -v OFS='\t' '
+    $4 == "" { next }
+    $27 == "1" { print "R", $4, $6, $1, $5, $25, $12, $11; next }
+    $26 == "1" && $2 != "Failed" && $2 != "Expired" { print "A", $4, $6, $1, $5, $25, $12, $11 }' "$FILES" \
+    | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k3,3r -k4,4 | LC_ALL=C awk -F'\t' \
+    -v rdir="$RSUB.new" -v vdir="$VSUB.new" -v FPL="$FPL" "$AWKLIB"'
+    BEGIN { while ((getline l < FPL) > 0) { split(l, a, "\t"); if (a[1] != "") PG[a[1]] = 1 } close(FPL) }
+    function clean(s) { gsub(/[\t\r]/, " ", s); return s }
+    function finish() { if (out == "") return; printf "TOTAL\tTotal (%d Files)\t\t\t\n", nr > out; printf "FOOT\n" > out; close(out) }
+    ($1 SUBSEP $2) != cur {
+        finish(); cur = $1 SUBSEP $2; nr = 0
+        r = ($1 == "R"); out = (r ? rdir : vdir) "/" $2 ".rpt"
+        printf "TITLE\t%s Files: %s\n", (r ? "Resubmitted" : "Recovered"), $2 > out
+        if (r) printf "INTRO\tEvery File that started on **%s** and carries a resubmitted leg — an operator resubmitted it — whatever its outcome: the Top view Resubmit Ok + Error of that day (Recovered Manual = the OK ones that also had a failed leg). Newest first; a row opens its File page.\n", $2 > out
+        else   printf "INTRO\tEvery File that started on **%s**, had a failed leg and was still delivered without an operator resubmit — the platform retried it: the Top view Recovered Automatic of that day. Newest first; the first five rows of every subscription open their File page.\n", $2 > out
+        printf "NAV\t0|Transfer top view|../transfer/topview.html\n" > out
+        printf "TABLE\t%s Files\twide\tnofilter\tsort=0:-1\tpager=25\trestint\trowlink\n", (r ? "Resubmitted" : "Recovered") > out
+        printf "HEAD\tDate/time\tSubscription\tFile\tCoreId\n" > out
+        printf "KIND\ttext\tsite\tmono\tmono\n" > out
+    }
+    {
+        res = ($6 == "green" || $6 == "orange" || $6 == "red") ? "\t@data:res=" $6 : ""
+        res = res (($4 in PG) ? "\t@data:href=../files/" $4 ".html" : "\t@data:norowlink=1")
+        printf "ROW\t%s %s\t%s\t%s\t%s%s\n", $2, substr($5, 1, 8), clean($7), lit(clean($8)), $4, res > out
+        nr++
+    }
+    END { finish() }'
+rm -rf "$RSUB"; mv "$RSUB.new" "$RSUB"
+rm -rf "$VSUB"; mv "$VSUB.new" "$VSUB"
 
 # Guard the empty case: with no ROW lines the greps below would abort under
 # set -euo pipefail. (Pure-bash pattern test, NOT `printf | grep -q`: grep -q
@@ -169,4 +250,4 @@ total_label="Total"   # "Total for N days" until 2026-10-01 (user request: "Do n
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
-echo "Data written to $OUT ($ndays day(s), $tC file(s), $tT row(s))." >&2
+echo "Data written to $OUT ($ndays day(s), $tC file(s), $tT row(s); + $(ls "$RSUB" | grep -c '\.rpt$' || true) resubmit / $(ls "$VSUB" | grep -c '\.rpt$' || true) recovered day list(s))." >&2

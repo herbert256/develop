@@ -96,6 +96,7 @@ daily_loglines_tsv() {   # $1 = the data root (data)
         # a duration cell "@{class=dur-s}3 s" -> its class / its text ("-" when absent)
         function dcls(v) { if (v !~ /^@\{class=/) return "-"; sub(/^@\{class=/, "", v); sub(/\}.*/, "", v); return v }
         function dtxt(v) { sub(/^@\{[^}]*\}/, "", v); return v == "" ? "-" : v }
+        function pv(v) { sub(/^@\{[^}]*\}/, "", v); return v }
         # the Duration group: p50/p75/p90/p95/p99 (ROW fields 8/9/10/11/13 — the
         # Average / Median columns before the percentiles since 2026-09-30) of the
         # "Duration per day — percentiles" table (the FIRST of its two
@@ -113,9 +114,11 @@ daily_loglines_tsv() {   # $1 = the data root (data)
         { dd = $2; sub(/^@\{[^}]*\}/, "", dd) }
         # the transfer topview ROW (bin/transfer/reports/topview.sh): the Files
         # group (Count Ok Error Error%) fields 3-6, the Recovered group
-        # (Automatic Manual) fields 7-8 — Cured is their sum
+        # (Automatic Manual) fields 7-8 — Cured is their sum. A day cell that
+        # links (Error, Automatic, Manual — 2026-10-01) leads with @{href=…}:
+        # pv() takes the value behind it
         dd ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { d = substr(dd, 1, 10)
-            fc[d] = nz($3); fok[d] = nz($4); fer[d] = nz($5); fpc[d] = nz($6); frv[d] = ($7 + 0) + ($8 + 0); seen[d] = 1 }
+            fc[d] = nz(pv($3)); fok[d] = nz(pv($4)); fer[d] = nz(pv($5)); fpc[d] = nz(pv($6)); frv[d] = (pv($7) + 0) + (pv($8) + 0); seen[d] = 1 }
         END {
             n = 0; for (k in seen) a[n++] = k
             for (i = 0; i < n; i++) for (j = i + 1; j < n; j++) if (a[j] > a[i]) { t = a[i]; a[i] = a[j]; a[j] = t }   # newest first

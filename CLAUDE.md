@@ -76,7 +76,7 @@ label = the inbox skipped with a note) and names the outbox archives
 copy is gone since 2026-09-12); a missing label FAILS the archive step. The docs root holds the site itself: `index.html` (the
 home), `404.html` (self-contained; its home link = the path before the FIRST known top-level dir,
 a trailing `acceptance/`|`production/` stripped for pre-split bookmarks), `assets/`, `help/`,
-`.nojekyll`, `transfer/` (+ `entities/`, `secparams/`, `expired/` — 2026-09-21, user
+`.nojekyll`, `resubmit/` + `recovered/` (2026-10-01: the Transfer top view's day File lists, see the second 2026-10-01 batch), `transfer/` (+ `entities/`, `secparams/`, `expired/` — 2026-09-21, user
 request: one page per subscription with expired Files, Start · Expired · File name · CoreId, opened
 from the Expired cells of **Waiting & Expired**'s Subscriptions table; `waiting-expired.sh`
 (expired.sh until 2026-09-30) writes the `.rpt` set into `data/transfer/reports/expired/`; default sort = Expired descending, baked in that
@@ -1325,16 +1325,16 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   Direction · Files · Volume · OK · Retry · Resubmit · Error · Last seen pages are GONE): Name,
   then seven column groups the Top view way (a `GHEAD` banner + `gsep=` dividers) — Files (In ·
   Out by MOVEMENT, `_files.tsv` col 17, a File without one by its connection side col 16 ·
-  Error · Error %) · Retry / Resubmit (Auto = an OK File
-  with a failed leg and no resubmitted leg; Ok / Error = every resubmitted File by outcome — the
-  Top view's Automatic + Resubmit Ok/Error rule) · Duration (p90 · p95 · p99 · p100 of the DELIVERED
+  Error · Error %) · Retry (Auto = an OK File
+  with a failed leg and no resubmitted leg) · Resubmit (Ok / Error = every resubmitted File by outcome — the
+  Top view's Automatic + Resubmit Ok/Error rule; ONE group "Retry / Resubmit" until 2026-10-01) · Duration (p90 · p95 · p99 · p100 of the DELIVERED
   (Processed) Files' wall-clock span — a Waiting File's span is its staging wait, excluded since
   2026-09-29 — the Duration report's scope and nearest-rank rule, FOLLOWING the date
   filter: per-day display-grid histograms `@data:durdays` + the RECALC tokens `P90`…`P100`, rows
   and TOTAL alike, the publish-time subset totals merging the same payload) · Volume (Total · Avg
   per File) · Transfers (Ok · Error · Error % — the LEGS of the entity's Files) (the State and Dates
   groups went 2026-09-30, user request: "remove the State & Dates sub tables"). DISPLAY RULES (user): the TOTAL row LAST
-  (`entity_total_last`); an EMPTY Retry / Resubmit group HIDDEN per view
+  (`entity_total_last`); an EMPTY Retry or Resubmit group HIDDEN per view, each on its own
   (`entity_hide_groups` drops the columns and the banner cell and remaps every index-naming
   modifier — gsep=, noagg=, pct=, drillcols=) AND, in the browser, hidden whenever a date range or
   a search leaves every visible row's cells of the group empty (the `autohide=Group;Group` TABLE
@@ -1751,8 +1751,9 @@ front end) then four fix workers with disjoint files. The rules it left:
 - **Durations / counts follow scope**: the dwell Gap per day = Processed Files only; Hour ×
   weekday and the anomaly Files spike / drop count OK Files; Security Parameters value counts skip Unknown legs so a value equals its
   value page's Total; Recovered files / Retries / One-legged per-subscription tables skip Unknown.
-- **A per-DAY cell never links a full-period page** (Top view Waiting / Expired day cells are
-  plain; the TOTAL keeps the link); a day-page line links a page that can narrow to that day
+- **A per-DAY cell never links a full-period page** UNMARKED (the Top view Waiting / Expired day
+  cells were plain until 2026-10-01; they now open Waiting & Expired with `?axway_row=<day>`, the
+  day's Summary row marked — user request; the TOTAL keeps its plain link); a day-page line links a page that can narrow to that day
   (Files in error → failed-files with `axway_date`, One-legged → `pirates-per-day`).
 - **No one-tab tab rows** (episodes renders as `transfer/episodes.html`); no report-page prose —
   the Monitor INTRO went (help page); help pages load style.css with `?v=`.
@@ -1843,9 +1844,36 @@ front end) then four fix workers with disjoint files. The rules it left:
   pirates-details row) link their File page with the WHOLE row. Since a File with a page takes its Reason
   from that page's own log lines, these pages moved 17 sample reasons off One-legged / Unknown subscription.
 
+## Rules from the second 2026-10-01 batch ("a few different things")
+
+- **Transfer Top view day cells link** (a 0 / blank cell stays plain; the value leads with `@{href=…}`, so a
+  positional reader strips it — `pv()` in bin/build/publish.sh, verify.sh): Files **Error** →
+  `failed-files.html?axway_date=<day>&axway_search=` (its File drill and the `coreids-failed` list went; Ok keeps
+  its drill) · Recovered **Automatic** → `../recovered/<day>.html` · Recovered **Manual**, Resubmit **Ok** /
+  **Error** → `../resubmit/<day>.html` · **Waiting** / **Expired** → `waiting-expired.html?axway_row=<day>` ·
+  **Volume** → `files-by-size.html?axway_date=<day>`.
+- **The day File lists** `docs/resubmit/<day>.html` and `docs/recovered/<day>.html` — docs ROOT directories;
+  topview.sh writes `data/transfer/reports/{resubmit,recovered}/<day>.rpt`, bin/transfer/publish.sh renders them
+  (help page `topview`, report key `<family>-<day>`, no From/To). Date/time · Subscription · File · CoreId, newest
+  first, File-colour tint, TOTAL, NAV back to the Top view. **Resubmit** = every File of that START day with a
+  resubmitted leg, OK and Error together (rows = Resubmit Ok + Error — NOT the Manual cell that also opens it);
+  **Recovered** = the day's Automatic ones (rows = the Automatic cell). The Subscription name keeps its detail
+  link, like every rowlink table.
+- **The published File-page set** has two more kinds: `R` = every dated File with a resubmitted leg (every
+  resubmit-list row opens its page with the WHOLE row), `A` = the five newest automatically recovered Files per
+  START DAY and subscription (`RECOVERED_PER_SUB`, selected ONLY in filepages.sh; the first five rows of every
+  subscription on a recovered list). A recovered row without a page carries `@data:norowlink=1` — report.js
+  `bindRowlink` skips it, so it keeps the default cell links instead of falling back to the row's first link.
+- **Entity Search** baked order: Partner · Account · Logical · Login · Host · IP · Subscription · Domain ·
+  Application · BL · Source · Target (Logical led before); the type boxes keep their order.
+- **Entities pages**: "Retry / Resubmit" is TWO banner groups with a gap — **Retry** (Auto, 1 column) and
+  **Resubmit** (Ok · Error, 2 columns): `gsep=1,5,6,8,12,14`, `autohide=Retry;Resubmit`, `entity_hide_groups`
+  drops each on its own when its columns are empty; GHEAD cells $4 Retry · $5 Resubmit · $6 Duration · $7 Volume
+  · $8 Transfers. Field positions, RECALC tokens, bucket metrics and drill keys are unchanged.
+
 ## Rules from the eleventh 2026-09-30 request ("a few different things")
 
-- **Entities pages** = Name + Files · Retry / Resubmit · Duration · Volume · Transfers — the State (Waiting ·
+- **Entities pages** = Name + Files · Retry / Resubmit (two groups, Retry · Resubmit, since 2026-10-01) · Duration · Volume · Transfers — the State (Waiting ·
   Expired) and Dates (First · Last · Days) groups and the Waiting / Expired links went; Waiting and Expired
   Files live on Waiting & Expired only. The S| fields (waiting / expired, first / last / days) are still
   produced for their other readers; the per-day buckets keep metrics 10 / 11 (unread) so metric 12 (the

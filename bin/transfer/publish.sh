@@ -229,6 +229,34 @@ if [ ${#pirp[@]} -gt 0 ]; then
     echo "Rendered docs/transfer/pirates/ (${#pirp[@]} subscription page(s))." >&2
 fi
 
+# THE TOP VIEW DAY FILE LISTS (2026-10-01, user request: "clicking on a
+# Recovered/Manual or a Resubmit/OK or a Resubmit/Error cell must give a new
+# page … docs/resubmit/<day>.html", "… Recovered/Automatic … docs/recovered/
+# <day>.html"): topview.sh writes one .rpt per start day into
+# data/transfer/reports/resubmit/ and recovered/; render each into the docs
+# ROOT directory of that name (ONE level deep, like files/ -> ../ css). The
+# day cells of the Transfer top view link here. No date filter (a page is one
+# day); a row with a File page opens it (rowlink + @data:href).
+for _fam in resubmit recovered; do
+    shopt -s nullglob
+    _dlp=("$DATA"/transfer/reports/"$_fam"/*.rpt)
+    shopt -u nullglob
+    # clear even when THIS run has no .rpt set (stale pages would survive forever)
+    mkdir -p "$DOCS/$_fam"
+    rm -f "$DOCS/$_fam"/*.html
+    if [ ${#_dlp[@]} -gt 0 ]; then
+        CUR_DATES=""; DLINK_BASE="../details/"
+        for f in "${_dlp[@]}"; do
+            b=${f##*/}; b=${b%.rpt}
+            # one report key per day page: a remembered search or sort belongs to THAT list
+            pub_run render_rpt "$f" "$DOCS/$_fam/$b.html" "../assets/style.css" "../index.html" "TRANSFER" "" "topview" "$_fam-$b"
+        done
+        pub_wait
+        CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"
+        echo "Rendered docs/$_fam/ (${#_dlp[@]} day page(s))." >&2
+    fi
+done
+
 # THE FILE PAGES — docs/files/ (render_file_pages above), from the errors/ +
 # files/ .rpt sets failed.sh settled in the report stage (its Reason
 # catch-up included) — ONCE per build.

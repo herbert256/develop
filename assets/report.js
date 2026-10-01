@@ -3266,7 +3266,11 @@
   // so esBuild can re-bind the rows it materialises on an esearch page that
   // also carries rowlink (the Failed Subscriptions All views) — those rows
   // did not exist when setupIndexRows ran at load.
+  // A row carrying data-norowlink keeps its plain cell links (2026-10-01:
+  // the recovered day lists — only a row whose File has a page opens it as a
+  // whole; the fallback below would send the others to the Subscription cell).
   function bindRowlink(tr) {
+    if (tr.getAttribute("data-norowlink")) return;
     var href = tr.getAttribute("data-href");
     var a = href ? { getAttribute: function () { return href; } } : tr.getElementsByTagName("a")[0];
     if (!a) return;

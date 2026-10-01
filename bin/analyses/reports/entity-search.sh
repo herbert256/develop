@@ -213,14 +213,16 @@ whitelist_ips=$( { printf '%s\n' "$seen_rows" | awk -F'\t' '$2=="Account" { prin
 INCSM="$REPORTS_DIR/details/incoming_connections/_slugmap.tsv"
 
 # ---- merge, sort by TYPE then name (case-folded) -----------------------------
-# Row order: Logical, Partner, Account, Login, Host, IP (Remote Host (IP) +
+# Row order: Partner, Account, Logical, Login, Host, IP (Remote Host (IP) +
 # Whitelist share one slot, interleaved by address), Subscription, Domain,
-# Application, Flow — name-sorted within each type. (The PDA entities come from their
+# Application, BL, Source, Target — name-sorted within each type. (Logical
+# led until 2026-10-01, user request: "Show Partner rows above Logical rows,
+# show Account below partner rows but above Logical".) (The PDA entities come from their
 # detail pages via collect(), like the classic five — no separate config-list
 # source anymore.)
 rows=$(printf '%s\n%s\n%s\n%s\n' "$seen_rows" "$host_ip_aliases" "$whitelist_ips" "$location_rows" \
        | grep -v '^$' | awk -F'\t' '
-           BEGIN { r["Logical"]=1; r["Partner"]=2; r["Account"]=3; r["Login"]=4; r["Remote Host"]=5
+           BEGIN { r["Partner"]=1; r["Account"]=2; r["Logical"]=3; r["Login"]=4; r["Remote Host"]=5
                    r["Remote Host (IP)"]=6; r["Whitelist"]=6
                    r["Subscription"]=7; r["Domain"]=8; r["Application"]=9; r["BL"]=10
                    r["Source"]=11; r["Target"]=12 }

@@ -708,7 +708,8 @@ check $([ "${rso:-0}" -gt 0 ] && [ "${rsf:-0}" -gt 0 ] && echo 0 || echo 1) "the
 # the home Cured cells cover the SHOWN days (the newest 14, no Total row since
 # 2026-09-29): their sum = the Top view's Automatic + Manual over those days
 hc=$(grep -o '<a href="transfer/retries-recovered-files.html?axway_date=[0-9-]*">[0-9.]*</a>' docs/index.html 2>/dev/null | sed 's/<[^>]*>//g; s/\.//g' | awk '{ s += $1 } END { print s + 0 }')
-w14=$(awk -F'\t' '$1 == "ROW" { d = $2; sub(/^@\{[^}]*\}/, "", d); d = substr(d, 1, 10); if (d ~ /^[0-9][0-9][0-9][0-9]-/) R[d] = ($7 + 0) + ($8 + 0) }
+w14=$(awk -F'\t' 'function pv(v) { sub(/^@\{[^}]*\}/, "", v); return v }   # a linked day cell leads with @{href=…} (2026-10-01)
+    $1 == "ROW" { d = pv($2); d = substr(d, 1, 10); if (d ~ /^[0-9][0-9][0-9][0-9]-/) R[d] = (pv($7) + 0) + (pv($8) + 0) }
     END { n = 0; for (d in R) D[++n] = d; for (i = 1; i <= n; i++) for (j = i + 1; j <= n; j++) if (D[j] > D[i]) { t = D[i]; D[i] = D[j]; D[j] = t }
           for (i = 1; i <= n && i <= 14; i++) s += R[D[i]]; print s + 0 }' data/transfer/reports/topview.rpt 2>/dev/null)
 check $([ "${hc:-x}" = "${w14:-y}" ] && echo 0 || echo 1) "home Cured cells sum to '${hc:-absent}', expected the newest 14 days' recovered total ${w14:-?}"
@@ -730,7 +731,7 @@ check $([ "$(grep -c '>Automatic<\|>Manual<' "docs/transfer/retries-recovered-fi
 FF="data/transfer/reports/failed-files.rpt"
 n=$(rpt_rows "$FF"); wn=$(awk -F'\t' '$2 == "Failed" || $2 == "Expired" { n++ } END { print n + 0 }' data/transfer/cache/_files.tsv 2>/dev/null)
 check $([ "${n:-0}" -gt 0 ] && [ "$n" = "$wn" ] && echo 0 || echo 1) "failed-files.rpt has ${n:-0} row(s), the Files cache ${wn:-?} Failed/Expired File(s)"
-n=$(awk -F'\t' 'FNR == NR { if ($1 == "TABLE") t++; if (t == 1 && $1 == "ROW") { d = $2; sub(/^@\{[^}]*\}/, "", d); d = substr(d, 1, 10); if (d ~ /^[0-9][0-9][0-9][0-9]-/) T[d] = $5 + 0 } next }
+n=$(awk -F'\t' 'FNR == NR { if ($1 == "TABLE") t++; if (t == 1 && $1 == "ROW") { d = $2; sub(/^@\{[^}]*\}/, "", d); d = substr(d, 1, 10); e = $5; sub(/^@\{[^}]*\}/, "", e); if (d ~ /^[0-9][0-9][0-9][0-9]-/) T[d] = e + 0 } next }
     $1 == "ROW" { F[substr($3, 1, 10)]++ }
     END { for (d in T) if (T[d] != F[d] + 0) b++; for (d in F) if (!(d in T)) b++; print b + 0 }' data/transfer/reports/topview.rpt "$FF" 2>/dev/null || echo 1)
 check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "failed-files: $n day(s) whose row count differs from the Top view Files/Error"
@@ -1528,6 +1529,61 @@ check $([ "${c:-x}" = orange ] && echo 0 || echo 1) "the nodirall flow ${nd:-?} 
 su=$(awk -F'\t' '$3 == 2 && ("," $30 ",") ~ /,shareduc4,/ { print $4; exit }' input/.sample/_estate.tsv 2>/dev/null)
 n=$(awk -F'\t' -v s="$su" '$1 == "ROW" && index($2, "}" s) { v = $7; print v + 0; exit }' data/server/reports/uc2-visits.rpt 2>/dev/null)
 check $([ -n "$su" ] && [ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "uc2-visits.rpt: the shareduc4 flow ${su:-?} has no Same connection (${n:-0})"
+
+# ---- the 2026-10-01 second batch (user request) ------------------------------
+# 1. THE TOP VIEW DAY CELLS LINK: Files Error -> Failed files for the day,
+#    Recovered Automatic -> ../recovered/<date>.html, Recovered Manual and
+#    Resubmit Ok / Error -> ../resubmit/<date>.html, Waiting / Expired ->
+#    Waiting & Expired with the day row marked, Volume -> By size for the day;
+#    a 0 / blank cell carries no link and no row ships a failed drill list
+TV="data/transfer/reports/topview.rpt"
+n=$(awk -F'\t' '
+    function pv(v) { sub(/^@\{[^}]*\}/, "", v); return v }
+    function bad(c, want,   v) { v = pv($c); if (v + 0 > 0 || (c == 19 && v != "")) return (index($c, "@{href=" want "}") != 1); return ($c ~ /^@\{/) }
+    $1 == "ROW" { d = substr(pv($2), 1, 10); if (d !~ /^[0-9][0-9][0-9][0-9]-/) next
+        b += bad(5, "failed-files.html?axway_date=" d "&axway_search=")
+        b += bad(7, "../recovered/" d ".html")
+        b += bad(8, "../resubmit/" d ".html") + bad(9, "../resubmit/" d ".html") + bad(10, "../resubmit/" d ".html")
+        b += bad(17, "waiting-expired.html?axway_row=" d) + bad(18, "waiting-expired.html?axway_row=" d)
+        b += bad(19, "files-by-size.html?axway_date=" d)
+        if ($0 ~ /@data:coreids-failed=/) b++ }
+    END { print b + 0 }' "$TV" 2>/dev/null)
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "topview.rpt: $n day cell(s) with a wrong or missing link (Error / Recovered / Resubmit / Waiting / Expired / Volume), or a failed drill list"
+check $([ "$(grep -c 'href="\.\./resubmit/[0-9-]*\.html"' docs/transfer/topview.html 2>/dev/null)" -ge 1 ] && [ "$(grep -c 'href="\.\./recovered/[0-9-]*\.html"' docs/transfer/topview.html 2>/dev/null)" -ge 1 ] && grep -q 'href="waiting-expired.html?axway_row=' docs/transfer/topview.html 2>/dev/null && grep -q 'href="files-by-size.html?axway_date=' docs/transfer/topview.html 2>/dev/null && grep -q 'href="failed-files.html?axway_date=' docs/transfer/topview.html 2>/dev/null && echo 0 || echo 1) "transfer/topview.html lacks a day-cell link family (resubmit / recovered / waiting-expired / files-by-size / failed-files)"
+# 2. THE DAY FILE LISTS: per day the resubmit list holds exactly the Resubmit
+#    Ok + Error Files and the recovered list the Automatic ones; every
+#    resubmit row opens its File page; on a recovered list the first five rows
+#    of every subscription do; each .rpt has its page and no other page exists
+n=$(awk -F'\t' '
+    function pv(v) { sub(/^@\{[^}]*\}/, "", v); return v }
+    FILENAME ~ /topview\.rpt$/ { if ($1 == "ROW") { d = substr(pv($2), 1, 10); if (d ~ /^[0-9][0-9][0-9][0-9]-/) { NS[d] = pv($9) + pv($10); NA[d] = pv($7) + 0 } } next }
+    FNR == 1 { d = FILENAME; sub(/.*\//, "", d); sub(/\.rpt$/, "", d); fam = (FILENAME ~ /\/resubmit\//) ? "R" : "A"; split("", SEEN5) }
+    $1 == "ROW" { C[fam, d]++
+        hr = ($0 ~ /\t@data:href=\.\.\/files\/[0-9a-f-]+\.html/)
+        if (fam == "R" && !hr) b++
+        if (fam == "A" && ++SEEN5[$3] <= 5 && !hr) b++
+        if (fam == "A" && !hr && $0 !~ /\t@data:norowlink=1/) b++ }
+    END { for (d in NS) { if (NS[d] != C["R", d] + 0) b++; if (NA[d] != C["A", d] + 0) b++ }
+          print b + 0 }' "$TV" data/transfer/reports/resubmit/*.rpt data/transfer/reports/recovered/*.rpt 2>/dev/null)
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "the resubmit / recovered day lists: $n mismatch(es) with the Top view counts or row(s) without the File-page link they must carry"
+for fam in resubmit recovered; do
+    nr=$(ls data/transfer/reports/$fam/*.rpt 2>/dev/null | wc -l | tr -d ' ')
+    nh=$(ls docs/$fam/ 2>/dev/null | grep -cE '^[0-9]{4}-[0-9]{2}-[0-9]{2}\.html$' || true)
+    na=$(ls docs/$fam/ 2>/dev/null | wc -l | tr -d ' ')
+    check $([ "${nr:-0}" -gt 0 ] && [ "$nr" = "$nh" ] && [ "$nh" = "$na" ] && echo 0 || echo 1) "docs/$fam/: $nh day page(s) of $na file(s), the writer made ${nr:-0} list(s)"
+done
+n=$(grep -ho 'data-href="\.\./files/[0-9a-f-]*\.html"' docs/resubmit/*.html docs/recovered/*.html 2>/dev/null | sed 's/.*files\///; s/"$//' | LC_ALL=C sort -u | while read -r c; do [ -f "docs/files/$c" ] || echo "$c"; done | wc -l | tr -d ' ')
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n File page(s) a resubmit / recovered day list row opens do not exist"
+n=$(awk -F'\t' 'FNR == NR { if ($2 == "R") R[$1] = 1; next } $27 == "1" && $4 != "" && !($1 in R) { n++ } END { print n + 0 }' "$FP" data/transfer/cache/_files.tsv 2>/dev/null)
+check $([ "${n:-1}" = 0 ] && [ "$(awk -F'\t' '$2 == "R"' "$FP" 2>/dev/null | wc -l | tr -d ' ')" -gt 0 ] && [ "$(awk -F'\t' '$2 == "A"' "$FP" 2>/dev/null | wc -l | tr -d ' ')" -gt 0 ] && echo 0 || echo 1) "_filepages.tsv: $n resubmitted File(s) without kind R, or no kind R / A row at all"
+# 3. Entity Search lists Partner, then Account, then Logical rows
+o=$(awk -F'\t' '$1 == "ROW" && ($4 == "Partner" || $4 == "Account" || $4 == "Logical") && $4 != last { printf "%s ", $4; last = $4 }' data/transfer/reports/entity-search.rpt 2>/dev/null)
+check $([ "$o" = "Partner Account Logical " ] && echo 0 || echo 1) "entity-search.rpt lists '$o', expected Partner, Account, Logical"
+# 4. the Entities pages carry TWO banner cells, Retry (1 column) and Resubmit
+#    (2 columns) — the one "Retry / Resubmit" group is gone
+g=$(awk -F'\t' '$1 == "GHEAD" { print; exit }' "$EA" 2>/dev/null)
+check $([ "$g" = $'GHEAD\t\t@{colspan=4,class=gband gsep}Files\t@{class=gband gsep}Retry\t@{colspan=2,class=gband gsep}Resubmit\t@{colspan=4,class=gband gsep}Duration\t@{colspan=2,class=gband gsep}Volume\t@{colspan=3,class=gband gsep}Transfers' ] && echo 0 || echo 1) "entities/account.rpt GHEAD is '$g' — expected Files · Retry · Resubmit · Duration · Volume · Transfers"
+check $(grep -q '>Retry</th>' docs/transfer/entities/account-all.html 2>/dev/null && grep -q '>Resubmit</th>' docs/transfer/entities/account-all.html 2>/dev/null && ! grep -rqs 'Retry / Resubmit</th>' docs/transfer/entities && echo 0 || echo 1) "transfer/entities/account-all.html lacks the separate Retry and Resubmit banner cells (or a page still shows Retry / Resubmit)"
 
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2

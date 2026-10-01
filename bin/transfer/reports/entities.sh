@@ -18,16 +18,19 @@
 # data/transfer/reports/_alltime.tsv (the analyses Subscriptions page) — sums
 # of the same rows' per-day buckets.
 #
-# Layout: the Name, then FIVE column groups (a GHEAD banner + the gsep=
+# Layout: the Name, then SIX column groups (a GHEAD banner + the gsep=
 # dividers, the Top view way), in this order:
 #   Files      In · Out · Error · Error %   In/Out = the MOVEMENT direction
 #              (_files.tsv col 17 — the home page's In/Out rule; a File with
 #              no movement counts in the total and the Error % only)
-#   Retry / Resubmit   Auto · Ok · Error   the Top view rule: Auto = an OK
-#              File that carried a failed leg and no resubmitted leg (the
-#              classic Retry column); Ok / Error = EVERY File with a
-#              resubmitted leg (_files.tsv col 27 — a _transfers.tsv col 22
-#              true leg), by its outcome; the failed leg = _files.tsv col 26
+#   Retry      Auto   the Top view rule: an OK File that carried a failed leg
+#              (_files.tsv col 26) and no resubmitted leg (the classic Retry
+#              column)
+#   Resubmit   Ok · Error   EVERY File with a resubmitted leg (_files.tsv col
+#              27 — a _transfers.tsv col 22 true leg), by its outcome
+#              (ONE group "Retry / Resubmit" until 2026-10-01, user request:
+#              "Split Retry / Resubmit into 2 cells, Retry 1 wide, Resubmit 2
+#              wide" — two banner cells with a gap between them)
 #   Duration   p90 · p95 · p99 · p100 of the OK Files' wall-clock span
 #   Volume     Total · Avg (per File)
 #   Transfers  Ok · Error · Error %      the LEGS (log rows) of the entity's
@@ -38,8 +41,8 @@
 #   tables"; their S| fields stay for the other readers)
 # Every count cell drills to its 10 newest Files (CoreIds); the Transfers
 # cells to the Files that carried a leg of that outcome; a Duration cell to
-# the 10 newest OK Files at or above that percentile. An empty Retry /
-# Resubmit group is hidden per view, the TOTAL row is last
+# the 10 newest OK Files at or above that percentile. An empty Retry or
+# Resubmit group is hidden per view (each on its own), the TOTAL row is last
 # (publish_lib).
 #
 # Attribution per entity — the rule of the five former classic writers
@@ -373,8 +376,9 @@ fmt_dim() {
         <<< "$({ grep "^T|$dim|" "$AGG.$dim" 2>/dev/null || true; } | awk 'NR == 1')"
     : "${tc:=0}" "${tdays:=0}" "${ttok:=0}" "${tter:=0}" "${tin:=0}" "${tout:=0}" "${tfe:=0}" "${tra:=0}" "${tmo:=0}" "${tme:=0}" "${twt:=0}" "${tex:=0}" "${tv:=0}" "${ns:=0}" "${tp90:=}" "${tp95:=}" "${tp99:=}" "${tp100:=}"
     # the display order (2026-09-13, user request; Transfers moved after
-    # Volume the same day): Files · Retry / Resubmit · Duration (p90 p95 p99
-    # p100) · Volume · Transfers — 17 cells (State and Dates went 2026-09-30)
+    # Volume the same day): Files · Retry · Resubmit · Duration (p90 p95 p99
+    # p100) · Volume · Transfers — 17 cells (State and Dates went 2026-09-30;
+    # Retry / Resubmit became two groups 2026-10-01)
     # NOFERR: the Subscriptions view's Error cell links Failed files (its
     # drillcols leave ferr out), so its ferr list is not shipped (2026-09-29 audit)
     # — nor the empty attribute itself since the 2026-09-30 audit (A1-09)
@@ -401,8 +405,8 @@ fmt_dim() {
         # it opens transfer/failed-files.html for that subscription and the active From/To (report.js
         # setupEntityErrorLinks, 2026-09-15 user request) — so its drill is left out there
         ferrdc="ferr:3:Files_Error,"; [ "$chead" = "Subscription" ] && ferrdc=""
-        printf 'TABLE\tSummary per %s\twide\tgsep=1,5,8,12,14\tnoagg=8,9,10,11,13\tpct=4:3:1+2;16:15:14+15\tautohide=Retry / Resubmit\tdrillcols=fin:1:Files_In,fout:2:Files_Out,%srauto:5:Retry,rmok:6:Resubmit_Ok,rmerr:7:Resubmit_Error,d90:8:Duration_p90,d95:9:Duration_p95,d99:10:Duration_p99,d100:11:Duration_p100,tok:14:Transfers_Ok,terr:15:Transfers_Error\n' "$chead" "$ferrdc"
-        printf 'GHEAD\t\t@{colspan=4,class=gband gsep}Files\t@{colspan=3,class=gband gsep}Retry / Resubmit\t@{colspan=4,class=gband gsep}Duration\t@{colspan=2,class=gband gsep}Volume\t@{colspan=3,class=gband gsep}Transfers\n'
+        printf 'TABLE\tSummary per %s\twide\tgsep=1,5,6,8,12,14\tnoagg=8,9,10,11,13\tpct=4:3:1+2;16:15:14+15\tautohide=Retry;Resubmit\tdrillcols=fin:1:Files_In,fout:2:Files_Out,%srauto:5:Retry,rmok:6:Resubmit_Ok,rmerr:7:Resubmit_Error,d90:8:Duration_p90,d95:9:Duration_p95,d99:10:Duration_p99,d100:11:Duration_p100,tok:14:Transfers_Ok,terr:15:Transfers_Error\n' "$chead" "$ferrdc"
+        printf 'GHEAD\t\t@{colspan=4,class=gband gsep}Files\t@{class=gband gsep}Retry\t@{colspan=2,class=gband gsep}Resubmit\t@{colspan=4,class=gband gsep}Duration\t@{colspan=2,class=gband gsep}Volume\t@{colspan=3,class=gband gsep}Transfers\n'
         printf 'HEAD\t%s\tIn\tOut\tError\tError %%\tAuto\tOk\tError\tp90\tp95\tp99\tp100\tTotal\tAvg\tOk\tError\tError %%\n' "$chead"
         printf 'KIND\t%s\tnum\tnum\tnumfailed\tnum\tnumwarn\tnumwarn\tnumfailed\tnum\tnum\tnum\tnum\tnum\tnum\tnumok\tnumfailed\tnum\n' "$nkind"
         printf 'RECALC\t-\tS1\tS2\ts3\te3.0\ts7\ts8\ts9\tP90\tP95\tP99\tP100\tH4\tV4.0\ts5\ts6\te6.12\n'
