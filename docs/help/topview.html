@@ -7,9 +7,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: Transfer top view — Axway ST reports</title>
-<link rel="stylesheet" href="../assets/style.css?v=2369215666">
+<link rel="stylesheet" href="../assets/style.css?v=239437635">
 <script src="../assets/topbar-data.js?v=2002570715" defer></script>
-<script src="../assets/topbar.js?v=2369215666" defer></script>
+<script src="../assets/topbar.js?v=239437635" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="general"></div>
@@ -19,26 +19,27 @@
 <h1>Transfer top view</h1>
 <h2>What it shows</h2>
 <ul>
-<li>One row per calendar day of the transfer log, newest on top, total row above; opens at the full period. Days without data get a zero row.</li>
+<li>One row per calendar day of the transfer log, newest first, total on top; opens at the full period. Days without data get a zero row.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
 <li><strong>Date</strong> &mdash; opens the day page.</li>
 <li><strong>Files</strong> &mdash; Count / Ok / Error / Error %: logical transfers (one per CoreId), each credited to its start day.</li>
-<li><strong>Recovered</strong> &mdash; Files with a failed leg that still ended OK: <strong>Automatic</strong> = the platform&rsquo;s retry delivered, <strong>Manual</strong> = a leg carries the Resubmitted flag.</li>
-<li><strong>Resubmit</strong> &mdash; every File with a resubmitted leg, <strong>Ok</strong> or <strong>Error</strong> by final outcome (Waiting = Ok, Expired = Error); a re-delivery without a failed leg counts here, not under Recovered.</li>
+<li><strong>Recovered</strong> &mdash; Files with a failed leg that still ended OK: <strong>Automatic</strong> = the platform&rsquo;s retry delivered, <strong>Manual</strong> = a leg was resubmitted.</li>
+<li><strong>Resubmit</strong> &mdash; every File with a resubmitted leg, <strong>Ok</strong> or <strong>Error</strong> by outcome; one without a failed leg counts here, not under Recovered.</li>
 <li><strong>Transfers</strong> &mdash; Count / Ok / Error / Error %: the physical log rows (legs).</li>
-<li><strong>State</strong> &mdash; the Files by final state: <strong>Processed</strong>, <strong>Failed</strong>, <strong>Waiting</strong> (staged, not collected yet), <strong>Expired</strong> (deleted unclaimed by the retention sweep, never delivered).</li>
+<li><strong>State</strong> &mdash; the Files by final state: <strong>Processed</strong>, <strong>Failed</strong>, <strong>Waiting</strong> (staged, not collected yet), <strong>Expired</strong> (deleted uncollected, never delivered).</li>
 <li><strong>Volume</strong> &mdash; the bytes of every File started that day.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Only here are the four states apart; elsewhere Processed + Waiting count as OK and Failed + Expired as Error.</li>
+<li>Elsewhere Processed + Waiting count as OK, Failed + Expired as Error.</li>
 <li>The home page&rsquo;s <strong>Cured</strong> = Automatic + Manual.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>A Files Ok / Error cell drills to that day&rsquo;s 10 newest Files; the Total row&rsquo;s Waiting / Expired cell opens <a href="waiting-expired.html">Waiting &amp; Expired</a> (full period; per-day cells do not link).</li>
+<li>A Files Ok cell drills to the day&rsquo;s 10 newest OK Files. Other day cells open that day: <strong>Error</strong> &rarr; <a href="failed-files.html">Failed files</a>; <strong>Automatic</strong> &rarr; its recovered Files; <strong>Manual</strong>, Resubmit <strong>Ok</strong> / <strong>Error</strong> &rarr; its resubmitted Files; <strong>Waiting</strong> / <strong>Expired</strong> &rarr; <a href="waiting-expired.html">Waiting &amp; Expired</a>, day marked; <strong>Volume</strong> &rarr; <a href="size-dist.html">Sizes &amp; types</a>.</li>
+<li>On those two lists a row opens its File page: every resubmitted File, the five newest recovered per subscription.</li>
 <li><a href="recovered-files.html">Recovered files</a> splits Recovered per subscription, protocol and day.</li>
 </ul>
 </main>

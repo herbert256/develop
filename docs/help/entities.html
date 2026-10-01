@@ -7,9 +7,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: Entities — Axway ST reports</title>
-<link rel="stylesheet" href="../assets/style.css?v=2369215666">
+<link rel="stylesheet" href="../assets/style.css?v=239437635">
 <script src="../assets/topbar-data.js?v=2002570715" defer></script>
-<script src="../assets/topbar.js?v=2369215666" defer></script>
+<script src="../assets/topbar.js?v=239437635" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="general"></div>
@@ -19,20 +19,21 @@
 <h1>Entities</h1>
 <h2>What it shows</h2>
 <ul>
-<li>The layout of the nine entity reports: one row per name, seven column groups; each entity&rsquo;s help gives its attribution.</li>
+<li>The layout of the nine entity reports: one row per name, six column groups; each entity&rsquo;s help gives its attribution.</li>
 <li>Views: <strong>All</strong> = every configured and logged name; <strong>Seen</strong> = the names in the transfer log; <strong>Not seen</strong> = configured, never logged (name only); <strong>OK</strong> / <strong>Warning</strong> / <strong>Error</strong> = result green / orange / red.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
 <li><strong>Files</strong> &mdash; <strong>In</strong> / <strong>Out</strong> by movement (else connection side), <strong>Error</strong>, <strong>Error %</strong>.</li>
-<li><strong>Retry / Resubmit</strong> &mdash; <strong>Auto</strong> = OK Files with a failed leg, none resubmitted; <strong>Ok</strong> / <strong>Error</strong> = resubmitted Files by final outcome.</li>
+<li><strong>Retry</strong> &mdash; <strong>Auto</strong> = OK Files with a failed leg, none resubmitted.</li>
+<li><strong>Resubmit</strong> &mdash; <strong>Ok</strong> / <strong>Error</strong> = resubmitted Files by final outcome.</li>
 <li><strong>Duration</strong> &mdash; <strong>p90</strong> &hellip; <strong>p100</strong> span of the delivered Files, nearest rank; seconds green, minutes amber, hours and days red.</li>
 <li><strong>Volume</strong> &mdash; <strong>Total</strong>, <strong>Avg</strong> per File.</li>
 <li><strong>Transfers</strong> &mdash; their legs: <strong>Ok</strong>, <strong>Error</strong>, <strong>Error %</strong>.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Waiting counts as OK, Expired as Error. Figures follow From/To. Retry / Resubmit shows only while a visible row has a value. Waiting and Expired Files per subscription: <a href="waiting-expired.html">Waiting &amp; Expired</a>.</li>
+<li>Waiting counts as OK, Expired as Error. Figures follow From/To. Retry and Resubmit each show only while a visible row has a value. Waiting and Expired Files per subscription: <a href="waiting-expired.html">Waiting &amp; Expired</a>.</li>
 <li>Logical, Partners, Applications and BL can count a File for several names; their Total counts it once. OK / Warning / Error views sum their rows.</li>
 <li>Row tint = the name&rsquo;s result (<a href="general.html">Generic help</a>); untinted = not configured.</li>
 </ul>
