@@ -1807,9 +1807,10 @@ front end) then four fix workers with disjoint files. The rules it left:
 
 ## Rules from the 2026-10-01 batch ("a few different things")
 
-- **Tables at 80%** (user request: "make all the tables a little smaller, 80% of current size"): `table` font-size
-  80%, cell padding 6.4 / 9.6 px (wide 4.8 / 8, dayrows sides 8, pager rows 4.8 / 8), the em-relative cell kinds
-  (file / lines / pre / coreid-cell 0.85em), the Top-5 cards 0.72rem / 0.62rem; the 30 px group gaps unchanged.
+- **Tables at 90%** (user request: 80% first, then "undo half, a bit bigger but still smaller than before, 90% of
+  the size like before"): `table` font-size 90%, cell padding 7.2 / 10.8 px (wide 5.4 / 9, dayrows sides 9, pager
+  rows 5.4 / 9, coreid-cell 7.2 / 9), the em-relative cell kinds (file / lines / pre / coreid-cell 0.85em), the
+  Top-5 cards 0.81rem / 0.7rem; the 30 px group gaps unchanged.
 - **Sub table edges** (user request: "give subtables, like on /transfer/topview.html also a right and left border as
   done on the home page"): every gsep= table draws the home per-day table's 2 px `#cfd7de` group edges on BOTH sides
   of each 30 px gap — as INSET box-shadows (the gap border owns the collapsed edge): left on `.gsep`, right on the

@@ -127,7 +127,7 @@ a:hover { text-decoration:underline; }
 /* Tables shrink to their CONTENT: columns are exactly as wide as their widest
    value + padding, never stretched to fill a fixed table width. A table wider
    than the page still scrolls inside its .tablewrap. */
-table { font-size:80%; border-collapse:collapse; width:auto; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin:0; border:2px solid #cfd7de; }   /* a 2 px outer edge (2026-09-06, user request); the cells keep their 1 px grid */
+table { font-size:90%; border-collapse:collapse; width:auto; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin:0; border:2px solid #cfd7de; }   /* a 2 px outer edge (2026-09-06, user request); the cells keep their 1 px grid */
 tr.rowlink { cursor:pointer; }   /* index rows are fully clickable (report.js setupIndexRows) */
 tr.rowlink td:empty { cursor:auto; }   /* ...except empty cells — not click targets */
 /* CELL LINKS (2026-09-13, user request): a td/th carrying data-href opens its
@@ -173,7 +173,7 @@ table.dayrows th:empty::before, table.dayrows td:empty::before { content:"\00a0"
    top rule must not paint the spacer either. */
 table.dayrows { border:none; box-shadow:none; }   /* no table-wide edge or shadow: both would run across the gaps — each GROUP gets its own 2 px edges below */
 table.dayrows th.spc, table.dayrows td.spc { width:30px; min-width:30px; max-width:30px; padding:0; border:none; background:#f7f7f9; }   /* 30 px gaps (2026-09-06, user request: more space) */
-table.dayrows th:not(.spc), table.dayrows td:not(.spc) { padding-left:8px; padding-right:8px; }   /* 19 columns: 2 px less side padding each keeps the table inside a 1512 px window (2026-09-29 audit: it overflowed by ~25 px) */
+table.dayrows th:not(.spc), table.dayrows td:not(.spc) { padding-left:9px; padding-right:9px; }   /* 19 columns: 2 px less side padding each keeps the table inside a 1512 px window (2026-09-29 audit: it overflowed by ~25 px) */
 /* the group edges: left of the first cell of a group (the Date column and
    every cell after a spacer), right of the last (before a spacer, and the
    last column), top of the field header, bottom of the LAST row — every day
@@ -192,7 +192,7 @@ table.dayrows th.spc::before, table.dayrows td.spc::before { content:none; }
 table.dayrows tr.gbrow > th { background:#f7f7f9; color:#20344a; border-color:#f7f7f9; }
 /* without the "Per day" <h2> the wrapper carries the section gap itself */
 .tablewrap.perday { margin-top:1.6rem; }
-th, td { border:1px solid #ddd; padding:6.4px 9.6px; text-align:left; white-space:nowrap; }
+th, td { border:1px solid #ddd; padding:7.2px 10.8px; text-align:left; white-space:nowrap; }
 th.num, td.num { text-align:right; }
 /* a cell whose whole value is ONE link (class cl: baked by the renderer for
    link=/href=/entity cells, added in the browser by report.js wholeCellLinks
@@ -383,7 +383,7 @@ table[data-start-empty="1"] tr[data-shide="1"] { display:none; }
    looks identical to the same-colored cells that don't drill */
 td.expandable { text-decoration:underline dotted; text-underline-offset:2px; }
 tr.expandable.expanded td, td.expandable.expanded { background-color:#e8f0fe; }
-td.coreid-cell { background:#f7f9fc; font-size:0.85em; padding:6.4px 8px; }
+td.coreid-cell { background:#f7f9fc; font-size:0.85em; padding:7.2px 9px; }
 .coreid-head { font-weight:bold; color:#20344a; margin-bottom:0.35rem; }
 .coreid-item { font-family:"SFMono-Regular",Consolas,Menlo,monospace; padding:1px 0; color:#333; }
 /* Entity Search: a Source/Target path used by >1 subscription is one aggregate
@@ -396,7 +396,7 @@ tr.subrow td.subname { padding-left:2.2rem; }
 tr.subrow td.subname::before { content:"\21B3\00a0"; color:#8a94a6; }
 
 /* ---- wide table variant (historical: tables now size to content; only the tighter padding remains) ---- */
-table.wide th, table.wide td { padding:4.8px 8px; }
+table.wide th, table.wide td { padding:5.4px 9px; }
 /* a FILE NAME never wraps and is never cut: a name that does not fit widens its
    cell (2026-09-30, user request — it was cut at 480px with an ellipsis):
    td.file = KIND file (monospace), td.fn = a text-KIND File / File name /
@@ -754,13 +754,13 @@ ul.dayfacts { border-left-color:#3c6e9f; background:#f6f9fc; }   /* facts: blue 
 .daytop .dt-s { grid-column:2; }
 .daytop .card { padding:0.75rem 1rem 0.85rem; }
 .daytop h3 { margin:0 0 0.45rem; font-size:0.95rem; color:#20344a; }
-.daytop table { width:100%; table-layout:fixed; border-collapse:collapse; font-size:0.72rem; margin:0; }
+.daytop table { width:100%; table-layout:fixed; border-collapse:collapse; font-size:0.81rem; margin:0; }
 .daytop td.num, .daytop th.num { width:6.5rem; }   /* fixed layout: give the value column a floor */
 /* the header bar keeps the site's `th { background:#20344a; color:#fff }` — an
    earlier mid-grey override here left grey text on the dark bar. Vertical
    padding is SYMMETRIC so the label sits centred in the bar instead of hugging
    its top edge. */
-.daytop th { text-align:left; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.03em;
+.daytop th { text-align:left; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em;
              font-weight:600; padding:0.32rem 0.45rem; line-height:1.2;
              border:none; white-space:nowrap; }
 .daytop th.num, .daytop td.num { text-align:right; white-space:nowrap; }
@@ -768,7 +768,7 @@ ul.dayfacts { border-left-color:#3c6e9f; background:#f6f9fc; }   /* facts: blue 
    report tables size to content and scroll, but a 50-character name in a
    third-width box has to WRAP. overflow-wrap gives it break points, since
    these names have none the browser would otherwise use. */
-.daytop td { padding:0.19rem 0.24rem; border:none; border-bottom:1px solid #f0f3f7;
+.daytop td { padding:0.22rem 0.27rem; border:none; border-bottom:1px solid #f0f3f7;
              white-space:normal; overflow-wrap:anywhere; }
 .daytop td.num { color:#20344a; font-variant-numeric:tabular-nums; }
 .daytop tr:last-child td { border-bottom:none; }
@@ -810,7 +810,7 @@ body.res-red    { background-color:#fdeeee; }
    totals/recalc still count them. The pager itself is a tfoot row INSIDE the
    table, tinted apart from the data rows. */
 tr.pghide { display:none; }
-tr.pagerrow td { background-color:#e3ebf4; padding:4.8px 8px; }
+tr.pagerrow td { background-color:#e3ebf4; padding:5.4px 9px; }
 /* The pager row spans the whole table, which on a WIDE table (Latest 100 Files)
    is wider than the viewport — a spread flex bar then pushes Previous/Next to the
    far edges, one always off-screen inside the .tablewrap's horizontal scroll. So
