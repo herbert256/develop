@@ -1810,6 +1810,11 @@ front end) then four fix workers with disjoint files. The rules it left:
 - **Tables at 80%** (user request: "make all the tables a little smaller, 80% of current size"): `table` font-size
   80%, cell padding 6.4 / 9.6 px (wide 4.8 / 8, dayrows sides 8, pager rows 4.8 / 8), the em-relative cell kinds
   (file / lines / pre / coreid-cell 0.85em), the Top-5 cards 0.72rem / 0.62rem; the 30 px group gaps unchanged.
+- **Sub table edges** (user request: "give subtables, like on /transfer/topview.html also a right and left border as
+  done on the home page"): every gsep= table draws the home per-day table's 2 px `#cfd7de` group edges on BOTH sides
+  of each 30 px gap — as INSET box-shadows (the gap border owns the collapsed edge): left on `.gsep`, right on the
+  cell before a gsep cell or on syncGroups' `gedge-r` (hidden columns / autohide groups), only while a visible gap
+  follows; grouped tables drop the table-wide shadow (`table:has(.gsep)`). CSS only — no markup change.
 - **First seen**: Date · Subscriptions · Partners · Logical · Accounts · Logins · Hosts (the .rpt keeps its order).
 - **Sizes & types**: By size · Empty files · By type · Duplicates · Largest files — Size regime and Stub shippers
   (size-profile.sh) are GONE; never restore.

@@ -464,6 +464,22 @@ a.tab:hover { background:#e8f0fe; text-decoration:none; }
    cell — with full cell borders that never reads as space) */
 th.gsep, td.gsep { border-left:30px solid #f7f7f9; }   /* 30 px = the home per-day table's spacer gap (2026-09-30, user request "more space between the sub tables" on the Top view; 10 px before) — every gsep= table alike */
 th.gband { text-align:center; }
+/* the gap's two sides get the group EDGES of the home per-day table — 2 px
+   #cfd7de left and right, so every column group reads as a sub table of its
+   own (2026-10-01, user request). The 30 px gap border owns the collapsed
+   cell edge, so the edges are painted INSIDE the cells (an inset shadow):
+   left on the group's first cell (gsep), right on the cell before a gap —
+   the one right before a gsep cell, or (a column hidden by the picker or an
+   autohide group) report.js syncGroups' last visible cell of a group, only
+   while a visible gap follows (no double edge on the table's own border). A
+   one-column group between two gaps gets both. The marked column's framed
+   header (th[data-colmark]) keeps its own white frame. */
+table:has(.gsep) { box-shadow:none; }   /* the table-wide shadow would run under the gaps (table.dayrows alike) */
+:is(th, td).gsep:not([data-colmark]) { box-shadow:inset 2px 0 0 #cfd7de; }
+:is(th, td):not([data-colmark]):has(+ .gsep):has(~ .gsep:not([hidden])),
+:is(th, td).gedge-r:not([data-colmark]):has(~ .gsep:not([hidden])) { box-shadow:inset -2px 0 0 #cfd7de; }
+:is(th, td).gsep:not([data-colmark]):has(+ .gsep):has(~ .gsep:not([hidden])),
+:is(th, td).gsep.gedge-r:not([data-colmark]):has(~ .gsep:not([hidden])) { box-shadow:inset 2px 0 0 #cfd7de, inset -2px 0 0 #cfd7de; }
 /* tint-only Error/OK columns (KIND numerr/numok — same colors as failed/
    processed, but without those class names so the drill binding stays on
    the one real failed/processed pair; 0 values blank like them) */

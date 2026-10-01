@@ -313,6 +313,7 @@ check $(awk -F'\t' '$1 == "TOTAL" { v = $2; sub(/^@\{[^}]*\}/, "", v); print v; 
 check $(grep -q $'^HEAD\tDate\tFiles\tMedian\tAverage\t' data/transfer/reports/duration.rpt 2>/dev/null && echo 0 || echo 1) "duration.rpt does not head Date · Files · Median · Average"
 check $(! grep -lqsE '\(expired password|NEVER found a file' docs/day/*.html && echo 0 || echo 1) "a day page still says '(expired password …' or 'NEVER found a file'"
 check $(grep -q 'dateblink' docs/assets/report.js 2>/dev/null && grep -q 'dateblink' docs/assets/style.css 2>/dev/null && echo 0 || echo 1) "report.js / style.css lack the From/To blink on load (dateblink)"
+check $(grep -q '^:is(th, td).gsep:not(\[data-colmark\]) { box-shadow:inset 2px 0 0 #cfd7de; }' docs/assets/style.css 2>/dev/null && grep -q 'has(+ .gsep)' docs/assets/style.css 2>/dev/null && echo 0 || echo 1) "style.css lacks the sub table edges on both sides of a gsep gap"
 # the three partner study reports are GONE (2026-09-30, user request): no
 # writer, .rpt, page or help page may come back
 n=$(ls bin/analyses/reports/partner-scorecard.sh bin/analyses/reports/blast-radius.sh bin/analyses/reports/app-partners.sh data/analyses/reports/partner-scorecard.rpt data/analyses/reports/blast-radius.rpt data/analyses/reports/app-partners.rpt docs/analyses/partner-scorecard.html docs/analyses/blast-radius.html docs/analyses/app-partners.html docs/help/partner-scorecard.html docs/help/blast-radius.html docs/help/app-partners.html 2>/dev/null | wc -l | tr -d ' ')
