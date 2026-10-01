@@ -506,6 +506,17 @@ a.daybtn:hover { background:#e8f0fe; text-decoration:none; }
 .controls label + select { margin-right:0.45rem; }   /* tight From <-> To pair (2026-08) */
 .controls label.sep { margin-left:1rem; }   /* extra gap before "Search" when it shares the row with From/To */
 .controls select { font:inherit; padding:2px 4px; }
+/* a page that OPENS on a narrowed date range blinks its From / To once (report.js
+   "THE NARROWED-RANGE BLINK", 2026-10-01): two amber flashes in about a second;
+   with reduced motion a steady highlight for the same second */
+@keyframes dateblink {
+  0%, 50%, 100% { background-color:#ffe08a; box-shadow:0 0 0 2px #e0a800; }
+  25%, 75%      { background-color:#fff;    box-shadow:0 0 0 2px transparent; }
+}
+select.dateblink { animation:dateblink 1s ease-in-out 1; }
+@media (prefers-reduced-motion: reduce) {
+  select.dateblink { animation:none; background-color:#ffe08a; box-shadow:0 0 0 2px #e0a800; }
+}
 .controls button.daterange { margin:0 0.3rem 0 0; padding:2px 10px; border:1px solid #ddd; border-radius:4px; background:#fff; color:#20344a; font:inherit; font-size:0.85rem; cursor:pointer; white-space:nowrap; }
 .controls button.daterange:first-of-type { margin-left:0.3rem; }   /* small gap after the To pulldown */
 .controls button.daterange:hover { background:#e8f0fe; }
