@@ -119,6 +119,14 @@ function addf(uc, dom, app, ptn, sfx, vol, fail, tags, acctover,
     }
     # one login serving several accounts (the Account-sharing report's rows)
     if (hastag(tags, "sharelogin")) login = "FE001111"
+    # the ORPHAN-RED HOST and LOGIN (2026-10-01, user request: the home Errors
+    # table lists a red host / login whose red no subscription row explains):
+    # the flows tagged orphanhost share ONE endpoint of their own — the org's
+    # host with "-edge" — on the org's unseen address +3 (free: no ownhost
+    # flow on that org); the flows tagged orphanlogin share ONE login of their
+    # own. gen-events.awk plants the line that reddens it (see there).
+    if (hastag(tags, "orphanhost") && host != "") { sub(/^[^.]+/, "&-edge", host); ips = PBASE[oi] "." (PUNSEEN[oi] + 3) }
+    if (hastag(tags, "orphanlogin")) login = acct_login("ORPHAN-SHARED-LOGIN")
     # a flow with its OWN login on a shared account (the production MULTI-FE
     # shape, 2026-08-31): the account carries several FE logins, one per flow
     if (hastag(tags, "ownlogin")) login = acct_login(acct "|" site)
@@ -187,6 +195,8 @@ function addf(uc, dom, app, ptn, sfx, vol, fail, tags, acctover,
     if (hastag(tags, "scanoff"))     T["act_scanoff"]++       # code 4: folder monitoring Inactive
     if (tags ~ /(^|,)(undeployed|notdeployed|schedoff|scanoff)(,|$)/) T["act_inactive"]++
     if (hastag(tags, "samecollect")) T["samecollect"]++   # the Inbound and Outbound same Protocol report's planted flow (2026-09-14)
+    if (hastag(tags, "orphanhost"))  T["orphanhost"]++    # the home Errors table's red host row (2026-10-01)
+    if (hastag(tags, "orphanlogin")) T["orphanlogin"]++   # the home Errors table's red login row (2026-10-01)
 }
 
 # account-only row (an orphaned account: config residue with no flows).
@@ -457,6 +467,23 @@ function build_roster() {
     # never transferring; the analyses Subscriptions page lists it as a
     # skipped row with Active CFT. LAST, so no other flow shifts.
     addf(1, "IT",  "SWIFT",    "INITECH",  "",  0, 0, "noxfer")
+    # the ORPHAN-RED HOST and LOGIN (2026-10-01, user request: "Hosts with
+    # problems … must also be showed in the Errors table on the homepage. If
+    # the host is the endpoint of an UC1 or UC3 subscription that is already in
+    # the Error table then do not show it" — logins likewise, UC2 / UC4): every
+    # red host and login of the estate above rolls up from a red subscription
+    # that has its own row, so none of them showed. Two QUIET flows (every
+    # File OK, then nothing for 12-20 days) share one endpoint, two more one
+    # login; three days before the data ends each shared entity logs ONE
+    # E-level line that names no flow, on a session nothing else uses — the
+    # ring residue bin/build/result.sh orphan_red gives the entity itself (no
+    # OK File since), while the flows stay GREEN (a shared owner's line
+    # reddens a flow only when it is about the connection — these are not).
+    # LAST, so no other flow shifts.
+    addf(1, "HR",  "PAYSLIP",  "VANDELAY", "",  1.0, 0, "quiet,orphanhost")
+    addf(1, "HR",  "PENSION",  "VANDELAY", "",  1.0, 0, "quiet,orphanhost")
+    addf(4, "HR",  "EXPENSE",  "VANDELAY", "",  1.0, 0, "quiet,orphanlogin")
+    addf(4, "HR",  "TIMESHEET","VANDELAY", "",  1.0, 0, "quiet,orphanlogin")
 }
 
 # The CFT end-to-end monitor: four sites UC<n>-INFRA_ST-MONITOR_INFRA (note

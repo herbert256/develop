@@ -512,12 +512,51 @@ check $([ "${nd:-0}" -gt 14 ] && [ "${nh:-0}" = 14 ] && echo 0 || echo 1) "the h
 hdr=$(awk '/<table class="index fit dayrows"/ { p = 1 } p && /<tr>/ && /<th/ { print; exit }' docs/index.html 2>/dev/null | grep -o '<th[^>]*>[^<]*</th>' | sed 's/<[^>]*>//g' | tr '\n' '|')
 check $([ "$hdr" = "Date||Ok|Cured|Error|Error %||p50|p75|p90|p95|p99|" ] && echo 0 || echo 1) "the home per-day table headers are '$hdr'"
 check $(grep -qE 'class="gband"[^>]*>(Transfers|UC2 state|First seen)<' docs/index.html 2>/dev/null && echo 1 || echo 0) "the home still carries a Transfers / UC2 state / First seen group"
-# ... and BESIDE it the Errors table: Subscription · Date/time · Reason of
-# every RED Failed Subscriptions row (no orange ones), in the same side-by-side row
+# ... and BESIDE it the Errors table: Entity · Date/time · Reason of every RED
+# Failed Subscriptions row (no orange ones) PLUS every red host / login that no
+# UC1 / UC3 resp. UC2 / UC4 subscription row of the table covers (2026-10-01,
+# user request; "Subscription" read the first header until then), in the same
+# side-by-side row — the host / login rows are counted below
 ne=$(awk -F'\t' '$1 == "TABLE" { t++ } t == 1 && $1 == "ROW" && /\t@data:res=red(\t|$)/ { n++ } END { print n + 0 }' data/transfer/reports/failed.rpt 2>/dev/null)
+# the independent recount of the host / login rows: red in the base cache,
+# minus every one connected (configured, observed or — hosts — through a leg)
+# to a subscription of a red failed.rpt row whose use case (name prefix, else
+# the derived one) is UC1 / UC3 for a host, UC2 / UC4 for a login
+hlr() {   # $1 = hosts|logins  $2 $3 = the two use cases -> one name per expected row
+    awk -F'\t' -v K="$1" -v U1="$2" -v U2="$3" '
+        function strip(c) { sub(/^@\{[^}]*\}/, "", c); return c }
+        function uco(s,   u) { u = toupper(s); if (u ~ /^UC[1-4][-_]/) return substr(u, 1, 3); return (u in UD) ? UD[u] : "" }
+        FNR == 1 { f++ }
+        f == 1 { if ($1 == "TABLE") t++; if (t == 1 && $1 == "ROW" && $0 ~ /\t@data:res=red(\t|$)/) IN[toupper(strip($2))] = 1; next }
+        f == 2 { UD[toupper($1)] = $2; next }
+        f == 3 { if ($3 == "red") R[toupper($1)] = $1; next }
+        f <= 6 { s = (f == 6) ? $4 : $2; if ((toupper(s) in IN) && (uco(s) == U1 || uco(s) == U2)) X[toupper($1)] = 1; next }
+        END { for (k in R) if (!(k in X)) print R[k] }' data/transfer/reports/failed.rpt data/flow-manager/xref/_subscriptions-ucderived.tsv \
+        data/flow-manager/base/_$1.tsv data/flow-manager/xref/_$1-subscriptions.tsv data/colour/_observed-$1.tsv \
+        $([ "$1" = hosts ] && echo data/colour/_hostlegs.tsv || echo /dev/null) 2>/dev/null | LC_ALL=C sort
+}
+eh_hosts=$(hlr hosts UC1 UC3); eh_logins=$(hlr logins UC2 UC4)
+neh=$(printf '%s\n' "$eh_hosts" | grep -c . || true); nel=$(printf '%s\n' "$eh_logins" | grep -c . || true)
+ne=$(( ${ne:-0} + neh + nel ))
 nr=$(awk '/<table class="index fit dayrows homeerr"/ { p = 1 } p && /<tr[ >]/ && /<td/ { n++ } p && /<\/table>/ { exit } END { print n + 0 }' docs/index.html 2>/dev/null)
 eh=$(awk '/<table class="index fit dayrows homeerr"/ { p = 1 } p && /<tr>/ && /<th/ { print; exit }' docs/index.html 2>/dev/null | grep -o '<th[^>]*>[^<]*</th>' | sed 's/<[^>]*>//g' | tr '\n' '|')
-check $([ "${ne:-0}" -gt 0 ] && [ "$nr" = "$ne" ] && [ "$eh" = "Subscription|Date/time|Reason|" ] && echo 0 || echo 1) "the home Errors table: $nr row(s) for ${ne:-?} red Failed Subscriptions row(s), headers '$eh'"
+check $([ "${ne:-0}" -gt 0 ] && [ "$nr" = "$ne" ] && [ "$eh" = "Entity|Date/time|Reason|" ] && echo 0 || echo 1) "the home Errors table: $nr row(s) for ${ne:-?} expected (red Failed Subscriptions rows + $neh host(s) + $nel login(s)), headers '$eh'"
+# ... each expected host / login row is there, links its detail page and
+# carries a stamp and a reason; the sample plants one of each (estate.awk
+# orphanhost / orphanlogin), so both kinds are exercised
+bad=0
+for kn in hosts logins; do
+    if [ "$kn" = hosts ]; then lst=$eh_hosts; else lst=$eh_logins; fi
+    while IFS= read -r nm; do
+        [ -n "$nm" ] || continue
+        sl=$(awk -F'\t' -v n="$nm" '$1 == n { print $2; exit }' "data/transfer/reports/details/$kn/_slugmap.tsv" 2>/dev/null)
+        awk -v h="<td><a href=\"details/$kn/$sl.html\">$nm</a></td>" '/<table class="index fit dayrows homeerr"/ { p = 1 } p && /<\/table>/ { exit } p && index($0, h) && $0 ~ /<td>[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}<\/td><td>[^<]+<\/td><\/tr>/ { ok = 1 } END { exit !ok }' docs/index.html 2>/dev/null || { bad=$((bad + 1)); echo "  missing or incomplete home Errors row: $kn $nm" >&2; }
+    done <<< "$lst"
+done
+check $([ "$bad" = 0 ] && [ "${neh:-0}" -ge 1 ] && [ "${nel:-0}" -ge 1 ] && echo 0 || echo 1) "the home Errors table: $bad host / login row(s) missing, without their detail-page link or stamp / reason; the sample has $neh host and $nel login row(s), expected at least one of each"
+oh=$(awk -F'\t' '$30 ~ /(^|,)orphanhost(,|$)/ { print $19; exit }' input/.sample/_estate.tsv 2>/dev/null); ol=$(awk -F'\t' '$30 ~ /(^|,)orphanlogin(,|$)/ { print $6; exit }' input/.sample/_estate.tsv 2>/dev/null)
+n=$(awk -F'\t' '$30 ~ /(^|,)orphan(host|login)(,|$)/ { print toupper($4) }' input/.sample/_estate.tsv 2>/dev/null | while read -r s9; do awk -F'\t' -v s="$s9" 'toupper($1) == s && $3 != "green" { print }' data/flow-manager/base/_subscriptions.tsv; done | wc -l | tr -d ' ')
+check $(printf '%s\n' "$eh_hosts" | grep -qx "${oh:-x}" && printf '%s\n' "$eh_logins" | grep -qx "${ol:-x}" && [ "${n:-1}" = 0 ] && echo 0 || echo 1) "the planted orphan host ${oh:-?} / login ${ol:-?} is not an expected home Errors row, or $n of their four quiet flows is not green"
 check $(awk '/<table class="index fit dayrows homeerr"/ { p = 1 } p && /<\/table>/ { exit } p && /<tr[ >]/ && /<td/ && !/data-res="red"/ { bad = 1 } END { exit bad }' docs/index.html 2>/dev/null && echo 0 || echo 1) "the home Errors table carries a row that is not red"
 # ... its Date/time to the minute (2026-09-29, user request: "only hh:mm, no ss.mmm")
 n=$(awk '/<table class="index fit dayrows homeerr"/ { p = 1 } p && /<\/table>/ { exit } p && /<td/ && /[0-9]:[0-9][0-9]:[0-9][0-9]/ { n++ } END { print n + 0 }' docs/index.html 2>/dev/null)

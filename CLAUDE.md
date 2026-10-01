@@ -1864,6 +1864,17 @@ front end) then four fix workers with disjoint files. The rules it left:
   START DAY and subscription (`RECOVERED_PER_SUB`, selected ONLY in filepages.sh; the first five rows of every
   subscription on a recovered list). A recovered row without a page carries `@data:norowlink=1` — report.js
   `bindRowlink` skips it, so it keeps the default cell links instead of falling back to the row's first link.
+- **The home Errors table** (user request, the same evening): first header **Entity** (was Subscription); besides
+  the red failed.rpt rows it lists every RED host and login (base col 3 — the Entities Remote hosts / Logins Error
+  views) EXCEPT one connected to a subscription of a red failed.rpt row whose use case (name prefix, else
+  `xref/_subscriptions-ucderived.tsv`) is UC1 / UC3 (a host) resp. UC2 / UC4 (a login); connected = the
+  configured `xref/_<kind>-subscriptions.tsv` ∪ `colour/_observed-<kind>.tsv` ∪ (hosts) `colour/_hostlegs.tsv`
+  col 4. bin/build/publish.sh `home_err_entities`: the name links `details/<kind>/<slug>.html` (an index table —
+  the whole row); Date/time · Reason = the NEWEST evidence of its red — the orphan ring line
+  (`colour/_ringorphan.tsv`, classified by bin/flip-reason.awk, else "Server log error"), a pairless host's failed
+  last OUT File (failed-files.rpt reason), a connected red subscription row that did not exclude it. The sample
+  plants one of each (estate.awk `orphanhost` / `orphanlogin`: two quiet flows share the endpoint / login, ONE
+  E line three days before the data ends names only it — the flows stay green). verify.sh recounts the rows.
 - **Waiting / Expired list pages** (user request, later the same day: "every file in transfer/waiting/ and
   transfer/expired/ must have its first 10 rows in /files/ and the complete row must point to it"): File-page
   kinds `W` / `X` = the first `LIST_ROWS` (10) rows of EVERY list page, subscription and day lists alike, selected

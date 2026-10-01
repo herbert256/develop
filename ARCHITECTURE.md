@@ -615,7 +615,10 @@ day ahead) would render a fully empty row. The table is `data-nosort` and has NO
 Subscriptions page; orange rows left out, user request), newest first, Date/time to the minute
 (yyyy-mm-dd hh:mm), `data-restint` +
 `data-res` tints; the Subscription cell opens the row's own page (its `href`, else the detail
-page through the subscriptions slugmap); the banner opens the report via `data-href`. (The
+page through the subscriptions slugmap); the banner opens the report via `data-href`. Since
+2026-10-01 (user request) the first column reads **Entity** and the table also lists the red
+hosts and logins no UC1 / UC3 (host) or UC2 / UC4 (login) subscription row of the table covers —
+`home_err_entities`, each linking its detail page; the rule is in CLAUDE.md. (The
 log-exports facts table, `write_log_facts`, went 2026-09-29 — the build report carries it.)
 Every status cell opens the **Entities view whose row
 count IS that figure** (columns Entity · Total · Seen % · OK % · Error · Warning · Ok — the

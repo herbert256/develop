@@ -3542,5 +3542,105 @@
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "name": "IT_SWIFT_INITECH",
     "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "9f88d2dc-aadd-4b16-b9df-8487d4af63c9",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/9f88d2dc-aadd-4b16-b9df-8487d4af63c9",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "8062b0cb-e074-420a-8956-19ebaed4fbea",
+        "name": "SCP_HR_PAYSLIP_VANDELAY_KEY",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PUBLIC_KEY",
+        "hosts": ["imports-edge.vandelay.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "HR_PAYSLIP_VANDELAY",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "941e4dfd-21ce-4936-876c-8aab20140665",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/941e4dfd-21ce-4936-876c-8aab20140665",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": null, "AllowIP2": null, "AllowIP3": null, "AllowIP4": null, "AllowIP5": null, "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "b323fde5-d064-4917-9358-a61b52a8b5ad",
+        "name": "SCP_HR_PENSION_VANDELAY_KEY",
+        "type": "SERVER", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PUBLIC_KEY",
+        "hosts": ["imports-edge.vandelay.example"], "port": 22,
+        "serverVerification": false, "storedPublicKey": "NO_PUBLIC_KEY"
+      }
+    ],
+    "credentials": [
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "HR_PENSION_VANDELAY",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "0ab0d238-9095-4311-97ec-aea5f6719887",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/0ab0d238-9095-4311-97ec-aea5f6719887",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "198.51.100.100", "AllowIP2": "198.51.100.101", "AllowIP3": "198.51.100.102", "AllowIP4": "198.51.100.215", "AllowIP5": "198.51.100.216", "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "690dfbf1-a9bc-47e6-a3db-d9e97525e298",
+        "name": "CCP_HR-EXPENSE-VANDELAY_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE030221", "loginName": "FE030221",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "0ab0d238-9095-4311-97ec-login00age", "name": "FE030221", "type": "LOGIN", "login": "FE030221", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "HR-EXPENSE-VANDELAY",
+    "tags": ["sample-estate"]
+  },
+  {
+    "businessId": "216d98e4-e231-401a-b251-72ae21227228",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/partners/216d98e4-e231-401a-b251-72ae21227228",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "customAttributes": {"AllowIP1": "198.51.100.100", "AllowIP2": "198.51.100.101", "AllowIP3": "198.51.100.102", "AllowIP4": "198.51.100.215", "AllowIP5": "198.51.100.216", "AllowIP6": null, "AllowIP7": null, "AllowIP8": null, "AllowIP9": null, "AllowIP10": null, "businessUnit": null, "partnerType": null},
+    "communicationProfiles": [
+      {
+        "businessId": "690dfbf1-a9bc-47e6-a3db-d9e97525e298",
+        "name": "CCP_HR-TIMESHEET-VANDELAY_PWD",
+        "type": "CLIENT", "protocol": "SFTP", "enabled": true,
+        "clientAuthentication": "PASSWORD",
+        "login": "FE030221", "loginName": "FE030221",
+        "fingerPrintVerified": false, "customAuthentication": false
+      }
+    ],
+    "credentials": [
+      {"businessId": "216d98e4-e231-401a-b251-login00age", "name": "FE030221", "type": "LOGIN", "login": "FE030221", "hasPassword": true,
+       "customAttributes": {"loginRestrictionPolicy": "Generic Whitelisting"}}
+    ],
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "name": "HR-TIMESHEET-VANDELAY",
+    "tags": ["sample-estate"]
   }
 ]

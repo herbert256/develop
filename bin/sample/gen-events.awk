@@ -787,6 +787,10 @@ FILENAME == CAL {
         NAL++; AL_A[NAL] = ACCT; AL_L[NAL] = LOGIN
         split(IPS, _aip, ";"); AL_IP[NAL] = _aip[1]
     }
+    # the orphan-red endpoint / login (estate.awk orphanhost / orphanlogin):
+    # remembered here, its one line planted in END
+    if (hastag("orphanhost") && OH_HOST == "") OH_HOST = HOST
+    if (hastag("orphanlogin") && OL_LOGIN == "") OL_LOGIN = LOGIN
     REASON = tagval("reason")
     OLDNAME = tagval("rename")
     VCLASS = "hourly"
@@ -897,6 +901,16 @@ function monitor_days(   ci, jd, base, q, dt) {
 
 END {
     env_ambient()
+    # THE ORPHAN-RED HOST and LOGIN (2026-10-01, estate.awk): three days
+    # before the data ends, ONE E-level line on the shared entity that names
+    # no flow and no account, on a session no other line uses — so no pass of
+    # result.sh _build_ringattr can attribute it, and its ring owner keeps it
+    # (orphan_red): no OK File since, so the entity goes RED. Neither line is
+    # about the connection itself ("No Dir", "Stream read/write error"), so
+    # the loose join of a SHARED owner never reddens the two quiet flows.
+    # Fixed times and session ids: no PRNG draw, nothing else moves.
+    if (OH_HOST != "") S((J1 - 3) * 86400000 + 37230456, "E", "TM", fixsid("4f5250484f5354", J1), "Error during transfer operation: No such file: /inbound/archive on remote host " OH_HOST)
+    if (OL_LOGIN != "") S((J1 - 3) * 86400000 + 41430789, "E", "TM", fixsid("4f52504c4f47", J1), "[Ssh Default] Stream read/write error. Exception message is: session of user " OL_LOGIN " closed by the peer")
     # UC2 expiry queue -> the sweep's deletion S rows (03:0x, account + basenames)
     for (i = 1; i <= NEXPQ; i++) {
         split(EXPQ[i], a, "\t")

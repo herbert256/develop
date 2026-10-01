@@ -4460,5 +4460,121 @@
     "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
     "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
     "type": "Subscription"
+  },
+  {
+    "businessId": "5db817ac-594d-4013-a1dd-712c19f294c2",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/5db817ac-594d-4013-a1dd-712c19f294c2",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_HR_PAYSLIP_VANDELAY",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "5db817ac-594d-4013-a1dd-0000par00000", "name": "HR_PAYSLIP_VANDELAY", "comProfileId": "8062b0cb-e074-420a-8956-19ebaed4fbea",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "5db817ac-594d-4013-a1dd-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "HR_PAYSLIP_VANDELAY",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/HR_PAYSLIP_VANDELAY/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "2d58f698-8470-4f2a-b25e-cefd4d2e3b07",
+    "flowName": "UC1_HR_PAYSLIP_VANDELAY",
+    "tags": ["BL_HR", "sample-estate"],
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "e30be9fa-3d04-4d9f-9708-0b2c7aaa4f94",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/e30be9fa-3d04-4d9f-9708-0b2c7aaa4f94",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC1_HR_PENSION_VANDELAY",
+    "patternName": "APP_CFT_PESIT_PUSH_ST_HYBRID_PUSH_PARTNER",
+    "participants": [
+      {"businessId": "e30be9fa-3d04-4d9f-9708-0000par00000", "name": "HR_PENSION_VANDELAY", "comProfileId": "b323fde5-d064-4917-9358-a61b52a8b5ad",
+       "role": "target", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "e30be9fa-3d04-4d9f-9708-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "HR_PENSION_VANDELAY",
+      "source_folder_monitoring_scan_dir": "/data/cft/out/HR_PENSION_VANDELAY/in",
+      "source_folder_monitoring_time_between_scans": "60",
+      "source_folder_monitoring_state": "Active",
+      "hybrid_partner_sftp_relay0_send_remote_directory": "/"
+    },
+    "flowId": "337c41fc-270b-4694-8f83-f9a88962b9bf",
+    "flowName": "UC1_HR_PENSION_VANDELAY",
+    "tags": ["BL_HR", "sample-estate"],
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "09db2cdc-5f08-43d7-b567-757717725855",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/09db2cdc-5f08-43d7-b567-757717725855",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_HR_EXPENSE_VANDELAY",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "09db2cdc-5f08-43d7-b567-0000par00000", "name": "HR-EXPENSE-VANDELAY", "comProfileId": "690dfbf1-a9bc-47e6-a3db-d9e97525e298",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "09db2cdc-5f08-43d7-b567-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "HR_EXPENSE_VANDELAY",
+      "target_working_dir": "/data/cft/in/HR-EXPENSE-VANDELAY",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "b8c324a8-a40b-4ebd-9a9e-09bc206f5b58",
+    "flowName": "UC4_HR_EXPENSE_VANDELAY",
+    "tags": ["BL_HR", "sample-estate"],
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
+  },
+  {
+    "businessId": "09db2cdc-5f08-43d7-b567-757717725855",
+    "meta": {
+      "href": "https://flowmanager.acme.example:443/api/v2/subscriptions/09db2cdc-5f08-43d7-b567-757717725855",
+      "createdTimestamp": 1780000000000,
+      "modifiedTimestamp": 1787000000000
+    },
+    "name": "UC4_HR_TIMESHEET_VANDELAY",
+    "patternName": "C0003_HYBRID_PUSH_PARTNER_ST_CFT_PESIT_PUSH_APP",
+    "participants": [
+      {"businessId": "09db2cdc-5f08-43d7-b567-0000par00000", "name": "HR-TIMESHEET-VANDELAY", "comProfileId": "690dfbf1-a9bc-47e6-a3db-d9e97525e298",
+       "role": "source", "protocol": "SFTP", "participantType": "partner"},
+      {"businessId": "09db2cdc-5f08-43d7-b567-0000hub00000", "name": "g2c_hub", "comProfileId": null,
+       "role": "hub", "protocol": "PESIT", "participantType": "application"}
+    ],
+    "parameters": {
+      "customAttribute_FlowIdentifier": "HR_TIMESHEET_VANDELAY",
+      "target_working_dir": "/data/cft/in/HR-TIMESHEET-VANDELAY",
+      "target_target_file_name": "&NFNAME",
+      "hybrid_partner_sftp_relay0_receive_remote_directory": "/outbox",
+      "hybrid_partner_sftp_relay0_receive_file_filter_expression": "*"
+    },
+    "flowId": "b8c324a8-a40b-4ebd-9a9e-09bc206f5b58",
+    "flowName": "UC4_HR_TIMESHEET_VANDELAY",
+    "tags": ["BL_HR", "sample-estate"],
+    "status": {"code": "DEPLOYED", "timestamp": 1787000000000},
+    "domains": [{"businessId": "c25c8684-4ecc-40fc-9d8b-85e39cbf91f2", "name": "Default"}],
+    "type": "Subscription"
   }
 ]
