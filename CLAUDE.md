@@ -1880,6 +1880,12 @@ front end) then four fix workers with disjoint files. The rules it left:
   makes the plain id the File Tracking link (`input/coreid-url.txt`) and adds the ↗ only after an id that already is
   a link — so no ↗. sub-files.js and all-files-search.js build the CoreId cell without the page link the same way;
   Longest Files no longer bakes one. A row-drill row keeps the old way (its file name links nothing).
+- **Skipped = skip.txt only** (user decision, option A): the "No subscription / http / empty probe" table and its
+  STAT box left the page. The records the parse sets aside before any File is formed (`data/transfer/_skipped.csv`)
+  are listed by ONE helper, `bin/transfer/dropped-records.sh` `dropped_rows nosub|probe`: Unknown transfers' table 3
+  "No subscription / http — records not counted" (left out when empty — the sample has none) and One-legged ›
+  Details' stacked "Empty ssh probes — records not counted" (TABLE modifier `tab=details` on both tables). Not Files:
+  no count, colour or File page — the 2026-09-08 probe rule stands.
 - **Missing entities** (all five tables): a **Last date/time** column — the newest mention (the first of the row's
   newest-first log lines); full-period (RECALC `-`), the TOTAL cell empty.
 

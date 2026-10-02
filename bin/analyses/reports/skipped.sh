@@ -126,73 +126,14 @@ awk -F'\t' -v cfg="$CFG_SKIP" -v skf="$SKIPFILE" -v tfile="$T_SKIP" -v sfile="$S
     }
 ' </dev/null
 
-# ---- the NO-SUBSCRIPTION / HTTP skip table (data/transfer/_skipped.csv:
-# the RAW input lines of the CoreIds bin/transfer/parse.sh dropped because no
-# leg carried a subscription OR an account — a group with an account keeps
-# the site "Unknown" (the synthetic "UCx_<account>" 2026-08..09-29) and
-# counts, listed by Unknown transfers — or because a leg
-# ran over http). Tokenize each
-# raw CSV line into readable columns and splice the table into skipped.rpt
-# just before its SUMMARY line (plus a 5th STAT box after the existing four).
-RAW_SKIP="$DATA/transfer/_skipped.csv"
-rows_tmp="$REPORTS_DIR/skipped.rows.tmp.$$"
-# clean the temps on ANY exit (unmatched globs stay literal; rm -f ignores
-# them)
-trap 'rm -f "$rows_tmp" "$REPORTS_DIR"/skipped.rpt.tmp*' EXIT
-if [ -f "$RAW_SKIP" ] && [ -s "$RAW_SKIP" ]; then
-    awk "$AWKLIB"'
-        # (lit() — a raw name kept literal, audit 2026-09-29 F07 — comes from bin/fmt.awk via $AWKLIB)
-        function f(line, want,    n, i, c, q, cur) {
-            n = 0; cur = ""; q = 0
-            for (i = 1; i <= length(line); i++) {
-                c = substr(line, i, 1)
-                if (q) { if (c == "\"") { if (substr(line, i+1, 1) == "\"") { cur = cur "\""; i++ } else q = 0 } else cur = cur c }
-                else { if (c == "\"") q = 1
-                       else if (c == ",") { n++; if (n == want) return cur; cur = "" }
-                       else cur = cur c }
-            }
-            n++; return (n == want) ? cur : ""
-        }
-        # pass 1: which CoreIds have an http leg, and how many raw lines each
-        # CoreId has; pass 2: emit sortable rows. Reason precedence: http, then
-        # the EMPTY OUTBOUND SSH PROBE (2026-09-08: the CoreId is one lone
-        # Outbound ssh record of size 0 whose Application field reads "none"
-        # or is empty — bin/transfer/parse.sh drops it as no file at all),
-        # else no subscription.
-        FNR == NR { if (f($0, 20) == "http") ht[f($0, 34)] = 1; nl[f($0, 34)]++; next }
-        {
-            ts = f($0, 23); cid = f($0, 34)
-            split(ts, dt, " "); split(dt[1], m, "/")
-            iso = (m[3] != "" ? sprintf("%04d-%02d-%02d", m[3], m[1], m[2]) : dt[1])
-            app = tolower(f($0, 6))
-            probe = (nl[cid] == 1 && f($0, 8) == "Outbound" && f($0, 20) == "ssh" && (f($0, 19) + 0) == 0 && (app == "none" || app == ""))
-            reason = (cid in ht) ? "http" : (probe ? "empty ssh probe" : "no subscription")
-            printf "%s %s\tROW\t%s %s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
-                iso, dt[2], iso, dt[2], reason, f($0, 1), f($0, 2), f($0, 3), \
-                f($0, 8), f($0, 20), lit(f($0, 15)), f($0, 19), cid
-        }
-    ' "$RAW_SKIP" "$RAW_SKIP" | LC_ALL=C sort -r | cut -f2- > "$rows_tmp"
-else
-    : > "$rows_tmp"
-fi
-nraw=$(grep -c . "$rows_tmp" || true)
-awk -v rowsfile="$rows_tmp" -v nraw="$nraw" '
-    /^STAT\t/ { print; laststat = 1; next }
-    laststat { printf "STAT\twhite\t%d\tSkipped no-subscription / http / probe lines\n", nraw; laststat = 0 }
-    /^SUMMARY\t/ && !spliced {
-        printf "TABLE\tNo subscription / http / empty probe — skipped transfer records\twide\n"
-        printf "HEAD\tDate & time\tReason\tStatus\tAccount\tLogin\tDirection\tProtocol\tFile\tSize\tCoreId\n"
-        printf "KIND\ttext\ttext\ttext\ttext\ttext\ttext\ttext\tfile\tnum\tmono\n"
-        n = 0
-        while ((getline l < rowsfile) > 0) { print l; n++ }
-        close(rowsfile)
-        if (n == 0) printf "ROW\t(none — every CoreId got a subscription attributed, none ran over http and none was an empty outbound ssh probe)\t\t\t\t\t\t\t\t\t\n"
-        printf "TOTAL\tTotal (%d record(s))\t\t\t\t\t\t\t\t\t\n", n
-        spliced = 1
-    }
-    { print }
-' "$REPORTS_DIR/skipped.rpt.tmp" > "$REPORTS_DIR/skipped.rpt.tmp.$$"
-mv "$REPORTS_DIR/skipped.rpt.tmp.$$" "$REPORTS_DIR/skipped.rpt"
-rm -f "$rows_tmp" "$REPORTS_DIR/skipped.rpt.tmp"
+# (The NO-SUBSCRIPTION / HTTP / EMPTY PROBE table — the raw records
+# bin/transfer/parse.sh sets aside in data/transfer/_skipped.csv before any
+# File is formed — and its STAT box left this page 2026-10-02, user request:
+# "Rows that are not because of skip.txt must go to /transfer/unknown-
+# transfers.html or to /transfer/pirates-details.html". No skip.txt rule is
+# involved in them: Unknown transfers lists the no-subscription / http
+# records, One-legged › Details the empty ssh probes —
+# bin/transfer/dropped-records.sh.)
+mv "$REPORTS_DIR/skipped.rpt.tmp" "$REPORTS_DIR/skipped.rpt"
 
-echo "Data written to $REPORTS_DIR/skipped.rpt ($nraw no-subscription/http line(s))." >&2
+echo "Data written to $REPORTS_DIR/skipped.rpt." >&2

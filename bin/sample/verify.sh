@@ -437,7 +437,9 @@ fi
 # the EMPTY OUTBOUND SSH PROBES (2026-09-08, user request): the tagged
 # flow's lone Outbound ssh 0-byte records with Application "none" are
 # dropped from both caches (never a one-legged Failed File), set aside in
-# _skipped.csv, and the Skipped report lists them under their own reason
+# _skipped.csv, and One-legged › Details lists them in its stacked "Empty ssh
+# probes" table (2026-10-02, user request — the Skipped page until then, which
+# keeps only the skip.txt tables now)
 if [ "$(exp sshprobe)" -gt 0 ]; then
     n=$(awk -F'\t' '$2=="Outbound" && $10=="ssh" && ($9+0)==0 && tolower($25)=="none" { c[$1]++ } END { for (k in c) n++; print n+0 }' "$T")
     check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "$n probe CoreId(s) (Outbound ssh, size 0, Application none) survived in _transfers.tsv"
@@ -445,8 +447,10 @@ if [ "$(exp sshprobe)" -gt 0 ]; then
     check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "$n probe record(s) survived in _transfers.tsv"
     n=$(command grep -c ',"none",' "data/transfer/_skipped.csv" 2>/dev/null || true)
     check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "_skipped.csv holds no Application-none record (the planted probes were not set aside)"
-    n=$(awk -F'\t' '$1=="ROW" && $3=="empty ssh probe" { n++ } END { print n+0 }' "data/transfer/reports/skipped.rpt" 2>/dev/null)
-    check $([ "${n:-0}" -gt 0 ] && echo 0 || echo 1) "skipped.rpt lists no 'empty ssh probe' row"
+    np=$(command grep -c ',"none",' "data/transfer/_skipped.csv" 2>/dev/null || true)
+    n=$(awk -F'\t' '$1 == "TABLE" { t = ($2 ~ /^Empty ssh probes/ && $0 ~ /\ttab=details(\t|$)/) } t && $1 == "ROW" { n++ } END { print n + 0 }' "data/transfer/reports/pirates.rpt" 2>/dev/null)
+    check $([ "${n:-0}" -gt 0 ] && [ "$n" -le "${np:-0}" ] && grep -q '<h2>Empty ssh probes' docs/transfer/pirates-details.html 2>/dev/null && echo 0 || echo 1) "pirates.rpt: ${n:-0} Empty ssh probes row(s) (of ${np:-0} set-aside Application-none record(s)), or the table is not on the Details page"
+    check $(! grep -q 'empty ssh probe\|No subscription / http' data/transfer/reports/skipped.rpt 2>/dev/null && ! grep -q 'No subscription / http / empty probe' docs/transfer/skipped.html 2>/dev/null && echo 0 || echo 1) "skipped.rpt / skipped.html still carry the no-subscription / http / probe records"
     n=$(awk -F'\t' 'NF < 25 { n++ } END { print n+0 }' "$T")
     check $([ "${n:-0}" -eq 0 ] && echo 0 || echo 1) "$n _transfers.tsv row(s) short of 25 columns"
 fi

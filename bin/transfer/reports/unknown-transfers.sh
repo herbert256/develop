@@ -30,6 +30,13 @@
 # dated Unknown File) and the WHOLE row opens it (rowlink + @data:href).
 # Table 2, one row per account: Files, OK, Error (the outcome policy: Error =
 # Failed or Expired), First / Last start.
+# Table 3 (2026-10-02, user request — it was a table of the Skipped page):
+# "No subscription / http — records not counted", the raw transfer records the
+# parse set aside BEFORE any File was formed: no subscription and no account
+# on any leg, or an http leg (bin/transfer/dropped-records.sh dropped_rows
+# nosub) — Date & time · Reason · Status · Account · Login · Direction ·
+# Protocol · File · Size · CoreId, newest first. Not Files: no count, colour
+# or File page rests on them. Left out when there are none.
 # The account rows tint by the ACCOUNT's result colour (base/_accounts.tsv
 # col 3; restint — 2026-09-30 audit A2-03). Default sorts: table 1 on
 # Date/time (column 0), table 2 on Files (column 1), descending (audit A2-02:
@@ -49,6 +56,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
+source "$SCRIPT_DIR/../dropped-records.sh"   # dropped_rows: the records the parse set aside (table 3)
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/unknown-transfers.rpt"
 
@@ -140,6 +148,15 @@ T=$(printf '\t')
         printf 'ROW\t@{colspan=6}No unknown transfers in this data window.\n'
     fi
     printf 'TOTAL\tTotal (%s account(s))\t@{class=num}%s\t@{class=num processed}%s\t@{class=num failed}%s\t\t\n' "${na:-0}" "${nf:-0}" "${tok:-}" "${terr:-}"
+    # table 3 — the set-aside records (see the header)
+    drows=$(dropped_rows nosub)
+    if [ -n "$drows" ]; then
+        printf 'TABLE\tNo subscription / http — records not counted\twide\tsort=0:-1\n'
+        printf 'HEAD\tDate & time\tReason\tStatus\tAccount\tLogin\tDirection\tProtocol\tFile\tSize\tCoreId\n'
+        printf 'KIND\ttext\ttext\ttext\ttext\ttext\ttext\ttext\tfile\tnum\tmono\n'
+        printf '%s\n' "$drows"
+        printf 'TOTAL\tTotal (%s record(s))\t\t\t\t\t\t\t\t\t\n' "$(printf '%s\n' "$drows" | grep -c .)"
+    fi
     printf 'FOOT\n'
 } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 

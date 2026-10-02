@@ -1,19 +1,17 @@
 <h1>Skipped</h1>
 <h2>What it shows</h2>
 <ul>
-<li>What the <strong>skip list</strong> removed at parse time &mdash; accounts, subscriptions, logins and the log lines set aside with them &mdash; plus the raw transfer records dropped for other reasons. No other report, detail page or search counts them.</li>
-<li>Six boxes: skipped <strong>accounts</strong>, <strong>subscriptions</strong>, <strong>logins</strong>, <strong>transfer log lines</strong>, <strong>server log lines</strong> and <strong>no-subscription / http / probe lines</strong>.</li>
+<li>What the <strong>skip list</strong> removed at parse time &mdash; accounts, subscriptions, logins and the log lines set aside with them. No other report, detail page or search counts them.</li>
+<li>Five boxes: skipped <strong>accounts</strong>, <strong>subscriptions</strong>, <strong>logins</strong>, <strong>transfer log lines</strong> and <strong>server log lines</strong>.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
 <li><strong>Skip rules</strong> &mdash; Rule, then what it caught: Accounts, Subscriptions, Logins, Transfer log lines, Server log lines.</li>
 <li><strong>Skipped accounts</strong> / <strong>subscriptions</strong> / <strong>logins</strong> &mdash; the name and the <strong>Rule</strong> that caught it.</li>
-<li><strong>No subscription / http / empty probe</strong> &mdash; the dropped raw records: Date &amp; time, <strong>Reason</strong>, Status, Account, Login, Direction, Protocol, File, Size, CoreId.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
 <li>The rules are <code>input/skip.txt</code>, one token per line, this checkout&rsquo;s own; edit it and rebuild.</li>
 <li>Configuration names match on a case-insensitive <strong>substring</strong> (<code>CRG</code> matches <code>IPO_CRG-OK01_RABOBANK</code>); log records follow the rule kind (contains, exact or regex). A skipped login loses its detail page; to hide it from the server log too, use an <code>any</code> rule.</li>
-<li>Reasons: <strong>http</strong> = the CoreId has an http leg (web-UI traffic); <strong>empty ssh probe</strong> = one lone outbound ssh record of size 0, Application <code>none</code>; otherwise <strong>no subscription</strong> = no leg carried a subscription or account.</li>
-<li>A record with an account but no subscription is kept, with subscription <strong>Unknown</strong>: a routing gap to investigate, listed on <a href="../transfer/unknown-transfers.html">Unknown transfers</a>.</li>
+<li>Records dropped for other reasons are listed where they belong: no subscription or account, or an http leg, on <a href="unknown-transfers.html">Unknown transfers</a>; an empty ssh probe on <a href="pirates.html">One-legged</a>.</li>
 </ul>

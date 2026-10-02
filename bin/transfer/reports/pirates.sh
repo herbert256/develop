@@ -31,6 +31,15 @@
 #     the site-wide slugof over the C-sorted names, numeric bump on a clash.
 #     Rendered by bin/transfer/publish.sh.
 #
+# THE EMPTY SSH PROBES (2026-10-02, user request — a table of the Skipped page
+# until then): stacked UNDER the Details table on the same tab page (TABLE
+# modifier tab=details on both), "Empty ssh probes — records not counted":
+# the lone Outbound ssh records of size 0 the parse set aside before any File
+# was formed (bin/transfer/dropped-records.sh dropped_rows probe) — Date &
+# time · Status · Account · Login · Direction · Protocol · File · Size ·
+# CoreId, newest first. No File, no count, no colour, no File page. Left out
+# when there are none.
+#
 # Usage:
 #   ./pirates.sh   # reads input/*.csv (via the caches), writes data/pirates.rpt
 #
@@ -42,6 +51,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # because it reads the transfer caches (its page, if any, is placed by the one
 # Reports menu — _report_groups). bin/transfer/reports.sh still runs it.
 source "$SCRIPT_DIR/../lib.sh"
+source "$SCRIPT_DIR/../dropped-records.sh"   # dropped_rows: the empty ssh probes the parse set aside
 mkdir -p "$REPORTS_DIR"
 OUT="$REPORTS_DIR/pirates.rpt"
 PSUB="$REPORTS_DIR/pirates"
@@ -119,7 +129,7 @@ pd=$(printf '%s\n' "$agg" | awk -F'\t' '
 
     # ---- tab 1: Details — per-subscription rollup of the single-leg transfers ----
     if [ "$n_total" -eq 0 ]; then
-        printf 'TABLE\tDetails\tnofilter\tnosort\n'
+        printf 'TABLE\tDetails\tnofilter\tnosort\ttab=details\n'
         printf 'HEAD\tSubscription\tOne-legged Files\tFirst date\tLast date\n'
         printf 'KIND\tsite\tnumfailed\ttext\ttext\n'
         printf 'ROW\t(none)\t\t\t\n'
@@ -131,7 +141,7 @@ pd=$(printf '%s\n' "$agg" | awk -F'\t' '
         # with none in the range hides; First / Last date stay full-period (the
         # site rule). The WHOLE row opens the subscription page (rowlink +
         # @data:href, 2026-10-01 — the File drill went)
-        printf 'TABLE\tDetails\trowlink\n'
+        printf 'TABLE\tDetails\trowlink\ttab=details\n'
         printf 'HEAD\tSubscription\tOne-legged Files\tFirst date\tLast date\n'
         printf 'KIND\tsite\tnumfailed\ttext\ttext\n'
         printf 'RECALC\t-\ts0\t-\t-\n'
@@ -156,6 +166,16 @@ pd=$(printf '%s\n' "$agg" | awk -F'\t' '
                 BEGIN { while ((getline l < slugs) > 0) { split(l, a, "\t"); SL[a[1]] = a[2] } close(slugs) }
                 { printf "ROW\t%s\t%s\t%s\t%s\t@data:buckets=%s%s\n", $2, $1, $3, $4, $5, (($2 in SL) ? "\t@data:href=pirates/" SL[$2] ".html" : ""); t += $1 }
                 END { printf "TOTAL\tTotal (%d subscription(s))\t@{class=num failed}%d\t\t\n", NR, t }'
+    fi
+
+    # ---- tab 1, stacked: the empty ssh probes (see the header) ----
+    drows=$(dropped_rows probe)
+    if [ -n "$drows" ]; then
+        printf 'TABLE\tEmpty ssh probes — records not counted\twide\tsort=0:-1\ttab=details\n'
+        printf 'HEAD\tDate & time\tStatus\tAccount\tLogin\tDirection\tProtocol\tFile\tSize\tCoreId\n'
+        printf 'KIND\ttext\ttext\ttext\ttext\ttext\ttext\tfile\tnum\tmono\n'
+        printf '%s\n' "$drows"
+        printf 'TOTAL\tTotal (%s record(s))\t\t\t\t\t\t\t\t\n' "$(printf '%s\n' "$drows" | grep -c .)"
     fi
 
     # ---- tab 2: Per day — the one-legged Files per day ("Top view" until
