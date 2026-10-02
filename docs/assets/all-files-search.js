@@ -208,7 +208,10 @@
         var h = "../files/" + r.cid + ".html";
         tr.setAttribute("data-href", h);
         cell(tr, "", when, h); cell(tr, "", sn, h); cell(tr, "", st, h);
-        cell(tr, "num", hb(r.by), h); cell(tr, "file", r.nm, h, true); cell(tr, "mono", r.cid, h, true);
+        // the CoreId never takes the File-page link (2026-10-02, user
+        // request: the file name links /files/, the CoreId the File Tracking
+        // URL — report.js addCoreIdLinks turns the plain id into it, no ↗)
+        cell(tr, "num", hb(r.by), h); cell(tr, "file", r.nm, h, true); cell(tr, "mono", r.cid, "", true);
       } else {                                              // else the subscription page
         var dh = slug ? "../details/subscriptions/" + slug + ".html" : "";
         cell(tr, "", when, ""); cell(tr, "", sn, dh); cell(tr, "", st, "");
