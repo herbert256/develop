@@ -184,7 +184,7 @@ CUR_DATES=""
 
 # Ordered report basenames per area (defines index order; the .rpt files are the
 # actual catalog — a page's title comes from its file's TITLE).
-transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search activity cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage skipped not-in-flow-manager ranking files failed episodes failed-files unknown-transfers waiting-expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell duration-all)
+transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search activity cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage skipped not-in-flow-manager ranking files failed episodes failed-files unknown-transfers waiting-expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell)
 server_order=(topview errors failure-flows io-errors routing-errors uc-status polling missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab); site-failures one since 2026-09-28 (its rows = the Per flow connection-failure rows); routing-errors = the 2026-09-28 merge of could-not-send, publish-failed and post-client-action
 
 # ---- the analyses-housed area reports ---------------------------------------
@@ -325,7 +325,7 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         failed) echo "Failed Subscriptions" ;; failing-reasons) echo "Error reasons" ;; episodes) echo "Recovered flows" ;; waiting-expired) echo "Waiting & Expired" ;; pirates) echo "One-legged" ;; went-quiet) echo "Went quiet" ;; failure-heatmap) echo "Failure heatmap" ;; not-in-flow-manager) echo "Not in Flow Manager" ;;
         protocol) echo "Direction & Mode" ;;   # "Protocol, Direction & Mode" until 2026-09-30
         ranking) echo "Ranking" ;;
-        duration|duration-all) echo "Duration" ;; duration-longest) echo "Longest Files" ;;
+        duration) echo "Duration" ;; duration-longest) echo "Longest Files" ;;
         duration-dwell) echo "Store-and-forward" ;;   # "Distribution & Store-and-forward" until 2026-09-30 (its Duration distribution table moved to Duration)
         security-params) echo "Security Parameters" ;; av-scan) echo "AV Scan" ;;
     esac
@@ -585,7 +585,7 @@ render_rpt() {   # $1 rpt  $2 out-html  $3 css_href  $4 (unused)  $5 (unused)  [
     # callers use for the CSS depth, so no caller needs a new argument.
     local rarea=""
     case $out in
-        "$DOCS"/transfer/*|"$DOCS"/details/*|"$DOCS"/resubmit/*|"$DOCS"/recovered/*|"$DOCS"/search/all-files.html) rarea="transfer" ;;   # all-files.html: the shared transfer From/To (2026-09-27)
+        "$DOCS"/transfer/*|"$DOCS"/details/*|"$DOCS"/resubmit/*|"$DOCS"/recovered/*|"$DOCS"/not-in-fm/*|"$DOCS"/search/all-files.html) rarea="transfer" ;;   # all-files.html: the shared transfer From/To (2026-09-27)
         "$DOCS"/server/*)                     rarea="server" ;;
     esac
     # (a page outside those trees that carries a date list — the analyses
@@ -881,7 +881,6 @@ help_slug_for() {   # $1 area (transfer|server)  $2 report basename
         account|login|subscription|remote-host|logical|partner|application|domain|bl) echo "entities-$n" ;;
         failed-files)                                                   echo "failed-files" ;;   # its own page (2026-09-29 fix: failed-* below caught it)
         failed-*)                                                       echo "failed" ;;    # the Failed Subscriptions view pages share one help page
-        duration-all)     echo "duration" ;;  # the All-transfers sibling view shares the Duration help page (the Min/Avg/Max pages are gone, 2026-09-13)
         cross-*)                                                        echo "cross-reference" ;;
         missing-entities)    echo "server-unknown-entities" ;;   # the merged report keeps the unknown-* family help page
         # the 2026-07 merged reports keep one component's existing help page

@@ -463,7 +463,7 @@ write_first_seen_page() {
         if [ -z "$1" ] || [ "$1" = 0 ]; then printf '<td class="num"></td>'; return; fi
         esc "$(dotify "$1")"
         local ek="" ev=""
-        case $2 in logicals) ek=logical ;; partners) ek=partner ;; subscriptions) ek=subscription ;; accounts) ek=account ;; logins) ek=login ;; hosts) ek=remote-host ;; esac
+        case $2 in logicals) ek=logical ;; partners) ek=partner ;; subscriptions) ek=subscription ;; accounts) ek=account ;; logins) ek=login ;; hosts) ek=remote-host ;; domains) ek=domain ;; applications) ek=application ;; bl) ek=bl ;; esac
         case $3 in total) ev=all ;; seen) ev=seen ;; notseen) ev=not-seen ;; esac
         if [ -n "$ek" ] && [ -n "$ev" ] && [ -f "$DOCS/transfer/entities/$ek-$ev.html" ]; then
             printf '<td class="num"><a href="../transfer/entities/%s-%s.html">%s</a></td>' "$ek" "$ev" "$ESC"
@@ -473,18 +473,20 @@ write_first_seen_page() {
             printf '<td class="num">%s</td>' "$ESC"
         fi
     }
-    local members=(logicals partners subscriptions accounts logins hosts)
+    local members=(logicals partners subscriptions accounts logins hosts domains applications bl)
     # the DISPLAY order (2026-10-01, user request: "Make subscriptions the
-    # first column, make partners the second column"): positions into
-    # members / the .rpt fields (which keep their order)
-    local order=(3 2 1 4 5 6) o
+    # first column, make partners the second column"; 2026-10-02, user
+    # request: "have a column for every of the 9 entities" — Domains,
+    # Applications and BL after Hosts, the Entities row's own tail order):
+    # positions into members / the .rpt fields (which keep their order)
+    local order=(3 2 1 4 5 6 7 8 9) o
     {
         html_head "First seen" "../assets/style.css" "" "ANALYSES" "first-seen"
         printf '<h1>First seen</h1>\n'
         # NOT class="index": index tables get report.js whole-row links, which
         # would make the Date cell navigate to the row's first cell page.
         printf '<div class="tablewrap"><table class="fit" data-nosort="1">\n'
-        local thead='<tr><th>Date</th><th class="num">Subscriptions</th><th class="num">Partners</th><th class="num">Logical</th><th class="num">Accounts</th><th class="num">Logins</th><th class="num">Hosts</th></tr>'
+        local thead='<tr><th>Date</th><th class="num">Subscriptions</th><th class="num">Partners</th><th class="num">Logical</th><th class="num">Accounts</th><th class="num">Logins</th><th class="num">Hosts</th><th class="num">Domains</th><th class="num">Applications</th><th class="num">BL</th></tr>'
         printf '%s\n' "$thead"
         # the Total row renders TWICE — above the Not seen row and as the
         # footer — so the column totals are in view from the top
@@ -494,20 +496,20 @@ write_first_seen_page() {
             for o in "${order[@]}"; do eval "fscell \"\$t$o\" ${members[$((o-1))]} ${kp}total"; done
             printf '</tr>\n'
         }
-        local t1 t2 t3 t4 t5 t6
-        IFS=$'\t' read -r _ t1 t2 t3 t4 t5 t6 <<<"$(grep -m1 $'^TOTAL\t' "$rpt")"
+        local t1 t2 t3 t4 t5 t6 t7 t8 t9
+        IFS=$'\t' read -r _ t1 t2 t3 t4 t5 t6 t7 t8 t9 <<<"$(grep -m1 $'^TOTAL\t' "$rpt")"
         total_row
-        local tag d v1 v2 v3 v4 v5 v6 i
-        while IFS=$'\t' read -r tag d v1 v2 v3 v4 v5 v6; do
+        local tag d v1 v2 v3 v4 v5 v6 v7 v8 v9 i
+        while IFS=$'\t' read -r tag d v1 v2 v3 v4 v5 v6 v7 v8 v9; do
             case $tag in
                 SEEN)
                     # SEEN/NOTSEEN carry no date column: shift the read fields
-                    v6=$v5; v5=$v4; v4=$v3; v3=$v2; v2=$v1; v1=$d
+                    v9=$v8; v8=$v7; v7=$v6; v6=$v5; v5=$v4; v4=$v3; v3=$v2; v2=$v1; v1=$d
                     printf '<tr data-res="green"><td>Seen</td>'
                     for o in "${order[@]}"; do eval "fscell \"\$v$o\" ${members[$((o-1))]} ${kp}seen"; done
                     printf '</tr>\n' ;;
                 NOTSEEN)
-                    v6=$v5; v5=$v4; v4=$v3; v3=$v2; v2=$v1; v1=$d
+                    v9=$v8; v8=$v7; v7=$v6; v6=$v5; v5=$v4; v4=$v3; v3=$v2; v2=$v1; v1=$d
                     printf '<tr data-res="orange"><td>Not seen</td>'
                     for o in "${order[@]}"; do eval "fscell \"\$v$o\" ${members[$((o-1))]} ${kp}notseen"; done
                     printf '</tr>\n' ;;

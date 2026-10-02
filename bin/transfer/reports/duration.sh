@@ -6,16 +6,13 @@
 # the transfer's WALL-CLOCK span in milliseconds (first row's start to the last
 # row's end, gaps included), NOT the sum of the row durations.
 #
-# TWO views along one selector (the pair of buttons is a NAV group):
-#   "Delivered Files" / "All Files" — the scope:
-#     OK  = outcome Processed only (the default). Error transfers (mostly
-#           short attempts or long retry spans) are excluded so they do not skew
-#           every statistic.
-#     All = every outcome with a measured duration, so a failed transfer's
-#           run time (e.g. a 2h timeout) counts too.
-#   - duration.rpt       OK
-#   - duration-all.rpt   All (renders beside duration.html, not as a separate
-#                        menu/index entry)
+# ONE view: the OK Files — outcome Processed (delivered) only. Error
+# transfers (mostly short attempts or long retry spans) are excluded so they
+# do not skew every statistic. (The "All Files" view, duration-all.rpt, and
+# the Delivered Files / All Files button pair went 2026-10-02, user request:
+# "Remove the second selection buttons Delivered Files & All Files, it must
+# only work with OK files".)
+#   - duration.rpt
 #
 # Tables (per view, SIDE BY SIDE):
 #   Duration per day — percentiles: Date · Files | Median · Average | p10 /
@@ -25,10 +22,14 @@
 #     gsep= dividers; Min and Max went, Max = p100). FIRST: the home per-day
 #     table reads its p50/p75/p90/p95/p99 by title + position
 #     (bin/build/publish.sh: ROW fields 8/9/10/11/13).
-#   Duration distribution — the wall-clock bands of THIS view's Files (moved
+#   Duration distribution — the wall-clock bands of the OK Files (moved
 #     here from Distribution & Store-and-forward 2026-09-30, user request —
-#     duration-distribution.sh folded in; each scope page shows its own
-#     scope, so the Delivered / All switch went with it).
+#     duration-distribution.sh folded in). TABLE modifier `rowday`
+#     (2026-10-02, user request: "if called with the axway_row parameter, the
+#     Duration distribution table must be about that day only"): opened with
+#     ?axway_row=<date> — the home Duration cells — report.js re-aggregates
+#     it for that one day while the per-day table keeps the full range with
+#     the day marked.
 # (The Top longest Files moved to their own page 2026-09-03 —
 # duration-longest.sh; the slowest subscriptions by p95 went to
 # duration-slowest.sh 2026-09-05, a page since retired.)
@@ -38,7 +39,7 @@
 # total. The Files count IS additive and re-totals.
 #
 # Usage:
-#   ./duration.sh    # reads input/*.csv (via the cache), writes data/duration{,-all}.rpt
+#   ./duration.sh    # reads input/*.csv (via the cache), writes data/transfer/reports/duration.rpt
 #
 set -euo pipefail
 
@@ -199,7 +200,7 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
     if [ -z "$agg" ]; then
         {
             printf 'TITLE\tDuration\n'
-            printf '%s\n' "$NAVLINE"
+            [ -n "$NAVLINE" ] && printf '%s\n' "$NAVLINE"
             printf 'TABLE\tTransfer duration\n'
             printf 'HEAD\tDuration\n'
             printf 'KIND\ttext\n'
@@ -247,7 +248,7 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
         local OUT=$1 NAVLINE=$2
     {
         printf 'TITLE\tDuration\n'
-        printf '%s\n' "$NAVLINE"
+        [ -n "$NAVLINE" ] && printf '%s\n' "$NAVLINE"
 
         # Files keeps an explicit @{class=num}; the duration cells arrive
         # from hdc() carrying their own dur-<unit> class, and the renderer adds
@@ -266,7 +267,7 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
         printf '%s\n' "$perday_pp"
         # the distribution (duration-distribution.sh until 2026-09-30): each
         # band's per-day counts re-aggregate for the From/To range
-        printf 'TABLE\tDuration distribution\twide\tsxs\n'
+        printf 'TABLE\tDuration distribution\twide\tsxs\trowday\n'
         printf 'HEAD\tDuration bucket\tFiles\tShare\n'
         printf 'KIND\ttext\tnum\tnum\n'
         printf 'RECALC\t-\ts0\t%%0\n'
@@ -284,13 +285,7 @@ build_view() {   # ONE output per scope since 2026-09-13: the percentiles table 
     emit_view "$OUT" "$NAVLINE"
 }
 
-# ONE button pair on the NAV row (2026-09-13): Delivered Files / All Files —
-# the Percentage vs Min/Avg/Max pair is gone, both tables sit on each page.
-# ("OK transfers" / "All transfers" until the 2026-09-29 audit: both views
-# count FILES, and the default one DELIVERED Files — Waiting ones are OK but
-# never delivered, so "OK" said more than it counts.)
-NAV_OK=$'NAV\t1|Delivered Files|duration.html\t0|All Files|duration-all.html'
-NAV_ALL=$'NAV\t0|Delivered Files|duration.html\t1|All Files|duration-all.html'
-
-build_view 1 "$REPORTS_DIR/duration.rpt" "$NAV_OK"
-build_view 0 "$REPORTS_DIR/duration-all.rpt" "$NAV_ALL"
+# NO button row (2026-10-02, user request — see the header): the OK Files
+# only. (The NAV argument stays empty: a one-button row is no row.)
+build_view 1 "$REPORTS_DIR/duration.rpt" ""
+rm -f "$REPORTS_DIR/duration-all.rpt"

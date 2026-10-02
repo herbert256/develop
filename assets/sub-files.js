@@ -92,7 +92,10 @@
       tr.setAttribute("data-res", TINT[fk] || "green");
       if (h) tr.setAttribute("data-href", h);
       cell(tr, "", when, h); cell(tr, "", st, h); cell(tr, "num", humanBytes(r.by), h);
-      cell(tr, "file", r.nm, h, true); cell(tr, "mono", r.cid, h, true);
+      // the CoreId never takes the File-page link (2026-10-02, user request:
+      // the file name links /files/, the CoreId the File Tracking URL —
+      // report.js addCoreIdLinks turns the plain id into it, no ↗)
+      cell(tr, "file", r.nm, h, true); cell(tr, "mono", r.cid, "", true);
       return tr;
     }
     function totalRow() {

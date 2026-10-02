@@ -54,7 +54,7 @@ echo "sample: renames + ip sidecars ..." >&2
 # flowid-names.tsv: the byte fixed-point of fm_snapshot_renames' jq
 # projection (flowId, name, profile — LC_ALL=C sorted), so the first
 # config run records ZERO phantom renames.
-awk -F'\t' '$3 != "A" { print $12 "\t" $4 "\t" $7 }' "$IN/.sample/_estate.tsv" \
+awk -F'\t' '$3 != "A" && ("," $30 ",") !~ /,noconfig,/ { print $12 "\t" $4 "\t" $7 }' "$IN/.sample/_estate.tsv" \
     | LC_ALL=C sort > "$IN/renames/flowid-names.tsv"
 # subscriptions.tsv: the full internal server-log spelling of every flow
 # (SITE_PROFILE -> SITE), plus the planted HISTORICAL renames — the old

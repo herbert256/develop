@@ -56,6 +56,13 @@
 #                       descending, CoreId ascending
 #           day lists (col 4 set, every subscription, Unknown and siteless
 #           included)  newest first: sortkey descending, CoreId ascending
+#     N   the first LIST_ROWS (10) rows of every NOT IN FLOW MANAGER per-row
+#         page docs/not-in-fm/<type>_<name>.html (2026-10-02, user request:
+#         "the first 10 rows must link to an entry in /files/") — the Files
+#         of one unconfigured (type, value), by the shared classifier
+#         bin/transfer/nifm-lib.sh, in the page order (sortkey descending,
+#         CoreId ascending); bin/transfer/reports/not-in-flow-manager.sh
+#         lists them, it does not select again
 #
 # per _files.tsv col 12 value ("Unknown" included). This is the ONE list of
 # the CoreIds that have a docs/files/<CoreId>.html page: bin/transfer/publish.sh
@@ -74,6 +81,8 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"
+source "$ROOT/bin/pda-union.sh"     # SP_AWK (bl_union) — the classifier below needs it
+source "$SCRIPT_DIR/nifm-lib.sh"    # kind N: the Not in Flow Manager classifier
 OUT="$CACHE_DIR/_filepages.tsv"
 LONGEST_N=250 LONGEST_PER_SUB=10   # kind L — the Longest Files page (see the header)
 RECOVERED_PER_SUB=5                # kind A — the recovered day lists (see the header)
@@ -123,6 +132,16 @@ if [ ! -s "$FILES" ]; then : > "$OUT"; echo "filepages: no transfer cache — no
     LC_ALL=C awk -F'\t' -v OFS='\t' '($2 == "Waiting" || $2 == "Expired") && $4 != "" { print ($2 == "Waiting" ? "W" : "X"), $4, $6, $1, $12 }' "$FILES" \
         | LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 -k3,3r -k4,4 \
         | LC_ALL=C awk -F'\t' -v per="$LIST_ROWS" '++n[$1 FS $2] <= per { print $4 "\t" $1 "\t" $5 }'
+    # N: the first LIST_ROWS Files of every Not in Flow Manager row (the
+    # classifier's (type, VALUE) pairs, the page order)
+    nifm_prepare
+    LC_ALL=C awk -F'\t' "${NIFM_V[@]}" -v BLMAP="$BL_MAP" "$SP_AWK$NIFM_AWK"'
+        BEGIN { nifm_load() }
+        function nifm_hit(t, v) { printf "%s\t%s\t%s\t%s\t%s\n", t, toupper(v), $6, $1, $12 }
+        { nifm_row() }' "$FILES" \
+        | LC_ALL=C sort -t"$(printf '\t')" -k1,1n -k2,2 -k3,3r -k4,4 \
+        | LC_ALL=C awk -F'\t' -v per="$LIST_ROWS" '++n[$1 FS $2] <= per { print $4 "\tN\t" $5 }'
+    [ -n "$NIFM_TMP" ] && rm -rf "$NIFM_TMP"
 } | LC_ALL=C sort -u > "$OUT.tmp"
 mv "$OUT.tmp" "$OUT"
-echo "filepages: $(awk -F'\t' '$2 == "O"' "$OUT" | wc -l | tr -d ' ') latest-OK + $(awk -F'\t' '$2 == "E"' "$OUT" | wc -l | tr -d ' ') error + $(awk -F'\t' '$2 == "L"' "$OUT" | wc -l | tr -d ' ') longest + $(awk -F'\t' '$2 == "U"' "$OUT" | wc -l | tr -d ' ') Unknown + $(awk -F'\t' '$2 == "P"' "$OUT" | wc -l | tr -d ' ') one-legged + $(awk -F'\t' '$2 == "R"' "$OUT" | wc -l | tr -d ' ') resubmitted + $(awk -F'\t' '$2 == "A"' "$OUT" | wc -l | tr -d ' ') recovered + $(awk -F'\t' '$2 == "W"' "$OUT" | wc -l | tr -d ' ') waiting + $(awk -F'\t' '$2 == "X"' "$OUT" | wc -l | tr -d ' ') expired File page(s) ($(cut -f1 "$OUT" | LC_ALL=C sort -u | wc -l | tr -d ' ') CoreIds)." >&2
+echo "filepages: $(awk -F'\t' '$2 == "O"' "$OUT" | wc -l | tr -d ' ') latest-OK + $(awk -F'\t' '$2 == "E"' "$OUT" | wc -l | tr -d ' ') error + $(awk -F'\t' '$2 == "L"' "$OUT" | wc -l | tr -d ' ') longest + $(awk -F'\t' '$2 == "U"' "$OUT" | wc -l | tr -d ' ') Unknown + $(awk -F'\t' '$2 == "P"' "$OUT" | wc -l | tr -d ' ') one-legged + $(awk -F'\t' '$2 == "R"' "$OUT" | wc -l | tr -d ' ') resubmitted + $(awk -F'\t' '$2 == "A"' "$OUT" | wc -l | tr -d ' ') recovered + $(awk -F'\t' '$2 == "W"' "$OUT" | wc -l | tr -d ' ') waiting + $(awk -F'\t' '$2 == "X"' "$OUT" | wc -l | tr -d ' ') expired + $(awk -F'\t' '$2 == "N"' "$OUT" | wc -l | tr -d ' ') not-in-Flow-Manager File page(s) ($(cut -f1 "$OUT" | LC_ALL=C sort -u | wc -l | tr -d ' ') CoreIds)." >&2

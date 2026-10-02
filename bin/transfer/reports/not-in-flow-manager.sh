@@ -2,21 +2,26 @@
 #
 # not-in-flow-manager.sh — "Not in Flow Manager" (Failures & Retries group):
 # one row for every entity VALUE that appears in the transfer log but is NOT in
-# the current FlowManager configuration — all TEN entity lists checked:
-#   Account      _files col 3   vs base/_accounts.tsv        (exact)
-#   Subscription _files col 12  vs base/_subscriptions.tsv   (configured name PREFIXES the logged value — the showseen rule)
-#   Login        _files col 14  vs base/_logins.tsv          (exact)
-#   Host         _files col 15, connection col 16 == out, vs base/_hosts.tsv (exact; hosts are OUTBOUND endpoints)
-#   Whitelist    _files col 15, connection col 16 == in,  vs base/_white.tsv (exact; the INCOMING source addresses)
-#   Logical      _files col 13 resolved through the FlowID map vs base/_logicals.tsv
-#                (an UNMAPPED profile value is NOT surfaced — the raw profile
-#                stays parse-internal, so these rows are empty by construction)
-#   Partner      _files col 20  vs base/_partners.tsv        (exact)
-#   Application  _files col 18  vs base/_apps.tsv            (exact)
-#   Domain       _files col 19  vs base/_domains.tsv        (exact)
-# All matching is case-insensitive. Counts are Files (one logical transfer per
-# CoreId). A missing base cache
-# degrades to an empty configured list (everything logged shows), like showseen.
+# the current FlowManager configuration — all TEN entity lists checked, by the
+# shared classifier bin/transfer/nifm-lib.sh (the types and their columns are
+# listed there; bin/transfer/filepages.sh uses the same one). All matching is
+# case-insensitive. Counts are Files (one logical transfer per CoreId). A
+# missing base cache degrades to an empty configured list (everything logged
+# shows), like showseen.
+#
+# THE PER-ROW PAGES (2026-10-02, user request: "the complete row must link to a
+# new page docs/not-in-fm/<type>_<name>.html with all entries for that row …
+# the first 10 rows must link to an entry in /files/"): every row of the table
+# opens (rowlink + @data:href) its page, rendered by bin/transfer/publish.sh
+# from data/transfer/reports/not-in-fm/<type>_<slug>.rpt — <type> the lowercase
+# type word (account … bl), <slug> the site-wide slugof of the value, bumped
+# "-2", "-3" on a clash within one type. The page lists EVERY File of the row —
+# Date/time · Subscription · File · CoreId · State, newest first (sortkey
+# descending, CoreId ascending on a tie), tinted by the File colour (col 25),
+# a TOTAL row and a NAV row back; date-aware like the row it opens from. A row
+# whose File has a published page (_filepages.tsv — kind N covers the first 10
+# of every such page) opens it with the whole row; any other row carries
+# @data:norowlink.
 #
 # Usage:
 #   ./not-in-flow-manager.sh   # reads the caches, writes data/transfer/reports/not-in-flow-manager.rpt
@@ -37,57 +42,24 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 echo "Found ${#files[@]} file(s) in '$INPUT_DIR', processing..." >&2
 
-B="$CONFIG_BASE"
-for _b in _accounts _subscriptions _logins _hosts _white _logicals _partners _apps _domains _bl; do
-    eval "f$_b=\"$B/$_b.tsv\""
-done
-# The base caches are AMENDED after flow-manager wrote them: result.sh
-# discover_logged appends every logged-but-unconfigured subscription/host
-# (never "Unknown", the no-subscription value) — so by report time "not in the base cache" no longer means "not
-# in Flow Manager", and reading base would silently empty this report. The
-# pristine per-type snapshot flow-manager takes BEFORE either append step
-# (.configured.tsv) is the real configured list (2026-08); the base caches
-# stay the fallback for a tree whose flow-manager run predates the snapshot.
-if [ -f "$B/.configured.tsv" ]; then
-    TMP=$(mktemp -d "${TMPDIR:-/tmp}/axnifm.XXXXXX")
-    trap 'rm -rf "$TMP"' EXIT
-    for _b in _accounts _subscriptions _logins _hosts _white _logicals _partners _apps _domains _bl; do
-        awk -F'\t' -v t="$_b" '$1 == t { print $2 }' "$B/.configured.tsv" > "$TMP/$_b.tsv"
-        eval "f$_b=\"$TMP/$_b.tsv\""
-    done
-fi
+source "$SCRIPT_DIR/../nifm-lib.sh"   # nifm_prepare / NIFM_AWK — the classifier, shared with bin/transfer/filepages.sh
+nifm_prepare
+TMPD=$(mktemp -d "${TMPDIR:-/tmp}/axnifm2.XXXXXX")
+trap 'rm -rf "$TMPD" ${NIFM_TMP:+"$NIFM_TMP"}' EXIT
+NSUB="$REPORTS_DIR/not-in-fm"
+# the CoreIds with a PUBLISHED File page (bin/transfer/filepages.sh)
+: > "$TMPD/pages"
+[ -f "$CACHE_DIR/_filepages.tsv" ] && cut -f1 "$CACHE_DIR/_filepages.tsv" > "$TMPD/pages"
 
 # Pass 1: aggregate the unconfigured (type, value) pairs from $FILES —
 # TAB lines "tidx  files  name  failed  processed  bytes  first  last  buckets"
-# — then sort by type order / Files desc / name and format the .rpt.
-awk -F'\t' \
-    -v ACC="$f_accounts" -v SUB="$f_subscriptions" -v LOG="$f_logins" -v HST="$f_hosts" \
-    -v WHT="$f_white" -v LGC="$f_logicals" -v PTN="$f_partners" -v APP="$f_apps" -v DOM="$f_domains" -v BLB="$f_bl" \
-    -v PLM="$CONFIG_XREF/_profiles-logicals.tsv" -v BLMAP="$BL_MAP" "$SP_AWK"'
-    function load(t, f,   l, a) {
-        while ((getline l < f) > 0) { split(l, a, "\t"); if (a[1] != "") cfg[t SUBSEP toupper(a[1])] = 1 }
-        close(f)
-    }
-    BEGIN {
-        load(1, ACC); load(3, LOG); load(4, HST); load(5, WHT)
-        load(6, LGC); load(7, PTN); load(8, APP); load(9, DOM); load(10, BLB)
-        while ((getline l < PLM) > 0) { split(l, a, "\t"); if (a[1] != "" && a[2] != "") PL[toupper(a[1])] = a[2] }
-        close(PLM)
-        # configured subscription names as a LIST (prefix matching)
-        while ((getline l < SUB) > 0) { split(l, a, "\t"); if (a[1] != "") SN[++ns] = toupper(a[1]) }
-        close(SUB)
-    }
-    # is the logged site value covered by a configured subscription? Exact, or
-    # the configured name as a prefix ending at a NAME-PART BOUNDARY (a tail
-    # the parse did not strip) — never mid-name (2026-08-31 audit: a genuinely
-    # unconfigured UC4_X_Y2 was hidden because UC4_X_Y is configured).
-    function subcfg(v,   u, i) {
-        u = toupper(v)
-        if (u in PFC) return PFC[u]
-        for (i = 1; i <= ns; i++) if (u == SN[i] || (index(u, SN[i]) == 1 && substr(u, length(SN[i]) + 1, 1) !~ /[A-Za-z0-9]/)) { PFC[u] = 1; return 1 }
-        PFC[u] = 0; return 0
-    }
-    function add(t, v,   k) {
+# — then sort by type order / Files desc / name and format the .rpt. Each
+# entry also goes to $TMPD/entries — "tidx TAB VALUE (upper) TAB sortkey TAB
+# CoreId TAB date time TAB subscription TAB colour TAB state TAB value as
+# logged TAB file" — for the per-row pages.
+awk -F'\t' "${NIFM_V[@]}" -v BLMAP="$BL_MAP" -v ENT="$TMPD/entries" "$SP_AWK$NIFM_AWK"'
+    BEGIN { nifm_load() }
+    function nifm_hit(t, v,   k) {
         k = t SUBSEP toupper(v)
         if (!(k in n)) { disp[k] = v; ord[++nk] = k }
         n[k]++; vol[k] += size; if (pr) p[k]++; else fl[k]++
@@ -96,29 +68,16 @@ awk -F'\t' \
         db = k SUBSEP date
         if (!(db in bn)) { bord[k] = bord[k] SUBSEP date }
         bn[db]++; bv[db] += size; if (pr) bp[db]++; else bf[db]++
+        printf "%s\t%s\t%s\t%s\t%s %s\t%s\t%s\t%s\t%s\t%s\n", t, toupper(v), sk, $1, dt, substr(tm, 1, 8), $12, $25, st, v, $11 > ENT
     }
     {
         date = $4; if (date == "") next
         dt = $4; tm = $5; sk = $6; size = $8 + 0; pr = ($2 != "Failed" && $2 != "Expired")
-        if ($3  != "" && !((1 SUBSEP toupper($3))  in cfg)) add(1, $3)
-        if ($12 != "" && $12 != "Unknown" && !subcfg($12))  add(2, $12)   # "Unknown" = no subscription (2026-09-29): the Unknown transfers report lists it
-        if ($14 != "" && !((3 SUBSEP toupper($14)) in cfg)) add(3, $14)
-        if ($15 != "" && $16 == "out" && !((4 SUBSEP toupper($15)) in cfg)) add(4, $15)
-        if ($15 != "" && $16 == "in"  && !((5 SUBSEP toupper($15)) in cfg)) add(5, $15)
-        # logical / partner / application: the File OWN column only, NOT the
-        # shared union (bin/pda-union.sh) — on purpose: the union adds the
-        # subscription configured values, which come from Flow Manager by
-        # definition, so only the File column can name something unconfigured.
-        # BL has no File column: its set IS the configured tag map (bl_union).
-        if ($13 != "" && (toupper($13) in PL)) { lg9 = PL[toupper($13)]
-            if (!((6 SUBSEP toupper(lg9)) in cfg)) add(6, lg9) }
-        if ($20 != "" && !((7 SUBSEP toupper($20)) in cfg)) add(7, $20)
-        if ($18 != "" && !((8 SUBSEP toupper($18)) in cfg)) add(8, $18)
-        if ($19 != "" && !((9 SUBSEP toupper($19)) in cfg)) add(9, $19)
-        nb9 = split(bl_union($12), B9, "\037")
-        for (ib9 = 1; ib9 <= nb9; ib9++) if (!((10 SUBSEP toupper(B9[ib9])) in cfg)) add(10, B9[ib9])
+        st = ($2 == "Processed") ? "OK" : ($2 == "Failed") ? "Error" : $2
+        nifm_row()
     }
     END {
+        close(ENT)
         for (i = 1; i <= nk; i++) { k = ord[i]
             split(k, K, SUBSEP)
             bk = ""
@@ -128,14 +87,60 @@ awk -F'\t' \
             printf "%s\t%d\t%s\t%d\t%d\t%d\t%s\t%s\t%s\n", K[1], n[k], disp[k], fl[k]+0, p[k]+0, vol[k], first[k], last[k], bk
         }
     }
-' "$FILES" \
-| LC_ALL=C sort -t$'\t' -k1,1n -k2,2nr -k3,3 \
-| awk -F'\t' "$AWKLIB"'
+' "$FILES" > "$TMPD/agg"
+: >> "$TMPD/entries"
+
+# ---- the page names: <type>_<slug>, slugof over the C-sorted values of a
+# type, a numeric bump on a clash (the site-wide slug rule) -> tidx TAB VALUE
+# (upper) TAB page name
+LC_ALL=C sort -t$'\t' -k1,1n -k3,3 "$TMPD/agg" | awk -F'\t' "$AWKLIB$NIFM_TWORD_AWK"'
+    { b = nifm_tword($1 + 0) "_" slugof($3); if (b ~ /_$/) b = b "value"
+      s = b; n = 1; while (s in used) { n++; s = b "-" n }; used[s] = 1
+      printf "%s\t%s\t%s\n", $1, toupper($3), s }' > "$TMPD/names"
+
+# ---- the per-row pages (see the header), staged in not-in-fm.new/ ----
+rm -rf "$NSUB.new"; mkdir -p "$NSUB.new"
+LC_ALL=C sort -t$'\t' -k1,1n -k2,2 -k3,3r -k4,4 "$TMPD/entries" | awk -F'\t' \
+    -v names="$TMPD/names" -v pages="$TMPD/pages" -v dir="$NSUB.new" "$AWKLIB"'
+    BEGIN { split("Account|Subscription|Login|Host|Whitelist|Logical|Partner|Application|Domain|BL", TL, "|")
+            while ((getline l < names) > 0) { split(l, a, "\t"); PN[a[1] SUBSEP a[2]] = a[3] } close(names)
+            while ((getline l < pages) > 0) if (l != "") PG[l] = 1
+            close(pages) }
+    function clean(s) { gsub(/[\t\r]/, " ", s); return s }
+    function finish() { if (out == "") return; printf "TOTAL\tTotal (%d Files)\t\t\t\t\n", nr > out; printf "FOOT\n" > out; close(out) }
+    ($1 SUBSEP $2) != cur {
+        finish(); cur = $1 SUBSEP $2; nr = 0; out = ""
+        if (!(cur in PN)) next
+        out = dir "/" PN[cur] ".rpt"; seen1 = 0
+    }
+    out == "" { next }
+    {
+        fn = $10; for (j = 11; j <= NF; j++) fn = fn " " $j   # (a TAB never reaches a file name; folded anyway)
+        if (nr == 0) {
+            # the TITLE names the value as LOGGED on the newest entry
+            printf "TITLE\tNot in Flow Manager: %s %s\n", TL[$1 + 0], clean($9) > out
+            printf "NAV\t0|Not in Flow Manager|../transfer/not-in-flow-manager.html\n" > out
+            printf "TABLE\t%s Files\twide\tsort=0:-1\tpager=25\trestint\trowlink\n", TL[$1 + 0] > out
+            printf "HEAD\tDate/time\tSubscription\tFile\tCoreId\tState\n" > out
+            printf "KIND\ttext\tsite\tmono\tmono\ttext\n" > out
+        }
+        res = ($7 == "green" || $7 == "orange" || $7 == "red") ? "\t@data:res=" $7 : ""
+        res = res (($4 in PG) ? "\t@data:href=../files/" $4 ".html" : "\t@data:norowlink=1")
+        printf "ROW\t%s\t%s\t%s\t%s\t%s%s\n", $5, clean($6), lit(clean(fn)), $4, $8, res > out
+        nr++
+    }
+    END { finish() }'
+rm -rf "$NSUB"; mv "$NSUB.new" "$NSUB"
+
+LC_ALL=C sort -t$'\t' -k1,1n -k2,2nr -k3,3 "$TMPD/agg" \
+| awk -F'\t' -v names="$TMPD/names" "$AWKLIB"'
     BEGIN {
         split("Account|Subscription|Login|Host|Whitelist|Logical|Partner|Application|Domain|BL", TL, "|")
         split("accounts|subscriptions|logins|hosts||logicals|partners|applications|domains|bl", SD, "|")
+        while ((getline l < names) > 0) { split(l, a, "\t"); PN[a[1] SUBSEP a[2]] = a[3] } close(names)
         printf "TITLE\tNot in Flow Manager\n"
-        printf "TABLE\tLogged but not configured\twide\tgroup\n"
+        # the WHOLE row opens the per-row page (2026-10-02 — see the header)
+        printf "TABLE\tLogged but not configured\twide\tgroup\trowlink\n"
         printf "HEAD\tType\tName\tFiles\tError\tOK\tVolume\tFirst seen\tLast seen\n"
         printf "KIND\ttext\ttext\tnum\tnumfailed\tnumprocessed\tnum\ttext\ttext\n"
         printf "RECALC\t-\t-\ts0\ts1\ts2\th3\t-\t-\n"
@@ -144,7 +149,8 @@ awk -F'\t' \
         t = $1 + 0
         nm = $3
         cell = (SD[t] != "") ? "@{alink=" SD[t] "/" nm "}" nm : nm
-        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s\n", TL[t], cell, $2, $4, $5, hbytes2($6), $7, $8, $9
+        pk = t SUBSEP toupper(nm)
+        printf "ROW\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t@data:buckets=%s%s\n", TL[t], cell, $2, $4, $5, hbytes2($6), $7, $8, $9, ((pk in PN) ? "\t@data:href=../not-in-fm/" PN[pk] ".html" : "")
         rows++; tf += $2; te += $4; to += $5; tb += $6
     }
     END {
@@ -156,4 +162,4 @@ awk -F'\t' \
     }
 ' > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
 
-echo "Data written to $OUT." >&2
+echo "Data written to $OUT (+ $(ls "$NSUB" | grep -c '\.rpt$' || true) per-row page(s))." >&2

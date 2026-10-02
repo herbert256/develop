@@ -14,6 +14,9 @@
 function jesc(s) { gsub(/\\/, "\\\\", s); gsub(/"/, "\\\"", s); return s }
 
 # ---- collect the estate -----------------------------------------------------
+# a NOCONFIG flow (2026-10-02, estate.awk) is not in the export at all — no
+# subscription, no communication profile, no partner record of its own
+("," $30 ",") ~ /,noconfig,/ { next }
 {
     fk = $1; uc = $3; site = $4; acct = $5
     if (!(acct in ABIZ)) { AORD[++NA] = acct; ABIZ[acct] = $15 }

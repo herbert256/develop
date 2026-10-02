@@ -483,6 +483,12 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     if (gsephit) { cls = (cls != "" ? cls " gsep" : "gsep"); gsephit = 0 }
     rawtext = text
     text = html_esc(text)
+    # the FILE / COREID RULE (see ROWFILEID in the ROW branch): the CoreId of
+    # the File page the row's file name links keeps NO File-page link of its
+    # own — an explicit one is dropped, the fp_has one below is skipped
+    nofp = (!total && ROWFILEID != "" && rawtext == ROWFILEID && CELLHEAD != "Value" && \
+            kind != "file" && CELLHEAD != "File" && CELLHEAD != "File name" && CELLHEAD != "Filename")
+    if (nofp && rawhref != "" && index(rawhref, "files/" rawtext ".html") > 0) rawhref = ""
     # `clinks` (2026-09-03) = a clines cell whose every line is a LINK:
     # "href|label" per \x1f line — a relative href (no scheme, no //) becomes
     # <a>, anything else renders as the plain line; folds like clines below
@@ -574,7 +580,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
     # column (the File page's own CoreId), never over an explicit link.
     if (!total && !rowdrill && link == "" && rawhref == "" && CELLHEAD != "Value" && \
         kind != "clines" && kind != "clinks" && kind != "bar" && alsd == "") {
-        if (rawtext ~ ("^" UUIDRE "$") && fp_has(rawtext)) {
+        if (rawtext ~ ("^" UUIDRE "$") && fp_has(rawtext) && !nofp) {
             text = "<a href=\"" FPRE rawtext ".html\">" text "</a>"; cls = (cls != "" ? cls " cl" : "cl")
         } else if (ROWFP1 != "" && rawtext != "" && (kind == "file" || CELLHEAD == "File" || CELLHEAD == "File name" || CELLHEAD == "Filename")) {
             text = "<a href=\"" FPRE ROWFP1 ".html\">" text "</a>"; cls = (cls != "" ? cls " cl" : "cl")
@@ -727,6 +733,7 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             else if (mi == "seenrows")   tattr = tattr " data-seenrows=\"1\""
             else if (mi == "restint")    tattr = tattr " data-restint=\"1\""   # rows tint by their data-res RESULT even when seen (beats the seenrows green)
             else if (mi == "rowlink")    tattr = tattr " data-rowlink=\"1\""   # the WHOLE row opens its target (report.js setupIndexRows): the row's own @data:href, else its first link
+            else if (mi == "rowday")     tattr = tattr " data-rowday=\"1\""    # opened with ?axway_row=<date>, this RECALC table shows that one day (report.js rowDayTables; the Duration distribution, 2026-10-02)
             else if (mi == "heat")       tattr = tattr " data-heat=\"1\""
             else if (mi == "esearch")    tattr = tattr " data-esearch=\"1\""
             else if (index(mi, "noagg=") == 1)    tattr = tattr " data-noagg=\"" substr(mi, 7) "\""
@@ -940,6 +947,25 @@ function cell(kind, raw, total,    cls, sp, text, cc, link, nolink, p, attrs,
             if (rv ~ ("^" UUIDRE "$") && !(i <= nhead && HEADC[i] == "Value") && fp_has(rv) && rv != ROWFP1) { ROWFP1 = rv; nrfp++ }
         }
         if (nrfp != 1) ROWFP1 = ""
+        # THE FILE / COREID RULE (2026-10-02, user request: "If a table has
+        # both a file and a coreid and the coreid exists in /files/ then the
+        # file name must link to /files/, the coreid must link to the FM link
+        # from coreid-url.txt, no ↗ right to the coreid"): ROWFILEID = the
+        # CoreId whose File page the row's FILE-NAME cell links — its own
+        # @{href=…files/<id>.html}, else ROWFP1 (the cell() rule below links
+        # it). A CoreId cell naming that id then carries NO File-page link:
+        # report.js addCoreIdLinks makes a plain id the File Tracking link
+        # (coreid-url.txt) and adds the ↗ only after an id that already is a
+        # link. A row-drill row links no File name, so it keeps the old way.
+        ROWFILEID = ""
+        if (!is_total && !rowdrill) for (i = 1; i <= nreal && ROWFILEID == ""; i++) {
+            if (!((i <= nkind && KINDS[i] == "file") || (i <= nhead && (HEADC[i] == "File" || HEADC[i] == "File name" || HEADC[i] == "Filename")))) continue
+            rv = REAL[i]; ra = ""
+            if (substr(rv, 1, 2) == "@{") { p = index(rv, "}"); if (p > 0) { ra = substr(rv, 3, p - 3); rv = substr(rv, p + 1) } }
+            if (rv == "") continue
+            if (match(ra, /files\/[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+\.html/)) ROWFILEID = substr(ra, RSTART + 6, RLENGTH - 11)
+            else if (ra !~ /(^|,)(href|link|alink)=/ && ROWFP1 != "") ROWFILEID = ROWFP1
+        }
         rowcells = ""; nfc = 0; npc = 0
         for (i = 1; i <= nreal; i++) {
             gsephit = 0; if ((i - 1) in gsepset) gsephit = 1

@@ -291,7 +291,7 @@ S = server/, A = analyses/):
 - **Activity & volume** — Activity (T) · Ranking (T) · Sizes & types (T files) · Month stats
   (transfer/month-stats/this — every page of that directory) (Trends and Route throughput went
   2026-09-29, user request)
-- **Performance** — Duration (T; + duration-all) · Longest Files (T duration-longest) ·
+- **Performance** — Duration (T; the All Files view duration-all went 2026-10-02) · Longest Files (T duration-longest) ·
   Distribution & Store-and-forward (T duration-dwell) · Anomalies (T)
 - **Flow patterns** — File journey (T) · File in - File out (T) · Inbound and Outbound same
   Protocol (T same-protocol)

@@ -306,8 +306,20 @@ check $([ "$np" -gt 0 ] && [ "$bad" = 0 ] && [ "$nd" = "$np" ] && [ "$tot" = "$p
 # THE 2026-10-01 BATCH: First seen column order, the Size regime / Stub
 # shippers tabs gone, the Top view TOTAL label, Duration Median before
 # Average, the day-page wordings, the From/To blink on load
-h=$(grep -o '<th[^>]*>[^<]*</th>' docs/analyses/first-seen.html 2>/dev/null | head -7 | sed 's/<[^>]*>//g' | tr '\n' '|')
-check $([ "$h" = "Date|Subscriptions|Partners|Logical|Accounts|Logins|Hosts|" ] && echo 0 || echo 1) "first-seen.html header is '${h:-?}', expected Date|Subscriptions|Partners|Logical|Accounts|Logins|Hosts|"
+# (2026-10-02, user request: a column for every one of the 9 entities —
+# Domains · Applications · BL after Hosts)
+h=$(grep -o '<th[^>]*>[^<]*</th>' docs/analyses/first-seen.html 2>/dev/null | head -10 | sed 's/<[^>]*>//g' | tr '\n' '|')
+check $([ "$h" = "Date|Subscriptions|Partners|Logical|Accounts|Logins|Hosts|Domains|Applications|BL|" ] && echo 0 || echo 1) "first-seen.html header is '${h:-?}', expected Date|Subscriptions|Partners|Logical|Accounts|Logins|Hosts|Domains|Applications|BL|"
+# ... and each of the three new columns: Seen + Not seen = Total = the
+# configured names (the base cache), and the day rows sum to at most Seen
+n=$(awk -F'\t' -v B="data/flow-manager/base" '
+    BEGIN { split("_domains _apps _bl", F, " "); for (i = 1; i <= 3; i++) { f = B "/" F[i] ".tsv"; while ((getline l < f) > 0) if (l != "") nb[i]++; close(f) } }
+    $1 == "SEEN" { for (i = 1; i <= 3; i++) s[i] = $(7 + i) }
+    $1 == "NOTSEEN" { for (i = 1; i <= 3; i++) ns[i] = $(7 + i) }
+    $1 == "ROW" { for (i = 1; i <= 3; i++) dsum[i] += $(8 + i) }
+    $1 == "TOTAL" { for (i = 1; i <= 3; i++) t[i] = $(7 + i) }
+    END { for (i = 1; i <= 3; i++) if (s[i] + ns[i] != t[i] || t[i] != nb[i] + 0 || dsum[i] > s[i] || t[i] == 0) b++; print b + 0 }' data/analyses/reports/first-seen.rpt 2>/dev/null)
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "first-seen.rpt: $n of the Domains / Applications / BL columns do not add up (Seen + Not seen = Total = configured, day rows <= Seen)"
 check $([ ! -e docs/transfer/files-size-regime.html ] && [ ! -e docs/transfer/files-stub-shippers.html ] && [ ! -e bin/transfer/reports/size-profile.sh ] && ! grep -rqsE 'files-(size-regime|stub-shippers)\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "the Size regime / Stub shippers pages (size-profile.sh) are back or still linked"
 check $(awk -F'\t' '$1 == "TOTAL" { v = $2; sub(/^@\{[^}]*\}/, "", v); print v; exit }' data/transfer/reports/topview.rpt 2>/dev/null | grep -qx 'Total' && echo 0 || echo 1) "the transfer Top view TOTAL label is not 'Total'"
 check $(grep -q $'^HEAD\tDate\tFiles\tMedian\tAverage\t' data/transfer/reports/duration.rpt 2>/dev/null && echo 0 || echo 1) "duration.rpt does not head Date · Files · Median · Average"
@@ -1087,17 +1099,20 @@ check $([ ! -f docs/transfer/protocol-protocol-direction.html ] && ! grep -rqs '
 # the Duration report holds BOTH per-day tables side by side (2026-09-13,
 # user request): percentiles first (the home page reads it by title), then
 # the Duration distribution (2026-09-30: the min / avg / median / max table
-# merged into the percentiles table); the Min/Avg/Max sibling pages are gone and the
-# button row keeps only the OK / All pair — for both scopes
-for p in duration duration-all; do
+# merged into the percentiles table); the Min/Avg/Max sibling pages are gone,
+# and since 2026-10-02 (user request) the Delivered Files / All Files pair and
+# the All Files page too — the OK Files only; the distribution table follows
+# ?axway_row (TABLE modifier rowday)
+for p in duration; do
     n=$(grep -c '<table' "docs/transfer/$p.html" 2>/dev/null)
     check $([ "${n:-0}" = 2 ] && echo 0 || echo 1) "transfer/$p.html has ${n:-0} table(s), expected the two side-by-side per-day tables"
     check $([ "$(grep -c '<h2[^>]*>Duration per day — percentiles' "docs/transfer/$p.html" 2>/dev/null)" = 1 ] && [ "$(grep -c '<h2[^>]*>Duration distribution' "docs/transfer/$p.html" 2>/dev/null)" = 1 ] && echo 0 || echo 1) "transfer/$p.html lacks one of the two per-day table headings"
     check $([ "$(grep -c 'class="sxs"' "docs/transfer/$p.html" 2>/dev/null)" -ge 1 ] && echo 0 || echo 1) "transfer/$p.html does not lay its tables out side by side (.sxs)"
     n=$(grep -o 'class="tab[^"]*"[^>]*>[^<]*<' "docs/transfer/$p.html" 2>/dev/null | grep -c 'Delivered Files\|All Files')
-    check $([ "${n:-0}" = 2 ] && [ "$(grep -c 'Min/Avg/Max\|>Percentage<' "docs/transfer/$p.html" 2>/dev/null)" = 0 ] && echo 0 || echo 1) "transfer/$p.html button row: ${n:-0} scope buttons, and the Percentage / Min/Avg/Max pair must be gone"
+    check $([ "${n:-1}" = 0 ] && [ "$(grep -c 'Min/Avg/Max\|>Percentage<' "docs/transfer/$p.html" 2>/dev/null)" = 0 ] && echo 0 || echo 1) "transfer/$p.html button row: ${n:-0} Delivered / All Files button(s), and the Percentage / Min/Avg/Max pair must be gone"
+    check $(grep -q '<table[^>]*data-rowday="1"' "docs/transfer/$p.html" 2>/dev/null && echo 0 || echo 1) "transfer/$p.html: the Duration distribution table does not follow ?axway_row (no data-rowday)"
 done
-check $([ ! -e docs/transfer/duration-minmax.html ] && [ ! -e docs/transfer/duration-all-minmax.html ] && [ ! -e data/transfer/reports/duration-minmax.rpt ] && echo 0 || echo 1) "the Min/Avg/Max sibling pages or .rpts still exist"
+check $([ ! -e docs/transfer/duration-minmax.html ] && [ ! -e docs/transfer/duration-all-minmax.html ] && [ ! -e data/transfer/reports/duration-minmax.rpt ] && [ ! -e docs/transfer/duration-all.html ] && [ ! -e data/transfer/reports/duration-all.rpt ] && ! grep -rqs 'duration-all\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "the Min/Avg/Max or All Files sibling pages / .rpts still exist (or a page links duration-all.html)"
 dr=$(awk '/<table class="index fit dayrows/ { p = 1 } p && /<tr>/ && /<td/ { print; exit }' docs/index.html 2>/dev/null | grep -o 'data-href="transfer/duration.html?axway_row=[0-9-]*">[^<][^<]*<' | wc -l | tr -d ' ')
 check $([ "${dr:-0}" -ge 5 ] && echo 0 || echo 1) "the home page's newest day carries ${dr:-0} filled Duration cells (the extractor must still find the percentiles table)"
 
@@ -1286,11 +1301,11 @@ check $(grep -q '<a class="tab" href="security-params.html">Security Parameters<
 # (Cipher suites … Session-lifecycle problems) sit on security-params.html
 n=$(ls docs/server/ssh-security*.html bin/server/reports/ssh-security.sh docs/help/server-ssh-crypto.html data/server/reports/ssh-security.rpt 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${n:-0}" = 0 ] && grep -q '<h2>Cipher suites</h2>' docs/transfer/security-params.html 2>/dev/null && grep -q '<h2>Session-lifecycle problems</h2>' docs/transfer/security-params.html 2>/dev/null && ! grep -rqs 'server/ssh-security\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "SSH security is not merged into transfer/security-params.html (or an ssh-security page / link / help page is back)"
-bad=0; for f in docs/transfer/duration.html docs/transfer/duration-all.html docs/transfer/duration-longest.html docs/analyses/failed.html docs/analyses/failed-sub-all.html docs/analyses/xref/cross-account-subscriptions.html docs/transfer/entities/subscription-all.html docs/transfer/waiting-expired.html; do
+bad=0; for f in docs/transfer/duration.html docs/transfer/duration-longest.html docs/analyses/failed.html docs/analyses/failed-sub-all.html docs/analyses/xref/cross-account-subscriptions.html docs/transfer/entities/subscription-all.html docs/transfer/waiting-expired.html; do
     [ "$(grep -o 'class="grouptag"' "$f" 2>/dev/null | wc -l | tr -d ' ')" = 1 ] || { bad=$((bad + 1)); echo "  no single group tag: $f" >&2; }
 done
 check $([ "$bad" = 0 ] && echo 0 || echo 1) "$bad report page(s) without exactly one group tag"
-check $(grep -q '<span class="tab active">Longest Files</span>' docs/transfer/duration-longest.html 2>/dev/null && grep -q '<span class="tab active">Duration</span>' docs/transfer/duration-all.html 2>/dev/null && echo 0 || echo 1) "the longest-stem rule: duration-longest.html must mark Longest Files, duration-all.html Duration"
+check $(grep -q '<span class="tab active">Longest Files</span>' docs/transfer/duration-longest.html 2>/dev/null && grep -q '<span class="tab active">Duration</span>' docs/transfer/duration.html 2>/dev/null && echo 0 || echo 1) "the longest-stem rule: duration-longest.html must mark Longest Files, duration.html Duration"
 
 # every detail page (2026-09-15, user request): a Features table whose FIRST row is the entity itself, Item = the type label and Value = the name its TITLE ends with
 r=$(awk -F'\t' '
@@ -1668,6 +1683,44 @@ check $([ "${nrep:-1}" = 0 ] && [ "${nboth:-0}" -gt 0 ] && echo 0 || echo 1) "$n
 n=$(awk -F'\t' '$2 != "" && $2 !~ /^[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/ { n++ } END { print n + 0 }' data/server/cache/_parse.tsv 2>/dev/null)
 m=$(LC_ALL=C sort data/server/cache/_parse.tsv 2>/dev/null | uniq -d | wc -l | tr -d ' ')
 check $([ "${n:-1}" = 0 ] && [ "${m:-1}" = 0 ] && [ -s data/server/cache/_parse.tsv ] && echo 0 || echo 1) "_parse.tsv: ${n:-?} time(s) not HH:MM:SS, ${m:-?} row(s) present more than once"
+
+# 8. NOT IN FLOW MANAGER PER-ROW PAGES (2026-10-02, user request): every row
+#    of the table opens docs/not-in-fm/<type>_<name>.html (rowlink +
+#    @data:href, the page exists); a page lists as many Files as its row
+#    counts, its first 10 rows open their File page (kind N), the others carry
+#    norowlink; the planted noconfig flow (estate.awk) gives the Account,
+#    Subscription and Login rows
+NR9="data/transfer/reports/not-in-flow-manager.rpt"
+read -r nrows nbad <<< "$(awk -F'\t' '
+    $1 == "TABLE" { rl = ($0 ~ /\trowlink(\t|$)/) }
+    $1 == "ROW" && $2 != "" && $2 !~ /^\(/ { n++; h = ""; for (i = 3; i <= NF; i++) if (index($i, "@data:href=../not-in-fm/") == 1) h = substr($i, 25)
+        sub(/\.html$/, "", h); if (!rl || h == "") { b++; next }
+        f = "data/transfer/reports/not-in-fm/" h ".rpt"; c = 0
+        while ((getline l < f) > 0) if (l ~ /^ROW\t/) c++
+        close(f); if (c != $4 + 0) b++ }
+    END { print n + 0, b + 0 }' "$NR9" 2>/dev/null)"
+nh=$(ls docs/not-in-fm/*.html 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${nrows:-0}" -gt 0 ] && [ "${nbad:-1}" = 0 ] && [ "$nh" = "$nrows" ] && echo 0 || echo 1) "not-in-flow-manager: ${nbad:-?} of ${nrows:-0} row(s) without a rowlink to a per-row page of as many Files; $nh page(s) published"
+n=$(awk -F'\t' 'FNR == 1 { k = 0 } $1 == "ROW" { k++; h = ($0 ~ /\t@data:href=\.\.\/files\/[0-9a-f-]+\.html/); if (k <= 10 && !h) b++; if (!h && $0 !~ /\t@data:norowlink=1/) b++ } END { print b + 0 }' data/transfer/reports/not-in-fm/*.rpt 2>/dev/null)
+check $([ "${n:-1}" = 0 ] && [ "$(awk -F'\t' '$2 == "N"' "$FP" 2>/dev/null | wc -l | tr -d ' ')" -gt 0 ] && echo 0 || echo 1) "the not-in-fm pages: ${n:-?} row(s) breaking the first-10 File-page rule (or no kind N in _filepages.tsv)"
+nc=$(awk -F'\t' '$30 ~ /(^|,)noconfig(,|$)/ { print toupper($4); exit }' input/.sample/_estate.tsv 2>/dev/null)
+n=$(awk -F'\t' -v s="$nc" '$1 == "ROW" { v = $3; sub(/^@\{[^}]*\}/, "", v); if ($2 == "Subscription" && toupper(v) == s) f = 1 } END { print f + 0 }' "$NR9" 2>/dev/null)
+check $([ -n "$nc" ] && [ "${n:-0}" = 1 ] && [ -f "docs/not-in-fm/subscription_$(printf '%s' "$nc" | tr 'A-Z_' 'a-z-').html" ] && echo 0 || echo 1) "the planted noconfig flow ${nc:-?} is not a Not in Flow Manager Subscription row with its page"
+# 9. THE FILE / COREID RULE (2026-10-02, user request): in a table with a file
+#    name and a CoreId, a CoreId whose File page the file name links carries
+#    no File-page link itself (report.js then makes it the File Tracking
+#    link, no ↗) — checked on every rendered page: a row linking a File page
+#    from its file-name cell never links the same page from the CoreId cell
+n=$(awk '
+    /<tr/ { n = split($0, R, "</tr>")
+        for (i = 1; i <= n; i++) {
+            r = R[i]; if (r !~ /<td/) continue
+            if (!match(r, /<td class="[^"]*(file|fn)[^"]*"><a href="[^"]*files\/[0-9a-f-]+\.html">/)) continue
+            m = substr(r, RSTART, RLENGTH); sub(/.*files\//, "", m); sub(/\.html.*/, "", m)
+            if (index(r, "files/" m ".html\"><code>" m "</code>") || index(r, "files/" m ".html\">" m "</a>")) { b++; if (b <= 3) print "  " FILENAME ": " m > "/dev/stderr" } } }
+    END { print b + 0 }' docs/transfer/*.html docs/transfer/*/*.html docs/resubmit/*.html docs/recovered/*.html docs/not-in-fm/*.html 2>/dev/null)
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n table row(s) link the same File page from the file name AND the CoreId (the CoreId must open File Tracking instead)"
+check $(grep -q 'cell(tr, "mono", r.cid, "", true)' docs/assets/sub-files.js 2>/dev/null && grep -q 'cell(tr, "mono", r.cid, "", true)' docs/assets/all-files-search.js 2>/dev/null && echo 0 || echo 1) "sub-files.js / all-files-search.js still give the CoreId cell the File-page link"
 
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2

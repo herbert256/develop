@@ -169,6 +169,8 @@ function addf(uc, dom, app, ptn, sfx, vol, fail, tags, acctover,
         tolower(site), KEY, uc, site, acct, login, prof, pd, dom, app, ptn, \
         uuid4(), uuid4(), uuid4(), acct_biz(acct), pat, fdk, fdir, host, ips, spell, port, \
         sched, vol, fail, size, f0, f1, cred, tags, allow > EST
+    # a NOCONFIG flow (2026-10-02) is no configured subscription: its own tally only
+    if (hastag(tags, "noconfig")) { T["noconfig"]++; return }
     # tallies for _expected.tsv
     T["subs"]++; T["subs_uc" uc]++
     if (hastag(tags, "pollconnfail")) T["pollconnfail"]++   # red without transfers (2026-09-10) — neither orange nor seen
@@ -484,6 +486,15 @@ function build_roster() {
     addf(1, "HR",  "PENSION",  "VANDELAY", "",  1.0, 0, "quiet,orphanhost")
     addf(4, "HR",  "EXPENSE",  "VANDELAY", "",  1.0, 0, "quiet,orphanlogin")
     addf(4, "HR",  "TIMESHEET","VANDELAY", "",  1.0, 0, "quiet,orphanlogin")
+    # the NOT-IN-FLOW-MANAGER flow (2026-10-02, user request: the per-row pages
+    # of Not in Flow Manager, docs/not-in-fm/<type>_<name>.html, and the File
+    # pages of their first 10 rows): a UC4 partner delivering on its own
+    # account and login, NEITHER in the Flow Manager export (gen-config.awk
+    # skips a noconfig row, generate.sh leaves it out of flowid-names.tsv) —
+    # every one of its Files is an entry of the Account, Subscription and Login
+    # rows. The flow is discovered from the transfer log like any unexported
+    # one (result.sh). LAST, so no other flow shifts.
+    addf(4, "HR",  "PORTAL",   "VANDELAY", "",  1.5, 0.05, "noconfig")
 }
 
 # The CFT end-to-end monitor: four sites UC<n>-INFRA_ST-MONITOR_INFRA (note

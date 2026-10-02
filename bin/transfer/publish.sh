@@ -257,6 +257,30 @@ for _fam in resubmit recovered; do
     fi
 done
 
+# THE NOT IN FLOW MANAGER PER-ROW PAGES (2026-10-02, user request: "the
+# complete row must link to a new page docs/not-in-fm/<type>_<name>.html with
+# all entries for that row"): not-in-flow-manager.sh writes one .rpt per row
+# into data/transfer/reports/not-in-fm/; render each into the docs ROOT
+# directory not-in-fm/ (ONE level deep -> ../ css). DATE-AWARE (the transfer
+# date list), like the row it opens from; a row with a File page opens it.
+shopt -s nullglob
+nifp=("$DATA"/transfer/reports/not-in-fm/*.rpt)
+shopt -u nullglob
+# clear even when THIS run has no .rpt set (stale pages would survive forever)
+mkdir -p "$DOCS/not-in-fm"
+rm -f "$DOCS"/not-in-fm/*.html
+if [ ${#nifp[@]} -gt 0 ]; then
+    CUR_DATES=$TRANSFER_DATES; DLINK_BASE="../details/"
+    for f in "${nifp[@]}"; do
+        b=${f##*/}; b=${b%.rpt}
+        # one report key per page: a remembered search or sort belongs to THAT row's list
+        pub_run render_rpt "$f" "$DOCS/not-in-fm/$b.html" "../assets/style.css" "../index.html" "TRANSFER" "" "not-in-flow-manager" "nifm-$b"
+    done
+    pub_wait
+    DLINK_BASE="../details/"
+    echo "Rendered docs/not-in-fm/ (${#nifp[@]} row page(s))." >&2
+fi
+
 # THE FILE PAGES — docs/files/ (render_file_pages above), from the errors/ +
 # files/ .rpt sets failed.sh settled in the report stage (its Reason
 # catch-up included) — ONCE per build.

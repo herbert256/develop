@@ -378,11 +378,16 @@ done <<< "$(printf '%s\n' "$agg" | grep $'^TOT\t')"
 # This type's ROW lines, count desc then name — printed STRAIGHT to stdout
 # inside the page block below, where a `rows+=$(printf …)` per row forked a
 # subshell per row for nothing.
+# LAST DATE/TIME (2026-10-02, user request: "Add a column Last date/time"):
+# the newest of the row's mentions — the stamp of the FIRST of its newest-
+# first log lines (lastlines: "yyyy-mm-dd hh:mm:ss  Level …", \037-joined).
 unknown_rows() {   # $1 = tag
-    local count bucket name lines
+    local count bucket name lines last
     while IFS=$'\t' read -r count bucket name lines; do
         [ -z "$name" ] && continue
-        printf 'ROW\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$name" "$count" "$bucket" "$lines"
+        last=${lines%%$'\037'*}; last=${last:0:19}
+        case $last in [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\ [0-9][0-9]:[0-9][0-9]:[0-9][0-9]) ;; *) last="" ;; esac
+        printf 'ROW\t%s\t%s\t%s\t@data:buckets=%s\t@data:loglines=%s\n' "$name" "$count" "$last" "$bucket" "$lines"
     done <<< "$(printf '%s\n' "$agg" | awk -F'\t' -v t="$1" '$1 == t { sub(/^[^\t]*\t/, ""); print }' \
                 | sort -t"$(printf '\t')" -k1,1nr -k3,3)"
 }
@@ -402,19 +407,19 @@ write_unknown_rpt() {   # $1 tag  $2 basename  $3 unit label ("subscription"…)
         case $tag in
         S)  printf 'TITLE\tSubscriptions Missing from Transfer Logs\n'
             printf 'TABLE\tSubscriptions in server logs, not in transfer logs\twide\n'
-            printf 'HEAD\tSubscription (as logged by the server)\tServer-log mentions\n' ;;
+            printf 'HEAD\tSubscription (as logged by the server)\tServer-log mentions\tLast date/time\n' ;;
         A)  printf 'TITLE\tAccounts Missing from Transfer Logs\n'
             printf 'TABLE\tAccounts in server logs, not in transfer logs\n'
-            printf 'HEAD\tAccount (as logged by the server)\tServer-log mentions\n' ;;
+            printf 'HEAD\tAccount (as logged by the server)\tServer-log mentions\tLast date/time\n' ;;
         L)  printf 'TITLE\tLogins Missing from Transfer Logs\n'
             printf 'TABLE\tLogins in server logs, not in transfer logs\n'
-            printf 'HEAD\tLogin (as logged by the server)\tServer-log mentions\n' ;;
+            printf 'HEAD\tLogin (as logged by the server)\tServer-log mentions\tLast date/time\n' ;;
         H)  printf 'TITLE\tOutbound Hosts Missing from Transfer Logs\n'
             printf 'TABLE\tConfigured hosts in server logs, not in transfer logs\n'
-            printf 'HEAD\tHost (as configured)\tServer-log mentions\n' ;;
+            printf 'HEAD\tHost (as configured)\tServer-log mentions\tLast date/time\n' ;;
         W)  printf 'TITLE\tWhitelisted IPs Missing from Transfer Logs\n'
             printf 'TABLE\tWhitelisted IPs in server logs, not in transfer logs\n'
-            printf 'HEAD\tIP address (whitelisted)\tServer-log mentions\n' ;;
+            printf 'HEAD\tIP address (whitelisted)\tServer-log mentions\tLast date/time\n' ;;
         esac
         # the value column's KIND is the ENTITY kind (2026-09-29, user request:
         # "have a link next to the entity value that goes to the detail page of
@@ -424,15 +429,17 @@ write_unknown_rpt() {   # $1 tag  $2 basename  $3 unit label ("subscription"…)
         # unconfigured or truncated name stays plain). A whitelisted IP has
         # no detail page type: mono, as before.
         case $tag in
-            S) printf 'KIND\tsite\tnum\n' ;;
-            A) printf 'KIND\tacct\tnum\n' ;;
-            L) printf 'KIND\tlogin\tnum\n' ;;
-            H) printf 'KIND\thost\tnum\n' ;;
-            *) printf 'KIND\tmono\tnum\n' ;;
+            S) printf 'KIND\tsite\tnum\ttext\n' ;;
+            A) printf 'KIND\tacct\tnum\ttext\n' ;;
+            L) printf 'KIND\tlogin\tnum\ttext\n' ;;
+            H) printf 'KIND\thost\tnum\ttext\n' ;;
+            *) printf 'KIND\tmono\tnum\ttext\n' ;;
         esac
-        printf 'RECALC\t-\ts0\n'
+        # Last date/time is the full-period newest mention: kept as it is
+        # under a narrowed From/To ("-")
+        printf 'RECALC\t-\ts0\t-\n'
         unknown_rows "$tag"
-        printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\n' "$n" "$unit" "$mentions"
+        printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t\n' "$n" "$unit" "$mentions"
         printf 'FOOT\n'
     } > "$REPORTS_DIR/$base.rpt.tmp" && mv "$REPORTS_DIR/$base.rpt.tmp" "$REPORTS_DIR/$base.rpt"
     echo "Data written to $REPORTS_DIR/$base.rpt ($n unknown $unit(s), $mentions mention(s))." >&2

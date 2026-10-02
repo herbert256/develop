@@ -1,7 +1,7 @@
 <h1>First seen</h1>
 <h2>What it shows</h2>
 <ul>
-<li>For six entity types &mdash; <strong>Logical</strong>, <strong>Partners</strong>, <strong>Subscriptions</strong>, <strong>Accounts</strong>, <strong>Logins</strong>, <strong>Hosts</strong> &mdash; the day each <strong>configured</strong> name first appeared in the transfer log: one row per log day, newest first.</li>
+<li>For all nine entity types &mdash; <strong>Subscriptions</strong>, <strong>Partners</strong>, <strong>Logical</strong>, <strong>Accounts</strong>, <strong>Logins</strong>, <strong>Hosts</strong>, <strong>Domains</strong>, <strong>Applications</strong>, <strong>BL</strong> &mdash; the day each <strong>configured</strong> name first appeared in the transfer log: one row per log day, newest first.</li>
 <li>Above the days: <strong>Total</strong>, <strong>Seen</strong>, <strong>Not seen</strong> (opening the matching Entities view).</li>
 <li>A day cell opens a page of its names &mdash; each linking its detail page, with its <strong>First transfer</strong> timestamp, tinted by its result colour.</li>
 </ul>
@@ -11,7 +11,7 @@
 <li>Transfers no subscription claimed (subscription <strong>Unknown</strong>) are no subscription and are not counted; a Total or Seen cell equals the Entities view it opens.</li>
 <li>A name seen without a dated transfer of its own (credited through a sibling: a shared endpoint&rsquo;s co-tenant, one organisation of a two-partner account) counts in Seen but in no day row, so the day rows can sum to less than Seen.</li>
 <li>Only transfers count: a name the server log mentions but that never transferred is Not seen.</li>
-<li>Dates: accounts and partners per File; subscriptions, logins and hosts per log record. Names match exactly, case aside; a subscription also matches the logged names it prefixes.</li>
+<li>Dates: accounts, partners, logical, domains, applications and BL per File; subscriptions, logins and hosts per log record. Names match exactly, case aside; a subscription also matches the logged names it prefixes.</li>
 </ul>
 <h2>Tips</h2>
 <ul>

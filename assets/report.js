@@ -2219,6 +2219,33 @@
     }
     if (hit.scrollIntoView) hit.scrollIntoView({ block: "center" });
   }
+  // ROWDAY TABLES (2026-10-02, user request: "/transfer/duration.html?axway_row
+  // — if called with the axway_row parameter, the Duration distribution table
+  // must be about that day only"): a RECALC table carrying data-rowday is
+  // re-aggregated for the ?axway_row DATE alone — the page itself stays at
+  // the full range (axway_row's rule) and the per-day table only marks the
+  // day — and its heading names the day. Not a date of the page's list: the
+  // table stays as it is. The next From/To change (rowDayOff, from apply)
+  // lifts it: the table then follows the range like every other one.
+  var rowDayOn = [];
+  function rowDayTables(epochOf, DAY) {
+    if (!urlRow || epochOf[urlRow] == null) return;
+    var tables = document.querySelectorAll("table[data-rowday][data-recalc]"), i;
+    for (i = 0; i < tables.length; i++) {
+      var t = tables[i], u = tunit(t), h = u && u.previousElementSibling;
+      recalcTable(t, epochOf[urlRow], epochOf[urlRow] + DAY - 1, true);
+      updateEmptyState(t); repage(t); replaceHotspots(t);
+      if (h && h.tagName === "H2") { h.setAttribute("data-rowday-orig", h.textContent); h.textContent = h.textContent + " \u2014 " + urlRow; }
+      rowDayOn.push(t);
+    }
+  }
+  function rowDayOff() {
+    rowDayOn.forEach(function (t) {
+      var u = tunit(t), h = u && u.previousElementSibling;
+      if (h && h.hasAttribute("data-rowday-orig")) { h.textContent = h.getAttribute("data-rowday-orig"); h.removeAttribute("data-rowday-orig"); }
+    });
+    rowDayOn = [];
+  }
   // ?axway_column=LABEL: find the header cell reading LABEL (the first one, on
   // the first table that has it), stamp data-colmark on it and on that
   // column's cell in every data and total row, and scroll it into view
@@ -2380,6 +2407,7 @@
     curRange = { lo: epochOf[dates[0]], hi: epochOf[dates[dates.length - 1]] + DAY - 1, narrowed: false };
     function apply(src) {
       closeAllDetails();                 // drill-down rows are full-period; drop them on any date change
+      rowDayOff();                       // a From/To change ends the ?axway_row day view of the rowday tables
       var loMid = +from.value, hiMid = +to.value;
       if (loMid > hiMid) {
         // An impossible range is resolved by moving the control the user did
@@ -2492,6 +2520,7 @@
       to.value = String(urlHi);
       apply();
     } else if (!resetDates && !urlRow && restoreSel()) apply();
+    rowDayTables(epochOf, DAY);
     // THE NARROWED-RANGE BLINK (2026-10-01, user request: "after loading a
     // page and there are date period selection fields with a selection other
     // then 'All' highlight and blink the from/to dates for a second"): a page

@@ -1437,7 +1437,7 @@ sidecars `_inbound-addr.tsv` / the flat server `_subscriptions.tsv` deleted; nev
   highlighted span, the others links made relative by `rg_rel` (a transfer page links
   `../server/…`); the h1 gets the tag `← Group`. A member's pages are `<dir>/<stem>.html` +
   `<stem>-*.html`, a LONGER member stem in the same dir winning (duration-longest.html is Longest
-  Files, duration-all.html Duration). Idempotent: a page already carrying a `grouptag` is skipped.
+  Files). Idempotent: a page already carrying a `grouptag` is skipped.
 - **Two groups keep their native render-time rows**: Entities (`group_of` → account-login-site:
   `render_entity_report`'s combined "members | views" row, the view carried across members — the
   pass only tags them) and the Cross References pair selector (group `cross`, its two entity rows
@@ -1852,6 +1852,36 @@ front end) then four fix workers with disjoint files. The rules it left:
   pirates.sh → transfer/publish.sh; Date/time · File name · CoreId · State, date-aware, opened from the
   pirates-details row) link their File page with the WHOLE row. Since a File with a page takes its Reason
   from that page's own log lines, these pages moved 17 sample reasons off One-legged / Unknown subscription.
+
+## Rules from the 2026-10-02 batch ("a few different things")
+
+- **Duration**: the OK (delivered) Files only — the Delivered Files / All Files pair and `duration-all` (page, .rpt,
+  `transfer_order` entry) are GONE; never restore. The Duration distribution table carries TABLE modifier
+  **`rowday`** (render_rpt → `data-rowday`): opened with `?axway_row=<date>` (the home Duration cells) report.js
+  `rowDayTables` re-aggregates it for that day alone and appends " — <date>" to its heading, while the page stays at
+  the full range with the day's row marked; the next From/To change (`rowDayOff` from `apply`) lifts it.
+- **Entity coverage** has no Subscriptions (nor Logins / Hosts) view by design: it asks whether every configured
+  DIRECTION of an entity that owns subscriptions works; a subscription is one direction, so its verdict is its own
+  result colour — the Entities Subscriptions views.
+- **First seen**: all nine entities — Date · Subscriptions · Partners · Logical · Accounts · Logins · Hosts · Domains
+  · Applications · BL; first-seen.rpt appends domains / applications / bl as fields 8-10 (the first six keep theirs);
+  Domains = `_files.tsv` col 19, Applications = `ap_union(col 18, col 12)`, BL = `bl_union(col 12)`, per File start.
+- **Not in Flow Manager**: ONE classifier, `bin/transfer/nifm-lib.sh` (`nifm_prepare` / `NIFM_AWK` /
+  `NIFM_TWORD_AWK`), shared by the report and `bin/transfer/filepages.sh`. Every row opens (rowlink) its page
+  `docs/not-in-fm/<type>_<slug>.html` (type word lowercase, slugof the value, `-2` on a clash) — every File of the
+  row, Date/time · Subscription · File · CoreId · State, newest first, File-colour tint, NAV back, date-aware; its first
+  10 rows have a File page (File-page kind **`N`**, selected in filepages.sh in the page order); other rows carry
+  `@data:norowlink`. The sample plants a `noconfig` flow (estate.awk; gen-config.awk skips it, generate.sh leaves it
+  out of flowid-names.tsv) — its Account / Subscription / Login rows; as a discovered subscription it reads red (no
+  flowdir join, so every File is Failed — the existing parse rule).
+- **The File / CoreId rule**: in a table with a file-name cell and a CoreId cell, when the file name links the File
+  page of that CoreId (`ROWFILEID` in render_rpt's ROW pre-pass — its own `@{href=…files/<id>.html}`, else the
+  ROWFP1 rule), the CoreId cell carries NO File-page link (an explicit one is dropped): report.js `addCoreIdLinks`
+  makes the plain id the File Tracking link (`input/coreid-url.txt`) and adds the ↗ only after an id that already is
+  a link — so no ↗. sub-files.js and all-files-search.js build the CoreId cell without the page link the same way;
+  Longest Files no longer bakes one. A row-drill row keeps the old way (its file name links nothing).
+- **Missing entities** (all five tables): a **Last date/time** column — the newest mention (the first of the row's
+  newest-first log lines); full-period (RECALC `-`), the TOTAL cell empty.
 
 ## Rules from the second 2026-10-01 batch ("a few different things")
 

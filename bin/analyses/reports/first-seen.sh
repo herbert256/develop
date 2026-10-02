@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
-# first-seen.sh — the First seen analysis: for six entity types (logical,
-# partner, subscription, account, login, remote host), the calendar day each CONFIGURED
+# first-seen.sh — the First seen analysis: for the NINE entity types (logical,
+# partner, subscription, account, login, remote host — and since 2026-10-02,
+# user request: "have a column for every of the 9 entities", domain,
+# application, BL), the calendar day each CONFIGURED
 # name was FIRST seen — plus, on top, the names never seen and the names seen
 # WITHOUT a dated transfer of their own. The universe and the seen split are
 # the COVERAGE TSVs (showseen's healed universe — the same files behind the
@@ -18,7 +20,8 @@
 #
 #   -> data/analyses/reports/first-seen.rpt        the page spec (SEEN /
 #      NOTSEEN / ROW / TOTAL lines, columns logicals partners
-#      subscriptions accounts logins hosts)
+#      subscriptions accounts logins hosts domains applications bl — the
+#      three last appended 2026-10-02, so the first six keep their fields)
 #   -> data/first-seen/<type>-<date>.rpt           one per NONZERO day cell
 #      (YYYY-MM-DD) — rendered into docs/first-seen/ by
 #      bin/analyses/publish.sh, like the coverage cells.
@@ -27,7 +30,9 @@
 # subscriptions,accounts,logins,hosts}.tsv — the seen flags; the partner
 # endpoint-alias rows, link col hosts/…, are skipped), the transfer parse
 # caches — _files.tsv (accounts col 3, partners col 20 unioned with the
-# subscription's configured partners, first-row date/time cols 4/5) and
+# subscription's configured partners, domains col 19, applications col 18
+# unioned with the subscription's applications, BL the subscription's tags —
+# the shared PDA unions of bin/pda-union.sh, first-row date/time cols 4/5) and
 # _transfers.tsv (subscriptions col 6, logins col 5, hosts
 # col 16, date/time cols 11/12) — for the DATES, plus the
 # data/flow-manager/base entity lists (configured names + direction), the
@@ -58,13 +63,13 @@ COV="$DATA/transfer/reports/coverage"
 # another caller)
 ensure_pda_tsvs
 srcs=()
-for f in _logicals _partners _subscriptions _accounts _logins _hosts; do
+for f in _logicals _partners _subscriptions _accounts _logins _hosts _domains _apps _bl; do
     [ -f "$BASE/$f.tsv" ] && srcs+=("$BASE/$f.tsv")
 done
-for f in logicals partners subscriptions accounts logins hosts; do
+for f in logicals partners subscriptions accounts logins hosts domains applications bl; do
     [ -f "$COV/$f.tsv" ] && srcs+=("$COV/$f.tsv")
 done
-for d in logicals partners subscriptions accounts logins hosts; do
+for d in logicals partners subscriptions accounts logins hosts domains applications bl; do
     [ -f "$DET/$d/_slugmap.tsv" ] && srcs+=("$DET/$d/_slugmap.tsv")
 done
 
@@ -82,7 +87,7 @@ rm -f "$FSRPT_DIR"/*.rpt
 # bridged the two. With no reverse DNS (2026-07) such an address stays raw in
 # col 16 and matches _hosts.tsv directly, so the alias is gone — showseen.sh
 # dropped the same bridge, and the two pages still cannot disagree.
-LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP="$PL_MAP" "$SP_AWK"'
+LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP="$PL_MAP" -v APMAP="$AP_MAP" -v BLMAP="$BL_MAP" "$SP_AWK"'
     function conf(t, n, d, r,   cu) {   # (d, r: the direction and result are not read — the cell rows went name-only, 2026-09-29 audit)
         cu = toupper(n)
         if ((t SUBSEP cu) in cname) return
@@ -123,6 +128,9 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
     FILENAME ~ /base\/_accounts\.tsv$/      { conf("accounts",      $1, $2, $3); next }
     FILENAME ~ /base\/_logins\.tsv$/        { conf("logins",        $1, $2, $3); next }
     FILENAME ~ /base\/_hosts\.tsv$/         { conf("hosts",         $1, $2, $3); next }
+    FILENAME ~ /base\/_domains\.tsv$/       { conf("domains",       $1, $2, $3); next }
+    FILENAME ~ /base\/_apps\.tsv$/          { conf("applications",  $1, $2, $3); next }
+    FILENAME ~ /base\/_bl\.tsv$/            { conf("bl",            $1, $2, $3); next }
     # the coverage seen flags (col 3) — the healed universe the status tables
     # and Entities views are built on
     # (NB: keys fold case here while home.sh pda_seen_total matches exactly —
@@ -147,12 +155,18 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
     FILENAME ~ /coverage\/accounts\.tsv$/      { covput("accounts",      $1, $3); next }
     FILENAME ~ /coverage\/logins\.tsv$/        { covput("logins",        $1, $3); next }
     FILENAME ~ /coverage\/hosts\.tsv$/         { covput("hosts",         $1, $3); next }
+    FILENAME ~ /coverage\/domains\.tsv$/       { covput("domains",       $1, $3); next }
+    FILENAME ~ /coverage\/applications\.tsv$/  { covput("applications",  $1, $3); next }
+    FILENAME ~ /coverage\/bl\.tsv$/            { covput("bl",            $1, $3); next }
     FILENAME ~ /details\/logicals\/_slugmap\.tsv$/       { smap["logicals"      SUBSEP toupper($1)] = "logicals/" $2;       next }
     FILENAME ~ /details\/partners\/_slugmap\.tsv$/       { smap["partners"      SUBSEP toupper($1)] = "partners/" $2;       next }
     FILENAME ~ /details\/subscriptions\/_slugmap\.tsv$/ { smap["subscriptions" SUBSEP toupper($1)] = "subscriptions/" $2; next }
     FILENAME ~ /details\/accounts\/_slugmap\.tsv$/       { smap["accounts"      SUBSEP toupper($1)] = "accounts/" $2;       next }
     FILENAME ~ /details\/logins\/_slugmap\.tsv$/         { smap["logins"        SUBSEP toupper($1)] = "logins/" $2;         next }
     FILENAME ~ /details\/hosts\/_slugmap\.tsv$/          { smap["hosts"         SUBSEP toupper($1)] = "hosts/" $2;          next }
+    FILENAME ~ /details\/domains\/_slugmap\.tsv$/        { smap["domains"       SUBSEP toupper($1)] = "domains/" $2;        next }
+    FILENAME ~ /details\/applications\/_slugmap\.tsv$/   { smap["applications"  SUBSEP toupper($1)] = "applications/" $2;   next }
+    FILENAME ~ /details\/bl\/_slugmap\.tsv$/             { smap["bl"            SUBSEP toupper($1)] = "bl/" $2;             next }
     FILENAME ~ /_files\.tsv$/ {
         if ($4 != "") dates[$4] = 1
         FCN[$1] = $16   # connection side per CoreId, for the hosts out-gate below
@@ -166,6 +180,14 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
         for (i9 = 1; i9 <= n9; i9++) upd("partners", Z9[i9], $4, $5)
         n8 = split(lg_union($13, $12), Z8, "\037")
         for (i8 = 1; i8 <= n8; i8++) upd("logicals", Z8[i8], $4, $5)
+        # (2026-10-02) the domain (col 19, single-valued), the applications
+        # (col 18 UNIONED with the subscription'\''s) and the BL tags of the
+        # subscription — the Entities attribution of the three
+        upd("domains", $19, $4, $5)
+        n7 = split(ap_union($18, $12), Z7, "\037")
+        for (i7 = 1; i7 <= n7; i7++) upd("applications", Z7[i7], $4, $5)
+        n6 = split(bl_union($12), Z6, "\037")
+        for (i6 = 1; i6 <= n6; i6++) upd("bl", Z6[i6], $4, $5)
         next
     }
     FILENAME ~ /_transfers\.tsv$/ {
@@ -188,7 +210,7 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
         # the DATE is the name'\''s own first transfer (subscriptions by
         # prefix). Seen without a date -> the "nodate" key: counted into
         # Seen, in no day row (its page row went 2026-09-30).
-        nt = split("logicals partners subscriptions accounts logins hosts", TL, " ")
+        nt = split("logicals partners subscriptions accounts logins hosts domains applications bl", TL, " ")
         for (i = 1; i <= nt; i++) {
             t = TL[i]
             for (j = 1; j <= cn[t]; j++) {
@@ -213,7 +235,8 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
     function lbl(t) {
         return (t == "logicals") ? "Logical" : \
                (t == "partners") ? "Partners" : (t == "subscriptions") ? "Subscriptions" : \
-               (t == "accounts") ? "Accounts" : (t == "logins") ? "Logins" : "Hosts"
+               (t == "accounts") ? "Accounts" : (t == "logins") ? "Logins" : \
+               (t == "domains") ? "Domains" : (t == "applications") ? "Applications" : (t == "bl") ? "BL" : "Hosts"
     }
     function celltitle(t, key, n) {
         return lbl(t) ": First seen " key " (" n ")"
@@ -263,7 +286,7 @@ LC_ALL=C awk -F'\t' -v OFS='\t' -v SPMAP="$SP_MAP" -v SLGMAP="$SLG_MAP" -v PLMAP
     }
     END {
         flushcell()
-        nt = split("logicals partners subscriptions accounts logins hosts", TL, " ")
+        nt = split("logicals partners subscriptions accounts logins hosts domains applications bl", TL, " ")
         # ordered day list
         nd = 0; for (d in alldates) days[++nd] = d
         for (i = 2; i <= nd; i++) { v = days[i]; j = i - 1; while (j >= 1 && days[j] > v) { days[j+1] = days[j]; j-- } days[j+1] = v }

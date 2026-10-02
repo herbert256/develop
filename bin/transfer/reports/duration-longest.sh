@@ -63,14 +63,16 @@ shown_ok=$(printf '%s\n' "$slow_ok" | awk 'length($0) { n++ } END { print n+0 }'
 
 # rows: Duration (sortval = the exact ms) ⇥ Start ⇥ End ⇥ File ⇥
 # Subscription ⇥ CoreId (2026-09-30: File and CoreId switched); every cell
-# but the subscription's opens the File page, and so does the whole row
+# but the subscription's and the CoreId's opens the File page, and so does the
+# whole row — the CoreId opens File Tracking (2026-10-02, user request: the
+# File / CoreId rule; render_rpt drops a File-page link there anyway)
 rows_of() {   # $1 the list
     printf '%s\n' "$1" | awk -F'\t' "$AWKLIB"'
     # (every listed File is in the published set: kind L — its page exists)
     length($0) {
         h = "href=../files/" $2 ".html,"
         # (@data:res FIRST: the row reads <tr data-res=… data-href=…>)
-        printf "ROW\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{href=../files/%s.html}%s\t%s\t@{href=../files/%s.html}%s%s\t@data:href=../files/%s.html\n", h, $1, $7, h, $1, $3, h, $1, $5, $2, $6, $4, $2, $2, ($8 ~ /^(green|orange|red)$/ ? "\t@data:res=" $8 : ""), $2 }'
+        printf "ROW\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{%ssortval=%d}%s\t@{href=../files/%s.html}%s\t%s\t%s%s\t@data:href=../files/%s.html\n", h, $1, $7, h, $1, $3, h, $1, $5, $2, $6, $4, $2, ($8 ~ /^(green|orange|red)$/ ? "\t@data:res=" $8 : ""), $2 }'
 }
 {
     printf 'TITLE\tLongest Files\n'
