@@ -830,6 +830,8 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "07/24/2026 17:11:55.368","INFO","TM","requestExecutor806282","[Ssh Default] Allowed user 'FE243615' from address '198.51.100.13', corresponding account 'STMT-EXPORT-GLOBEX@FE243615' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level.","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","654","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","6248456f387a3747505659656a414c427368642f727479536468762f576764535a563446523853647742373d","07/24/2026 17:11:33.691","UNKNOWN"
 "07/24/2026 17:07:30.253","INFO","TM","requestExecutor813580","{""message"":""Transfer end logged."",
 ""status"":""error"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""84f0b64d-ad7a-444d-a106-f7ddf28a57da"",
 ""transferId"":""950c6f71-a49d-4795-8d56-879c2161a525"",
@@ -837,12 +839,16 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "07/24/2026 17:07:30.236","ERROR","TM","requestExecutor860424","Error during transfer operation: Error occurred while sending file to partner UC2_ZG_MATCH_HOOLI_ZG_MATCH_HOOLI_SCP_ZG_MATCH_HOOLI_PWD defined in account ZG-MATCH-HOOLI. Connection closed by the remote host","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","543","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","4a56415a696e6438514f5a2f6433414b347638504b5457512b746a644b72706e334a5333753161626155613d","07/24/2026 17:07:01.905","UNKNOWN"
 "07/24/2026 17:07:30.216","INFO","TM","requestExecutor809223","{""message"":""Transfer end logged."",
 ""status"":""ok"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""84f0b64d-ad7a-444d-a106-f7ddf28a57da"",
 ""transferId"":""950c6f71-a49d-4795-8d56-879c2161a525"",
 ""fileName"":""AcmeZG_MATCH_HOOLI_20260724058839_816609.dat""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","389","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","714d4e4b7439542f41645a436b54786b6f746c4959554b4f7466375171417044516563625075386e2b41743d","07/24/2026 17:07:14.801","UNKNOWN"
 "07/24/2026 17:07:28.427","INFO","TM","requestExecutor878482","{""message"":""Transfer start logged."",
 ""status"":""active"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""84f0b64d-ad7a-444d-a106-f7ddf28a57da"",
 ""transferId"":""950c6f71-a49d-4795-8d56-879c2161a525"",
@@ -1776,12 +1782,16 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "07/24/2026 10:59:11.219","INFO","TM","requestExecutor882898","[Ssh Default] Allowed user 'FE454960' from address '198.51.100.41', corresponding account 'ZG-ZKA-HOOLI@FE454960' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level.","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","682","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","32415432674a2f4b59564e30744c596d7357662b6f4f554f336f7263364d635949457237324c65485736353d","07/24/2026 10:58:41.362","UNKNOWN"
 "07/24/2026 10:55:05.019","INFO","TM","requestExecutor894471","{""message"":""Transfer end logged."",
 ""status"":""ok"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""76c2f907-4b13-4e3b-b72e-735cbb35a55f"",
 ""transferId"":""101a4d5f-cf92-4b4b-9490-2f4ebf4586cb"",
 ""fileName"":""AcmeSTMT_EXPORT_GLOBEX_20260724034930_524173.zip""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","304","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","6276546e7648363561576d563668372b66517747494c2b76684d67316436505436574639794b784e7955463d","07/24/2026 10:54:52.562","UNKNOWN"
 "07/24/2026 10:55:04.989","INFO","TM","requestExecutor870709","{""message"":""Transfer end logged."",
 ""status"":""error"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""6bcedc53-0e97-403a-83d2-84084c5ab0c4"",
 ""transferId"":""101a4d5f-cf92-4b4b-9490-2f4ebf4586cb"",
@@ -1789,6 +1799,8 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "07/24/2026 10:55:04.959","WARN","TM","requestExecutor866351","[Ssh Default] No session cycleId for file /data/FlowManager/STMT-EXPORT-GLOBEX@FE243615/AcmeSTMT_EXPORT_GLOBEX_20260724034930_524173.zip. SENT will not get reported!","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","654","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","6276546e7648363561576d563668372b66517747494c2b76684d67316436505436574639794b784e7955463d","07/24/2026 10:54:22.373","UNKNOWN"
 "07/24/2026 10:55:04.555","INFO","TM","requestExecutor834369","{""message"":""Transfer start logged."",
 ""status"":""active"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""6bcedc53-0e97-403a-83d2-84084c5ab0c4"",
 ""transferId"":""101a4d5f-cf92-4b4b-9490-2f4ebf4586cb"",

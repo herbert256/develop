@@ -154,7 +154,7 @@ function s_arpair(abs, sid, fn) {
 # T()) — bin/bookend-ok.sh settles on the ok bookend of the LAST leg only.
 # Emitted for the collectdrop flow only (2026-09-09).
 function s_bookend(abs, sid, kind, status, fn) {
-    S(abs, "I", "TM", sid, "{\"message\":\"Transfer " kind " logged.\",\x01\"status\":\"" status "\",\x01\"direction\":\"Outbound\",\x01\"coreId\":\"" CID "\",\x01\"transferId\":\"" LAST_TID "\",\x01\"fileName\":\"" fn "\"}")
+    S(abs, "I", "TM", sid, "{\"message\":\"Transfer " kind " logged.\",\x01\"status\":\"" status "\",\x01\"serverName\":\"Ssh Default\",\x01\"initiator\":\"Client\",\x01\"direction\":\"Outbound\",\x01\"coreId\":\"" CID "\",\x01\"transferId\":\"" LAST_TID "\",\x01\"fileName\":\"" fn "\"}")
 }
 function s_pesit_ok(abs, sid) {
     if (rnd() < 0.4) S(abs - 200 - rint(300), "I", "PESITD", "", "Establishing PeSIT SSL connection with host 192.0.2.21, using cipher suite: TLS_AES_256_GCM_SHA384 and TLS/SSL protocol: TLSv1.3.")
@@ -342,7 +342,9 @@ function uc2_file(t0,   fn, sz, mo, sidst, sidc, d1, d2, d3, tr, uncol, tc, swj,
         # half the drops are followed by the client's successful re-download
         # (the ok bookend settles the File); the other half end in the error
         # bookend alone — the File stays Failed and its only evidence is that
-        # bookend: reason "Unknown error" (2026-09-10)
+        # bookend: reason "Unknown error" (2026-09-10), "Partner disconnected
+        # during download" since 2026-10-05 (the bookend names the client-
+        # initiated Outbound SSH session, as the platform writes it)
         if (rnd() < 0.5) s_bookend(tc + dcol + 1350, sesshex(), "end", "ok", fn)
         # the dropped connection also logs an Error naming the flow ON THE
         # SAME SESSION as the error bookend below (2026-09-12): a transfer-

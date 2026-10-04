@@ -514,12 +514,16 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "07/05/2026 16:32:12.075","INFO","TM","requestExecutor861002","Remote files pattern of transfer site: 'UC3_AB_SNOWFLAKE_GLOBEX_AB_SNOWFLAKE_GLOBEX_SCP_AB_SNOWFLAKE_GLOBEX_KEY' evaluated to: '*'","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","589","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","6e67656f2f6e5a7a42623755705365637949684864394a335a36617a6d5a353178365033464f526d6179343d","07/05/2026 16:32:05.938","UNKNOWN"
 "07/05/2026 16:26:20.958","INFO","TM","requestExecutor857036","{""message"":""Transfer end logged."",
 ""status"":""ok"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""b7c5148e-9953-43db-b0d0-62d07ebdbcab"",
 ""transferId"":""90eb4ded-3e40-41b4-a81b-2a4d6681ca57"",
 ""fileName"":""AcmeZG_MATCH_HOOLI_20260705058323_269611.pdf.pgp""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","355","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","41796a79454151473134615a2f6f363048366552436479556f32446f6973703055525a322f7044743349543d","07/05/2026 16:25:57.253","UNKNOWN"
 "07/05/2026 16:26:20.363","INFO","TM","requestExecutor812800","{""message"":""Transfer start logged."",
 ""status"":""active"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""b7c5148e-9953-43db-b0d0-62d07ebdbcab"",
 ""transferId"":""90eb4ded-3e40-41b4-a81b-2a4d6681ca57"",

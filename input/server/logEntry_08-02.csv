@@ -511,12 +511,16 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "08/02/2026 17:13:05.334","INFO","TM","requestExecutor833451","Remote files pattern of transfer site: 'UC3_CD_QUOTES_STARK_CD_QUOTES_STARK_SCP_CD_QUOTES_STARK_PWD' evaluated to: '*'","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","380","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","494a72525a734d746770556c725949767178544b46664963557559567a55654441776e5136792b3649776a3d","08/02/2026 17:12:56.740","UNKNOWN"
 "08/02/2026 17:12:17.533","INFO","TM","requestExecutor841249","{""message"":""Transfer end logged."",
 ""status"":""ok"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""b37b756c-221c-4965-a11a-c742cc16edc0"",
 ""transferId"":""a244452f-517b-4966-9d80-066e567a89c7"",
 ""fileName"":""AcmeSTMT_EXPORT_GLOBEX_20260802061093_592446.pdf.pgp""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","646","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","367463703877485462726661446546584e4b736c59653561764a5a7671676a496b6f4c5668396847504a763d","08/02/2026 17:11:13.204","UNKNOWN"
 "08/02/2026 17:12:17.503","INFO","TM","requestExecutor851859","{""message"":""Transfer end logged."",
 ""status"":""error"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""7b2221e9-65a5-439d-ba69-bd1e17ea06be"",
 ""transferId"":""a244452f-517b-4966-9d80-066e567a89c7"",
@@ -524,6 +528,8 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "08/02/2026 17:12:17.473","WARN","TM","requestExecutor828843","[Ssh Default] No session cycleId for file /data/FlowManager/STMT-EXPORT-GLOBEX@FE243615/AcmeSTMT_EXPORT_GLOBEX_20260802061093_592446.pdf.pgp. SENT will not get reported!","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","625","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","367463703877485462726661446546584e4b736c59653561764a5a7671676a496b6f4c5668396847504a763d","08/02/2026 17:11:53.472","UNKNOWN"
 "08/02/2026 17:12:17.311","INFO","TM","requestExecutor822287","{""message"":""Transfer start logged."",
 ""status"":""active"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""7b2221e9-65a5-439d-ba69-bd1e17ea06be"",
 ""transferId"":""a244452f-517b-4966-9d80-066e567a89c7"",

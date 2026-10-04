@@ -798,12 +798,16 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "08/17/2026 16:43:51.314","INFO","TM","requestExecutor887276","AR0076: [SECURETRANSPORT] [route]  Route execution started.","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","607","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","463659584c6c346364557670793470456d436d47306d55625144733242627a7877636a6d757550726133463d","08/17/2026 16:43:35.070","UNKNOWN"
 "08/17/2026 16:43:44.680","INFO","TM","requestExecutor802997","{""message"":""Transfer end logged."",
 ""status"":""ok"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""0124f54f-28e1-4d34-9326-e38bf66b0363"",
 ""transferId"":""339af0a2-4716-4fea-bb33-5f0aaf651cb2"",
 ""fileName"":""AcmeZG_MATCH_HOOLI_20260817058623_254769.csv""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","639","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","754a73633130576c47356d476e4559752b5737787549737743384d454c344c343739577377495a36514c473d","08/17/2026 16:43:28.308","UNKNOWN"
 "08/17/2026 16:43:44.284","INFO","TM","requestExecutor873371","{""message"":""Transfer start logged."",
 ""status"":""active"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""0124f54f-28e1-4d34-9326-e38bf66b0363"",
 ""transferId"":""339af0a2-4716-4fea-bb33-5f0aaf651cb2"",
@@ -1712,12 +1716,16 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "08/17/2026 10:11:32.140","INFO","TM","requestExecutor802925","[Ssh Default] Allowed user 'FE243615' from address '198.51.100.12', corresponding account 'STMT-EXPORT-GLOBEX@FE243615' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level.","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","589","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","666e474a6c6f4e50766b586b4247386a5444395364576479705a554b554566586a625631786e33316176783d","08/17/2026 10:10:48.710","UNKNOWN"
 "08/17/2026 10:11:09.947","INFO","TM","requestExecutor816607","{""message"":""Transfer end logged."",
 ""status"":""ok"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""9199d81d-7ae9-4707-b86f-b47ed7411aff"",
 ""transferId"":""b93a9942-bcbe-46d5-bd44-10642b7c15ca"",
 ""fileName"":""AcmeSTMT_EXPORT_GLOBEX_20260817032696_390771.dat""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","415","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","38744d36394c736d66354e7646516857782b566276515a656a6d4e374164384a585a576a4e357768484e423d","08/17/2026 10:10:15.145","UNKNOWN"
 "08/17/2026 10:11:09.917","INFO","TM","requestExecutor827217","{""message"":""Transfer end logged."",
 ""status"":""error"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""740a65fb-7a02-429d-ade5-315df86c8a14"",
 ""transferId"":""b93a9942-bcbe-46d5-bd44-10642b7c15ca"",
@@ -1725,6 +1733,8 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "08/17/2026 10:11:09.887","WARN","TM","requestExecutor804201","[Ssh Default] No session cycleId for file /data/FlowManager/STMT-EXPORT-GLOBEX@FE243615/AcmeSTMT_EXPORT_GLOBEX_20260817032696_390771.dat. SENT will not get reported!","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","394","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","38744d36394c736d66354e7646516857782b566276515a656a6d4e374164384a585a576a4e357768484e423d","08/17/2026 10:10:55.413","UNKNOWN"
 "08/17/2026 10:11:09.382","INFO","TM","requestExecutor861761","{""message"":""Transfer start logged."",
 ""status"":""active"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""740a65fb-7a02-429d-ade5-315df86c8a14"",
 ""transferId"":""b93a9942-bcbe-46d5-bd44-10642b7c15ca"",

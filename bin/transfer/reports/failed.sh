@@ -1072,7 +1072,8 @@ LC_ALL=C awk -F'\t' -v CAND=8 "$(cat "$LIB_DIR/../flip-reason.awk")"'
     # (2026-09-10): the Info line {"message":"Transfer end logged.",
     # "status":"error",…} whose transferId is in the legs table (TABLE 2,
     # cell 9) — the only evidence a silently dropped connection leaves; the
-    # classifier reads it "Unknown error" and, walking
+    # classifier reads it "Unknown error" ("Partner disconnected during
+    # download" on a partner own download, 2026-10-05) and, walking
     # errors first, lets any real error line outrank it
     function ownbookend(m,   t9) {
         if (index(m, "{\"message\":\"Transfer end logged.\"") != 1 || index(m, "\"status\":\"error\"") == 0) return 0
@@ -1090,7 +1091,7 @@ LC_ALL=C awk -F'\t' -v CAND=8 "$(cat "$LIB_DIR/../flip-reason.awk")"'
     $1 == "ROW" && tno == 2 && NF >= 9 && $9 != "" { ptid[$9] = 1 }   # the legs table: the page own transfer ids
     $1 == "ROW" && site != "" && NF >= 4 && ($3 == "Error" || $3 == "Warning" || ($3 == "Info" && ownbookend($4))) {
         if ($2 > fmax) fmax = $2                # the page own newest line, for picking the page
-        if (fn < CAND) { fn++; fs[fn] = $2; fl[fn] = $3; fm[fn] = ctx_enrich(substr($4, 1, 200), prev) }   # a bare "Permission denied" carries the line before it
+        if (fn < CAND) { fn++; fs[fn] = $2; fl[fn] = $3; fm[fn] = ctx_enrich(substr(bookend_short($4), 1, 200), prev) }   # a bare "Permission denied" carries the line before it
     }
     $1 == "ROW" && NF >= 4 { prev = $4 }   # the previous line of the page, for ctx_enrich
     END { flush()
@@ -1118,7 +1119,8 @@ mv "$EVID.tmp" "$EVID"
 #      contradicted its own title. What the file's legs say outranks what a
 #      DIFFERENT file's page said. Since 2026-09-21 (user rule) a one-leg file
 #      its page classified only as "Unknown error" — the classifier's LAST
-#      rule, the bare error bookend — reads "One-legged" too.
+#      rule, the bare error bookend — reads "One-legged" too (as does its
+#      partner-download twin "Partner disconnected during download").
 #   3. the PAIR borrow (2026-08): an UNPAGED file with nothing of its own
 #      takes the reason of the NEWEST PAGED file of its (subscription, legs)
 #      pair — the same failure shape, much closer evidence than the flow's
@@ -1191,7 +1193,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -
             if (t == 2 && n >= 9 && a[9] != "") ptid[a[9]] = 1   # the legs table: the file own transfer ids
             # a bare "Permission denied" takes its meaning from the line before it (ctx_enrich, flip-reason.awk)
             if (n >= 4 && (a[3] == "Error" || a[3] == "Warning" || (a[3] == "Info" && ownbookend(a[4], ptid)))) {
-                fn++; fl[fn] = a[3]; fm[fn] = ctx_enrich(substr(a[4], 1, 200), prev) }
+                fn++; fl[fn] = a[3]; fm[fn] = ctx_enrich(substr(bookend_short(a[4]), 1, 200), prev) }
             if (n >= 4) prev = a[4]
         }
         close(f)
@@ -1216,7 +1218,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -
             # missing second leg IS the story, the verdict rule 2 gives every
             # other unclassified one-leg file. Before the PAIR store, so the
             # pair donates the final verdict.
-            if (r6 == "Unknown error" && legs + 0 == 1) r6 = "One-legged"
+            if ((r6 == "Unknown error" || r6 == "Partner disconnected during download") && legs + 0 == 1) r6 = "One-legged"
             # the PAIR verdict: the stream is newest first, so the FIRST
             # paged row of a (subscription, legs) pair is that pair NEWEST
             # page — it donates its reason to the unpaged (older, off-window)
@@ -1226,7 +1228,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v EVID="$EVID" -v PAGEDF="$TMP/paged" -
         }
         else if (cid in FS9) {   # its own FILE page (never a pair donor)
             r6 = pagereason(cid)
-            if (r6 == "Unknown error" && legs + 0 == 1) r6 = "One-legged"
+            if ((r6 == "Unknown error" || r6 == "Partner disconnected during download") && legs + 0 == 1) r6 = "One-legged"
         }
         else { r6 = ""; if (cid in LST) LEGST = LST[cid] }
         if (r6 == "" && legs + 0 == 1) r6 = "One-legged"

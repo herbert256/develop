@@ -893,12 +893,16 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "08/10/2026 17:05:02.994","INFO","TM","requestExecutor833642","Remote files pattern of transfer site: 'UC3_FIN_FACTS_MASSIVE_FIN_FACTS_MASSIVE_SCP_FIN_FACTS_MASSIVE_PWD' evaluated to: '*'","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","429","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","35616d62644c6877645375632b4d4c3149446c50504139682f684872694c653771795530495268314b31473d","08/10/2026 17:04:31.369","UNKNOWN"
 "08/10/2026 17:04:34.027","INFO","TM","requestExecutor855769","{""message"":""Transfer end logged."",
 ""status"":""ok"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""7e2e22bd-e309-480e-bf9b-416184d77390"",
 ""transferId"":""e9a2912e-9b4f-4834-ac32-337eb09509d6"",
 ""fileName"":""AcmeSTMT_EXPORT_GLOBEX_20260810060689_825789.xml""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","378","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","6e345076474b2b54636a566f476e6e736b584b4742516371306e2f49644d6266397243747577702b4233423d","08/10/2026 17:04:02.175","UNKNOWN"
 "08/10/2026 17:04:33.997","INFO","TM","requestExecutor832006","{""message"":""Transfer end logged."",
 ""status"":""error"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""3780bf0e-37b6-4bcd-96ab-e243ab5bf910"",
 ""transferId"":""e9a2912e-9b4f-4834-ac32-337eb09509d6"",
@@ -906,6 +910,8 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "08/10/2026 17:04:33.967","WARN","TM","requestExecutor827649","[Ssh Default] No session cycleId for file /data/FlowManager/STMT-EXPORT-GLOBEX@FE243615/AcmeSTMT_EXPORT_GLOBEX_20260810060689_825789.xml. SENT will not get reported!","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","328","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","6e345076474b2b54636a566f476e6e736b584b4742516371306e2f49644d6266397243747577702b4233423d","08/10/2026 17:03:31.986","UNKNOWN"
 "08/10/2026 17:04:33.781","INFO","TM","requestExecutor800846","{""message"":""Transfer start logged."",
 ""status"":""active"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""3780bf0e-37b6-4bcd-96ab-e243ab5bf910"",
 ""transferId"":""e9a2912e-9b4f-4834-ac32-337eb09509d6"",
@@ -986,12 +992,16 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "08/10/2026 16:28:14.296","INFO","PESITD","requestExecutor802578","[Pesit Default] Client logged in (remote address - 192.0.2.20/192.0.2.20, caller id - P00001_CFT01)","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","422","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","UNKNOWN","unknown","UNKNOWN"
 "08/10/2026 16:22:16.194","INFO","TM","requestExecutor832145","{""message"":""Transfer end logged."",
 ""status"":""ok"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""aaf4b892-afec-4b9f-979e-3aa54bf4a4e4"",
 ""transferId"":""8ca322f9-425c-4bd1-8193-580cadc04f7b"",
 ""fileName"":""AcmeZG_MATCH_HOOLI_20260810058601_707815.xml""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","603","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","536b6a7a44797456556b456a597157724b6e6f376b3742684266426774374c48674f514c49385650514a623d","08/10/2026 16:21:30.643","UNKNOWN"
 "08/10/2026 16:22:15.929","INFO","TM","requestExecutor805311","{""message"":""Transfer start logged."",
 ""status"":""active"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""aaf4b892-afec-4b9f-979e-3aa54bf4a4e4"",
 ""transferId"":""8ca322f9-425c-4bd1-8193-580cadc04f7b"",

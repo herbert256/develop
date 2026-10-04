@@ -30,6 +30,20 @@ function ctx_enrich(msg, prev,   m) {
     if (m == "permission denied" && prev != "") return msg " [after: " substr(prev, 1, 120) "]"
     return msg
 }
+# bookend_short(msg): the "Transfer end logged." JSON bookend cut down to the
+# fields the classifier reads. The collectors keep 200 characters of a line,
+# and in the platform's field order (message, status, fileName, userName,
+# serverName, initiator, direction, …) a long fileName pushes "initiator" and
+# "direction" past that cut (2026-10-05). Any other line comes back unchanged.
+function bk_field(m, k) {
+    if (!match(m, "\"" k "\" *: *\"[^\"]*\"")) return ""
+    m = substr(m, RSTART, RLENGTH); sub(/^"[^"]*" *: *"/, "", m); sub(/"$/, "", m); return m
+}
+function bookend_short(m) {
+    if (index(m, "{\"message\":\"Transfer end logged.\"") != 1) return m
+    return "{\"message\":\"Transfer end logged.\",\"status\":\"" bk_field(m, "status") "\",\"serverName\":\"" bk_field(m, "serverName") \
+           "\",\"initiator\":\"" bk_field(m, "initiator") "\",\"direction\":\"" bk_field(m, "direction") "\"}"
+}
 function flip_reason(msg,   m) {
     m = tolower(msg)
     # the FTPS pull leg failing wholesale (2026-08-31, user request): the
@@ -138,6 +152,17 @@ function flip_reason(msg,   m) {
     # order — the bookend closes the transfer, so it comes last). Reads
     # "Unknown error" since 2026-09-12 (user request; it was "Connection
     # dropped mid-transfer") — no error line says what went wrong.
+    # EXCEPT a PARTNER'S OWN DOWNLOAD (2026-10-05, user request, from the
+    # server log around such failures): the bookend of a client-initiated
+    # Outbound transfer — the partner's SFTP/FTP client fetching a file from
+    # its account. The client closes its session ("Removed session
+    # information") while the platform has not yet seen the file closed; the
+    # session cleanup books the transfer as error, with no Error line on
+    # either side. On a clean download the same race happens, but the file
+    # close lands a moment later and books the transfer ok — when it never
+    # lands (or lands without its transfer-status id) the leg stays Failed.
+    # Pesit is excluded: its client is CFT, not a partner.
+    if (m ~ /"message":"transfer end logged\."/ && m ~ /"status":"error"/ && m ~ /"initiator":"client"/ && m ~ /"direction":"outbound"/ && m !~ /"servername":"pesit/) return "Partner disconnected during download"
     if (m ~ /"message":"transfer end logged\."/ && m ~ /"status":"error"/) return "Unknown error"
     return ""
 }

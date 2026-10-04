@@ -1671,12 +1671,16 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "07/08/2026 10:50:02.606","INFO","TM","requestExecutor892986","Remote files pattern of transfer site: 'UC3_FIN_FACTS_MASSIVE_FIN_FACTS_MASSIVE_SCP_FIN_FACTS_MASSIVE_PWD' evaluated to: '*'","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","429","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","45484364434133454f6e695966366e4344732b2f723163444530397676335268386d6373497174424f554e3d","07/08/2026 10:49:00.880","UNKNOWN"
 "07/08/2026 10:49:30.487","INFO","TM","requestExecutor877909","{""message"":""Transfer end logged."",
 ""status"":""ok"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""04d97e3d-fa51-4e44-8a9d-efcad2c47946"",
 ""transferId"":""da8ab868-c03f-49be-af66-bbb85d2a913f"",
 ""fileName"":""AcmeSTMT_EXPORT_GLOBEX_20260708035802_610085.zip""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","470","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","654c316161743758346135393344687a636f2f6e56556b446c30564247466b6936625965315a4645416c673d","07/08/2026 10:48:45.206","UNKNOWN"
 "07/08/2026 10:49:30.457","INFO","TM","requestExecutor888519","{""message"":""Transfer end logged."",
 ""status"":""error"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""22eb7e27-4f47-4c0d-8a4c-ca0d22ce29c4"",
 ""transferId"":""da8ab868-c03f-49be-af66-bbb85d2a913f"",
@@ -1684,6 +1688,8 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "07/08/2026 10:49:30.427","WARN","TM","requestExecutor884161","[Ssh Default] No session cycleId for file /data/FlowManager/STMT-EXPORT-GLOBEX@FE243615/AcmeSTMT_EXPORT_GLOBEX_20260708035802_610085.zip. SENT will not get reported!","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","389","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","654c316161743758346135393344687a636f2f6e56556b446c30564247466b6936625965315a4645416c673d","07/08/2026 10:49:11.245","UNKNOWN"
 "07/08/2026 10:49:30.178","INFO","TM","requestExecutor853616","{""message"":""Transfer start logged."",
 ""status"":""active"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""22eb7e27-4f47-4c0d-8a4c-ca0d22ce29c4"",
 ""transferId"":""da8ab868-c03f-49be-af66-bbb85d2a913f"",
@@ -1741,12 +1747,16 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "07/08/2026 10:26:14.936","INFO","TM","requestExecutor809506","Reporting event to Sentinel: TransferEvent","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","581","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","55494c347868524f75642b6b6e33716d396f78495577416d4565424b48732f2f55703878757a78414749513d","07/08/2026 10:25:36.713","UNKNOWN"
 "07/08/2026 10:23:51.736","INFO","TM","requestExecutor899006","{""message"":""Transfer end logged."",
 ""status"":""ok"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""fec7d500-006b-4ab4-85d9-15112d53dcdc"",
 ""transferId"":""7c1834a7-fb4d-4a1b-8726-0dbfb6a0e7e2"",
 ""fileName"":""AcmeSTMT_EXPORT_GLOBEX_20260708032691_645450.dat""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","392","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","7671574e55504d34422f5a3373516367316a6572466b6f6f45667a4574727a6938337333644f75715965633d","07/08/2026 10:23:15.355","UNKNOWN"
 "07/08/2026 10:23:51.706","INFO","TM","requestExecutor809617","{""message"":""Transfer end logged."",
 ""status"":""error"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""6c540b42-3b94-4728-a184-2e6fa20d42bf"",
 ""transferId"":""7c1834a7-fb4d-4a1b-8726-0dbfb6a0e7e2"",
@@ -1754,6 +1764,8 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "07/08/2026 10:23:51.676","WARN","TM","requestExecutor886601","[Ssh Default] No session cycleId for file /data/FlowManager/STMT-EXPORT-GLOBEX@FE243615/AcmeSTMT_EXPORT_GLOBEX_20260708032691_645450.dat. SENT will not get reported!","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","371","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","7671574e55504d34422f5a3373516367316a6572466b6f6f45667a4574727a6938337333644f75715965633d","07/08/2026 10:22:55.623","UNKNOWN"
 "07/08/2026 10:23:51.334","INFO","TM","requestExecutor806388","{""message"":""Transfer start logged."",
 ""status"":""active"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""6c540b42-3b94-4728-a184-2e6fa20d42bf"",
 ""transferId"":""7c1834a7-fb4d-4a1b-8726-0dbfb6a0e7e2"",
@@ -1808,12 +1820,16 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "07/08/2026 10:04:45.557","INFO","TM","requestExecutor881758","[Ssh Default] Allowed user 'FE847938' from address '198.51.100.11', corresponding account 'APS-COSMOS-GLOBEX@FE847938' , corresponding policy name 'Generic Whitelisting' (2c9581cc9e849e6e019e8d4a77c80014) , obtained on 'account' level.","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","412","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","2f68662f6c57426f63725345654b746f716b6b46744932424c2f3777644d374551463279676a69536972483d","07/08/2026 10:04:15.669","UNKNOWN"
 "07/08/2026 10:03:48.723","INFO","TM","requestExecutor898247","{""message"":""Transfer end logged."",
 ""status"":""ok"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""ab719315-6e5a-40e4-81d9-afac4bc8685f"",
 ""transferId"":""ecb427fc-3432-4d48-a1d3-c2c79feec8d4"",
 ""fileName"":""AcmeSTMT_EXPORT_GLOBEX_20260708033311_637374.pdf.pgp""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","547","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","553570593856614c56706a526367422b68364477754131644539566d3256355370495477646651347058513d","07/08/2026 10:02:56.290","UNKNOWN"
 "07/08/2026 10:03:48.693","INFO","TM","requestExecutor890199","{""message"":""Transfer end logged."",
 ""status"":""error"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""afc9f3fe-e6e6-438c-9158-ce06267b65e7"",
 ""transferId"":""ecb427fc-3432-4d48-a1d3-c2c79feec8d4"",
@@ -1821,6 +1837,8 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "07/08/2026 10:03:48.663","WARN","TM","requestExecutor885841","[Ssh Default] No session cycleId for file /data/FlowManager/STMT-EXPORT-GLOBEX@FE243615/AcmeSTMT_EXPORT_GLOBEX_20260708033311_637374.pdf.pgp. SENT will not get reported!","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","527","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","553570593856614c56706a526367422b68364477754131644539566d3256355370495477646651347058513d","07/08/2026 10:03:36.558","UNKNOWN"
 "07/08/2026 10:03:47.940","INFO","TM","requestExecutor822508","{""message"":""Transfer start logged."",
 ""status"":""active"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""afc9f3fe-e6e6-438c-9158-ce06267b65e7"",
 ""transferId"":""ecb427fc-3432-4d48-a1d3-c2c79feec8d4"",

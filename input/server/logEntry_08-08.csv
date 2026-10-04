@@ -1199,12 +1199,16 @@ Time, Level, Component, Thread, Message, Filename, Class, Method, Line, Account 
 "08/08/2026 07:52:15.032","INFO","TM","requestExecutor821430","Remote files pattern of transfer site: 'UC3_ODV_MERLIJN_SABRE_I_ODV_MERLIJN_SABRE_I_SCP_ODV_MERLIJN_SABRE_I_PWD' evaluated to: '*'","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","618","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","6a6d514c7642415a6674437252774854692f546b567972667541314f576836446f545143464b615179576a3d","08/08/2026 07:51:24.324","UNKNOWN"
 "08/08/2026 07:51:36.181","INFO","TM","requestExecutor871841","{""message"":""Transfer end logged."",
 ""status"":""ok"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""ad1d63c2-6f47-4bb0-93f7-be7e70f4cddf"",
 ""transferId"":""e446b0e9-d29f-4f1c-b592-8e08c8da7d32"",
 ""fileName"":""AcmeZG_MATCH_HOOLI_20260808026916_351316.txt.pgp""}","BaseConfigAgent.java","com.tumbleweed.st.server.tm.agents.BaseConfigAgent","logAuthResultMessage","534","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","UNKNOWN","192.0.2.76","34512f676d5732725150447966334379794550725a45496b6b44594e534a463459344b666d386e644148743d","08/08/2026 07:51:27.842","UNKNOWN"
 "08/08/2026 07:51:35.295","INFO","TM","requestExecutor806506","{""message"":""Transfer start logged."",
 ""status"":""active"",
+""serverName"":""Ssh Default"",
+""initiator"":""Client"",
 ""direction"":""Outbound"",
 ""coreId"":""ad1d63c2-6f47-4bb0-93f7-be7e70f4cddf"",
 ""transferId"":""e446b0e9-d29f-4f1c-b592-8e08c8da7d32"",
