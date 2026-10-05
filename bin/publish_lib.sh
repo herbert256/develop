@@ -967,15 +967,16 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # twin under transfer/entities2/, then made THE layout; the classic Name ·
     # Direction · Files · Volume · OK · Retry · Resubmit · Error · Last seen
     # pages are gone): the .rpt is already in display order — Name, then the
-    # Files / Retry / Resubmit / Duration / Volume / Transfers column groups (State
-    # and Dates went 2026-09-30, user request) (a GHEAD banner + gsep dividers) — its rows baked
+    # Files / UC2 status / Retry / Resubmit / Duration / Volume / Transfers column
+    # groups (State and Dates went 2026-09-30, user request; Waiting / Expired came
+    # back as UC2 status 2026-10-05) (a GHEAD banner + gsep dividers) — its rows baked
     # busiest-first with no sort= marker. Below: the views, the
     # subset totals re-summing the grouped columns (entity_res_block), an
     # empty group hidden per view (entity_hide_groups), the TOTAL row last
     # (entity_total_last). The nine classic <name>.rpt records (written by
     # entities.sh too) are DATA (showseen, entity-search, the rosters) and
     # render no page.
-    local _nreal=18   # the directive + Name + 16 figure columns (the Reason column follows the Transfers Error %)
+    local _nreal=20   # the directive + Name + 18 figure columns (the Reason column follows the Transfers Error %)
     segment_rpt "$rpt"                                  # TBLOCK[1]=Summary
     local sumblk=${TBLOCK[1]:-}
     local stable shead stotal srows
@@ -1209,9 +1210,10 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # durations tinted by unit — the Duration cells are rebuilt whole, their
     # tint following the subset value). Template cells (the 2026-09-13
     # order, Transfers after Volume): 2 label · 3 In · 4 Out · 5 Error ·
-    # 6 Error % · 7 Auto · 8 Ok · 9 Error · 10 p90 · 11 p95 · 12 p99 ·
-    # 13 p100 · 14 Total · 15 Avg · 16 Ok · 17 Error · 18 Error % (the State and
-    # Dates cells 19-23 went 2026-09-30).
+    # 6 Error % · 7 Waiting · 8 Expired (UC2 status, 2026-10-05) · 9 Auto ·
+    # 10 Ok · 11 Error · 12 p90 · 13 p95 · 14 p99 · 15 p100 · 16 Total ·
+    # 17 Avg · 18 Ok · 19 Error · 20 Error % (the State and Dates cells after
+    # Transfers went 2026-09-30).
     entity_res_block() {   # $1 = green|orange|red   $2 = the All-view rows to filter
         # (the whole-unit byte format hbytes0 and the quicksort qsortn come
         # from $AWKLIB — bin/fmt.awk, 2026-09-30; pasted copies before)
@@ -1222,14 +1224,14 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
             function dcell(ms) { return (ms == "") ? "" : "@{class=" dtint(ms) "}" hshort(ms) }
             function pr(x, c) { if (x + 0 == 0 || c + 0 == 0) return ""; return sprintf("%.1f%%", x * 100 / c) }
             function nz(x) { return (x + 0 == 0) ? "" : x + 0 }
-            function n(s) { gsub(/[^0-9]/, "", s); return s + 0 }
+            function n(s) { sub(/^@\{[^}]*\}/, "", s); gsub(/[^0-9]/, "", s); return s + 0 }   # the @{href=…} of a linked Waiting / Expired cell is no digit source
             function prank(P,   r, cum, i2) { r = int((HN - 1) * P / 100 + 0.5) + 1; cum = 0
                 for (i2 = 1; i2 <= hq; i2++) { cum += HC[i2]; if (cum >= r) return HQ[i2] } return HQ[hq] }
             $1=="ROW" {
                 hit=0; for (i=1;i<=NF;i++) if ($i==want) hit=1
                 if (!hit) next
                 cnt++
-                for (c = 3; c <= 17; c++) if (c != 6 && !(c >= 10 && c <= 15)) S[c] += n($c)   # the count cells: In Out Error | Auto Ok Error | Ok Error
+                for (c = 3; c <= 19; c++) if (c != 6 && !(c >= 12 && c <= 17)) S[c] += n($c)   # the count cells: In Out Error | Waiting Expired | Auto | Ok Error | Ok Error
                 for (i=1;i<=NF;i++) {
                     if ($i ~ /^@data:buckets=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ split(B[j],C,":"); files += C[2]+0; sb += C[6]+0 } }
                     else if ($i ~ /^@data:durdays=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ p = index(B[j], ":"); if (p < 1) continue
@@ -1244,11 +1246,11 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                 for (k in HH) { HQ[++hq] = k + 0; HN += HH[k] }
                 qsortn(HQ, 1, hq)
                 for (j = 1; j <= hq; j++) HC[j] = HH[HQ[j]]
-                V[3]=nz(S[3]); V[4]=nz(S[4]); V[5]=S[5]+0; V[6]=pr(S[5], files); V[7]=S[7]+0; V[8]=S[8]+0; V[9]=S[9]+0
-                W[10] = (HN > 0) ? dcell(prank(90)) : ""; W[11] = (HN > 0) ? dcell(prank(95)) : ""; W[12] = (HN > 0) ? dcell(prank(99)) : ""; W[13] = (HN > 0) ? dcell(prank(100)) : ""   # WHOLE cells (their tint follows the value)
-                V[14]=hbytes0(sb); V[15]=hbytes0(files > 0 ? sb / files : 0); V[16]=S[16]+0; V[17]=S[17]+0; V[18]=pr(S[17], S[16]+S[17])
+                V[3]=nz(S[3]); V[4]=nz(S[4]); V[5]=S[5]+0; V[6]=pr(S[5], files); V[7]=S[7]+0; V[8]=S[8]+0; V[9]=S[9]+0; V[10]=S[10]+0; V[11]=S[11]+0
+                W[12] = (HN > 0) ? dcell(prank(90)) : ""; W[13] = (HN > 0) ? dcell(prank(95)) : ""; W[14] = (HN > 0) ? dcell(prank(99)) : ""; W[15] = (HN > 0) ? dcell(prank(100)) : ""   # WHOLE cells (their tint follows the value)
+                V[16]=hbytes0(sb); V[17]=hbytes0(files > 0 ? sb / files : 0); V[18]=S[18]+0; V[19]=S[19]+0; V[20]=pr(S[19], S[18]+S[19])
                 nt = split(tmpl, T, "\t"); while (nt > 2 && T[nt] ~ /^@data:/) nt--   # the All total own distinct @data:buckets never ride a SUBSET total (2026-09-29)
-                if (cnt + 0 == 0) { V[14] = ""; V[15] = "" }   # an EMPTY view (2026-09-29): no "0 B" in its total
+                if (cnt + 0 == 0) { V[16] = ""; V[17] = "" }   # an EMPTY view (2026-09-29): no "0 B" in its total
                 l = T[2]; sub(/\([0-9,]+/, "(" (cnt + 0), l); out = T[1] OFS l
                 for (c = 3; c <= nt; c++) { cell = T[c]
                     if (c in W) cell = W[c]
@@ -1267,11 +1269,13 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
             { if (held != "") { print held; held = "" } print }
             END { if (held != "") print held }'
     }
-    # HIDE an EMPTY group (2026-09-13, user request) — the Retry group (Auto,
-    # .rpt field 7, display column 5, banner cell 4) and the Resubmit group
-    # (Ok · Error, fields 8-9, display columns 6-7, banner cell 5), EACH ON
-    # ITS OWN since 2026-10-01 (user request: the one "Retry / Resubmit" group
-    # became two; the State group went 2026-09-30) — on a view whose
+    # HIDE an EMPTY group (2026-09-13, user request) — the UC2 status group
+    # (Waiting · Expired, .rpt fields 7-8, display columns 5-6, banner cell 4;
+    # 2026-10-05, user request: "do not show this subtable if every cell in it
+    # has no value"), the Retry group (Auto, field 9, display column 7, banner
+    # cell 5) and the Resubmit group (Ok · Error, fields 10-11, display
+    # columns 8-9, banner cell 6), EACH ON ITS OWN (Retry / Resubmit were one
+    # group until 2026-10-01; the State group went 2026-09-30) — on a view whose
     # rows carry no such value at all. At the full range that holds for every narrower
     # range too, so the page drops the columns for good: the fields of every
     # HEAD/KIND/RECALC/ROW/TOTAL line (a trailing Reason column shifts left
@@ -1298,15 +1302,18 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
             function keep(   out, i) { out = ""; for (i = 1; i <= NF; i++) { if (i in DF) continue; out = out (i == 1 ? "" : OFS) $i } return out }
             { L[++n] = $0
               if ($1 == "HEAD" && NF < 10) skip = 1
-              if ($1 == "ROW") { v = $7; gsub(/[^0-9]/, "", v); if (v + 0 > 0) hasT = 1
-                                 for (i = 8; i <= 9; i++) { v = $i; gsub(/[^0-9]/, "", v); if (v + 0 > 0) hasR = 1 } } }
+              if ($1 == "ROW") { for (i = 7; i <= 8; i++) { v = $i; sub(/^@\{[^}]*\}/, "", v); gsub(/[^0-9]/, "", v); if (v + 0 > 0) hasU = 1 }   # (the @{href=…} of a linked cell holds digits of its own)
+                                 v = $9; gsub(/[^0-9]/, "", v); if (v + 0 > 0) hasT = 1
+                                 for (i = 10; i <= 11; i++) { v = $i; gsub(/[^0-9]/, "", v); if (v + 0 > 0) hasR = 1 } } }
             END {
-                if (skip || (hasT && hasR)) { for (k = 1; k <= n; k++) print L[k]; exit }
+                if (skip || (hasU && hasT && hasR)) { for (k = 1; k <= n; k++) print L[k]; exit }
                 # DF = the .rpt fields to drop, DD = the same as display columns, DB = the
-                # banner cells: GHEAD $3 Files · $4 Retry · $5 Resubmit · $6 Duration ·
-                # $7 Volume · $8 Transfers (the State and Dates groups went 2026-09-30)
-                if (!hasT) { DF[7] = 1; DD[5] = 1; DB[4] = 1 }
-                if (!hasR) { DF[8] = 1; DF[9] = 1; DD[6] = 1; DD[7] = 1; DB[5] = 1 }
+                # banner cells: GHEAD $3 Files · $4 UC2 status · $5 Retry · $6 Resubmit ·
+                # $7 Duration · $8 Volume · $9 Transfers (the State and Dates groups
+                # went 2026-09-30)
+                if (!hasU) { DF[7] = 1; DF[8] = 1; DD[5] = 1; DD[6] = 1; DB[4] = 1 }
+                if (!hasT) { DF[9] = 1; DD[7] = 1; DB[5] = 1 }
+                if (!hasR) { DF[10] = 1; DF[11] = 1; DD[8] = 1; DD[9] = 1; DB[6] = 1 }
                 for (k = 1; k <= n; k++) { $0 = L[k]
                     if ($1 == "TABLE") {
                         for (i = 3; i <= NF; i++) {
@@ -1432,10 +1439,10 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                         rk[u] = (n >= 3) ? a[3] : ""; rc[u] = (n >= 4) ? a[4] : "" }
                     close(mapf) }
             # insert v as the display column after the LAST figure column —
-            # nreal = the real fields incl. the directive: 10 on the classic
-            # layout (Last seen, since the Retry/Resubmit columns), 19 on the
-            # Entities2 twin (Avg); the trailing @data cells start at nreal+1
-            # and ride along
+            # nreal = the real fields incl. the directive: 20 on the grouped
+            # layout (the Transfers Error %, since the UC2 status group came
+            # 2026-10-05); the trailing @data cells start at nreal+1 and ride
+            # along
             function ins(v,   out, i) {
                 out = $1
                 for (i = 2; i <= nreal; i++) out = out OFS (i <= NF ? $i : "")

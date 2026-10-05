@@ -1,12 +1,13 @@
 <h1>Entities</h1>
 <h2>What it shows</h2>
 <ul>
-<li>The layout of the nine entity reports: one row per name, six column groups; each entity&rsquo;s help gives its attribution.</li>
+<li>The layout of the nine entity reports: one row per name, seven column groups; each entity&rsquo;s help gives its attribution.</li>
 <li>Views: <strong>All</strong> = every configured and logged name; <strong>Seen</strong> = the names in the transfer log; <strong>Not seen</strong> = configured, never logged (name only); <strong>OK</strong> / <strong>Warning</strong> / <strong>Error</strong> = result green / orange / red.</li>
 </ul>
 <h2>Columns</h2>
 <ul>
 <li><strong>Files</strong> &mdash; <strong>In</strong> / <strong>Out</strong> by movement (else connection side), <strong>Error</strong>, <strong>Error %</strong>.</li>
+<li><strong>UC2 status</strong> &mdash; <strong>Waiting</strong> (staged, not yet collected) and <strong>Expired</strong> (deleted unclaimed) Files.</li>
 <li><strong>Retry</strong> &mdash; <strong>Auto</strong> = OK Files with a failed leg, none resubmitted.</li>
 <li><strong>Resubmit</strong> &mdash; <strong>Ok</strong> / <strong>Error</strong> = resubmitted Files by final outcome.</li>
 <li><strong>Duration</strong> &mdash; <strong>p90</strong> &hellip; <strong>p100</strong> span of the delivered Files, nearest rank; seconds green, minutes amber, hours and days red.</li>
@@ -15,11 +16,11 @@
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Waiting counts as OK, Expired as Error. Figures follow From/To. Retry and Resubmit each show only while a visible row has a value. Waiting and Expired Files per subscription: <a href="waiting-expired.html">Waiting &amp; Expired</a>.</li>
+<li>Waiting counts as OK, Expired as Error. Figures follow From/To. UC2 status, Retry and Resubmit each show only while a visible row has a value.</li>
 <li>Logical, Partners, Applications and BL can count a File for several names; their Total counts it once. OK / Warning / Error views sum their rows.</li>
 <li>Row tint = the name&rsquo;s result (<a href="general.html">Generic help</a>); untinted = not configured.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>A count opens its 10 newest Files; a Transfers cell those with such a leg; a Duration cell those at or above it.</li>
+<li>A count opens its 10 newest Files; a Transfers cell those with such a leg; a Duration cell those at or above it. Waiting and Expired open <a href="waiting-expired.html">Waiting &amp; Expired</a> (on Subscriptions with that subscription&rsquo;s row marked).</li>
 </ul>

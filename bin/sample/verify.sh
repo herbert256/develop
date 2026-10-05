@@ -649,9 +649,15 @@ read -r wok wbad wsort wkind <<< "$(awk -F'\t' '$1 == "TABLE" { t++; if (t == 2)
 check $([ "${wok:-0}" -gt 0 ] && [ "${wbad:-1}" = 0 ] && [ "${wsort:-0}" = 1 ] && [ "${wkind:-0}" = 1 ] && echo 0 || echo 1) "waiting-expired Subscriptions: ${wok:-?} age cell(s) ok, ${wbad:-?} not '@{sortval=N}<n><d|h|m|s>', sort=4:-1 ${wsort:-?}, Expired numfailed ${wkind:-?}"
 n=$(ls docs/transfer/waiting.html docs/transfer/expired.html docs/help/waiting.html docs/help/expired.html bin/transfer/reports/waiting.sh bin/transfer/reports/expired.sh data/transfer/reports/waiting.rpt data/transfer/reports/expired.rpt 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${n:-1}" = 0 ] && ! grep -rqsE '(["/])(waiting|expired)\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "the retired Waiting / Expired pages, writers or help pages are back (${n:-?} file(s)), or a page still links waiting.html / expired.html"
-# the Entities pages carry no State / Dates groups and no Waiting & Expired
-# links since 2026-09-30 (user request: "remove the State & Dates sub tables")
-check $(! cat docs/transfer/entities/*.html docs/transfer/entities/*-data.js 2>/dev/null | grep -q 'waiting-expired\.html' && ! grep -qE 'gband[^>]*>(State|Dates)<' docs/transfer/entities/*.html && echo 0 || echo 1) "the Entities pages still carry the State / Dates groups or their Waiting & Expired links (removed 2026-09-30)"
+# the Entities pages carry no State / Dates groups since 2026-09-30 (user
+# request: "remove the State & Dates sub tables"); Waiting / Expired came back
+# 2026-10-05 as the UC2 status group right after Files (user request), its
+# non-zero cells linking Waiting & Expired — on the subscription pages with
+# ?axway_row=<the subscription>
+check $(! grep -qE 'gband[^>]*>(State|Dates)<' docs/transfer/entities/*.html && echo 0 || echo 1) "the Entities pages still carry the State / Dates groups (removed 2026-09-30)"
+gb=$(grep -o '<th[^>]*class="gband[^"]*"[^>]*>[^<]*</th>' docs/transfer/entities/subscription-all.html 2>/dev/null | head -2 | sed 's/<[^>]*>//g' | tr '\n' '|')
+check $([ "$gb" = "Files|UC2 status|" ] && echo 0 || echo 1) "entities/subscription-all.html: the first group banners are '${gb:-absent}', expected Files|UC2 status|"
+check $(grep -q 'href="\.\./waiting-expired\.html?axway_row=' docs/transfer/entities/subscription-all.html 2>/dev/null && echo 0 || echo 1) "entities/subscription-all.html: no Waiting / Expired cell links waiting-expired.html?axway_row=<subscription>"
 n=$(rpt_rows "data/transfer/reports/missing-cronjobs.rpt"); en=$(exp nocron)
 [ "$en" -gt 0 ] && check $([ "$n" -ge "$en" ] && echo 0 || echo 1) "missing-cronjobs rows $n < planted $en"
 
@@ -695,18 +701,24 @@ check $([ "$n" -gt 0 ] && echo 0 || echo 1) "no resubmitted legs"
 EA="data/transfer/reports/entities/account.rpt"; ES="data/transfer/reports/entities/subscription.rpt"
 n=$(awk -F'\t' '$1 == "ROW" { ok = 0
         for (i = 2; i <= NF; i++) if (index($i, "@data:buckets=") == 1) { nb = split(substr($i, 15), B, ","); for (j = 1; j <= nb; j++) { split(B[j], z, ":"); ok += z[2] - z[5] } }
-        if ($7 + $8 > ok) n++ } END { print n + 0 }' "$ES" 2>/dev/null)
+        if ($9 + $10 > ok) n++ } END { print n + 0 }' "$ES" 2>/dev/null)
 check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "entities/subscription.rpt: ${n:-?} row(s) with Auto + Resubmit Ok > the OK Files"
 hdr=$(grep -o '<tr><th>Account</th>.*' "docs/transfer/entities/account-all.html" 2>/dev/null | head -1 | sed 's/^<tr>//; s/<\/tr>.*//; s/<th[^>]*>//g; s/<\/th>/|/g')
-check $([ "$hdr" = "Account|In|Out|Error|Error %|Auto|Ok|Error|p90|p95|p99|p100|Total|Avg|Ok|Error|Error %|" ] && echo 0 || echo 1) "entities/account-all.html header is '$hdr', expected the grouped layout Account|In|Out|Error|Error %|Auto|Ok|Error|p90|p95|p99|p100|Total|Avg|Ok|Error|Error %|Waiting|Expired|First|Last|Days"
+check $([ "$hdr" = "Account|In|Out|Error|Error %|Waiting|Expired|Auto|Ok|Error|p90|p95|p99|p100|Total|Avg|Ok|Error|Error %|" ] && echo 0 || echo 1) "entities/account-all.html header is '$hdr', expected the grouped layout Account|In|Out|Error|Error %|Waiting|Expired|Auto|Ok|Error|p90|p95|p99|p100|Total|Avg|Ok|Error|Error %"
 read -r want wantm wante <<< "$(awk -F'\t' 'FNR == 1 { fno++ } fno == 1 { if ($3 != "Processed") fl[$1] = 1; if ($22 == "true") rs[$1] = 1; next }
     $3 != "" && $4 != "" { ok = ($2 != "Failed" && $2 != "Expired"); if (ok && ($1 in fl) && !($1 in rs)) a++; if ($1 in rs) { if (ok) m++; else e++ } }
     END { print a + 0, m + 0, e + 0 }' "$T" "$F" 2>/dev/null)"
-read -r got gotm gote <<< "$(awk -F'\t' '$1 == "TOTAL" { a = $7; b = $8; c = $9; sub(/^@\{[^}]*\}/, "", a); sub(/^@\{[^}]*\}/, "", b); sub(/^@\{[^}]*\}/, "", c); print a + 0, b + 0, c + 0; exit }' "$EA" 2>/dev/null)"
+read -r got gotm gote <<< "$(awk -F'\t' '$1 == "TOTAL" { a = $9; b = $10; c = $11; sub(/^@\{[^}]*\}/, "", a); sub(/^@\{[^}]*\}/, "", b); sub(/^@\{[^}]*\}/, "", c); print a + 0, b + 0, c + 0; exit }' "$EA" 2>/dev/null)"
 check $([ "${got:-x}" = "${want:-y}" ] && echo 0 || echo 1) "entities/account.rpt Auto total is '${got:-absent}', an independent recount of the caches gives '${want:-?}'"
 check $([ "${gotm:-x}" = "${wantm:-y}" ] && echo 0 || echo 1) "entities/account.rpt Resubmit Ok total is '${gotm:-absent}', an independent recount of the caches gives '${wantm:-?}'"
 check $([ "${gote:-x}" = "${wante:-y}" ] && echo 0 || echo 1) "entities/account.rpt Resubmit Error total is '${gote:-absent}', an independent recount of the caches gives '${wante:-?}'"
 check $([ "${want:-0}" -gt 0 ] && [ "${wantm:-0}" -gt 0 ] && echo 0 || echo 1) "the sample has no Auto (${want:-0}) or no Resubmit Ok (${wantm:-0}) File — an Entities column is never exercised"
+# the UC2 status group (2026-10-05): the account TOTAL Waiting / Expired equal
+# an independent recount of _files.tsv (a dated File with an account, by its state)
+read -r wantw wantx <<< "$(awk -F'\t' '$3 != "" && $4 != "" { if ($2 == "Waiting") w++; if ($2 == "Expired") x++ } END { print w + 0, x + 0 }' "$F" 2>/dev/null)"
+read -r gotw gotx <<< "$(awk -F'\t' '$1 == "TOTAL" { a = $7; b = $8; sub(/^@\{[^}]*\}/, "", a); sub(/^@\{[^}]*\}/, "", b); print a + 0, b + 0; exit }' "$EA" 2>/dev/null)"
+check $([ "${gotw:-x}/${gotx:-x}" = "${wantw:-y}/${wantx:-y}" ] && echo 0 || echo 1) "entities/account.rpt Waiting / Expired totals are '${gotw:-absent}/${gotx:-absent}', an independent recount of the caches gives '${wantw:-?}/${wantx:-?}'"
+check $([ "${wantw:-0}" -gt 0 ] && [ "${wantx:-0}" -gt 0 ] && echo 0 || echo 1) "the sample has no Waiting (${wantw:-0}) or no Expired (${wantx:-0}) File — the UC2 status group is never exercised"
 # the Retry / Resubmit DRILLS (2026-09-13, user request): every row with an
 # Auto / Ok / Error count carries a non-empty coreids-rauto / -rmok / -rmerr
 # list of at most 10 entries, a row without one an empty list, and the
@@ -715,7 +727,7 @@ read -r dr1 dr2 dr3 <<< "$(awk -F'\t' '$1 == "ROW" {
         r = ""; s = ""; e = ""
         for (i = 2; i <= NF; i++) { if (index($i, "@data:coreids-rauto=") == 1) r = substr($i, 21); if (index($i, "@data:coreids-rmok=") == 1) s = substr($i, 20); if (index($i, "@data:coreids-rmerr=") == 1) e = substr($i, 21) }
         nr = (r == "" ? 0 : split(r, a, ",")); ns = (s == "" ? 0 : split(s, b, ",")); ne = (e == "" ? 0 : split(e, c, ","))
-        if (($7 + 0 > 0) != (nr > 0) || ($8 + 0 > 0) != (ns > 0) || ($9 + 0 > 0) != (ne > 0)) bad++
+        if (($9 + 0 > 0) != (nr > 0) || ($10 + 0 > 0) != (ns > 0) || ($11 + 0 > 0) != (ne > 0)) bad++
         if (nr > 10 || ns > 10 || ne > 10) big++
         if (nr > 0) anyr++; if (ns > 0) anys++ }
     END { print bad + 0, big + 0, (anyr > 0 && anys > 0) + 0 }' "$ES" 2>/dev/null)"
@@ -1443,10 +1455,11 @@ fh=$(grep -o '<tr><th[^>]*>[^<]*</th>' docs/analyses/failed.html 2>/dev/null | h
 n=$(grep -c '<th[^>]*>Environment</th>' docs/analyses/failed.html 2>/dev/null || true)
 check $([ "$fh" = "Subscription" ] && [ "${n:-0}" = 0 ] && echo 0 || echo 1) "analyses/failed.html header starts with '${fh:-absent}' / carries ${n:-?} Environment column(s), expected Subscription first and no Environment"
 # Entities › Remote Hosts: the group banner follows the columns — a Transfers
-# band, and no State band (the sample hosts carry no Waiting / Expired)
+# band, and no UC2 status band (a host counts OUT-connection Files: it never
+# carries a Waiting / Expired File, so the empty group is hidden)
 n=$(grep -c 'class="gband[^"]*">Transfers</th>' docs/transfer/entities/remote-host-all.html 2>/dev/null || true)
-m=$(grep -c 'class="gband[^"]*">State</th>' docs/transfer/entities/remote-host-all.html 2>/dev/null || true)
-check $([ "${n:-0}" -ge 1 ] && [ "${m:-1}" = 0 ] && echo 0 || echo 1) "entities/remote-host-all.html group banner: ${n:-0} Transfers band(s), ${m:-?} State band(s), expected Transfers and no State"
+m=$(grep -cE 'class="gband[^"]*">(State|UC2 status)</th>' docs/transfer/entities/remote-host-all.html 2>/dev/null || true)
+check $([ "${n:-0}" -ge 1 ] && [ "${m:-1}" = 0 ] && echo 0 || echo 1) "entities/remote-host-all.html group banner: ${n:-0} Transfers band(s), ${m:-?} UC2 status band(s), expected Transfers and no UC2 status"
 # the Subscriptions page's all-time counts sidecar (entities.sh, month-stats.sh until 2026-09-30) and its count cells
 check $([ -s data/transfer/reports/_alltime.tsv ] && echo 0 || echo 1) "data/transfer/reports/_alltime.tsv missing or empty"
 n=$(grep -oE '<td class="num[^"]*">(<a [^>]*>)?[1-9][0-9]*(</a>)?</td>' docs/analyses/subscriptions.html 2>/dev/null | wc -l | tr -d ' ')
@@ -1638,9 +1651,10 @@ check $([ "${n:-1}" = 0 ] && [ "$(awk -F'\t' '$2 == "R"' "$FP" 2>/dev/null | wc 
 o=$(awk -F'\t' '$1 == "ROW" && ($4 == "Partner" || $4 == "Account" || $4 == "Logical") && $4 != last { printf "%s ", $4; last = $4 }' data/transfer/reports/entity-search.rpt 2>/dev/null)
 check $([ "$o" = "Partner Account Logical " ] && echo 0 || echo 1) "entity-search.rpt lists '$o', expected Partner, Account, Logical"
 # 4. the Entities pages carry TWO banner cells, Retry (1 column) and Resubmit
-#    (2 columns) — the one "Retry / Resubmit" group is gone
+#    (2 columns) — the one "Retry / Resubmit" group is gone; UC2 status
+#    (Waiting · Expired, 2 columns) sits between Files and Retry since 2026-10-05
 g=$(awk -F'\t' '$1 == "GHEAD" { print; exit }' "$EA" 2>/dev/null)
-check $([ "$g" = $'GHEAD\t\t@{colspan=4,class=gband gsep}Files\t@{class=gband gsep}Retry\t@{colspan=2,class=gband gsep}Resubmit\t@{colspan=4,class=gband gsep}Duration\t@{colspan=2,class=gband gsep}Volume\t@{colspan=3,class=gband gsep}Transfers' ] && echo 0 || echo 1) "entities/account.rpt GHEAD is '$g' — expected Files · Retry · Resubmit · Duration · Volume · Transfers"
+check $([ "$g" = $'GHEAD\t\t@{colspan=4,class=gband gsep}Files\t@{colspan=2,class=gband gsep}UC2 status\t@{class=gband gsep}Retry\t@{colspan=2,class=gband gsep}Resubmit\t@{colspan=4,class=gband gsep}Duration\t@{colspan=2,class=gband gsep}Volume\t@{colspan=3,class=gband gsep}Transfers' ] && echo 0 || echo 1) "entities/account.rpt GHEAD is '$g' — expected Files · UC2 status · Retry · Resubmit · Duration · Volume · Transfers"
 check $(grep -q '>Retry</th>' docs/transfer/entities/account-all.html 2>/dev/null && grep -q '>Resubmit</th>' docs/transfer/entities/account-all.html 2>/dev/null && ! grep -rqs 'Retry / Resubmit</th>' docs/transfer/entities && echo 0 || echo 1) "transfer/entities/account-all.html lacks the separate Retry and Resubmit banner cells (or a page still shows Retry / Resubmit)"
 
 # 5. THE WAITING / EXPIRED LIST PAGES (2026-10-01, user request): the first 10

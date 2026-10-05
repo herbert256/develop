@@ -1337,7 +1337,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   Direction · Files · Volume · OK · Retry · Resubmit · Error · Last seen pages are GONE): Name,
   then seven column groups the Top view way (a `GHEAD` banner + `gsep=` dividers) — Files (In ·
   Out by MOVEMENT, `_files.tsv` col 17, a File without one by its connection side col 16 ·
-  Error · Error %) · Retry (Auto = an OK File
+  Error · Error %) · UC2 status (Waiting · Expired, since 2026-10-05 — see that rules section) · Retry (Auto = an OK File
   with a failed leg and no resubmitted leg) · Resubmit (Ok / Error = every resubmitted File by outcome — the
   Top view's Automatic + Resubmit Ok/Error rule; ONE group "Retry / Resubmit" until 2026-10-01) · Duration (p90 · p95 · p99 · p100 of the DELIVERED
   (Processed) Files' wall-clock span — a Waiting File's span is its staging wait, excluded since
@@ -1346,7 +1346,7 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   and TOTAL alike, the publish-time subset totals merging the same payload) · Volume (Total · Avg
   per File) · Transfers (Ok · Error · Error % — the LEGS of the entity's Files) (the State and Dates
   groups went 2026-09-30, user request: "remove the State & Dates sub tables"). DISPLAY RULES (user): the TOTAL row LAST
-  (`entity_total_last`); an EMPTY Retry or Resubmit group HIDDEN per view, each on its own
+  (`entity_total_last`); an EMPTY UC2 status, Retry or Resubmit group HIDDEN per view, each on its own
   (`entity_hide_groups` drops the columns and the banner cell and remaps every index-naming
   modifier — gsep=, noagg=, pct=, drillcols=) AND, in the browser, hidden whenever a date range or
   a search leaves every visible row's cells of the group empty (the `autohide=Group;Group` TABLE
@@ -1818,6 +1818,23 @@ front end) then four fix workers with disjoint files. The rules it left:
   Partners row by stem. verify.sh checks the rows, the names and the totals. A column change in a writer needs
   its RULES string changed in step (one rule per ROW field from field 3).
 
+## Rules from the 2026-10-05 UC2 status request (user request)
+
+- **Entities pages** (`transfer/entities/*.html`): a **UC2 status** group right AFTER Files — **Waiting** ·
+  **Expired** (`_files.tsv` col 2; S| fields 16 / 17, bucket metrics 10 / 11, RECALC `s10` / `s11`, KIND
+  numwarn / numfailed). User rule: "do not show this subtable if every cell in it has no value" — hidden per
+  view by `entity_hide_groups` (and in the browser by `autohide=UC2 status;Retry;Resubmit` after a range change
+  or a search), on its own like Retry and Resubmit; the Hosts pages never show it (a host counts OUT-connection
+  Files). A non-zero cell LINKS `transfer/waiting-expired.html` (the 2026-09-30 rule restored: the subscription
+  pages add `?axway_row=<the subscription>`, the other entities open the page itself) — no drill lists.
+- Display layout now: Name | Files (In Out Error Error%) 1-4 | UC2 status 5-6 | Retry 7 | Resubmit 8-9 |
+  Duration 10-13 | Volume 14-15 | Transfers 16-18 (display indexes, Name = 0; `.rpt` field = index + 2):
+  `gsep=1,5,7,8,10,14,16`, `noagg=10,11,12,13,15`, `pct=4:3:1+2;18:17:16+17`; GHEAD $3 Files · $4 UC2 status ·
+  $5 Retry · $6 Resubmit · $7 Duration · $8 Volume · $9 Transfers; `_nreal=20` (the Reason column follows the
+  Transfers Error %); `entity_res_block` template cells 7 / 8 = Waiting / Expired (its `n()` strips a leading
+  `@{href=…}` — a linked cell's URL holds digits). verify.sh checks the banners, the links, the header and the
+  account Waiting / Expired totals against a recount of `_files.tsv`.
+
 ## Rules from the 2026-10-01 batch ("a few different things")
 
 - **Tables at 90%** (user request: 80% first, then "undo half, a bit bigger but still smaller than before, 90% of
@@ -1942,15 +1959,14 @@ front end) then four fix workers with disjoint files. The rules it left:
 - **Entity Search** baked order: Partner · Account · Logical · Login · Host · IP · Subscription · Domain ·
   Application · BL · Source · Target (Logical led before); the type boxes keep their order.
 - **Entities pages**: "Retry / Resubmit" is TWO banner groups with a gap — **Retry** (Auto, 1 column) and
-  **Resubmit** (Ok · Error, 2 columns): `gsep=1,5,6,8,12,14`, `autohide=Retry;Resubmit`, `entity_hide_groups`
-  drops each on its own when its columns are empty; GHEAD cells $4 Retry · $5 Resubmit · $6 Duration · $7 Volume
-  · $8 Transfers. Field positions, RECALC tokens, bucket metrics and drill keys are unchanged.
+  **Resubmit** (Ok · Error, 2 columns); `entity_hide_groups` drops each on its own when its columns are empty.
+  (The column indexes moved again 2026-10-05 with UC2 status — see that rules section.)
 
 ## Rules from the eleventh 2026-09-30 request ("a few different things")
 
 - **Entities pages** = Name + Files · Retry / Resubmit (two groups, Retry · Resubmit, since 2026-10-01) · Duration · Volume · Transfers — the State (Waiting ·
-  Expired) and Dates (First · Last · Days) groups and the Waiting / Expired links went; Waiting and Expired
-  Files live on Waiting & Expired only. The S| fields (waiting / expired, first / last / days) are still
+  Expired) and Dates (First · Last · Days) groups and the Waiting / Expired links went (Waiting · Expired
+  came back 2026-10-05 as UC2 status, after Files, its links with it — see that rules section). The S| fields (waiting / expired, first / last / days) are still
   produced for their other readers; the per-day buckets keep metrics 10 / 11 (unread) so metric 12 (the
   Transfers Error %) keeps its position.
 - **Partners in** (all three views): Login · Use cases | Logons (Cloud · Gateway) | Files in - UC4 (Count ·
