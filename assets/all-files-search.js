@@ -43,6 +43,7 @@
   var SHOW = 500;   // matches rendered at most
   var PAUSE = 250;  // ms after the last keystroke before the search runs
   var PAR = 4;      // day shards loading at once
+  var MINLEN = 3;   // characters the first search word needs (2026-10-05)
 
   var A64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
   var B64 = {};
@@ -264,6 +265,14 @@
       while (table.rows.length > 1) table.deleteRow(1);
       var fw = words(fq), sw = words(sq);
       if (!fw.length && !sw.length) { showData(false); summary(my); return; }   // both fields empty: the period summary
+      // THE FIRST SEARCH WORD needs 3 characters (2026-10-05, user request):
+      // the first word of the File field — of the Subscription field when
+      // File is empty — wildcards not counted; the words after it may be
+      // shorter. Fewer, and nothing is searched: one or two letters match
+      // nearly every day and would load them all.
+      if ((fw.length ? fw[0] : sw[0]).replace(/[*?]/g, "").length < MINLEN) {
+        showData(false); count.textContent = "type at least " + MINLEN + " characters"; return;
+      }
       if (NOIDX) { count.textContent = "the search index did not load — reload the page; nothing was searched"; showData(false); return; }
       // the filter items come from the RAW words: norm() is the generator's
       // C-locale fold (non-ASCII runs -> "?", then ASCII lowercase), and a
