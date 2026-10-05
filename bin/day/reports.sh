@@ -410,9 +410,9 @@ awk -F'\t' -v OFS='\t' -v outdir="$RPTNEW" -v tdays="$tdays" -v sdays="$sdays" -
             if (PIR[d] + 0 > 0)
                 printf "PROBLEM\ttransfer\t../transfer/pirates-per-day.html" q "\tOne-legged Files\t**%d** File(s) with only one leg — one-sided, incomplete crossings that never completed\n", PIR[d] >> out
             if (GTRC[d] + 0 > 0)
-                printf "PROBLEM\ttransfer\t../analyses/failed.html\tWent red\t**%d** subscription(s) went red this day — they delivered OK before and have not recovered since\n", GTRC[d] >> out
+                printf "PROBLEM\ttransfer\t../analyses/errors.html\tWent red\t**%d** subscription(s) went red this day — they delivered OK before and have not recovered since\n", GTRC[d] >> out
             if (OREDC[d] + 0 > 0)
-                printf "PROBLEM\ttransfer\t../analyses/failed.html\tNever delivered\t**%d** subscription(s) failed for the first time this day and have never delivered an OK File (Failed Subscriptions, Last green day never)\n", OREDC[d] >> out
+                printf "PROBLEM\ttransfer\t../analyses/errors.html\tNever delivered\t**%d** subscription(s) failed for the first time this day and have never delivered an OK File (Failed Subscriptions, Last green day never)\n", OREDC[d] >> out
             if (WAI[d] + 0 > 0)
                 printf "PROBLEM\ttransfer\t../transfer/waiting-expired.html" q "\tWaiting for pickup\t**%d** File(s) staged this day are still waiting to be collected by the partner\n", WAI[d] >> out
             if (XPD[d] + 0 > 0)

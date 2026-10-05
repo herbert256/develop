@@ -1291,7 +1291,8 @@ gets an "empty report" placeholder page (`render_missing_reports`). Publishes ru
   ss.mmm"), tinted by its
   `@data:res`; the Subscription cell opens the page the row opens on Failed Subscriptions (else the
   detail page), the "Errors" banner the report (`data-href` — a link in a banner th would take
-  the header's white). The Red/Green switch group, its `docs/switches/` pages, the Transfers,
+  the header's white). **Since 2026-10-05 it is OPEN ERRORS' OWN ROW SET** (see "Open Errors"
+  below): `write_home_errors` only reads `open-errors.rpt`. The Red/Green switch group, its `docs/switches/` pages, the Transfers,
   UC2 state and First seen groups and the Files In / Out columns are GONE — never restore
   them. The home's RED worklists ("Failing transfers" / "Failing subscriptions in Server
   log", `write_failing_now`, 2026-08) and "The log exports" facts table (`write_log_facts`) are
@@ -1943,12 +1944,28 @@ front end) then four fix workers with disjoint files. The rules it left:
   views) EXCEPT one connected to a subscription of a red failed.rpt row whose use case (name prefix, else
   `xref/_subscriptions-ucderived.tsv`) is UC1 / UC3 (a host) resp. UC2 / UC4 (a login); connected = the
   configured `xref/_<kind>-subscriptions.tsv` ∪ `colour/_observed-<kind>.tsv` ∪ (hosts) `colour/_hostlegs.tsv`
-  col 4. bin/build/publish.sh `home_err_entities`: the name links `details/<kind>/<slug>.html` (an index table —
+  col 4. `err_entities` (bin/build/publish.sh `home_err_entities` until 2026-10-05, now in
+  bin/analyses/reports/open-errors.sh): the name links `details/<kind>/<slug>.html` (an index table —
   the whole row); Date/time · Reason = the NEWEST evidence of its red — the orphan ring line
   (`colour/_ringorphan.tsv`, classified by bin/flip-reason.awk, else "Server log error"), a pairless host's failed
   last OUT File (failed-files.rpt reason), a connected red subscription row that did not exclude it. The sample
   plants one of each (estate.awk `orphanhost` / `orphanlogin`: two quiet flows share the endpoint / login, ONE
   E line three days before the data ends names only it — the flows stay green). verify.sh recounts the rows.
+- **Open Errors** (2026-10-05, user request: "rename to /analyses/errors.html", "rename Failed subscriptions to
+  Open Errors", "it must also have the host/login/etc errors that the home page has in the Errors table", "the
+  Errors table on the home page and this page must give the same data, only code once and reuse it"): ONE
+  writer, `bin/analyses/reports/open-errors.sh` (analyses reports, wave 1 — after failed.sh's Reason catch-up),
+  writes `data/analyses/reports/open-errors.rpt` (the RED rows of failed.rpt + the `err_entities` host / login
+  rows, newest first, first column **Entity**, every row's link baked in — an unpaged subscription its detail page
+  through the slugmap) and `open-errors-all.rpt` (failed-sub-all.rpt's rows, recovered included, + the same host /
+  login rows). bin/analyses/publish.sh renders them BY HAND to `analyses/errors.html` (Open, default) and
+  `analyses/errors-all.html` (All) with the selector row Open · All; the home Errors table is the Open rpt's first
+  three columns. The report KEY and help slug are **`open-errors`** (assets/help/open-errors.html, which also
+  helps the files/ pages) because `errors` is the server Errors report's key (its tabs, its help) — so it is not a
+  SUBS_GROUP_REPORTS member, and `rg_landing` special-cases the group member `analyses/errors`. failed.rpt /
+  failed-sub-all.rpt stay failed.sh's DATA (pageless; the Entities Reason reads failed-sub-all.rpt by position).
+  analyses/failed.html, failed-sub-all.html and help/failed.html are GONE — never restore them; verify.sh checks
+  that the home table and errors.html show the same rows.
 - **Waiting / Expired list pages** (user request, later the same day: "every file in transfer/waiting/ and
   transfer/expired/ must have its first 10 rows in /files/ and the complete row must point to it"): File-page
   kinds `W` / `X` = the first `LIST_ROWS` (10) rows of EVERY list page, subscription and day lists alike, selected

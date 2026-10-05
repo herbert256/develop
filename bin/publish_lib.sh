@@ -183,8 +183,10 @@ CUR_DATES=""
 
 
 # Ordered report basenames per area (defines index order; the .rpt files are the
-# actual catalog — a page's title comes from its file's TITLE).
-transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search activity cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage skipped not-in-flow-manager ranking files failed episodes failed-files unknown-transfers waiting-expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell)
+# actual catalog — a page's title comes from its file's TITLE). (failed left
+# the list 2026-10-05: failed.rpt is failed.sh's pageless data since the Open
+# Errors pages, bin/analyses/reports/open-errors.sh.)
+transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search activity cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage skipped not-in-flow-manager ranking files episodes failed-files unknown-transfers waiting-expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell)
 server_order=(topview errors failure-flows io-errors routing-errors uc-status polling missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab); site-failures one since 2026-09-28 (its rows = the Per flow connection-failure rows); routing-errors = the 2026-09-28 merge of could-not-send, publish-failed and post-client-action
 
 # ---- the analyses-housed area reports ---------------------------------------
@@ -200,7 +202,7 @@ server_order=(topview errors failure-flows io-errors routing-errors uc-status po
 # OWNERSHIP: bin/analyses/publish.sh renders them, NOT the area publishes —
 # it clears docs/analyses/*.html and runs AFTER both, so a page written
 # there by the transfer/server loop would be deleted again.
-SUBS_GROUP_REPORTS=" transfer:failed analyses:failing-reasons server:uc-status server:polling analyses:partners-in analyses:partners-out "
+SUBS_GROUP_REPORTS=" analyses:failing-reasons server:uc-status server:polling analyses:partners-in analyses:partners-out "
 
 is_subs_report() {   # $1 report basename -> 0 when its pages live in analyses/
     case $SUBS_GROUP_REPORTS in *:"$1 "*) return 0 ;; esac
@@ -322,7 +324,7 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         cross-bl) echo "BL" ;;
         entity-coverage) echo "Entity coverage" ;; skipped) echo "Skipped" ;;
         files) echo "Sizes & types" ;;   # the MERGED report (size-dist + file-type + duplicate-files): its own group tab was an EMPTY span until 2026-09-13 (user report)
-        failed) echo "Failed Subscriptions" ;; failing-reasons) echo "Error reasons" ;; episodes) echo "Recovered flows" ;; waiting-expired) echo "Waiting & Expired" ;; pirates) echo "One-legged" ;; went-quiet) echo "Went quiet" ;; failure-heatmap) echo "Failure heatmap" ;; not-in-flow-manager) echo "Not in Flow Manager" ;;
+        failing-reasons) echo "Error reasons" ;; episodes) echo "Recovered flows" ;; waiting-expired) echo "Waiting & Expired" ;; pirates) echo "One-legged" ;; went-quiet) echo "Went quiet" ;; failure-heatmap) echo "Failure heatmap" ;; not-in-flow-manager) echo "Not in Flow Manager" ;;
         protocol) echo "Direction & Mode" ;;   # "Protocol, Direction & Mode" until 2026-09-30
         ranking) echo "Ranking" ;;
         duration) echo "Duration" ;; duration-longest) echo "Longest Files" ;;
@@ -499,7 +501,7 @@ html_head() {   # $1 title  $2 css_href  [$3 date-list]  [$4 unused (was the rig
     fi
     # A stable per-AREA key for report.js's date-filter persistence — emitted
     # ONLY alongside a date list (pages without the From/To filter get neither).
-    # A caller without an area (the analyses pages: Failed Subscriptions, UC
+    # A caller without an area (the analyses pages: Open Errors, UC
     # status, Polling, Triage, …) is keyed by the list it carries — an area's
     # own list IS that area, the match the partial days above make — so its
     # From/To joins that area's shared range instead of a silo keyed by the
@@ -879,8 +881,7 @@ help_slug_for() {   # $1 area (transfer|server)  $2 report basename
     local area=$1 n=$2
     case $n in
         account|login|subscription|remote-host|logical|partner|application|domain|bl) echo "entities-$n" ;;
-        failed-files)                                                   echo "failed-files" ;;   # its own page (2026-09-29 fix: failed-* below caught it)
-        failed-*)                                                       echo "failed" ;;    # the Failed Subscriptions view pages share one help page
+        failed-files)                                                   echo "failed-files" ;;   # its own page (2026-09-29 fix: the failed-* view rule caught it — gone 2026-10-05 with the Failed Subscriptions pages)
         cross-*)                                                        echo "cross-reference" ;;
         missing-entities)    echo "server-unknown-entities" ;;   # the merged report keeps the unknown-* family help page
         # the 2026-07 merged reports keep one component's existing help page
@@ -2026,7 +2027,7 @@ _report_groups() {
     printf '%s\n' \
         "Overview|transfer/topview=Transfer top view|server/topview=Server top view" \
         "Entities|transfer/entities/subscription=Subscriptions|transfer/entities/logical=Logical|transfer/entities/partner=Partners|transfer/entities/account=Accounts|transfer/entities/login=Logins|transfer/entities/remote-host=Hosts|transfer/entities/domain=Domains|transfer/entities/application=Applications|transfer/entities/bl=BL" \
-        "Errors|analyses/failed=Failed Subscriptions|analyses/failing-reasons=Error reasons|transfer/failed-files=Failed files|transfer/unknown-transfers=Unknown transfers|transfer/pirates=One-legged|transfer/episodes=Recovered flows|transfer/retries=Retries & resubmissions|transfer/failure-heatmap=Failure heatmap|server/errors=Errors|server/failure-flows=Per flow|server/io-errors=IO errors|server/routing-errors=Routing errors" \
+        "Errors|analyses/errors=Open Errors|analyses/failing-reasons=Error reasons|transfer/failed-files=Failed files|transfer/unknown-transfers=Unknown transfers|transfer/pirates=One-legged|transfer/episodes=Recovered flows|transfer/retries=Retries & resubmissions|transfer/failure-heatmap=Failure heatmap|server/errors=Errors|server/failure-flows=Per flow|server/io-errors=IO errors|server/routing-errors=Routing errors" \
         "Performance|transfer/duration=Duration|transfer/duration-longest=Longest Files|transfer/duration-dwell=Store-and-forward|transfer/anomalies=Anomalies" \
         "Use cases & delivery|analyses/use-cases=Use cases|analyses/uc-status=UC status|analyses/polling=UC3 Polling|transfer/waiting-expired=Waiting & Expired|transfer/went-quiet=Went quiet" \
         "Activity & volume|transfer/activity=Activity|transfer/ranking=Ranking|transfer/files=Sizes & types|transfer/month-stats/this=Month stats" \
@@ -2052,6 +2053,9 @@ _report_subrows() {
 # pages and a $( ) per call is a fork)
 rg_landing() {
     local dir=${1%/*} stem=${1##*/}
+    # Open Errors (2026-10-05): its stem "errors" is also the server Errors
+    # report's, whose first_page is a tab page — the page is errors.html
+    [ "$1" = analyses/errors ] && { RG_LANDING="analyses/errors.html"; return; }
     case $dir in
         transfer/entities) RG_LANDING="transfer/entities/$stem-all.html" ;;
         analyses/xref)     RG_LANDING="analyses/$(group_home cross)" ;;
@@ -2099,7 +2103,7 @@ unset _rgl _rgf
 # — the slot for a row that must sit UNDER the From/To date controls (report.js
 # inserts those before the first h2/tablewrap, and hoists its anchor back over
 # a "p.tabs.undertabs" row, so the order comes out controls -> row -> table).
-# The Failed Subscriptions view switches use this.
+# The Open Errors view switches use this.
 _inject_before_table() {
     local f=$1 frag=$2 tmp; [ -f "$f" ] || return 0
     tmp=$(mktemp "${TMPDIR:-/tmp}/inj.XXXXXX")

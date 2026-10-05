@@ -501,7 +501,7 @@ fi
 # the UC3 that never transfers and CANNOT CONNECT (2026-09-10, user rule):
 # no File, every poll a Connection failure — red (not orange), with
 # its newest failure in the _redflip sidecar, an error page of its own,
-# and a row on Failed Subscriptions (the home page's "Failing subscriptions
+# and a row on Open Errors (Failed Subscriptions until 2026-10-05; the home page's "Failing subscriptions
 # in Server log" table that listed it went 2026-09-29)
 if [ "$(exp pollconnfail)" -gt 0 ]; then
     c=$(awk -F'\t' '$1=="UC3_ZG_RATES_OSCORP" { print $3 }' "$B")
@@ -511,7 +511,7 @@ if [ "$(exp pollconnfail)" -gt 0 ]; then
     n=$(awk -F'\t' '$1=="UC3_ZG_RATES_OSCORP" { n++ } END { print n+0 }' "data/colour/_redflip.tsv" 2>/dev/null)
     check $([ "${n:-0}" -eq 1 ] && echo 0 || echo 1) "_redflip.tsv has $n row(s) for UC3_ZG_RATES_OSCORP, expected 1"
     check $([ -f "docs/files/uc3-zg-rates-oscorp.html" ] && echo 0 || echo 1) "docs/files/uc3-zg-rates-oscorp.html missing (the server-failing error page)"
-    check $(grep -q 'UC3_ZG_RATES_OSCORP' docs/analyses/failed.html 2>/dev/null && echo 0 || echo 1) "analyses/failed.html does not list UC3_ZG_RATES_OSCORP"
+    check $(grep -q 'UC3_ZG_RATES_OSCORP' docs/analyses/errors.html 2>/dev/null && echo 0 || echo 1) "analyses/errors.html does not list UC3_ZG_RATES_OSCORP"
 fi
 # the HOME PAGE (2026-09-29, user request): no red worklists, no "The log
 # exports" table, no Show all button; the site is called "Axway ST reports"
@@ -557,6 +557,21 @@ ne=$(( ${ne:-0} + neh + nel ))
 nr=$(awk '/<table class="index fit dayrows homeerr"/ { p = 1 } p && /<tr[ >]/ && /<td/ { n++ } p && /<\/table>/ { exit } END { print n + 0 }' docs/index.html 2>/dev/null)
 eh=$(awk '/<table class="index fit dayrows homeerr"/ { p = 1 } p && /<tr>/ && /<th/ { print; exit }' docs/index.html 2>/dev/null | grep -o '<th[^>]*>[^<]*</th>' | sed 's/<[^>]*>//g' | tr '\n' '|')
 check $([ "${ne:-0}" -gt 0 ] && [ "$nr" = "$ne" ] && [ "$eh" = "Entity|Date/time|Reason|" ] && echo 0 || echo 1) "the home Errors table: $nr row(s) for ${ne:-?} expected (red Failed Subscriptions rows + $neh host(s) + $nel login(s)), headers '$eh'"
+# ... and it IS Open Errors (2026-10-05, user request: "the Errors table on
+# the home page and this page must give the same data, only code once and
+# reuse it"): analyses/errors.html lists the same entities, in the same order,
+# with the same reasons and the same links (the home's without the "../")
+erows() {   # $1 = page  $2 = the table marker -> one "name|reason|href" line per row
+    awk -v M="$2" 'index($0, M) { p = 1 } p && /<tr data-/ {
+            l = $0; h = ""; if (match(l, /<td[^>]*><a href="[^"]*"/)) { h = substr(l, RSTART, RLENGTH); sub(/.*href="/, "", h); sub(/"$/, "", h); sub(/^\.\.\//, "", h) }
+            n = split(l, C, "</td>"); for (i = 1; i <= 3 && i <= n; i++) { gsub(/<[^>]*>/, "", C[i]) }
+            print C[1] "|" C[3] "|" h }
+        p && /<\/table>/ { exit }' "$1" 2>/dev/null
+}
+eo=$(erows docs/analyses/errors.html '<table'); ehm=$(erows docs/index.html 'class="index fit dayrows homeerr"')
+check $([ -n "$eo" ] && [ "$eo" = "$ehm" ] && echo 0 || echo 1) "the home Errors table and analyses/errors.html differ ($(printf '%s\n' "$ehm" | grep -c . || true) vs $(printf '%s\n' "$eo" | grep -c . || true) row(s)) — they must show the same rows"
+check $(grep -q '<h1>Open Errors' docs/analyses/errors.html 2>/dev/null && grep -q '<span class="tab active">Open Errors</span>' docs/analyses/errors.html && grep -q '<span class="tab active">Open</span><a class="tab" href="errors-all.html">All</a>' docs/analyses/errors.html && grep -q '<a class="tab" href="errors.html">Open</a><span class="tab active">All</span>' docs/analyses/errors-all.html 2>/dev/null && echo 0 || echo 1) "analyses/errors.html / errors-all.html: the Open Errors title, group entry or Open · All row is missing"
+check $([ ! -f docs/analyses/failed.html ] && [ ! -f docs/analyses/failed-sub-all.html ] && [ ! -f docs/help/failed.html ] && [ -f docs/help/open-errors.html ] && ! grep -rqs 'analyses/failed\.html\|failed-sub-all\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "an analyses/failed*.html page, its help page or a link to it is back (Open Errors: analyses/errors.html since 2026-10-05)"
 # ... each expected host / login row is there, links its detail page and
 # carries a stamp and a reason; the sample plants one of each (estate.awk
 # orphanhost / orphanlogin), so both kinds are exercised
@@ -686,7 +701,7 @@ check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "$n subscription table(s) still c
 nu=$(awk -F'\t' '$12 == "Unknown" && $4 != "" { n++ } END { print n + 0 }' "$F")
 nr=$(awk -F'\t' '$1 == "TABLE" { t++ } $1 == "ROW" && t == 1 && $2 !~ /^@\{colspan/ { n++ } END { print n + 0 }' data/transfer/reports/unknown-transfers.rpt 2>/dev/null)
 check $([ "${nu:-0}" -gt 0 ] && [ "$nu" = "$nr" ] && echo 0 || echo 1) "Unknown transfers lists ${nr:-0} File(s), _files.tsv holds ${nu:-0} Unknown File(s)"
-check $([ -f docs/transfer/unknown-transfers.html ] && grep -q '<a class="tab" href="../transfer/unknown-transfers.html">Unknown transfers</a>' docs/analyses/failed.html 2>/dev/null && echo 0 || echo 1) "Unknown transfers is missing or not in the Errors group row"
+check $([ -f docs/transfer/unknown-transfers.html ] && grep -q '<a class="tab" href="../transfer/unknown-transfers.html">Unknown transfers</a>' docs/analyses/errors.html 2>/dev/null && echo 0 || echo 1) "Unknown transfers is missing or not in the Errors group row"
 n=$(awk -F'\t' '$22 == "true" { n++ } END { print n + 0 }' "$T")
 check $([ "$n" -gt 0 ] && echo 0 || echo 1) "no resubmitted legs"
 
@@ -929,7 +944,7 @@ check $(grep -q 'data-restint' docs/transfer/duration-longest.html 2>/dev/null &
 # request; the Latest files search until then) — checked on the BAKED bar
 # (help pages); report.js buildTopbar draws the same link. Since 2026-09-29
 # it sits in ONE cluster with Entities and Errors (Errors = the Errors
-# group's first page, Failed Subscriptions), the search icon after them.
+# group's first page, Open Errors since 2026-10-05), the search icon after them.
 # (checked in topbar.js, the ONE bar implementation since 2026-09-30: the
 # cluster's links in this order)
 # (2026-09-30, user request: Errors right after Overview, then Duration ->
@@ -949,7 +964,7 @@ for lk in 'transfer/duration.html">Duration' 'analyses/partners-in.html">Partner
 done
 check $ok "topbar.js cluster is '${tbl}', expected '${want}' with the fixed targets (Duration -> transfer/duration.html … Activity -> transfer/activity-per-week.html)"
 # Errors is a top-bar link (topbar-data.js errors:)
-check $(grep -q 'errors:"analyses/failed.html"' docs/assets/topbar-data.js 2>/dev/null && echo 0 || echo 1) "topbar-data.js lacks errors:\"analyses/failed.html\" (the runtime bar's Errors link)"
+check $(grep -q 'errors:"analyses/errors.html"' docs/assets/topbar-data.js 2>/dev/null && echo 0 || echo 1) "topbar-data.js lacks errors:\"analyses/errors.html\" (the runtime bar's Errors link)"
 # the Implementation 1 | 2 tab row went with the File search pages
 # (2026-09-29): the all-files page is the only implementation left
 check $(grep -q 'Implementation 1, period' docs/search/all-files.html 2>/dev/null && echo 1 || echo 0) "search/all-files.html still carries the Implementation tab row"
@@ -1317,7 +1332,7 @@ check $(grep -q '<a class="tab" href="security-params.html">Security Parameters<
 # (Cipher suites … Session-lifecycle problems) sit on security-params.html
 n=$(ls docs/server/ssh-security*.html bin/server/reports/ssh-security.sh docs/help/server-ssh-crypto.html data/server/reports/ssh-security.rpt 2>/dev/null | wc -l | tr -d ' ')
 check $([ "${n:-0}" = 0 ] && grep -q '<h2>Cipher suites</h2>' docs/transfer/security-params.html 2>/dev/null && grep -q '<h2>Session-lifecycle problems</h2>' docs/transfer/security-params.html 2>/dev/null && ! grep -rqs 'server/ssh-security\.html' docs --include='*.html' --include='*.js' && echo 0 || echo 1) "SSH security is not merged into transfer/security-params.html (or an ssh-security page / link / help page is back)"
-bad=0; for f in docs/transfer/duration.html docs/transfer/duration-longest.html docs/analyses/failed.html docs/analyses/failed-sub-all.html docs/analyses/xref/cross-account-subscriptions.html docs/transfer/entities/subscription-all.html docs/transfer/waiting-expired.html; do
+bad=0; for f in docs/transfer/duration.html docs/transfer/duration-longest.html docs/analyses/errors.html docs/analyses/errors-all.html docs/analyses/xref/cross-account-subscriptions.html docs/transfer/entities/subscription-all.html docs/transfer/waiting-expired.html; do
     [ "$(grep -o 'class="grouptag"' "$f" 2>/dev/null | wc -l | tr -d ' ')" = 1 ] || { bad=$((bad + 1)); echo "  no single group tag: $f" >&2; }
 done
 check $([ "$bad" = 0 ] && echo 0 || echo 1) "$bad report page(s) without exactly one group tag"
@@ -1450,10 +1465,11 @@ check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "docs/day/ holds ${n:-?} page(s) 
 # went with the report; its absence is asserted with the Partners pages above)
 
 # ---- the 2026-09-29 site-audit fixes -----------------------------------------
-# Failed Subscriptions: the Environment letter column went — Subscription leads
-fh=$(grep -o '<tr><th[^>]*>[^<]*</th>' docs/analyses/failed.html 2>/dev/null | head -1 | sed 's/<[^>]*>//g')
-n=$(grep -c '<th[^>]*>Environment</th>' docs/analyses/failed.html 2>/dev/null || true)
-check $([ "$fh" = "Subscription" ] && [ "${n:-0}" = 0 ] && echo 0 || echo 1) "analyses/failed.html header starts with '${fh:-absent}' / carries ${n:-?} Environment column(s), expected Subscription first and no Environment"
+# Open Errors (Failed Subscriptions until 2026-10-05): the Environment letter
+# column went — the entity leads, headed Entity since 2026-10-05
+fh=$(grep -o '<tr><th[^>]*>[^<]*</th>' docs/analyses/errors.html 2>/dev/null | head -1 | sed 's/<[^>]*>//g')
+n=$(grep -c '<th[^>]*>Environment</th>' docs/analyses/errors.html 2>/dev/null || true)
+check $([ "$fh" = "Entity" ] && [ "${n:-0}" = 0 ] && echo 0 || echo 1) "analyses/errors.html header starts with '${fh:-absent}' / carries ${n:-?} Environment column(s), expected Entity first and no Environment"
 # Entities › Remote Hosts: the group banner follows the columns — a Transfers
 # band, and no UC2 status band (a host counts OUT-connection Files: it never
 # carries a Waiting / Expired File, so the empty group is hidden)
@@ -1507,7 +1523,7 @@ for p in server/errors-log-reasons server/failure-flows server/io-errors server/
     check $(grep -q '<span class="tab active">Server log</span>' "docs/$p.html" 2>/dev/null && echo 0 || echo 1) "docs/$p.html: the first row lacks the active Server log entry"
     check $(grep -c '<a class="tab" href="[^"]*">\(Errors\|Per flow\|IO errors\|Routing errors\)</a>' "docs/$p.html" 2>/dev/null | awk '{ exit !($1 >= 1) }' && echo 0 || echo 1) "docs/$p.html lacks the Server log second row"
 done
-check $(grep -q '<a class="tab" href="../server/errors-log-reasons.html">Server log</a>' docs/analyses/failed.html 2>/dev/null && grep -q '>Per flow</a>' docs/analyses/failed.html && echo 1 || echo 0) "analyses/failed.html: the Server log entry is missing or the four server members are still in the first row"
+check $(grep -q '<a class="tab" href="../server/errors-log-reasons.html">Server log</a>' docs/analyses/errors.html 2>/dev/null && grep -q '>Per flow</a>' docs/analyses/errors.html && echo 1 || echo 0) "analyses/errors.html: the Server log entry is missing or the four server members are still in the first row"
 # went-kaput.html is gone (2026-09-29, user request) and its .rpt with the
 # day pages' Trouble after success line (2026-09-30: bin/build/kaput-evidence.sh
 # writes only the evidence sidecar the Reason readers take)

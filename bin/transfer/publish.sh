@@ -53,7 +53,7 @@ render_files_run() {   # $@ = the .rpt files of one run
     local f b
     for f in "$@"; do
         b=${f##*/}; b=${b%.rpt}
-        render_rpt "$f" "$DOCS/files/$b.html" "../assets/style.css" "../index.html" "TRANSFER" "" "failed" || return $?
+        render_rpt "$f" "$DOCS/files/$b.html" "../assets/style.css" "../index.html" "TRANSFER" "" "open-errors" || return $?   # the Open Errors help page explains the File / error pages too
     done
 }
 # ONLY THE PUBLISHED SET (2026-09-29, user request: per subscription the

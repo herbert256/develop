@@ -618,7 +618,10 @@ Subscriptions page; orange rows left out, user request), newest first, Date/time
 page through the subscriptions slugmap); the banner opens the report via `data-href`. Since
 2026-10-01 (user request) the first column reads **Entity** and the table also lists the red
 hosts and logins no UC1 / UC3 (host) or UC2 / UC4 (login) subscription row of the table covers —
-`home_err_entities`, each linking its detail page; the rule is in CLAUDE.md. (The
+`home_err_entities`, each linking its detail page; the rule is in CLAUDE.md. Since 2026-10-05
+the table is the Open Errors page's own row set: `bin/analyses/reports/open-errors.sh` writes
+`open-errors.rpt` (the red failed.rpt rows + the host / login rows, its `err_entities`) and
+`write_home_errors` shows its first three columns. (The
 log-exports facts table, `write_log_facts`, went 2026-09-29 — the build report carries it.)
 Every status cell opens the **Entities view whose row
 count IS that figure** (columns Entity · Total · Seen % · OK % · Error · Warning · Ok — the
@@ -1006,8 +1009,10 @@ exactly that set.
   on that reason as a whole cell — the per-reason `failing-reasons-<slug>.html` drill pages went
   2026-09-29): since 2026-09-29 TWO pages over the Files in error
   (Failed AND Expired — the site-wide Error rule; Expired reads "Expired (not collected)"), one row
-  per subscription (its newest): **Still failing** (default, `analyses/failed.html`) and **All**
-  (`failed-sub-all.html`, green-again subscriptions kept) — the "All files" views went (Failed
+  per subscription (its newest): **Still failing** (`failed.rpt`) and **All**
+  (`failed-sub-all.rpt`, green-again subscriptions kept) — pageless DATA since 2026-10-05: the
+  Open Errors pages (`analyses/errors.html` Open, `errors-all.html` All) show them merged with
+  the red hosts / logins (`bin/analyses/reports/open-errors.sh`) — the "All files" views went (Failed
   files lists every File). Columns Subscription · Date/time · Reason · Last green day · Days red ·
   Failures in a row · CoreId / SessionId (last since 2026-09-29) — the three day columns from the pageless
   red-run sidecar (from-green-to-red / only-red until 2026-09-30; the Only red / From green to red pages and Episodes'

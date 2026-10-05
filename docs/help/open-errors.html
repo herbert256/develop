@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Help: Open Errors — Axway ST reports</title>
+<link rel="stylesheet" href="../assets/style.css?v=2764338114">
+<script src="../assets/topbar-data.js?v=1645445767" defer></script>
+<script src="../assets/topbar.js?v=2764338114" defer></script>
+</head>
+<body>
+<div class="topbar" data-b="../" data-help="general"></div>
+<main class="help-content">
+<a class="help-back" href="../index.html" onclick="if(history.length>1){history.back();return false}">&larr; Back to the report</a>
+<a class="help-back help-generic" href="general.html">Generic help</a>
+<h1>Open Errors</h1>
+<h2>What it shows</h2>
+<ul>
+<li>One row per open error: each red subscription &mdash; its newest File in error (Failed or Expired), or a <strong>server row</strong> when only the server log reddens it &mdash; plus each red <strong>host</strong> or <strong>login</strong> no UC1 / UC3 (host) or UC2 / UC4 (login) subscription row covers.</li>
+<li>The same rows as the home page&rsquo;s <strong>Errors</strong> table.</li>
+<li>Views: <strong>Open</strong> (default); <strong>All</strong> also keeps the subscriptions green again.</li>
+<li>Also the help of the <strong>File pages</strong> (<code>File: &lt;name&gt;</code>, any outcome) and the subscription <strong>error pages</strong>. Only the newest OK File and the three newest Error Files of a subscription have a page.</li>
+</ul>
+<h2>Columns</h2>
+<ul>
+<li><strong>Entity</strong>; <strong>Date/time</strong> &mdash; the File&rsquo;s start, the reddening error&rsquo;s time, or a host / login&rsquo;s newest evidence.</li>
+<li><strong>Reason</strong> &mdash; the first classifying server-log error (<em>Connection failures</em>, <em>Route stopped</em>&hellip;), <em>One-legged</em>, <em>Expired (not collected)</em>, else the last leg&rsquo;s raw status.</li>
+<li><strong>CoreId / SessionId</strong> &mdash; the File&rsquo;s CoreId, or the session of the reddening error.</li>
+<li><strong>Last green day</strong> (<em>never</em> = never delivered), <strong>Days red</strong>, <strong>Failures in a row</strong> &mdash; blank on server, host and login rows.</li>
+</ul>
+<h2>Rules</h2>
+<ul>
+<li>Row tint = the entity&rsquo;s colour; a subscription row opens its error page (an Expired File has none), a host or login row its detail page.</li>
+<li>A server row: a server error after the last delivery, a deploy mistake, or an attributed authentication failure.</li>
+<li>A File page: the <strong>facts</strong>, the <strong>legs</strong> in order (each with the remote host it logged), then the <strong>server log</strong> of their sessions and every line naming the CoreId or a transfer ID.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Every File in error: <a href="failed-files.html">Failed files</a>; back to green: <a href="recovered.html">Recovered flows</a>.</li>
+</ul>
+</main>
+</body>
+</html>

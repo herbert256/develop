@@ -4,15 +4,18 @@
 # the capped single last-failed list; the Subscription-leg views went 2026-08,
 # the two every-failed-File views all-failing / all-all 2026-09-29 — the Failed
 # files page lists every File in error): one row per subscription, its newest
-# failed File, and one button group picks the FILTER, each its own page
-# (analyses/failed*.html; the selector row is injected at publish time by
-# bin/analyses/publish.sh, BELOW the From/To date fields):
+# failed File, and one button group picks the FILTER, each its own list
+# (the Open / All selector row of the Open Errors pages is injected at
+# publish time by bin/analyses/publish.sh, BELOW the From/To date fields):
 #
 #   failing  hide the subscriptions that are GREEN again
 #   all      keep them
 #
-#   failed.rpt = the still-failing view, THE page (analyses/failed.html);
-#   failed-sub-all.rpt -> analyses/failed-sub-all.html keeps the recovered.
+#   failed.rpt = the still-failing view, failed-sub-all.rpt keeps the
+#   recovered. Since 2026-10-05 neither is a page of its own: the Open Errors
+#   pages (analyses/errors.html + errors-all.html; analyses/failed*.html until
+#   then) and the home Errors table show them merged with the red hosts /
+#   logins — bin/analyses/reports/open-errors.sh.
 #   No caps and no floor: a view is an exact dedup. The (subscription, legs)
 #   PAIR rule lives on WITHOUT a page of its own: it still grants the drill
 #   pages (each pair's newest file, ~185 pairs over 14,935 acceptance
@@ -887,7 +890,7 @@ if [ -s "$TMP/meta" ]; then
                 f = pdir(MC[i]) "/" MC[i] ".rpt"
                 # a File page (the latest-OK set, O) has no back link — the
                 # facts table links its subscription; a drill page links back
-                if (!(MC[i] in FSET)) printf "LINK\t../analyses/failed.html\tBack to Failed Subscriptions\n" >> f
+                if (!(MC[i] in FSET)) printf "LINK\t../analyses/errors.html\tBack to Open Errors\n" >> f
                 printf "FOOT\n" >> f
                 close(f)
             }
@@ -1028,7 +1031,7 @@ LC_ALL=C awk -F'\t' -v ERRDIR="$ERRDIR" -v CAP="$SRVCAP" \
             } else
                 printf "INTRO\t%s Its server-log mention ring is empty: the evidence is on the subscription'"'"'s detail page and the report its box names.\n", pre > f
         }
-        printf "LINK\t../analyses/failed.html\tBack to Failed Subscriptions\n" > f
+        printf "LINK\t../analyses/errors.html\tBack to Open Errors\n" > f
         printf "FOOT\n" > f
         close(f)
     }

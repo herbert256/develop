@@ -14,6 +14,8 @@
 #                                                report — it reads the PDA coverage TSVs
 #                                                ensure_pda_tsvs materializes)
 #   reports/first-seen.sh                     -> data/analyses/reports/first-seen*.rpt + data/first-seen/
+#   reports/open-errors.sh                    -> data/analyses/reports/open-errors*.rpt
+#                                                (Open Errors + the home Errors table)
 #
 # The analyses read TRANSFER report outputs (showseen.sh's coverage TSVs and
 # Seen counts, the detail-page slugmaps) and the data/flow-manager config caches — so this
@@ -64,6 +66,10 @@ run_bg "$SCRIPT_DIR/reports/cross-reference.sh"
 run_bg "$SCRIPT_DIR/reports/entity-coverage.sh"
 run_bg "$SCRIPT_DIR/reports/skipped.sh"               # reads the parse-time skip sidecars only
 run_bg "$SCRIPT_DIR/reports/failing-reasons.sh"       # Error reasons (reads failed-files.rpt — the transfer reports ran first)
+# Open Errors + the home Errors table (2026-10-05): failed.sh's lists (final
+# after its Reason catch-up) + the red hosts / logins — colour/, base/,
+# xref/, the server rings, the detail slugmaps; no PDA TSV, no home.rpt
+run_bg "$SCRIPT_DIR/reports/open-errors.sh"
 # (the 2026-08 study reports Partner scorecard, Blast radius and Application
 # dependencies went 2026-09-30, user request)
 # Partners Out (2026-09-30, user request): every host we connect OUT to —

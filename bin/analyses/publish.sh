@@ -1561,24 +1561,25 @@ _aplap "use cases, first seen, configuration pages"
 render_subs_group_pages
 _aplap "subscription group pages"
 
-# The Failed Subscriptions VIEW page (failed-sub-all.rpt, written by
-# bin/transfer/reports/failed.sh beside the default failed.rpt, which
-# render_subs_group_pages just rendered): the All view — reached only through
-# the selector row below, rendered as the SAME report (the "failed" help slug
-# and search/sort persistence key, so a typed search survives a view switch;
-# its group row comes from bin/build/publish.sh apply_report_groups).
+# THE OPEN ERRORS PAGES (2026-10-05, user request: "rename to
+# /analyses/errors.html", "rename Failed subscriptions to Open Errors"; they
+# were analyses/failed.html + failed-sub-all.html, rendered from failed.sh's
+# lists): open-errors.rpt -> errors.html (the Open view, the Errors group's
+# first page) and open-errors-all.rpt -> errors-all.html (All), both written
+# by bin/analyses/reports/open-errors.sh — the same row set the home Errors
+# table shows. Rendered here by hand, not through SUBS_GROUP_REPORTS: the
+# report KEY "errors" is the server Errors report's (its tabs, its help), so
+# the pages carry the key and help slug "open-errors"; their group row comes
+# from bin/build/publish.sh apply_report_groups (member analyses/errors).
 _fsaved_dates=${CUR_DATES:-}; CUR_DATES=$TRANSFER_DATES
-for _frpt in "$DATA"/transfer/reports/failed-*.rpt; do
+for _fv in "open-errors:errors" "open-errors-all:errors-all"; do
+    _frpt="$DATA/analyses/reports/${_fv%%:*}.rpt"
     [ -f "$_frpt" ] || continue
-    _fname=${_frpt##*/}; _fname=${_fname%.rpt}
-    # the view variants ONLY (failed-sub-*): the glob also matches
-    # failed-files.rpt — the Failed files report, a transfer page of its own
-    case $_fname in failed-sub-*) ;; *) continue ;; esac
-    RPT_NOPROSE=1 render_rpt "$_frpt" "$ADIR/$_fname.html" "../assets/style.css" "index.html" \
-        "TRANSFER - Failed Subscriptions" 1 "failed" "failed"   # a report page: no INTRO / NOTE prose (the help page carries it)
+    RPT_NOPROSE=1 render_rpt "$_frpt" "$ADIR/${_fv#*:}.html" "../assets/style.css" "index.html" \
+        "" 1 "open-errors" "open-errors"   # a report page: no INTRO / NOTE prose (the help page carries it)
 done
 CUR_DATES=$_fsaved_dates
-_aplap "failed pages"
+_aplap "open errors pages"
 
 # The Partners in / Partners Out VIEW pages (2026-09-30, user request: the view
 # row Endpoint · Accounts · Partners): partners-{in,out}-{accounts,partners}.rpt,
@@ -1601,23 +1602,19 @@ _aplap "partners view pages"
 # (The Error reasons DRILL pages, failing-reasons-<slug>.html, went
 # 2026-09-29: a reason row opens the Failed files page searched on it.)
 
-# THE VIEW SELECTOR ROW — Still failing (failed.html, the default, FIRST since
-# 2026-09-29) · All (failed-sub-all.html) — injected into both pages BELOW the
-# From/To date controls (report.js hoists its controls anchor back over a
-# p.tabs.undertabs row, so the row comes out controls -> row -> table).
-# (The Selection group — All files / Subscription — went 2026-09-29 with the
-# every-File views: the Failed files page is that list.)
-_fpage() {   # $1 filter -> page basename
-    if [ "$1" = failing ]; then echo "failed.html"; else echo "failed-sub-$1.html"; fi
-}
-for _ffil in failing all; do
-    _ff="$ADIR/$(_fpage "$_ffil")"
+# THE VIEW SELECTOR ROW — Open (errors.html, the default) · All
+# (errors-all.html; "Still failing" · All on Failed Subscriptions until
+# 2026-10-05) — injected into both pages BELOW the From/To date controls
+# (report.js hoists its controls anchor back over a p.tabs.undertabs row, so
+# the row comes out controls -> row -> table).
+for _ffil in errors errors-all; do
+    _ff="$ADIR/$_ffil.html"
     [ -f "$_ff" ] || continue
     _frow='<p class="tabs undertabs">'
-    for _fs in "failing:Still failing" "all:All"; do
+    for _fs in "errors:Open" "errors-all:All"; do
         _fk=${_fs%%:*}; _flbl=${_fs#*:}
         if [ "$_fk" = "$_ffil" ]; then _frow+="<span class=\"tab active\">$_flbl</span>"
-        else _frow+="<a class=\"tab\" href=\"$(_fpage "$_fk")\">$_flbl</a>"; fi
+        else _frow+="<a class=\"tab\" href=\"$_fk.html\">$_flbl</a>"; fi
     done
     _frow+='</p>'
     _inject_before_table "$_ff" "$_frow"
