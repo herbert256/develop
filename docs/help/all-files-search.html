@@ -7,9 +7,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Help: All files search — Axway ST reports</title>
-<link rel="stylesheet" href="../assets/style.css?v=2764338114">
+<link rel="stylesheet" href="../assets/style.css?v=1923470480">
 <script src="../assets/topbar-data.js?v=1645445767" defer></script>
-<script src="../assets/topbar.js?v=2764338114" defer></script>
+<script src="../assets/topbar.js?v=1923470480" defer></script>
 </head>
 <body>
 <div class="topbar" data-b="../" data-help="general"></div>
@@ -28,6 +28,7 @@
 <h2>Rules</h2>
 <ul>
 <li>Results follow as you type (Enter at once), case-insensitive: <code>*</code> = any run, <code>?</code> = one character, space-separated words must all match. <strong>From/To</strong> limits the days searched.</li>
+<li>The search starts once the <strong>first word</strong> has <strong>3 characters</strong> (wildcards not counted) &mdash; the first word of File, or of Subscription when File is empty; the words after it may be shorter.</li>
 <li>Only the days that can hold a match are loaded, newest first. The search stops at the newest 500 matches.</li>
 <li>The line beside the fields counts the matches, the subscriptions, the days searched and the days the index skipped. With both fields empty it reads <strong>N files in M subscriptions</strong> for the From/To period, straight from the search index (the Files of subscription Unknown count, Unknown is no subscription); a day&rsquo;s data file is only loaded when a search needs it.</li>
 <li>Row colour = the <a href="general.html#colours">File colour</a>: <strong>green</strong> OK, <strong>orange</strong> OK after a retry or resubmit and Waiting, <strong>red</strong> Error and Expired.</li>

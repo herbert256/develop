@@ -3724,6 +3724,21 @@
   // (drill-down lists, Entity Search rows, the Files page) through a
   // MutationObserver, plus a mouseover net for cells a restore rewrote.
   var ID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/g;
+  // idAt(s): the first id of s that stands ON ITS OWN, or null. A UUID inside
+  // a longer name is no CoreId (2026-10-05, user report: the file name
+  // "sB0005FRC.RBW20261002_{acc9b1d2-be35-11f1-9726-0a81094c0000}.xml" got the
+  // File Tracking link and the ⧉) — a match with a brace, hyphen, dot or slash
+  // right before it, or a brace or hyphen right after it, is skipped.
+  function idAt(s) {
+    var m, b, a;
+    ID_RE.lastIndex = 0;
+    while ((m = ID_RE.exec(s)) !== null) {
+      b = m.index > 0 ? s.charAt(m.index - 1) : "";
+      a = s.charAt(m.index + m[0].length);
+      if (!/[{.\-\/\\]/.test(b) && !/[}\-]/.test(a)) { ID_RE.lastIndex = 0; return m; }
+    }
+    return null;
+  }
   function isIcon(n) { return n && n.nodeType === 1 && (" " + n.className + " ").indexOf(" cpid ") >= 0; }
   function makeIcon(id) {
     var i = document.createElement("span");
@@ -3737,15 +3752,15 @@
     for (var e = 0; e < els.length; e++) {
       var el = els[e], t = el.textContent, lc = isLinesCell(el);
       if ((!lc && t.length > 200) || t.indexOf("-") < 0) continue;
-      ID_RE.lastIndex = 0; if (!ID_RE.test(t)) continue;
+      if (!idAt(t)) continue;
       if (el.closest && el.closest(".colpick, .topbar")) continue;
       // the text nodes carrying an id, one icon after each (after the node's
       // element when that element IS the id — <code>id</code>, <a>id</a>)
       var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), node, nodes = [], count = 0;
       while ((node = walker.nextNode())) { if (!isIcon(node.parentNode)) nodes.push(node); }
       for (var k = 0; k < nodes.length && (lc || count < 4); k++) {
-        node = nodes[k]; ID_RE.lastIndex = 0;
-        var m = ID_RE.exec(node.nodeValue); if (!m) continue;
+        node = nodes[k];
+        var m = idAt(node.nodeValue); if (!m) continue;
         var par = node.parentNode, anchor = node;
         if (par !== el && par.textContent.trim() === m[0]) anchor = par;   // wrap-the-id element: icon after it
         if (isIcon(anchor.nextSibling)) continue;                          // already there
@@ -3827,14 +3842,14 @@
     for (var e = 0; e < els.length; e++) {
       var el = els[e], t = el.textContent, prose = /^(P|H1|H2|H3)$/.test(el.tagName), lc = isLinesCell(el);
       if ((!prose && !lc && t.length > 200) || t.indexOf("-") < 0) continue;
-      ID_RE.lastIndex = 0; if (!ID_RE.test(t)) continue;
+      if (!idAt(t)) continue;
       if (el.closest && el.closest(".colpick, .topbar")) continue;
       if (isTransferIdCell(el) || (el.tagName === "CODE" && el.parentNode && el.parentNode.closest && isTransferIdCell(el.parentNode.closest("td, dd") || el))) continue;
       var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), node, nodes = [], count = 0;
       while ((node = walker.nextNode())) { if (!isIcon(node.parentNode) && !isStGo(node.parentNode)) nodes.push(node); }
       for (var k = 0; k < nodes.length && (lc || count < 4); k++) {
-        node = nodes[k]; ID_RE.lastIndex = 0;
-        var m = ID_RE.exec(node.nodeValue); if (!m) continue;
+        node = nodes[k];
+        var m = idAt(node.nodeValue); if (!m) continue;
         var par = node.parentNode, a = par.closest ? par.closest("a") : null;
         if (a) {
           // already a link: our own wrap (a re-run) — nothing to do; an
