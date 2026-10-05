@@ -301,7 +301,9 @@ S = server/, A = analyses/):
 - **Partners** — Partners in (A partners-in) · Partners Out (A partners-out) — 2026-09-30: Partner
   scorecard, Blast radius and Application dependencies went, Logons › Incoming / Outgoing became these two
 - **Configuration** — Configured subscriptions (A subscriptions) · Configured accounts (A
-  accounts) · Logical detection (A) · Cross References (analyses/xref, its pair selector under the group row)
+  accounts) · Cross References (analyses/xref, its pair selector under the group row) — Logical
+  detection left the group 2026-10-05 (user request): its table is the LAST section of the build
+  report (data/analyses/_logical-detection.html, appended by bin/build.sh write_report); no page
 - **Coverage** — Entity coverage (T) · First seen (A) · Not in Flow Manager (T) · Skipped (T) ·
   Missing entities (S)
 - (**Cleanup** — Cleanup backlog · Config hygiene · Whitelist audit · Account sharing · Twins —

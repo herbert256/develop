@@ -277,7 +277,7 @@ write_status_pair() {
     _status_table "$cov" "Flow manager entities" \
         "Subscriptions:subscriptions:_subscriptions" \
         "Accounts:accounts:_accounts" "Hosts:hosts:_hosts" "Logins:logins:_logins"
-    _status_table "$cov" "Logical, Partners, Domains, Applications &amp; BL" \
+    _status_table "$cov" "Achmea entities" \
         "Logical:logicals:_logicals" \
         "Partners:partners:_partners" "Domains:domains:_domains" "Applications:applications:_apps" \
         "BL:bl:_bl"
@@ -311,7 +311,7 @@ _daycell() {   # $1 = date
 # (set by the caller).
 write_home_block() {
     # The two result-status tables (copied from the Flow manager Entities /
-    # Logical, Partners, Domains, Applications & BL analyses pages), side by side with
+    # Achmea entities analyses pages), side by side with
     # coverage links — a status snapshot at the TOP of the landing page.
     if [ -f "$HOME_ENV_DATA/analyses/reports/home.rpt" ] || [ -f "$HOME_ENV_DATA/flow-manager/base/_subscriptions.tsv" ]; then
         write_status_pair "coverage/"

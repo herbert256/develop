@@ -186,7 +186,7 @@ CUR_DATES=""
 # actual catalog — a page's title comes from its file's TITLE). (failed left
 # the list 2026-10-05: failed.rpt is failed.sh's pageless data since the Open
 # Errors pages, bin/analyses/reports/open-errors.sh.)
-transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search activity cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage skipped not-in-flow-manager ranking files episodes failed-files unknown-transfers waiting-expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell)
+transfer_order=(topview subscription account login remote-host logical partner application domain bl entity-search activity cross-account cross-login cross-subscription cross-host cross-logical cross-partner cross-application cross-domain cross-bl entity-coverage skipped not-in-flow-manager ranking volume files episodes failed-files unknown-transfers waiting-expired retries pirates went-quiet failure-heatmap protocol security-params security-outreach av-scan connection-efficiency duration anomalies duration-longest duration-dwell)
 server_order=(topview errors failure-flows io-errors routing-errors uc-status polling missing-entities)   # remote-poll: an unpublished intermediate since 2026-09-05 (its tables ride the UC status / UC3 tab); site-failures one since 2026-09-28 (its rows = the Per flow connection-failure rows); routing-errors = the 2026-09-28 merge of could-not-send, publish-failed and post-client-action
 
 # ---- the analyses-housed area reports ---------------------------------------
@@ -241,7 +241,7 @@ report_tabs() {
         cross-domain)       cross_tabs "Accounts|Logins|Subscriptions|Hosts|Logical|Partners|Applications|BL" ;;
         cross-bl)           cross_tabs "Accounts|Logins|Subscriptions|Hosts|Logical|Partners|Applications|Domains" ;;
         files)         echo "By size|Empty files|By type|Duplicates|Largest files" ;;   # 2026-09-29: + top-transfers (size-profile, its Size regime + Stub shippers tabs, went 2026-10-01)
-        went-quiet)    echo "Subscriptions|Accounts" ;;   # 2026-07 Tier 3: + stale-accounts
+        # went-quiet: ONE table since 2026-10-05 (its Accounts tab, stale-accounts, went — user request)
         # ---- the 2026-07 MERGED reports: one tab per component TABLE, in
         # component order — the tab count MUST equal the merged rpt's TABLE count
         activity)      echo "Per week|Per hour|Hour × weekday|Per weekday" ;;   # 2026-09-29: Per day went (= the Top view, Volume included)
@@ -253,6 +253,7 @@ report_tabs() {
         av-scan)       echo "Breakdown|Per day|Per protocol|Blocked|Not performed|Not first inbound" ;;
         # security-params: ONE table since 2026-09-29 (the six attribute tabs went)   # 2026-08: one tab per attribute; the report always emits all six tables (empty when absent) so the count matches in every env. Protocol table dropped — the protocol report owns it.
         ranking)       echo "Subscriptions|Accounts|Logins|Hosts|Logical|Partners|Applications|Domains|BL" ;;   # the 9 entity types, in ranking.sh's SPECS order
+        volume)        echo "Subscriptions|Logical|Partners|Accounts|Logins|Hosts|Domains|Applications|BL" ;;   # 2026-10-05: the Entities Volume group as a report (entities.sh, the Entities group order)
         # (anomalies had "Hourly|Daily" until 2026-08 — the two granularities
         # now share ONE page, Daily first, so the report is not split)
         pirates)       echo "Details|Per day" ;;   # the single-leg list + the count per day ("Top view" until 2026-09-30: the Top view is the transfer Top view)
@@ -327,6 +328,7 @@ member_label() {   # a report's own label: the group-row tab text (Entities / cr
         failing-reasons) echo "Error reasons" ;; episodes) echo "Recovered flows" ;; waiting-expired) echo "Waiting & Expired" ;; pirates) echo "One-legged" ;; went-quiet) echo "Went quiet" ;; failure-heatmap) echo "Failure heatmap" ;; not-in-flow-manager) echo "Not in Flow Manager" ;;
         protocol) echo "Direction & Mode" ;;   # "Protocol, Direction & Mode" until 2026-09-30
         ranking) echo "Ranking" ;;
+        volume) echo "Volume" ;;
         duration) echo "Duration" ;; duration-longest) echo "Longest Files" ;;
         duration-dwell) echo "Store-and-forward" ;;   # "Distribution & Store-and-forward" until 2026-09-30 (its Duration distribution table moved to Duration)
         security-params) echo "Security Parameters" ;; av-scan) echo "AV Scan" ;;
@@ -968,8 +970,8 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # twin under transfer/entities2/, then made THE layout; the classic Name ·
     # Direction · Files · Volume · OK · Retry · Resubmit · Error · Last seen
     # pages are gone): the .rpt is already in display order — Name, then the
-    # Files / UC2 status / Retry / Resubmit / Duration / Volume / Transfers column
-    # groups (State and Dates went 2026-09-30, user request; Waiting / Expired came
+    # Files / UC2 status / Retry / Resubmit / Duration / Transfers column
+    # groups (Volume went 2026-10-05 — the Volume report) (State and Dates went 2026-09-30, user request; Waiting / Expired came
     # back as UC2 status 2026-10-05) (a GHEAD banner + gsep dividers) — its rows baked
     # busiest-first with no sort= marker. Below: the views, the
     # subset totals re-summing the grouped columns (entity_res_block), an
@@ -977,7 +979,7 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # (entity_total_last). The nine classic <name>.rpt records (written by
     # entities.sh too) are DATA (showseen, entity-search, the rosters) and
     # render no page.
-    local _nreal=20   # the directive + Name + 18 figure columns (the Reason column follows the Transfers Error %)
+    local _nreal=18   # the directive + Name + 16 figure columns (the Reason column follows the Transfers Error %; 20 until the Volume group went, 2026-10-05)
     segment_rpt "$rpt"                                  # TBLOCK[1]=Summary
     local sumblk=${TBLOCK[1]:-}
     local stable shead stotal srows
@@ -1199,25 +1201,25 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
     # outcome, which for a rolled-up type — account/login/host — is a different
     # set than its result, e.g. 149 accounts vs the 121 the home called Ok).
     # Filter the All rows, which already carry @data:res, and re-sum the
-    # subset TOTAL (Files/Error/OK from the integer cells, Volume from the
-    # @data:buckets bytes).
+    # subset TOTAL (the counts from the integer cells, Files from the
+    # @data:buckets).
     # The subset TOTAL of the OK / Warning / Error views: the @data:res filter,
-    # re-summing the grouped columns — the count cells, the Files total and
-    # bytes from the buckets (metrics 0 and 4), the Duration percentiles from the rows' merged @data:durdays
+    # re-summing the grouped columns — the count cells, the Files total
+    # from the buckets (metric 0), the Duration percentiles from the rows' merged @data:durdays
     # per-day histograms (display-grid values, the writer's nearest-rank
     # rule) — into the writer's own baked TOTAL line, whose @{class=…} cell
     # prefixes are kept (the formatting lives in the writer: whole-unit
     # bytes, an empty rate beside an empty Error, no In/Out 0, the s/m/h/d
     # durations tinted by unit — the Duration cells are rebuilt whole, their
     # tint following the subset value). Template cells (the 2026-09-13
-    # order, Transfers after Volume): 2 label · 3 In · 4 Out · 5 Error ·
-    # 6 Error % · 7 Waiting · 8 Expired (UC2 status, 2026-10-05) · 9 Auto ·
-    # 10 Ok · 11 Error · 12 p90 · 13 p95 · 14 p99 · 15 p100 · 16 Total ·
-    # 17 Avg · 18 Ok · 19 Error · 20 Error % (the State and Dates cells after
-    # Transfers went 2026-09-30).
+    # order): 2 label · 3 In · 4 Out · 5 Error · 6 Error % · 7 Waiting ·
+    # 8 Expired (UC2 status, 2026-10-05) · 9 Auto · 10 Ok · 11 Error ·
+    # 12 p90 · 13 p95 · 14 p99 · 15 p100 · 16 Ok · 17 Error · 18 Error % (the
+    # State and Dates cells after Transfers went 2026-09-30, the Volume
+    # Total · Avg before them 2026-10-05).
     entity_res_block() {   # $1 = green|orange|red   $2 = the All-view rows to filter
-        # (the whole-unit byte format hbytes0 and the quicksort qsortn come
-        # from $AWKLIB — bin/fmt.awk, 2026-09-30; pasted copies before)
+        # (the quicksort qsortn comes from $AWKLIB — bin/fmt.awk, 2026-09-30;
+        # a pasted copy before)
         printf '%s\n' "$2" | LC_ALL=C awk -F'\t' -v OFS='\t' -v want="@data:res=$1" -v tmpl="$stotal" "$AWKLIB"'
             function hshort(ms,   v) { v = ms / 1000; if (v < 59.5) return sprintf("%.0f s", v)
                 v /= 60; if (v < 59.5) return sprintf("%.0f m", v); v /= 60; if (v < 23.5) return sprintf("%.0f h", v); return sprintf("%.0f d", v / 24) }
@@ -1232,9 +1234,9 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                 hit=0; for (i=1;i<=NF;i++) if ($i==want) hit=1
                 if (!hit) next
                 cnt++
-                for (c = 3; c <= 19; c++) if (c != 6 && !(c >= 12 && c <= 17)) S[c] += n($c)   # the count cells: In Out Error | Waiting Expired | Auto | Ok Error | Ok Error
+                for (c = 3; c <= 17; c++) if (c != 6 && !(c >= 12 && c <= 15)) S[c] += n($c)   # the count cells: In Out Error | Waiting Expired | Auto | Ok Error | Ok Error
                 for (i=1;i<=NF;i++) {
-                    if ($i ~ /^@data:buckets=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ split(B[j],C,":"); files += C[2]+0; sb += C[6]+0 } }
+                    if ($i ~ /^@data:buckets=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ split(B[j],C,":"); files += C[2]+0 } }
                     else if ($i ~ /^@data:durdays=/) { nb = split(substr($i,15),B,","); for (j=1;j<=nb;j++){ p = index(B[j], ":"); if (p < 1) continue
                         nq = split(substr(B[j],p+1),QQ,";"); for (m=1;m<=nq;m++){ p2 = index(QQ[m], "."); if (p2 > 1) HH[substr(QQ[m],1,p2-1)+0] += substr(QQ[m],p2+1)+0 } } }
                 }
@@ -1249,9 +1251,8 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                 for (j = 1; j <= hq; j++) HC[j] = HH[HQ[j]]
                 V[3]=nz(S[3]); V[4]=nz(S[4]); V[5]=S[5]+0; V[6]=pr(S[5], files); V[7]=S[7]+0; V[8]=S[8]+0; V[9]=S[9]+0; V[10]=S[10]+0; V[11]=S[11]+0
                 W[12] = (HN > 0) ? dcell(prank(90)) : ""; W[13] = (HN > 0) ? dcell(prank(95)) : ""; W[14] = (HN > 0) ? dcell(prank(99)) : ""; W[15] = (HN > 0) ? dcell(prank(100)) : ""   # WHOLE cells (their tint follows the value)
-                V[16]=hbytes0(sb); V[17]=hbytes0(files > 0 ? sb / files : 0); V[18]=S[18]+0; V[19]=S[19]+0; V[20]=pr(S[19], S[18]+S[19])
+                V[16]=S[16]+0; V[17]=S[17]+0; V[18]=pr(S[17], S[16]+S[17])
                 nt = split(tmpl, T, "\t"); while (nt > 2 && T[nt] ~ /^@data:/) nt--   # the All total own distinct @data:buckets never ride a SUBSET total (2026-09-29)
-                if (cnt + 0 == 0) { V[16] = ""; V[17] = "" }   # an EMPTY view (2026-09-29): no "0 B" in its total
                 l = T[2]; sub(/\([0-9,]+/, "(" (cnt + 0), l); out = T[1] OFS l
                 for (c = 3; c <= nt; c++) { cell = T[c]
                     if (c in W) cell = W[c]
@@ -1310,8 +1311,8 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                 if (skip || (hasU && hasT && hasR)) { for (k = 1; k <= n; k++) print L[k]; exit }
                 # DF = the .rpt fields to drop, DD = the same as display columns, DB = the
                 # banner cells: GHEAD $3 Files · $4 UC2 status · $5 Retry · $6 Resubmit ·
-                # $7 Duration · $8 Volume · $9 Transfers (the State and Dates groups
-                # went 2026-09-30)
+                # $7 Duration · $8 Transfers (the State and Dates groups went
+                # 2026-09-30, Volume 2026-10-05)
                 if (!hasU) { DF[7] = 1; DF[8] = 1; DD[5] = 1; DD[6] = 1; DB[4] = 1 }
                 if (!hasT) { DF[9] = 1; DD[7] = 1; DB[5] = 1 }
                 if (!hasR) { DF[10] = 1; DF[11] = 1; DD[8] = 1; DD[9] = 1; DB[6] = 1 }
@@ -1440,8 +1441,8 @@ render_entity_report() {   # $1 area  $2 name  $3 rpt (bin/transfer/reports/enti
                         rk[u] = (n >= 3) ? a[3] : ""; rc[u] = (n >= 4) ? a[4] : "" }
                     close(mapf) }
             # insert v as the display column after the LAST figure column —
-            # nreal = the real fields incl. the directive: 20 on the grouped
-            # layout (the Transfers Error %, since the UC2 status group came
+            # nreal = the real fields incl. the directive: 18 on the grouped
+            # layout (the Transfers Error % — the Volume group went
             # 2026-10-05); the trailing @data cells start at nreal+1 and ride
             # along
             function ins(v,   out, i) {
@@ -2030,10 +2031,10 @@ _report_groups() {
         "Errors|analyses/errors=Open Errors|analyses/failing-reasons=Error reasons|transfer/failed-files=Failed files|transfer/unknown-transfers=Unknown transfers|transfer/pirates=One-legged|transfer/episodes=Recovered flows|transfer/retries=Retries & resubmissions|transfer/failure-heatmap=Failure heatmap|server/errors=Errors|server/failure-flows=Per flow|server/io-errors=IO errors|server/routing-errors=Routing errors" \
         "Performance|transfer/duration=Duration|transfer/duration-longest=Longest Files|transfer/duration-dwell=Store-and-forward|transfer/anomalies=Anomalies" \
         "Use cases & delivery|analyses/use-cases=Use cases|analyses/uc-status=UC status|analyses/polling=UC3 Polling|transfer/waiting-expired=Waiting & Expired|transfer/went-quiet=Went quiet" \
-        "Activity & volume|transfer/activity=Activity|transfer/ranking=Ranking|transfer/files=Sizes & types|transfer/month-stats/this=Month stats" \
+        "Activity & volume|transfer/activity=Activity|transfer/ranking=Ranking|transfer/volume=Volume|transfer/files=Sizes & types|transfer/month-stats/this=Month stats" \
         "Protocols & security|transfer/protocol=Direction & Mode|transfer/security-params=Security Parameters|transfer/security-outreach=Security outreach|transfer/av-scan=AV Scan|transfer/connection-efficiency=Connection efficiency" \
         "Partners|analyses/partners-in=Partners in|analyses/partners-out=Partners Out" \
-        "Configuration|analyses/subscriptions=Configured subscriptions|analyses/accounts=Configured accounts|analyses/logical-detection=Logical detection|analyses/xref/cross=Cross References" \
+        "Configuration|analyses/subscriptions=Configured subscriptions|analyses/accounts=Configured accounts|analyses/xref/cross=Cross References" \
         "Coverage|analyses/first-seen=First seen|transfer/entity-coverage=Entity coverage|transfer/not-in-flow-manager=Not in Flow Manager|transfer/skipped=Skipped|server/missing-entities=Missing entities"
 }
 # THE SUB-ROWS (2026-09-29, user request: "On the group Failures move the 4

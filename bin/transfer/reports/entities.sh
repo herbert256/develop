@@ -18,7 +18,7 @@
 # data/transfer/reports/_alltime.tsv (the analyses Subscriptions page) — sums
 # of the same rows' per-day buckets.
 #
-# Layout: the Name, then SEVEN column groups (a GHEAD banner + the gsep=
+# Layout: the Name, then SIX column groups (a GHEAD banner + the gsep=
 # dividers, the Top view way), in this order:
 #   Files      In · Out · Error · Error %   In/Out = the MOVEMENT direction
 #              (_files.tsv col 17 — the home page's In/Out rule; a File with
@@ -36,7 +36,6 @@
 #              "Split Retry / Resubmit into 2 cells, Retry 1 wide, Resubmit 2
 #              wide" — two banner cells with a gap between them)
 #   Duration   p90 · p95 · p99 · p100 of the OK Files' wall-clock span
-#   Volume     Total · Avg (per File)
 #   Transfers  Ok · Error · Error %      the LEGS (log rows) of the entity's
 #              Files — every leg of every attributed File, credited to the
 #              File's start day like every per-File figure on the site
@@ -44,7 +43,10 @@
 #   group — First · Last · Days — went 2026-09-30, user request: "remove the
 #   State & Dates sub tables"; Waiting · Expired came back 2026-10-05 as UC2
 #   status, after Files; the First / Last / Days S| fields stay for the other
-#   readers)
+#   readers; the Volume group — Total · Avg per File, before Transfers — went
+#   2026-10-05, user request: it is the VOLUME REPORT now, data/transfer/
+#   reports/volume.rpt, one table per entity written from the same rows
+#   (fmt_dim + the assembly at the bottom), in the Activity & volume group)
 # Every count cell drills to its 10 newest Files (CoreIds) — except the
 # linked UC2 status cells; the Transfers cells to the Files that carried a
 # leg of that outcome; a Duration cell to the 10 newest OK Files at or above
@@ -381,11 +383,11 @@ fmt_dim() {
     IFS='|' read -r _ _ tc tdays ttok tter tin tout tfe tra tmo tme twt tex tv ns tp90 tp95 tp99 tp100 tbk \
         <<< "$({ grep "^T|$dim|" "$AGG.$dim" 2>/dev/null || true; } | awk 'NR == 1')"
     : "${tc:=0}" "${tdays:=0}" "${ttok:=0}" "${tter:=0}" "${tin:=0}" "${tout:=0}" "${tfe:=0}" "${tra:=0}" "${tmo:=0}" "${tme:=0}" "${twt:=0}" "${tex:=0}" "${tv:=0}" "${ns:=0}" "${tp90:=}" "${tp95:=}" "${tp99:=}" "${tp100:=}"
-    # the display order (2026-09-13, user request; Transfers moved after
-    # Volume the same day): Files · UC2 status · Retry · Resubmit · Duration
-    # (p90 p95 p99 p100) · Volume · Transfers — 19 cells (State and Dates went
-    # 2026-09-30; Retry / Resubmit became two groups 2026-10-01; Waiting /
-    # Expired came back as UC2 status after Files 2026-10-05)
+    # the display order (2026-09-13, user request): Files · UC2 status ·
+    # Retry · Resubmit · Duration (p90 p95 p99 p100) · Transfers — 17 cells
+    # (State and Dates went 2026-09-30; Retry / Resubmit became two groups
+    # 2026-10-01; Waiting / Expired came back as UC2 status after Files
+    # 2026-10-05; Volume went the same day — the Volume report, below)
     # NOFERR: the Subscriptions view's Error cell links Failed files (its
     # drillcols leave ferr out), so its ferr list is not shipped (2026-09-29 audit)
     # — nor the empty attribute itself since the 2026-09-30 audit (A1-09)
@@ -409,10 +411,10 @@ fmt_dim() {
             return "@{href=../waiting-expired.html" (ROWQ ? "?axway_row=" uenc(nm) : "") "}" (n + 0) }
         BEGIN { for (i = 1; i < 256; i++) HX[sprintf("%c", i)] = i }
         $3 == "" { next }
-        { files = $4 + 0; tok = $8 + 0; ter = $9 + 0; fe = $12 + 0; bytes = $18 + 0
-          printf "ROW\t%s\t%s\t%s\t%d\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t@data:buckets=%s\t@data:coreids-tok=%s\t@data:coreids-terr=%s\t@data:coreids-fin=%s\t@data:coreids-fout=%s%s\t@data:coreids-rauto=%s\t@data:coreids-rmok=%s\t@data:coreids-rmerr=%s\t@data:durdays=%s\t@data:coreids-d90=%s\t@data:coreids-d95=%s\t@data:coreids-d99=%s\t@data:coreids-d100=%s\n", \
+        { files = $4 + 0; tok = $8 + 0; ter = $9 + 0; fe = $12 + 0
+          printf "ROW\t%s\t%s\t%s\t%d\t%s\t%s\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t@data:buckets=%s\t@data:coreids-tok=%s\t@data:coreids-terr=%s\t@data:coreids-fin=%s\t@data:coreids-fout=%s%s\t@data:coreids-rauto=%s\t@data:coreids-rmok=%s\t@data:coreids-rmerr=%s\t@data:durdays=%s\t@data:coreids-d90=%s\t@data:coreids-d95=%s\t@data:coreids-d99=%s\t@data:coreids-d100=%s\n", \
               $3, nz($10), nz($11), fe, pr(fe, files), stcell($16, $3), stcell($17, $3), $13, $14, $15, \
-              dcell($30), dcell($31), dcell($32), dcell($33), hbytes0(bytes), hbytes0(files > 0 ? bytes / files : 0), \
+              dcell($30), dcell($31), dcell($32), dcell($33), \
               tok, ter, pr(ter, tok + ter), \
               $19, $20, $21, $22, $23, (NOFERR ? "" : "\t@data:coreids-ferr=" $24), $25, $26, $27, $34, $35, $36, $37, $38 }')
     tot_line=$(awk -F'|' "$FMT_AWK"'BEGIN { tc = ARGV[1]; ttok = ARGV[2]; tter = ARGV[3]; tfe = ARGV[4]; tv = ARGV[5]; tin = ARGV[6]; tout = ARGV[7]
@@ -428,17 +430,51 @@ fmt_dim() {
         # it opens transfer/failed-files.html for that subscription and the active From/To (report.js
         # setupEntityErrorLinks, 2026-09-15 user request) — so its drill is left out there
         ferrdc="ferr:3:Files_Error,"; [ "$chead" = "Subscription" ] && ferrdc=""
-        printf 'TABLE\tSummary per %s\twide\tgsep=1,5,7,8,10,14,16\tnoagg=10,11,12,13,15\tpct=4:3:1+2;18:17:16+17\tautohide=UC2 status;Retry;Resubmit\tdrillcols=fin:1:Files_In,fout:2:Files_Out,%srauto:7:Retry,rmok:8:Resubmit_Ok,rmerr:9:Resubmit_Error,d90:10:Duration_p90,d95:11:Duration_p95,d99:12:Duration_p99,d100:13:Duration_p100,tok:16:Transfers_Ok,terr:17:Transfers_Error\n' "$chead" "$ferrdc"
-        printf 'GHEAD\t\t@{colspan=4,class=gband gsep}Files\t@{colspan=2,class=gband gsep}UC2 status\t@{class=gband gsep}Retry\t@{colspan=2,class=gband gsep}Resubmit\t@{colspan=4,class=gband gsep}Duration\t@{colspan=2,class=gband gsep}Volume\t@{colspan=3,class=gband gsep}Transfers\n'
-        printf 'HEAD\t%s\tIn\tOut\tError\tError %%\tWaiting\tExpired\tAuto\tOk\tError\tp90\tp95\tp99\tp100\tTotal\tAvg\tOk\tError\tError %%\n' "$chead"
-        printf 'KIND\t%s\tnum\tnum\tnumfailed\tnum\tnumwarn\tnumfailed\tnumwarn\tnumwarn\tnumfailed\tnum\tnum\tnum\tnum\tnum\tnum\tnumok\tnumfailed\tnum\n' "$nkind"
-        printf 'RECALC\t-\tS1\tS2\ts3\te3.0\ts10\ts11\ts7\ts8\ts9\tP90\tP95\tP99\tP100\tH4\tV4.0\ts5\ts6\te6.12\n'
+        printf 'TABLE\tSummary per %s\twide\tgsep=1,5,7,8,10,14\tnoagg=10,11,12,13\tpct=4:3:1+2;16:15:14+15\tautohide=UC2 status;Retry;Resubmit\tdrillcols=fin:1:Files_In,fout:2:Files_Out,%srauto:7:Retry,rmok:8:Resubmit_Ok,rmerr:9:Resubmit_Error,d90:10:Duration_p90,d95:11:Duration_p95,d99:12:Duration_p99,d100:13:Duration_p100,tok:14:Transfers_Ok,terr:15:Transfers_Error\n' "$chead" "$ferrdc"
+        printf 'GHEAD\t\t@{colspan=4,class=gband gsep}Files\t@{colspan=2,class=gband gsep}UC2 status\t@{class=gband gsep}Retry\t@{colspan=2,class=gband gsep}Resubmit\t@{colspan=4,class=gband gsep}Duration\t@{colspan=3,class=gband gsep}Transfers\n'
+        printf 'HEAD\t%s\tIn\tOut\tError\tError %%\tWaiting\tExpired\tAuto\tOk\tError\tp90\tp95\tp99\tp100\tOk\tError\tError %%\n' "$chead"
+        printf 'KIND\t%s\tnum\tnum\tnumfailed\tnum\tnumwarn\tnumfailed\tnumwarn\tnumwarn\tnumfailed\tnum\tnum\tnum\tnum\tnumok\tnumfailed\tnum\n' "$nkind"
+        printf 'RECALC\t-\tS1\tS2\ts3\te3.0\ts10\ts11\ts7\ts8\ts9\tP90\tP95\tP99\tP100\ts5\ts6\te6.12\n'
         [ -n "$rows" ] && printf '%s\n' "$rows"
-        printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num warn}%s\t@{class=num failed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s\t%s\t%s\t%s\t%s\t@{class=num}%s\t@{class=num}%s\t@{class=num okc}%s\t@{class=num failed}%s\t@{class=num}%s%s\n' \
-            "$ns" "$noun" "$tinz" "$toutz" "$tfe" "$tfep" "$twt" "$tex" "$tra" "$tmo" "$tme" "$td90" "$td95" "$td99" "$td100" "$tvh" "$tavg" "$ttok" "$tter" "$tterp" \
+        printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num}%s\t@{class=num failed}%s\t@{class=num}%s\t@{class=num warn}%s\t@{class=num failed}%s\t@{class=num warn}%s\t@{class=num warn}%s\t@{class=num failed}%s\t%s\t%s\t%s\t%s\t@{class=num okc}%s\t@{class=num failed}%s\t@{class=num}%s%s\n' \
+            "$ns" "$noun" "$tinz" "$toutz" "$tfe" "$tfep" "$twt" "$tex" "$tra" "$tmo" "$tme" "$td90" "$td95" "$td99" "$td100" "$ttok" "$tter" "$tterp" \
             "${tbk:+$'\t'@data:buckets=$tbk}"   # the DISTINCT per-day totals (2026-09-29: report.js re-totals a narrowed range from them)
         printf 'FOOT\n'
     } > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+    # THE VOLUME TABLE of this entity (2026-10-05, user request: "Remove the
+    # Volume subtable [of the Entities pages], add the removed info as a new
+    # report in the Activity & volume group"): per name the Total bytes and
+    # the Avg per File — the same S| rows, the same whole-unit format and the
+    # same TOTAL as the Entities group had — most bytes first, the per-day
+    # buckets riding along (RECALC H4 / V4.0: From/To re-totals), rows tinted
+    # by the entity result (restint; an unconfigured name stays untinted).
+    # One TABLE block per entity in $REPORTS_DIR/.volume-<dim>.part, which
+    # the assembly at the bottom joins into volume.rpt.
+    local vbase vrows
+    case $dim in
+        subscription) vbase=_subscriptions ;; account) vbase=_accounts ;; login) vbase=_logins ;;
+        remote-host) vbase=_hosts ;; logical) vbase=_logicals ;; partner) vbase=_partners ;;
+        application) vbase=_apps ;; domain) vbase=_domains ;; bl) vbase=_bl ;;
+    esac
+    vbase="$CONFIG_BASE/$vbase.tsv"; [ -f "$vbase" ] || vbase=/dev/null
+    vrows=$({ grep "^S|$dim|" "$AGG.$dim" 2>/dev/null || true; } | LC_ALL=C sort -t'|' -k18,18nr -k3,3f -k3,3 | awk -F'|' -v BF="$vbase" "$FMT_AWK"'
+        BEGIN { while ((getline l < BF) > 0) { n9 = split(l, a9, "\t")
+                    if (n9 >= 3 && a9[1] != "" && (a9[3] == "green" || a9[3] == "orange" || a9[3] == "red")) RES[toupper(a9[1])] = a9[3] }
+                close(BF) }
+        $3 == "" { next }
+        { files = $4 + 0; bytes = $18 + 0; r = toupper($3)
+          printf "ROW\t%s\t%s\t%s%s\t@data:buckets=%s\n", $3, hbytes0(bytes), hbytes0(files > 0 ? bytes / files : 0), \
+              ((r in RES) ? "\t@data:res=" RES[r] : ""), $19 }')
+    {
+        printf 'TABLE\tVolume per %s\trestint\tsort=1:-1\n' "$chead"
+        printf 'HEAD\t%s\tTotal\tAvg\n' "$chead"
+        printf 'KIND\t%s\tnum\tnum\n' "$nkind"
+        printf 'RECALC\t-\tH4\tV4.0\n'
+        if [ -n "$vrows" ]; then printf '%s\n' "$vrows"
+        else printf 'ROW\t@{colspan=3}No %s carried a File.\n' "$noun"; fi
+        printf 'TOTAL\tTotal (%s %s(s))\t@{class=num}%s\t@{class=num}%s%s\n' "$ns" "$noun" "$tvh" "$tavg" \
+            "${tbk:+$'\t'@data:buckets=$tbk}"
+    } > "$REPORTS_DIR/.volume-$dim.part"
     echo "Data written to $OUT ($ns $noun(s), $tc file(s))." >&2
 }
 # THE CLASSIC RECORDS (2026-09-30, user decision — the five classic writers
@@ -626,4 +662,15 @@ month_stats & FMT_PIDS+=("$!")
 for dim in $DIMS; do fmt_dim "$dim" & FMT_PIDS+=("$!"); classic_dim "$dim" & FMT_PIDS+=("$!"); done
 for _p in "${FMT_PIDS[@]}"; do wait "$_p" || { echo "entities: a report writer failed" >&2; exit 1; }; done
 rm -f "$AGG".*
+# THE VOLUME REPORT (2026-10-05): the nine .volume-<dim>.part tables in the
+# Entities group order — the order publish_lib report_tabs volume names them
+{
+    printf 'TITLE\tVolume\n'
+    for dim in subscription logical partner account login remote-host domain application bl; do
+        cat "$REPORTS_DIR/.volume-$dim.part"
+    done
+    printf 'FOOT\n'
+} > "$REPORTS_DIR/volume.rpt.tmp" && mv "$REPORTS_DIR/volume.rpt.tmp" "$REPORTS_DIR/volume.rpt"
+rm -f "$REPORTS_DIR"/.volume-*.part
+echo "Data written to $REPORTS_DIR/volume.rpt (the Volume report, 9 tables)." >&2
 echo "Data written to $REPORTS_DIR/{account,subscription,login,remote-host,logical,partner,application,domain,bl}.rpt (the classic records)." >&2

@@ -784,8 +784,8 @@ xcompose "$XREF/_profiles-logicals.tsv" _profiles-hosts.tsv         1 RIGHT host
 xcompose "$XREF/_profiles-logicals.tsv" _profiles-white.tsv         1 LEFT  logicals-white
 
 # ------------------------------------------- partners / apps / domains (PDA)
-# The three PDA entities behind the home page's "Logical, Partners, Domains &
-# Applications" table, derived HERE so the caches are the single source
+# The three PDA entities behind the home page's "Achmea entities" table (Logical,
+# Partners, Domains, Applications, BL), derived HERE so the caches are the single source
 # (bin/build/publish.sh consumes them and only adds the Seen/Result
 # enrichment). Each base file is "name<TAB>direction" with direction in /
 # both / out ("" when none of the member flows has a login or host side).

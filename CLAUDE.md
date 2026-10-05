@@ -1828,13 +1828,39 @@ front end) then four fix workers with disjoint files. The rules it left:
   or a search), on its own like Retry and Resubmit; the Hosts pages never show it (a host counts OUT-connection
   Files). A non-zero cell LINKS `transfer/waiting-expired.html` (the 2026-09-30 rule restored: the subscription
   pages add `?axway_row=<the subscription>`, the other entities open the page itself) — no drill lists.
-- Display layout now: Name | Files (In Out Error Error%) 1-4 | UC2 status 5-6 | Retry 7 | Resubmit 8-9 |
-  Duration 10-13 | Volume 14-15 | Transfers 16-18 (display indexes, Name = 0; `.rpt` field = index + 2):
-  `gsep=1,5,7,8,10,14,16`, `noagg=10,11,12,13,15`, `pct=4:3:1+2;18:17:16+17`; GHEAD $3 Files · $4 UC2 status ·
-  $5 Retry · $6 Resubmit · $7 Duration · $8 Volume · $9 Transfers; `_nreal=20` (the Reason column follows the
-  Transfers Error %); `entity_res_block` template cells 7 / 8 = Waiting / Expired (its `n()` strips a leading
+- Display layout now (the Volume group went later the same day — see the next section): Name | Files (In Out
+  Error Error%) 1-4 | UC2 status 5-6 | Retry 7 | Resubmit 8-9 | Duration 10-13 | Transfers 14-16 (display
+  indexes, Name = 0; `.rpt` field = index + 2): `gsep=1,5,7,8,10,14`, `noagg=10,11,12,13`,
+  `pct=4:3:1+2;16:15:14+15`; GHEAD $3 Files · $4 UC2 status · $5 Retry · $6 Resubmit · $7 Duration ·
+  $8 Transfers; `_nreal=18` (the Reason column follows the Transfers Error %); `entity_res_block` template cells 7 / 8 = Waiting / Expired (its `n()` strips a leading
   `@{href=…}` — a linked cell's URL holds digits). verify.sh checks the banners, the links, the header and the
   account Waiting / Expired totals against a recount of `_files.tsv`.
+
+## Rules from the 2026-10-05 batch ("A few things", user request)
+
+- **Logical detection has NO PAGE** ("remove from the configuration group, add to the bottom of the build.html
+  page"): bin/analyses/publish.sh `write_logical_detection_table` writes the table to
+  `data/analyses/_logical-detection.html` (links carry the build report's `@B@` docs-root placeholder) and
+  bin/build.sh `write_report` appends it as the LAST section (`#logical-detection`) of build/index.html and
+  docs/tools/build.html. help/logical-detection.html stays (linked from the section, general.html and
+  details-logicals.html). Never restore docs/analyses/logical-detection.html or its Configuration membership.
+- **The coverage Configured pages** (docs/coverage/<member>-configured.html) open with ONE first selection row
+  Logical · Partners · Domains · Applications · BL (render_coverage_pages; a member with no rows has no page and no
+  button). The home table over them is **"Achmea entities"** (was "Logical, Partners, Domains, Applications & BL").
+- **Went quiet is ONE table** — went-quiet.sh writes went-quiet.rpt directly (TITLE Went quiet), page
+  transfer/went-quiet.html, no tab row; stale-accounts.sh (the Accounts tab) and merge-went-quiet.sh are gone —
+  never restore them.
+- **Duplicates** (files.rpt › Repeated filenames): Filename · Files · Error · First · Last — the Accounts column went.
+- **The Entities pages lost the Volume group** (Total · Avg); the same figures are the **Volume report**
+  (`transfer/volume-<entity>.html`, Activity & volume group, after Ranking; help/volume.html): entities.sh
+  fmt_dim writes one TABLE per entity from the same S| rows (most bytes first, the per-day buckets for
+  RECALC `H4` / `V4.0`, restint by the entity result, the TOTAL the Entities total had) and assembles
+  `data/transfer/reports/volume.rpt` in the Entities group order — report_tabs `volume` must name the same nine.
+  (The OLD Volume pages — per day / direction / top accounts — went 2026-09-29 and stay gone; the stem is reused.)
+- **All files search**: nothing is searched until the FIRST word (File field, else Subscription) has 3 characters,
+  wildcards not counted (`MINLEN`); the words after it may be shorter.
+- **CoreId detection** (report.js `idAt`): a UUID with a brace, hyphen, dot or slash right before it, or a brace or
+  hyphen right after it, is part of a name — no File Tracking link, no ⧉ (a file name `…_{<uuid>}.xml`).
 
 ## Rules from the 2026-10-01 batch ("a few different things")
 
@@ -2026,7 +2052,7 @@ browser, front end + gates), then four fix workers with disjoint files, each pro
   finished .rpt with the TABLES to tint, the BASE cache and the name COLUMN (restint + `@data:res` from the
   entity's result colour; an unknown name stays untinted). Users: connection-efficiency, dwell-time,
   recovered, files (Empty files), pirates, retry, resubmissions, recovered-files,
-  security-outreach (+ the secparams value pages), went-quiet, stale-accounts. Month stats (entities.sh),
+  security-outreach (+ the secparams value pages), went-quiet. Month stats (entities.sh),
   Unknown transfers › Per account and io-errors per folder tint in their own writers. Anomalies colours the
   "× typical" CELL (red failed / amber warn), never the row.
 - **Every table has a TOTAL row** — same-protocol and uc4-to-uc2 Files, went-quiet subscriptions, the

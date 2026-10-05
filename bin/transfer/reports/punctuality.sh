@@ -13,9 +13,8 @@
 # Last seen column — went 2026-09-29: the one reader takes the five columns
 # below.)
 #
-# Complements: stale-accounts measures idle DAYS vs an account's own cadence
-# (day granularity, accounts); this is time-OF-DAY granularity per
-# subscription. The UC status / UC3 tab (Configured cronjobs) shows the CONFIGURED schedules —
+# Time-OF-DAY granularity per subscription (the day-granularity account
+# idleness of stale-accounts.sh went 2026-10-05). The UC status / UC3 tab (Configured cronjobs) shows the CONFIGURED schedules —
 # a Clockwork row here is the observed side of one of those cron lines.
 # Full-period semantics (`nofilter`): the regularity model needs the whole
 # window, so the date filter never narrows this page.

@@ -16,11 +16,13 @@
 #
 # "Days ago" is measured against the LAST DAY IN THE DATA, not today: the site
 # reports on an export, so counting from the wall clock would make every figure
-# drift with how old the export is. Same convention as stale-accounts.sh.
+# drift with how old the export is.
 # Dates use the cache's Julian day number (col 7) — no `date` command.
 #
 # Reads data/_files.tsv (12 = subscription, 4 = date, 7 = jdn). Writes
-# data/went-quiet.rpt.
+# data/went-quiet.rpt — the whole report, ONE table since 2026-10-05 (user
+# request: its Accounts tab, stale-accounts.sh, went with its merge step
+# merge-went-quiet.sh; the page is transfer/went-quiet.html, no tab row).
 #
 # Usage:
 #   ./went-quiet.sh    # reads input/*.csv (via the cache), writes data/went-quiet.rpt
@@ -30,7 +32,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib.sh"
 mkdir -p "$REPORTS_DIR"
-OUT="$REPORTS_DIR/went-quiet-src.rpt"
+OUT="$REPORTS_DIR/went-quiet.rpt"
 
 QUIET_DAYS=7   # a subscription unseen for MORE than this many days has gone quiet
 

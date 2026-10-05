@@ -3,8 +3,10 @@
 # bin/analyses/publish.sh — render the ANALYSES .rpt files into docs/:
 #
 #   docs/analyses/first-seen.html          the First seen table
-#   docs/analyses/use-cases.html, subscriptions.html, logical-detection.html,
+#   docs/analyses/use-cases.html, subscriptions.html,
 #   accounts.html                           the Configuration pages
+#   data/analyses/_logical-detection.html   the Logical detection table, the
+#                                           build report's last section
 #   docs/analyses/*.html                    the analyses .rpt pages (via
 #                                           reason-boxes.sh and the
 #                                           subscription group renders)
@@ -129,6 +131,15 @@ render_first_seen_pages() {
 render_coverage_pages() {
     rm -rf "$COVDIR"; mkdir -p "$COVDIR"
     local rpt member key title ltcol dircol rows awfile npages=0
+    # THE MEMBER ROW (2026-10-05, user request): every Configured page opens
+    # with one first selection row over the five Achmea entities — Logical ·
+    # Partners · Domains · Applications · BL — the page's own member the
+    # active button; a member whose .rpt has no rows renders no page, so it
+    # gets no button
+    local covrow_m="" _cm
+    for _cm in logicals:Logical partners:Partners domains:Domains applications:Applications bl:BL; do
+        grep -q $'^ROW\t' "$COVRPT/${_cm%%:*}-configured.rpt" 2>/dev/null && covrow_m+=" $_cm"
+    done
     for rpt in "$COVRPT"/*.rpt; do
         [ -f "$rpt" ] || continue
         title=$(field1 TITLE "$rpt"); member=$(field1 MEMBER "$rpt"); key=$(field1 KEY "$rpt")
@@ -189,16 +200,24 @@ render_coverage_pages() {
         {
             html_head "$title" "../assets/style.css" "" "HOME" "coverage"
             esc "$title"; printf '<h1>%s</h1>\n' "$ESC"
+            if [ "$key" = configured ] && [ -n "$covrow_m" ]; then
+                printf '<p class="tabs">'
+                for _cm in $covrow_m; do
+                    if [ "${_cm%%:*}" = "$member" ]; then printf '<span class="tab active">%s</span>' "${_cm#*:}"
+                    else printf '<a class="tab" href="%s-configured.html">%s</a>' "${_cm%%:*}" "${_cm#*:}"; fi
+                done
+                printf '</p>\n'
+            fi
             if [ "$member" = logicals ]; then
-                printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the logical flows counted in the Total of the Logical row (Logical, Partners, Domains, Applications &amp; BL table). A logical flow is a FlowID family condensed to one three-part name (a hyphen marks parts the derivation combined); its members are the configured subscriptions that carry those FlowIDs.</p>\n'
+                printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the logical flows counted in the Total of the Logical row (Achmea entities table). A logical flow is a FlowID family condensed to one three-part name (a hyphen marks parts the derivation combined); its members are the configured subscriptions that carry those FlowIDs.</p>\n'
             elif [ "$member" = partners ]; then
-                printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the partners counted in the Total of the Partners row (Logical, Partners, Domains, Applications &amp; BL table). A partner is the last part of the logical flow names (domain_application_partner), merged into one organisation by shared endpoints, shared whitelist IPs, whitelisted host addresses and curated aliases; its configured endpoint(s) and member accounts are listed.</p>\n'
+                printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the partners counted in the Total of the Partners row (Achmea entities table). A partner is the last part of the logical flow names (domain_application_partner), merged into one organisation by shared endpoints, shared whitelist IPs, whitelisted host addresses and curated aliases; its configured endpoint(s) and member accounts are listed.</p>\n'
             elif [ "$member" = applications ]; then
-                printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the applications counted in the Total of the Applications row (Logical, Partners, Domains, Applications &amp; BL table). An application is the middle part of the three-part logical flow name (domain_application_partner), so this list is derived from the logical flows; an application active in both directions counts once per side.</p>\n'
+                printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the applications counted in the Total of the Applications row (Achmea entities table). An application is the middle part of the three-part logical flow name (domain_application_partner), so this list is derived from the logical flows; an application active in both directions counts once per side.</p>\n'
             elif [ "$member" = domains ]; then
-                printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the business domains counted in the Total of the Domains row (Logical, Partners, Domains, Applications &amp; BL table). The domain is the first part of the three-part logical flow name (domain_application_partner), so this list is derived from the logical flows; a domain active in both directions counts once per side.</p>\n'
+                printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the business domains counted in the Total of the Domains row (Achmea entities table). The domain is the first part of the three-part logical flow name (domain_application_partner), so this list is derived from the logical flows; a domain active in both directions counts once per side.</p>\n'
             elif [ "$member" = bl ]; then
-                printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the BL tags counted in the Total of the BL row (Logical, Partners, Domains, Applications &amp; BL table). A BL is a subscriptions.json tags entry starting with BL, kept verbatim; its members are the configured subscriptions that carry the tag, and a tag active in both directions counts once per side.</p>\n'
+                printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the BL tags counted in the Total of the BL row (Achmea entities table). A BL is a subscriptions.json tags entry starting with BL, kept verbatim; its members are the configured subscriptions that carry the tag, and a tag active in both directions counts once per side.</p>\n'
             else
                 printf '<p class="range"><a href="../index.html">&larr; Back to the home status table</a> &mdash; the items counted in this cell of the Entities table.</p>\n'
             fi
@@ -725,14 +744,19 @@ write_use_cases_page() {
 # (the Use Case patterns page went 2026-09-29: its multi-subscription accounts
 # are the Account sharing page, the single-use-case buckets said nothing more)
 
-# ---- the Logical detection page (docs/analyses/logical-detection.html) ------
+# ---- the Logical detection table (the build report's last section) --------
 # One row per configured FlowID (2026-08-31, user request): the FlowID, the
 # Logical it detected to, and the rule trail that produced it — the third
 # column of xref/_logical-rules.tsv, written by the derivation itself in
-# bin/flow-manager.sh, so page and pipeline can never disagree. Rows tint by
+# bin/flow-manager.sh, so table and pipeline can never disagree. Rows tint by
 # the Logical result; the Logical cell links its detail page.
-write_logical_detection_page() {
-    local out="$ADIR/logical-detection.html"
+# NO PAGE OF ITS OWN since 2026-10-05 (user request: "remove from the
+# configuration group, add to the bottom of the build.html page"): this writes
+# the TABLE to data/analyses/_logical-detection.html and bin/build.sh
+# write_report appends it to the build report — its links carry the report's
+# @B@ docs-root placeholder. Never restore docs/analyses/logical-detection.html.
+write_logical_detection_table() {
+    local out="$DATA/analyses/_logical-detection.html"
     local rules="$DATA/flow-manager/xref/_logical-rules.tsv"
     local lmap="$DATA/transfer/reports/details/logicals/_slugmap.tsv"
     local lbase="$DATA/flow-manager/base/_logicals.tsv"
@@ -748,19 +772,17 @@ write_logical_detection_page() {
             r = res[k]
             if (r == "green" || r == "orange" || r == "red") tr = tr " data-res=\"" r "\""
             lc = html_esc($2)
-            if (k in slug) lc = "<a href=\"../details/logicals/" slug[k] ".html\">" lc "</a>"
-            print tr "><td><code>" html_esc($1) "</code></td><td>" lc "</td><td class=\"wrap\">" html_esc($3) "</td></tr>"
+            if (k in slug) lc = "<a href=\"@B@details/logicals/" slug[k] ".html\">" lc "</a>"
+            print tr "><td><code>" html_esc($1) "</code></td><td>" lc "</td><td>" html_esc($3) "</td></tr>"
         }' "$rules")
     n=$(printf '%s' "$rows" | grep -c '<tr' || true)
+    mkdir -p "${out%/*}"
     {
-        html_head "Logical detection" "../assets/style.css" "" "" "logical-detection" "" "" "sort-fresh"
-        printf '<h1>Logical detection</h1>\n'
-        printf '<div class="tablewrap"><table class="index fit">\n'
+        printf '<table>\n'
         printf '<tr><th>FlowID</th><th>Logical</th><th>Rules</th></tr>\n'
         [ -n "$rows" ] && printf '%s\n' "$rows"
         printf '<tr class="total"><td>Total (%s)</td><td></td><td></td></tr>\n' "$n"
-        printf '</table></div>\n'
-        printf '</body>\n</html>\n'
+        printf '</table>\n'
     } > "$out"
 }
 
@@ -1547,7 +1569,7 @@ _aplap "coverage pages"
 render_first_seen_pages # docs/first-seen/*.html, before the First seen table links them
 write_use_cases_page
 write_subscriptions_page
-write_logical_detection_page
+write_logical_detection_table   # the build report's last section (no page since 2026-10-05)
 write_accounts_page
 write_first_seen_page
 _aplap "use cases, first seen, configuration pages"

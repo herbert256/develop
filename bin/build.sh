@@ -587,6 +587,16 @@ HTML
             printf '</table></div>\n'
         done
         printf '</div>\n'
+        # ---- Logical detection (2026-10-05, user request: off the
+        # Configuration group, onto the bottom of this page): how every
+        # configured FlowID became its Logical — the table bin/analyses/
+        # publish.sh write_logical_detection_table leaves in data/ (its links
+        # carry the @B@ prefix); a build that died before that publish has none
+        if [ -s data/analyses/_logical-detection.html ]; then
+            printf '<h2 id="logical-detection">Logical detection</h2>\n'
+            printf '<p class="bsnote">How every configured FlowID became its Logical, one row per FlowID &mdash; the rules: <a href="%shelp/logical-detection.html">help</a>.</p>\n' "$base"
+            cat data/analyses/_logical-detection.html
+        fi
         printf '<p>Written by <code>bin/build.sh</code> &mdash; raw step logs in <code>build/step-NN.log</code>. Build finished at %s.</p>\n' "$end"
         printf '</div>\n'
         printf '</body>\n</html>\n'

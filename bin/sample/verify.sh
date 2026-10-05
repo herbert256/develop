@@ -253,13 +253,13 @@ check $(! grep -q 'Wildcards: ? = 1 character' docs/assets/report.js 2>/dev/null
 # writers' own), TOTAL rows, the list pages' way back, no DESC lines, the
 # anomalies cell colour, the io-errors account tint
 bad=""
-for pg in transfer/connection-efficiency transfer/episodes transfer/files-empty-files transfer/pirates-details transfer/retries-failing-flows transfer/retries-per-subscription transfer/went-quiet-accounts transfer/went-quiet-subscriptions transfer/security-outreach transfer/month-stats/this-subscription transfer/unknown-transfers; do
+for pg in transfer/connection-efficiency transfer/episodes transfer/files-empty-files transfer/pirates-details transfer/retries-failing-flows transfer/retries-per-subscription transfer/went-quiet transfer/security-outreach transfer/month-stats/this-subscription transfer/unknown-transfers; do
     f="docs/$pg.html"
     { [ -f "$f" ] && grep -q 'data-restint' "$f" && grep -q ' data-res="' "$f"; } || bad="$bad $pg"
 done
 check $([ -z "$bad" ] && echo 0 || echo 1) "entity-keyed table(s) without the result-colour row tint:$bad"
 bad=""
-for pg in transfer/went-quiet-subscriptions; do
+for pg in transfer/went-quiet; do
     t=$(grep -o '<table' "docs/$pg.html" 2>/dev/null | wc -l | tr -d ' '); n=$(grep -o '<tr class="total"' "docs/$pg.html" 2>/dev/null | wc -l | tr -d ' ')
     [ "${t:-0}" -gt 0 ] && [ "$n" = "$t" ] || bad="$bad $pg($n/$t)"
 done
@@ -719,7 +719,7 @@ n=$(awk -F'\t' '$1 == "ROW" { ok = 0
         if ($9 + $10 > ok) n++ } END { print n + 0 }' "$ES" 2>/dev/null)
 check $([ "${n:-1}" -eq 0 ] && echo 0 || echo 1) "entities/subscription.rpt: ${n:-?} row(s) with Auto + Resubmit Ok > the OK Files"
 hdr=$(grep -o '<tr><th>Account</th>.*' "docs/transfer/entities/account-all.html" 2>/dev/null | head -1 | sed 's/^<tr>//; s/<\/tr>.*//; s/<th[^>]*>//g; s/<\/th>/|/g')
-check $([ "$hdr" = "Account|In|Out|Error|Error %|Waiting|Expired|Auto|Ok|Error|p90|p95|p99|p100|Total|Avg|Ok|Error|Error %|" ] && echo 0 || echo 1) "entities/account-all.html header is '$hdr', expected the grouped layout Account|In|Out|Error|Error %|Waiting|Expired|Auto|Ok|Error|p90|p95|p99|p100|Total|Avg|Ok|Error|Error %"
+check $([ "$hdr" = "Account|In|Out|Error|Error %|Waiting|Expired|Auto|Ok|Error|p90|p95|p99|p100|Ok|Error|Error %|" ] && echo 0 || echo 1) "entities/account-all.html header is '$hdr', expected the grouped layout Account|In|Out|Error|Error %|Waiting|Expired|Auto|Ok|Error|p90|p95|p99|p100|Ok|Error|Error %"
 read -r want wantm wante <<< "$(awk -F'\t' 'FNR == 1 { fno++ } fno == 1 { if ($3 != "Processed") fl[$1] = 1; if ($22 == "true") rs[$1] = 1; next }
     $3 != "" && $4 != "" { ok = ($2 != "Failed" && $2 != "Expired"); if (ok && ($1 in fl) && !($1 in rs)) a++; if ($1 in rs) { if (ok) m++; else e++ } }
     END { print a + 0, m + 0, e + 0 }' "$T" "$F" 2>/dev/null)"
@@ -1495,7 +1495,10 @@ check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "$n page(s) still titled a bare \
 # Slowest subscriptions, Failure rate, Volume and Missing cronjobs pages and
 # the Failed Subscriptions every-File views
 check $([ -f docs/transfer/skipped.html ] && echo 0 || echo 1) "docs/transfer/skipped.html missing"
-for g in 'transfer/skipped-*.html' 'transfer/duration-slowest*.html' 'transfer/failure-rate*.html' 'transfer/volume*.html' \
+# (the old Volume pages — per day, per direction, top accounts — went that
+# day too; transfer/volume-*.html is the per-entity Volume report since
+# 2026-10-05, the Entities Volume group moved, so the name is not guarded)
+for g in 'transfer/skipped-*.html' 'transfer/duration-slowest*.html' 'transfer/failure-rate*.html' \
          'transfer/missing-cronjobs*.html' 'analyses/missing-cronjobs*.html' 'analyses/failed-all-*.html'; do
     n=$(ls docs/$g 2>/dev/null | wc -l | tr -d ' ')
     check $([ "${n:-0}" = 0 ] && echo 0 || echo 1) "docs/$g: $n retired page(s) still published (retired 2026-09-29)"
@@ -1670,7 +1673,7 @@ check $([ "$o" = "Partner Account Logical " ] && echo 0 || echo 1) "entity-searc
 #    (2 columns) — the one "Retry / Resubmit" group is gone; UC2 status
 #    (Waiting · Expired, 2 columns) sits between Files and Retry since 2026-10-05
 g=$(awk -F'\t' '$1 == "GHEAD" { print; exit }' "$EA" 2>/dev/null)
-check $([ "$g" = $'GHEAD\t\t@{colspan=4,class=gband gsep}Files\t@{colspan=2,class=gband gsep}UC2 status\t@{class=gband gsep}Retry\t@{colspan=2,class=gband gsep}Resubmit\t@{colspan=4,class=gband gsep}Duration\t@{colspan=2,class=gband gsep}Volume\t@{colspan=3,class=gband gsep}Transfers' ] && echo 0 || echo 1) "entities/account.rpt GHEAD is '$g' — expected Files · UC2 status · Retry · Resubmit · Duration · Volume · Transfers"
+check $([ "$g" = $'GHEAD\t\t@{colspan=4,class=gband gsep}Files\t@{colspan=2,class=gband gsep}UC2 status\t@{class=gband gsep}Retry\t@{colspan=2,class=gband gsep}Resubmit\t@{colspan=4,class=gband gsep}Duration\t@{colspan=3,class=gband gsep}Transfers' ] && echo 0 || echo 1) "entities/account.rpt GHEAD is '$g' — expected Files · UC2 status · Retry · Resubmit · Duration · Transfers"
 check $(grep -q '>Retry</th>' docs/transfer/entities/account-all.html 2>/dev/null && grep -q '>Resubmit</th>' docs/transfer/entities/account-all.html 2>/dev/null && ! grep -rqs 'Retry / Resubmit</th>' docs/transfer/entities && echo 0 || echo 1) "transfer/entities/account-all.html lacks the separate Retry and Resubmit banner cells (or a page still shows Retry / Resubmit)"
 
 # 5. THE WAITING / EXPIRED LIST PAGES (2026-10-01, user request): the first 10
@@ -1755,6 +1758,41 @@ n=$(awk '
     END { print b + 0 }' docs/transfer/*.html docs/transfer/*/*.html docs/resubmit/*.html docs/recovered/*.html docs/not-in-fm/*.html 2>/dev/null)
 check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n table row(s) link the same File page from the file name AND the CoreId (the CoreId must open File Tracking instead)"
 check $(grep -q 'cell(tr, "mono", r.cid, "", true)' docs/assets/sub-files.js 2>/dev/null && grep -q 'cell(tr, "mono", r.cid, "", true)' docs/assets/all-files-search.js 2>/dev/null && echo 0 || echo 1) "sub-files.js / all-files-search.js still give the CoreId cell the File-page link"
+
+# 10. THE 2026-10-05 BATCH (user requests)
+#  a. Logical detection: no page, not in the Configuration group — the LAST
+#     section of the build report (its Logical cells link the detail pages)
+check $([ ! -f docs/analyses/logical-detection.html ] && ! grep -rqs 'logical-detection\.html">Logical detection' docs/analyses && echo 0 || echo 1) "analyses/logical-detection.html is still published or still a Configuration group member"
+check $([ -s data/analyses/_logical-detection.html ] && grep -q '<h2 id="logical-detection">Logical detection</h2>' docs/tools/build.html 2>/dev/null && grep -q 'href="../details/logicals/[^"]*\.html"' docs/tools/build.html && ! grep -q '@B@' docs/tools/build.html && echo 0 || echo 1) "tools/build.html lacks the Logical detection section (or its detail links)"
+#  b. the five coverage Configured pages open with the member row Logical ·
+#     Partners · Domains · Applications · BL, their own member active
+bad=""
+for m in logicals:Logical partners:Partners domains:Domains applications:Applications bl:BL; do
+    r=$(grep -o '<p class="tabs">.*' "docs/coverage/${m%%:*}-configured.html" 2>/dev/null | head -1 | sed 's#</p>.*##; s#<p class="tabs">##; s#<span class="tab active">\([^<]*\)</span>#*\1|#g; s#<a class="tab" href="[^"]*-configured\.html">\([^<]*\)</a>#\1|#g')
+    case $r in *"*${m#*:}|"*) ;; *) bad="$bad ${m%%:*}"; continue ;; esac
+    [ "$(printf '%s' "$r" | tr -d '*')" = "Logical|Partners|Domains|Applications|BL|" ] || bad="$bad ${m%%:*}"
+done
+check $([ -z "$bad" ] && echo 0 || echo 1) "coverage Configured page(s) without the Logical · Partners · Domains · Applications · BL row:$bad"
+#  c. the home table is "Achmea entities"
+check $(grep -q '>Achmea entities<' docs/index.html 2>/dev/null && ! grep -q 'Applications &amp; BL' docs/index.html docs/coverage/*.html && echo 0 || echo 1) "the home table is not titled Achmea entities (or the old title survived)"
+#  d. Went quiet: one table, no Accounts tab — transfer/went-quiet.html
+check $([ -f docs/transfer/went-quiet.html ] && ! ls docs/transfer/went-quiet-*.html >/dev/null 2>&1 && [ ! -f data/transfer/reports/stale-accounts.rpt ] && [ ! -f bin/transfer/reports/stale-accounts.sh ] && echo 0 || echo 1) "Went quiet still has tab pages / the stale-accounts writer, or transfer/went-quiet.html is missing"
+#  e. the Duplicates table has no Accounts column
+h=$(awk -F'\t' '$1 == "TABLE" { t = $2 } t == "Repeated filenames" && $1 == "HEAD" { print; exit }' data/transfer/reports/files.rpt 2>/dev/null)
+check $([ "$h" = $'HEAD\tFilename\tFiles\tError\tFirst\tLast' ] && echo 0 || echo 1) "files.rpt Repeated filenames HEAD is '$h', expected Filename|Files|Error|First|Last"
+#  f. the Entities pages carry no Volume group; the Volume report (Activity &
+#     volume group) has the nine entity tabs, its Subscriptions Total the
+#     bytes the Entities total had (the topview Volume of every File)
+n=$(grep -l 'class="gband[^"]*">Volume</th>' docs/transfer/entities/*.html 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "$n Entities page(s) still carry the Volume group"
+nt=$(grep -c $'^TABLE\t' data/transfer/reports/volume.rpt 2>/dev/null || true)
+np=$(ls docs/transfer/volume-*.html 2>/dev/null | wc -l | tr -d ' ')
+check $([ "${nt:-0}" = 9 ] && [ "$np" = 9 ] && [ -f docs/transfer/volume-subscriptions.html ] && [ -f docs/transfer/volume-bl.html ] && grep -q 'grouptag">&larr; Activity &amp; volume' docs/transfer/volume-subscriptions.html && grep -q 'href="volume-subscriptions.html">Volume<\|>Volume</span>' docs/transfer/activity-per-week.html && echo 0 || echo 1) "the Volume report: ${nt:-0} table(s), $np page(s), expected 9 + 9 in the Activity & volume group"
+n=$(awk -F'\t' '$1 == "TABLE" { t++ } t == 1 && $1 == "ROW" && $0 !~ /@data:buckets=/ { b++ } t == 1 && $1 == "ROW" { r++ } END { print (r > 0 ? b + 0 : 1) }' data/transfer/reports/volume.rpt 2>/dev/null)
+check $([ "${n:-1}" = 0 ] && echo 0 || echo 1) "volume.rpt: $n Subscriptions row(s) without their per-day buckets (From/To)"
+#  g. the CoreId rule never takes a UUID inside a name, and the file search
+#     waits for 3 characters
+check $(grep -q 'function idAt(s)' docs/assets/report.js 2>/dev/null && ! grep -q 'ID_RE.exec(node.nodeValue)' docs/assets/report.js && grep -q 'MINLEN = 3' docs/assets/all-files-search.js 2>/dev/null && echo 0 || echo 1) "report.js lacks the standalone-id rule (idAt) or all-files-search.js the 3-character minimum"
 
 if [ "$fails" -eq 0 ]; then
     echo "verify: OK — the sample estate exercises every planted scenario." >&2

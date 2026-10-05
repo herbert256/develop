@@ -1,23 +1,20 @@
 <h1>Went quiet</h1>
 <h2>What it shows</h2>
 <ul>
-<li>The silence report: <strong>subscriptions</strong> that carried Files and then stopped, and <strong>accounts</strong> idle long against their own cadence. Nothing fails when a flow stops, so no other report shows it.</li>
+<li>The silence report: <strong>subscriptions</strong> that carried Files and then stopped. Nothing fails when a flow stops, so no other report shows it.</li>
 </ul>
-<h2>Tabs</h2>
+<h2>Columns</h2>
 <ul>
-<li><strong>Subscriptions</strong> &mdash; boxes <strong>Subscriptions with Files</strong> and <strong>Went quiet</strong>; per quiet subscription (links its detail page) <strong>Days ago last traffic</strong>, longest-quiet first.</li>
-<li><strong>Accounts</strong> &mdash; <strong>First</strong> / <strong>Last activity</strong>, <strong>Active days</strong>, <strong>Median gap</strong> (typical spacing between active days), <strong>Days idle</strong>, <strong>Idle &divide; gap</strong> (missed cycles), <strong>Files</strong>. The Total row counts the stale and overdue accounts.</li>
+<li>Boxes <strong>Subscriptions with Files</strong> and <strong>Went quiet</strong>; per quiet subscription (links its detail page) <strong>Days ago last traffic</strong>, longest-quiet first.</li>
 </ul>
 <h2>Rules</h2>
 <ul>
-<li>Rows tint by the subscription&rsquo;s / account&rsquo;s result colour.</li>
+<li>Rows tint by the subscription&rsquo;s result colour.</li>
 <li>A subscription is quiet when its newest File is more than <strong>7 days</strong> before the last day in the data. Every outcome counts as traffic: the question is &ldquo;is anything happening&rdquo;, not &ldquo;is it working&rdquo;.</li>
 <li>A subscription that never carried a File cannot go quiet; the Entities <strong>Not seen</strong> view lists those.</li>
-<li>Accounts: <strong>Days idle</strong> 7+ is tinted (stale), and so is <strong>Idle &divide; gap</strong> 2 or more (overdue); an account seen on one day has no gap (&ldquo;-&rdquo;). Files without an account are left out.</li>
-<li>Both measure from the window end, never today; always the full period.</li>
+<li>Measured from the window end, never today; always the full period.</li>
 </ul>
 <h2>Tips</h2>
 <ul>
-<li>A daily account idle 3 days (ratio 3.0) is more alarming than a weekly one idle 5 days (0.7).</li>
 <li>Health is judged on <a href="open-errors.html">Open Errors</a>.</li>
 </ul>

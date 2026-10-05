@@ -41,7 +41,6 @@ if [ "$PHASE" != phase2 ]; then
 # phase, and nothing here reads what they write.
 pool_run "$SCRIPT_DIR/reports/entities.sh"   # the Entities PAGES (the grouped layout, 2026-09-13) + the nine classic <dim>.rpt records (the five classic writers folded in, 2026-09-30)
 pool_run "$SCRIPT_DIR/reports/topview.sh"
-pool_run "$SCRIPT_DIR/reports/stale-accounts.sh"
 pool_run "$SCRIPT_DIR/reports/went-quiet.sh"
 pool_run "$SCRIPT_DIR/reports/connection-efficiency.sh"
 pool_run "$SCRIPT_DIR/reports/recovered.sh"
@@ -96,7 +95,6 @@ pool_wait
 "$SCRIPT_DIR/reports/retries.sh"
 "$SCRIPT_DIR/reports/merge-episodes.sh"   # 2026-09-29: the episodes + the Recovered flows tab
 "$SCRIPT_DIR/reports/files.sh"
-"$SCRIPT_DIR/reports/merge-went-quiet.sh"
 "$SCRIPT_DIR/reports/failed-files.sh"          # 2026-09-14: every failed File + its reason — reads the pool failed.sh's reasons sidecar, so after pool_wait
 "$SCRIPT_DIR/reports/unknown-transfers.sh"     # 2026-09-29: every File with subscription "Unknown" — links the File pages the pool wrote, so after pool_wait
 fi
